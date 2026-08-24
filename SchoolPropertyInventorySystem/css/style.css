@@ -103,8 +103,8 @@ body[data-theme="light"] .sidebar {
 
 .brand-mark {
     display: grid;
-    width: 46px;
-    height: 46px;
+    width: 56px;
+    height: 56px;
     place-items: center;
     border-radius: 8px;
     color: #ffffff;
@@ -159,7 +159,7 @@ body[data-theme="light"] .brand span {
 
 .nav-list {
     display: grid;
-    gap: 8px;
+    gap: 6px;
 }
 
 .nav-item {
