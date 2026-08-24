@@ -1674,7 +1674,7 @@ body[data-theme="light"] .asset-detail-row {
 }
 
 .qr-preview-actions {
-    justify-content: space-between;
+    justify-content: center;
 }
 
 .qr-next-button {

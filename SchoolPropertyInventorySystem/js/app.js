@@ -88,7 +88,6 @@ const dom = {
     resetFormBtn: document.querySelector("#resetFormBtn"),
     downloadQrBtn: document.querySelector("#downloadQrBtn"),
     copyQrBtn: document.querySelector("#copyQrBtn"),
-    printQrBtn: document.querySelector("#printQrBtn"),
     printReportBtn: document.querySelector("#printReportBtn"),
     themeButtons: document.querySelectorAll("[data-theme-choice]"),
     toast: document.querySelector("#toast"),
@@ -1328,8 +1327,8 @@ function renderQr() {
 
 function setQrDetails(item) {
     const details = item
-        ? [item.propertyNo || item.assetId, item.accountable || "Unassigned", item.serialNo || "Not specified"]
-        : ["-", "-", "-"];
+        ? [item.itemClassification || "Unspecified", item.propertyNo || item.assetId, item.accountable || "Unassigned", item.serialNo || "Not specified"]
+        : ["-", "-", "-", "-"];
 
     dom.qrDetails.querySelectorAll("dd").forEach((node, index) => {
         node.textContent = details[index];
@@ -1487,7 +1486,15 @@ function downloadQr() {
                 ctx.drawImage(src, quietAdd, quietAdd, src.width, src.height);
 
                 const link = document.createElement("a");
-                link.download = `${item.propertyNo || item.assetId}-qr.png`;
+                const fileName = (item.itemBrandModel || "qr-code")
+                    .trim()
+                    .replace(/[<>:"/\\|?*]+/g, "-")
+                    .replace(/[. ]+$/, "") || "qr-code";
+                const serialNumber = (item.serialNo || "No Serial No.")
+                    .trim()
+                    .replace(/[<>:"/\\|?*]+/g, "-")
+                    .replace(/[. ]+$/, "") || "No Serial No";
+                link.download = `${fileName} - ${serialNumber}.png`;
                 link.href = out.toDataURL("image/png");
                 link.click();
             } catch (err) {
@@ -1873,9 +1880,6 @@ function wireEvents() {
     }
     if (dom.copyQrBtn) {
         dom.copyQrBtn.addEventListener("click", copyQrData);
-    }
-    if (dom.printQrBtn) {
-        dom.printQrBtn.addEventListener("click", () => window.print());
     }
     if (dom.printReportBtn) {
         dom.printReportBtn.addEventListener("click", () => window.print());

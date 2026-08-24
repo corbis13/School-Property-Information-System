@@ -20,7 +20,6 @@
                 </div>
             </div>
 
-            <nav class="nav-list" aria-label="Main navigation">
                 <button class="nav-item active" type="button" data-view="dashboard">
                     <img class="nav-icon" src="images/dashboard_1.svg" alt="Dashboard" data-theme-icon="images/dashboard_1.svg" data-theme-icon-light="images/dashboard_2.svg">
                     Dashboard
@@ -93,7 +92,7 @@
                     <article class="dashboard-card status-card">
                         <div class="section-heading">
                             <div>
-                                <p class="eyebrow">Status Mix</p>
+                                <p class="eyebrow">Status</p>
                                 <h2>Distribution</h2>
                             </div>
                         </div>
@@ -149,7 +148,7 @@
                 <form class="item-form" id="itemForm">
                     <div class="section-heading">
                         <div>
-                            <p class="eyebrow">Asset Details</p>
+                            <p class="eyebrow">Property Details</p>
                             <h2 id="formTitle">Add Property Item</h2>
                         </div>
                     </div>
@@ -321,6 +320,10 @@
                         </div>
                         <dl class="qr-details" id="qrDetails">
                             <div>
+                                <dt>Classification</dt>
+                                <dd>-</dd>
+                            </div>
+                            <div>
                                 <dt>Property No.</dt>
                                 <dd>-</dd>
                             </div>
@@ -334,7 +337,6 @@
                             </div>
                         </dl>
                         <div class="button-row qr-preview-actions">
-                            <button class="secondary-button" id="printQrBtn" type="button">Print Selected QR Code</button>
                             <button class="secondary-button" id="downloadQrBtn" type="button">Download QR</button>
                         </div>
                         <button class="primary-button qr-next-button" type="button">Next</button>
@@ -373,10 +375,6 @@
                         <h2>Database Connection</h2>
                         <dl class="settings-list">
                             <div>
-                                <dt>Supabase URL</dt>
-                                <dd>https://ouqgkytallctnptshefo.supabase.co</dd>
-                            </div>
-                            <div>
                                 <dt>Storage Mode</dt>
                                 <dd>Supabase REST API</dd>
                             </div>
@@ -385,11 +383,6 @@
                                 <dd>assets, classifications</dd>
                             </div>
                         </dl>
-                    </article>
-                    <article class="module-card">
-                        <p class="eyebrow">Columns</p>
-                        <h2>Spreadsheet Headers</h2>
-                        <p class="module-copy">asset_id, fund_cluster, property_no, item_classification, item_brand_model, serial_no, acquisition_cost, acquisition_date, accountable_person, date_issue, status, remarks, created_at, updated_at</p>
                     </article>
                 </section>
             </div>
