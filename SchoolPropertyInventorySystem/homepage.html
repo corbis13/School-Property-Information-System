@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Property Inventory System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/homepage.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="supabase-config.js"></script>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-badge">PI</div>
+                <div>
+                    <strong>Property Inventory</strong>
+                    <small>School Asset System</small>
+                </div>
+            </div>
+
+            <nav class="menu-list" aria-label="Primary navigation">
+                <a class="menu-item active" href="#">
+                    <img class="nav-icon" src="images/dashboard_1.svg" alt="Dashboard">
+                    Dashboard
+                </a>
+                <a class="menu-item" href="#">
+                    <img class="nav-icon" src="images/inventory_1.svg" alt="Inventory">
+                    Inventory
+                </a>
+                <a class="menu-item" href="#">
+                    <img class="nav-icon" src="images/qr_code_1.svg" alt="QR Codes">
+                    QR Codes
+                </a>
+                <a class="menu-item" href="#">
+                    <img class="nav-icon" src="images/report_1.svg" alt="Reports">
+                    Reports
+                </a>
+                <a class="menu-item" href="#">
+                    <img class="nav-icon" src="images/setting_1.svg" alt="Settings">
+                    Settings
+                </a>
+                <a class="menu-item" href="#">
+                    <img class="nav-icon" src="images/about_1.svg" alt="About">
+                    About
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div>
+                    <h1>School Property Inventory Dashboard</h1>
+                    <p>Government property monitoring for school assets and office inventory.</p>
+                </div>
+                <div class="topbar-actions">
+                    <div class="status-pill" id="dataStatus">Loading live inventory data...</div>
+                    <button class="refresh-btn" id="refreshDashboardBtn" type="button">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        Refresh Data
+                    </button>
+                    <label class="search-box" aria-label="Search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Search items, report, or user">
+                    </label>
+                </div>
+            </header>
+
+            <section class="kpi-grid">
+                <article class="card kpi-card cyan">
+                    <div class="label"><span>Total Property Count</span><i class="fa-solid fa-boxes-stacked"></i></div>
+                    <strong id="totalPropertyCount">0</strong>
+                    <small>All tracked assets</small>
+                </article>
+                <article class="card kpi-card green">
+                    <div class="label"><span>Available Items</span><i class="fa-solid fa-check"></i></div>
+                    <strong id="availableItems">0</strong>
+                    <small>Ready for use</small>
+                </article>
+                <article class="card kpi-card cyan">
+                    <div class="label"><span>Issued Items</span><i class="fa-solid fa-share-from-square"></i></div>
+                    <strong id="issuedItems">0</strong>
+                    <small>Assigned to offices</small>
+                </article>
+                <article class="card kpi-card pink">
+                    <div class="label"><span>Borrowed Items</span><i class="fa-solid fa-hand-holding-hand"></i></div>
+                    <strong id="borrowedItems">0</strong>
+                    <small>Temporary release</small>
+                </article>
+                <article class="card kpi-card gold">
+                    <div class="label"><span>Unserviceable Items</span><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <strong id="unserviceableItems">0</strong>
+                    <small>Needs action</small>
+                </article>
+                <article class="card kpi-card green">
+                    <div class="label"><span>Total Property Value</span><i class="fa-solid fa-peso-sign"></i></div>
+                    <strong id="totalPropertyValue">₱0</strong>
+                    <small>Estimated value</small>
+                </article>
+            </section>
+
+            <section class="charts-grid">
+                <article class="card canvas-card">
+                    <h3>Monthly Issuance Chart</h3>
+                    <canvas id="monthlyIssuanceChart"></canvas>
+                </article>
+                <article class="card canvas-card">
+                    <h3>Property Category Chart</h3>
+                    <canvas id="propertyCategoryChart"></canvas>
+                </article>
+                <article class="card canvas-card full-width-card">
+                    <h3>Accountable Person</h3>
+                    <canvas id="accountablePersonChart"></canvas>
+                </article>
+            </section>
+
+            <section class="panel-grid">
+                <article class="card list-card">
+                    <h3>Recent Transactions</h3>
+                    <ul id="recentTransactions"></ul>
+                </article>
+                <article class="card list-card">
+                    <h3>Low Stock Alerts</h3>
+                    <ul id="lowStockAlerts"></ul>
+                </article>
+                <article class="card list-card">
+                    <h3>Upcoming Maintenance</h3>
+                    <ul id="upcomingMaintenance"></ul>
+                </article>
+                <article class="card list-card">
+                    <h3>User Activity Log</h3>
+                    <div class="activity-grid" id="userActivityLog"></div>
+                </article>
+            </section>
+        </main>
+    </div>
+
+    <script src="js/homepage.js"></script>
+</body>
+</html>

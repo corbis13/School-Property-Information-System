@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Inventory System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark">PI</div>
+                <div>
+                    <strong>Property Inventory</strong>
+                    <span>Asset Registry</span>
+                </div>
+            </div>
+
+            <nav class="nav-list" aria-label="Main navigation">
+                <button class="nav-item active" type="button" data-view="dashboard">
+                    <img class="nav-icon" src="images/dashboard_1.svg" alt="Dashboard" data-theme-icon="images/dashboard_1.svg" data-theme-icon-light="images/dashboard_2.svg">
+                    Dashboard
+                </button>
+                <button class="nav-item" type="button" data-view="inventory">
+                    <img class="nav-icon" src="images/inventory_1.svg" alt="Inventory" data-theme-icon="images/inventory_1.svg" data-theme-icon-light="images/inventory_2.svg">
+                    Inventory
+                </button>
+                <button class="nav-item" type="button" data-view="qr">
+                    <img class="nav-icon" src="images/qr_code_1.svg" alt="QR Codes" data-theme-icon="images/qr_code_1.svg" data-theme-icon-light="images/qr_code_2.svg">
+                    QR Codes
+                </button>
+                <button class="nav-item" type="button" data-view="reports">
+                    <img class="nav-icon" src="images/report_1.svg" alt="Reports" data-theme-icon="images/report_1.svg" data-theme-icon-light="images/report_2.svg">
+                    Reports
+                </button>
+                <button class="nav-item" type="button" data-view="settings">
+                    <img class="nav-icon" src="images/setting_1.svg" alt="Settings" data-theme-icon="images/setting_1.svg" data-theme-icon-light="images/setting_2.svg">
+                    Settings
+                </button>
+                <button class="nav-item" type="button" data-view="about">
+                    <img class="nav-icon" src="images/about_1.svg" alt="About" data-theme-icon="images/about_1.svg" data-theme-icon-light="images/about_2.svg">
+                    About
+                </button>
+            </nav>
+
+            <div class="sidebar-note">
+                <span id="databaseStatus">Connecting to Supabase...</span>
+            </div>
+        </aside>
+
+        <main class="main-panel">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">Inventory Control</p>
+                    <h1>Property Inventory System</h1>
+                </div>
+                <div class="topbar-actions"></div>
+            </header>
+
+            <div class="module-view active" data-module="dashboard">
+                <section class="stats-grid" aria-label="Inventory summary">
+                    <article class="stat-tile">
+                        <span>Total Items</span>
+                        <strong id="totalItems">0</strong>
+                        <small>Registered property</small>
+                    </article>
+                    <article class="stat-tile">
+                        <span>Assigned</span>
+                        <strong id="assignedItems">0</strong>
+                        <small>With accountable person</small>
+                    </article>
+                    <article class="stat-tile">
+                        <span>Classifications</span>
+                        <strong id="repairItems">0</strong>
+                        <small>Unique categories</small>
+                    </article>
+                    <article class="stat-tile accent">
+                        <span>QR Ready</span>
+                        <strong id="qrItems">0</strong>
+                        <small>Generated automatically</small>
+                    </article>
+                </section>
+
+                <section class="database-strip" aria-live="polite">
+                    <strong>Database</strong>
+                    <span id="databaseMessage">Using Supabase as the inventory source.</span>
+                </section>
+
+                <section class="dashboard-board" aria-label="Property inventory dashboard">
+                    <article class="dashboard-card status-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Status Mix</p>
+                                <h2>Distribution</h2>
+                            </div>
+                        </div>
+                        <div class="status-overview">
+                            <div class="status-pie-chart" id="statusLineChart" aria-label="Status mix pie chart"></div>
+                        </div>
+                        <div class="status-analytics-grid">
+                            <section class="mini-chart-card">
+                                <div class="mini-chart-header">
+                                    <span>School Level</span>
+                                </div>
+                                <div class="mini-chart-list" id="schoolLevelChart"></div>
+                            </section>
+                            <section class="mini-chart-card">
+                                <div class="mini-chart-header">
+                                    <span>Acquisition Year</span>
+                                </div>
+                                <div class="mini-chart-list" id="acquisitionYearChart"></div>
+                            </section>
+                            <section class="mini-chart-card">
+                                <div class="mini-chart-header">
+                                    <span>Date Issue Year</span>
+                                </div>
+                                <div class="mini-chart-list" id="dateIssueYearChart"></div>
+                            </section>
+                        </div>
+                    </article>
+
+                    <article class="dashboard-card recent-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Recently Updated</p>
+                                <h2>Latest Records</h2>
+                            </div>
+                        </div>
+                        <div class="recent-list" id="recentAssets"></div>
+                    </article>
+
+                    <article class="dashboard-card accountable-bar-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Accountable Persons</p>
+                                <h2>Units per Person</h2>
+                            </div>
+                        </div>
+                        <div class="accountable-chart" id="accountablePersonChart" aria-label="Accountable person bar graph"></div>
+                    </article>
+                </section>
+            </div>
+
+            <div class="module-view" data-module="inventory">
+                <section class="workspace-grid inventory-workspace">
+                <form class="item-form" id="itemForm">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">Asset Details</p>
+                            <h2 id="formTitle">Add Property Item</h2>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="editingId">
+
+                    <div class="two-column">
+                        <label>
+                            AssetID
+                            <input id="assetId" type="text" placeholder="e.g. AST-2026-001" readonly>
+                        </label>
+                        <label>
+                            Fund Cluster
+                            <input id="fundCluster" type="text" placeholder="e.g. 01 Regular Agency Fund">
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Property No.
+                            <input id="propertyNo" type="text" placeholder="e.g. PROP-2026-001" required>
+                        </label>
+                        <label>
+                            Item Classification
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <select id="itemClassification" style="flex:1;">
+                                    <option value=""></option>
+                                </select>
+                                <button class="ghost-button" id="addClassificationBtn" type="button">+</button>
+                                <button class="ghost-button" id="deleteClassificationBtn" type="button" title="Delete selected classification">-</button>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Item/Brand/Model
+                            <input id="itemBrandModel" type="text" placeholder="e.g. Dell Latitude 5440 Laptop" required>
+                        </label>
+                        <label>
+                            Serial No.
+                            <input id="serialNo" type="text" placeholder="e.g. DL-5440-9281">
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Person Accountable
+                            <select id="accountable">
+                                <option value="">Select teacher</option>
+                            </select>
+                        </label>
+                        <label>
+                            School Level
+                            <input id="schoolLevel" type="text" placeholder="Auto-populates from selected teacher" readonly>
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Acquisition Cost
+                            <input id="acquisitionCost" type="number" min="0" step="0.01" placeholder="e.g. 45000">
+                        </label>
+                        <label>
+                            Acquisition Date
+                            <input id="acquisitionDate" type="date">
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Date Issue
+                            <input id="dateIssue" type="date">
+                        </label>
+                        <label>
+                            Status
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <select id="status" style="flex:1;">
+                                    <option value="" selected></option>
+                                </select>
+                                <button class="ghost-button" id="addStatusBtn" type="button">+</button>
+                                <button class="ghost-button" id="deleteStatusBtn" type="button" title="Delete selected status">-</button>
+                            </div>
+                        </label>
+                        <div aria-hidden="true"></div>
+                    </div>
+
+                    <label class="full-width">
+                        Remarks
+                        <textarea id="remarks" class="large-remarks" rows="4" placeholder="Other details about the item..."></textarea>
+                    </label>
+
+                    <div class="inventory-actions-row form-actions-row">
+                        <button class="primary-button form-action-btn" id="newItemBtnInline" type="button">
+                            <img src="images/add_new_1.svg" alt="" class="action-icon" data-theme-icon="images/add_new_1.svg" data-theme-icon-light="images/add_new_2.svg">
+                            <span>New</span>
+                        </button>
+                        <button class="primary-button form-action-btn" id="resetFormBtn" type="button">
+                            <img src="images/clear_1.svg" alt="" class="action-icon" data-theme-icon="images/clear_1.svg" data-theme-icon-light="images/clear_2.svg">
+                            <span>Clear</span>
+                        </button>
+                        <button class="primary-button form-action-btn" type="submit">
+                            <img src="images/save_1.svg" alt="" class="action-icon" data-theme-icon="images/save_1.svg" data-theme-icon-light="images/save_2.svg">
+                            <span>Save</span>
+                        </button>
+                    </div>
+
+                </form>
+                </section>
+
+                <section class="inventory-panel">
+                <div class="section-heading inventory-heading">
+                    <div>
+                        <p class="eyebrow">Property List</p>
+                        <h2>Inventory Records</h2>
+                    </div>
+                    <div class="filters">
+                        <input id="searchInput" type="search" placeholder="Search property, item, person...">
+                        <select id="statusFilter">
+                            <option value="All">All Status</option>
+                            <option>Available</option>
+                            <option>Assigned</option>
+                            <option>Classification</option>
+                            <option>Disposed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Property No.</th>
+                                <th>Item/Brand/Model</th>
+                                <th>Serial No.</th>
+                                <th>Classification</th>
+                                <th>Accountable</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTable"></tbody>
+                    </table>
+                </div>
+                <div class="inventory-pagination" id="inventoryPagination" aria-label="Inventory pagination"></div>
+                <div class="empty-state" id="emptyState">
+                    <strong>No inventory records yet</strong>
+                    <span>Add your first property item to generate its QR code.</span>
+                </div>
+                </section>
+            </div>
+
+            <div class="module-view" data-module="qr">
+                <section class="qr-module-grid">
+                    <section class="qr-panel" aria-label="QR code preview">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Preview</p>
+                                <h2 id="qrTitle">Select an item</h2>
+                            </div>
+                            <span class="status-pill" id="qrStatus">Waiting</span>
+                        </div>
+                        <div class="qr-stage">
+                            <div id="qrCode" class="qr-code" aria-live="polite"></div>
+                        </div>
+                        <div class="qr-preview-meta">
+                            <span>Scannability:</span>
+                            <strong>EXCELLENT</strong>
+                        </div>
+                        <dl class="qr-details" id="qrDetails">
+                            <div>
+                                <dt>Property No.</dt>
+                                <dd>-</dd>
+                            </div>
+                            <div>
+                                <dt>Accountable</dt>
+                                <dd>-</dd>
+                            </div>
+                            <div>
+                                <dt>Serial No.</dt>
+                                <dd>-</dd>
+                            </div>
+                        </dl>
+                        <div class="button-row qr-preview-actions">
+                            <button class="secondary-button" id="printQrBtn" type="button">Print Selected QR Code</button>
+                            <button class="secondary-button" id="downloadQrBtn" type="button">Download QR</button>
+                        </div>
+                        <button class="primary-button qr-next-button" type="button">Next</button>
+                    </section>
+                </section>
+            </div>
+
+            <div class="module-view" data-module="reports">
+                <section class="reports-grid">
+                    <article class="module-card">
+                        <p class="eyebrow">Reports</p>
+                        <h2>Inventory Summary</h2>
+                        <div class="report-list" id="reportSummary"></div>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">Export</p>
+                        <h2>Printable Records</h2>
+                        <p class="module-copy">Generate a browser printout from the current inventory table or export from your Supabase-backed data source.</p>
+                        <button class="secondary-button" type="button" id="printReportBtn">Print Report</button>
+                    </article>
+                </section>
+            </div>
+
+            <div class="module-view" data-module="settings">
+                <section class="settings-grid">
+                    <article class="module-card">
+                        <p class="eyebrow">Appearance</p>
+                        <h2>Theme</h2>
+                        <div class="theme-switcher" role="group" aria-label="Theme selection">
+                            <button class="theme-option active" type="button" data-theme-choice="dark">Dark</button>
+                            <button class="theme-option" type="button" data-theme-choice="light">Light</button>
+                        </div>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">Settings</p>
+                        <h2>Database Connection</h2>
+                        <dl class="settings-list">
+                            <div>
+                                <dt>Supabase URL</dt>
+                                <dd>https://ouqgkytallctnptshefo.supabase.co</dd>
+                            </div>
+                            <div>
+                                <dt>Storage Mode</dt>
+                                <dd>Supabase REST API</dd>
+                            </div>
+                            <div>
+                                <dt>Configured Tables</dt>
+                                <dd>assets, classifications</dd>
+                            </div>
+                        </dl>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">Columns</p>
+                        <h2>Spreadsheet Headers</h2>
+                        <p class="module-copy">asset_id, fund_cluster, property_no, item_classification, item_brand_model, serial_no, acquisition_cost, acquisition_date, accountable_person, date_issue, status, remarks, created_at, updated_at</p>
+                    </article>
+                </section>
+            </div>
+
+            <div class="module-view" data-module="about">
+                <section class="about-grid">
+                    <article class="module-card about-card">
+                        <p class="eyebrow">About</p>
+                        <h2>Property Inventory System</h2>
+                        <p class="module-copy">A browser-based asset registry for recording property details, tracking accountable persons, monitoring item status, and generating QR codes for fast property verification.</p>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">Purpose</p>
+                        <h2>Inventory Control</h2>
+                        <div class="report-list">
+                            <div class="report-item">
+                                <span>Asset Records</span>
+                                <strong>Maintain property numbers, serial numbers, acquisition data, and remarks.</strong>
+                            </div>
+                            <div class="report-item">
+                                <span>Accountability</span>
+                                <strong>Track assigned personnel and item status across the property list.</strong>
+                            </div>
+                            <div class="report-item">
+                                <span>QR Support</span>
+                                <strong>Generate, copy, download, and print QR data for each registered asset.</strong>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">System Info</p>
+                        <h2>Data Source</h2>
+                        <dl class="settings-list">
+                            <div>
+                                <dt>Application Type</dt>
+                                <dd>Static browser app</dd>
+                            </div>
+                            <div>
+                                <dt>Database</dt>
+                                <dd>Supabase REST API</dd>
+                            </div>
+                            <div>
+                                <dt>Offline Fallback</dt>
+                                <dd>Local browser storage</dd>
+                            </div>
+                        </dl>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">Modules</p>
+                        <h2>Included Menus</h2>
+                        <p class="module-copy">Dashboard, Inventory, QR Codes, Reports, Settings, and About are available from the sidebar navigation.</p>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">Developer</p>
+                        <h2>Corbis</h2>
+                        <dl class="settings-list">
+                            <div>
+                                <dt>Email</dt>
+                                <dd><a href="mailto:corbis.official@gmail.com">corbis.official@gmail.com</a></dd>
+                            </div>
+                        </dl>
+                    </article>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

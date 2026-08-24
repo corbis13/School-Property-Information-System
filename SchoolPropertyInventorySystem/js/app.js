@@ -1,0 +1,1941 @@
+const storageKey = "propertyInventoryItems";
+const classificationStorageKey = "propertyInventoryClassifications";
+const themeKey = "propertyInventoryTheme";
+const supabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+const supabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "YOUR_SUPABASE_ANON_KEY";
+const supabaseHeaders = {
+    apikey: supabaseAnonKey,
+    Authorization: `Bearer ${supabaseAnonKey}`
+};
+
+const seedItems = [
+    {
+        assetId: "AST000001",
+        fundCluster: "01",
+        propertyNo: "PROP-2026-001",
+        itemClassification: "Computer Equipment",
+        itemBrandModel: "Dell Latitude 5440 Laptop",
+        serialNo: "DL-5440-9281",
+        acquisitionCost: "45000",
+        acquisitionDate: "2026-02-12",
+        accountable: "Maria Santos",
+        dateIssue: "2026-02-14",
+        status: "Assigned",
+        remarks: "Serviceable",
+        createdAt: "2026-07-22T00:00:00.000Z",
+        updatedAt: "2026-07-22T00:00:00.000Z"
+    },
+    {
+        assetId: "AST000002",
+        fundCluster: "01",
+        propertyNo: "PROP-2026-002",
+        itemClassification: "Office Equipment",
+        itemBrandModel: "HP LaserJet Pro Printer",
+        serialNo: "HP-LJ-3308",
+        acquisitionCost: "18500",
+        acquisitionDate: "2026-03-08",
+        accountable: "",
+        dateIssue: "",
+        status: "Available",
+        remarks: "Available",
+        createdAt: "2026-07-22T00:00:00.000Z",
+        updatedAt: "2026-07-22T00:00:00.000Z"
+    }
+];
+
+const dom = {
+    form: document.querySelector("#itemForm"),
+    formTitle: document.querySelector("#formTitle"),
+    editingId: document.querySelector("#editingId"),
+    assetId: document.querySelector("#assetId"),
+    fundCluster: document.querySelector("#fundCluster"),
+    propertyNo: document.querySelector("#propertyNo"),
+    itemClassification: document.querySelector("#itemClassification"),
+    itemBrandModel: document.querySelector("#itemBrandModel"),
+    serialNo: document.querySelector("#serialNo"),
+    acquisitionCost: document.querySelector("#acquisitionCost"),
+    acquisitionDate: document.querySelector("#acquisitionDate"),
+    accountable: document.querySelector("#accountable"),
+    schoolLevel: document.querySelector("#schoolLevel"),
+    dateIssue: document.querySelector("#dateIssue"),
+    status: document.querySelector("#status"),
+    remarks: document.querySelector("#remarks"),
+    table: document.querySelector("#inventoryTable"),
+    emptyState: document.querySelector("#emptyState"),
+    pagination: document.querySelector("#inventoryPagination"),
+    searchInput: document.querySelector("#searchInput"),
+    statusFilter: document.querySelector("#statusFilter"),
+    qrCode: document.querySelector("#qrCode"),
+    qrTitle: document.querySelector("#qrTitle"),
+    qrStatus: document.querySelector("#qrStatus"),
+    qrDetails: document.querySelector("#qrDetails"),
+    totalItems: document.querySelector("#totalItems"),
+    assignedItems: document.querySelector("#assignedItems"),
+    repairItems: document.querySelector("#repairItems"),
+    qrItems: document.querySelector("#qrItems"),
+    totalAcquisitionCost: document.querySelector("#totalAcquisitionCost"),
+    portfolioChart: document.querySelector("#portfolioChart"),
+    portfolioLegend: document.querySelector("#portfolioLegend"),
+    statusBars: document.querySelector("#statusBars"),
+    statusLineChart: document.querySelector("#statusLineChart"),
+    statusChartLegend: document.querySelector("#statusChartLegend"),
+    qrCoverage: document.querySelector("#qrCoverage"),
+    recentAssets: document.querySelector("#recentAssets"),
+    accountablePersonChart: document.querySelector("#accountablePersonChart"),
+    qrAssetList: document.querySelector("#qrAssetList"),
+    reportSummary: document.querySelector("#reportSummary"),
+    newItemBtnInline: document.querySelector("#newItemBtnInline"),
+    resetFormBtn: document.querySelector("#resetFormBtn"),
+    downloadQrBtn: document.querySelector("#downloadQrBtn"),
+    copyQrBtn: document.querySelector("#copyQrBtn"),
+    printQrBtn: document.querySelector("#printQrBtn"),
+    printReportBtn: document.querySelector("#printReportBtn"),
+    themeButtons: document.querySelectorAll("[data-theme-choice]"),
+    toast: document.querySelector("#toast"),
+    databaseStatus: document.querySelector("#databaseStatus"),
+    databaseMessage: document.querySelector("#databaseMessage"),
+    schoolLevelChart: document.querySelector("#schoolLevelChart"),
+    acquisitionYearChart: document.querySelector("#acquisitionYearChart"),
+    dateIssueYearChart: document.querySelector("#dateIssueYearChart"),
+    addClassificationBtn: document.querySelector("#addClassificationBtn"),
+    addStatusBtn: document.querySelector("#addStatusBtn"),
+    deleteClassificationBtn: document.querySelector("#deleteClassificationBtn"),
+    deleteStatusBtn: document.querySelector("#deleteStatusBtn")
+};
+
+let items = [];
+let selectedId = null;
+let classificationOptions = [];
+let statusOptions = [];
+let teacherOptions = [];
+let canOpenClassificationModal = false;
+let canOpenStatusModal = false;
+let inventoryPage = 1;
+let qrPage = 1;
+const inventoryRowsPerPage = 12;
+const qrRowsPerPage = 8;
+let isRefreshingStatusOptions = false;
+let isStatusSelectionLocked = false;
+let isRefreshingClassificationOptions = false;
+let isClassificationSelectionLocked = false;
+
+function loadPersistedClassifications() {
+    try {
+        const raw = localStorage.getItem(classificationStorageKey);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed.map((item) => String(item || "").trim()).filter(Boolean) : [];
+    } catch {
+        return [];
+    }
+}
+
+function savePersistedClassifications(options) {
+    try {
+        localStorage.setItem(classificationStorageKey, JSON.stringify(options || []));
+    } catch {
+        // ignore storage failures
+    }
+}
+
+function sortClassificationValues(values) {
+    return [...new Set((values || []).map((value) => String(value || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+}
+
+function sortStatusValues(values) {
+    return [...new Set((values || []).map((value) => String(value || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+}
+
+function fallbackItems() {
+    try {
+        const raw = localStorage.getItem(storageKey);
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(parsed) && parsed.length) {
+            return parsed;
+        }
+    } catch {
+        // ignore parse errors
+    }
+    return seedItems.slice();
+}
+
+async function loadClassificationOptions() {
+    let remoteClassifications = [];
+
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/classifications?select=classification_name`, {
+            headers: supabaseHeaders
+        });
+
+        if (response.ok) {
+            const rows = await response.json();
+            remoteClassifications = sortClassificationValues((rows || []).map((row) => String(row.classification_name || row.name || row.label || "").trim()).filter(Boolean));
+        } else {
+            console.error("Unable to load classification options from Supabase: HTTP", response.status);
+        }
+    } catch (error) {
+        console.error("Unable to load classification options from Supabase:", error);
+    }
+
+    classificationOptions = sortClassificationValues([...loadPersistedClassifications(), ...remoteClassifications]);
+    populateClassificationOptions(classificationOptions);
+    return classificationOptions;
+}
+
+function populateStatusOptions(options) {
+    isRefreshingStatusOptions = true;
+    isStatusSelectionLocked = true;
+    const currentValue = (dom.status && dom.status.value || "").trim();
+    const values = sortStatusValues(options || []);
+    const shouldPreserveValue = currentValue && currentValue !== "__add_new__" && values.includes(currentValue);
+
+    if (currentValue && currentValue !== "__add_new__" && !values.includes(currentValue)) {
+        values.unshift(currentValue);
+        values.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    }
+
+    dom.status.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select";
+    dom.status.appendChild(placeholder);
+
+    values.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        dom.status.appendChild(option);
+    });
+
+    if (shouldPreserveValue) {
+        dom.status.value = currentValue;
+    } else {
+        dom.status.selectedIndex = 0;
+        dom.status.value = "";
+    }
+
+    window.setTimeout(() => {
+        isRefreshingStatusOptions = false;
+        isStatusSelectionLocked = false;
+    }, 0);
+}
+
+async function loadTeacherOptions() {
+    teacherOptions = [];
+
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/geras_teacher?select=teacher_name,school_level`, {
+            headers: supabaseHeaders
+        });
+
+        if (!response.ok) throw new Error("Unable to load teacher options from Supabase.");
+
+        const rows = await response.json();
+        teacherOptions = (rows || [])
+            .map((row) => ({
+                name: String(row.teacher_name || row.name || row.full_name || "").trim(),
+                schoolLevel: String(row.school_level || row.schoolLevel || row.schoollevel || "").trim()
+            }))
+            .filter((row) => row.name)
+            .sort((first, second) => first.name.localeCompare(second.name, undefined, { sensitivity: "base" }));
+    } catch (error) {
+        console.error(error);
+        teacherOptions = [];
+    }
+
+    const currentValue = dom.accountable.value.trim();
+    const names = teacherOptions.map((teacher) => teacher.name).filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    const shouldPreserveValue = currentValue && names.includes(currentValue);
+
+    if (currentValue && !names.includes(currentValue)) {
+        names.unshift(currentValue);
+    }
+
+    dom.accountable.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select teacher";
+    dom.accountable.appendChild(placeholder);
+
+    names.forEach((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        dom.accountable.appendChild(option);
+    });
+
+    if (shouldPreserveValue) {
+        dom.accountable.value = currentValue;
+    } else if (currentValue) {
+        dom.accountable.value = currentValue;
+    } else {
+        dom.accountable.selectedIndex = 0;
+        dom.accountable.value = "";
+    }
+}
+
+function populateStatusFilterOptions(options) {
+    const values = sortStatusValues(options || []);
+    dom.statusFilter.innerHTML = "";
+
+    const allOption = document.createElement("option");
+    allOption.value = "All";
+    allOption.textContent = "All Status";
+    dom.statusFilter.appendChild(allOption);
+
+    values.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        dom.statusFilter.appendChild(option);
+    });
+}
+
+function getStatusValueFromRow(row) {
+    if (!row || typeof row !== "object") return "";
+    return String(row.status_name || row.status || row.name || row.label || "").trim();
+}
+
+async function loadStatusOptions() {
+    let remoteStatuses = [];
+
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/statuses?select=status_name`, {
+            headers: supabaseHeaders
+        });
+
+        if (response.ok) {
+            const rows = await response.json();
+            remoteStatuses = sortStatusValues((rows || []).map((row) => getStatusValueFromRow(row)).filter(Boolean));
+        } else {
+            console.error("Unable to load status options from Supabase: HTTP", response.status);
+        }
+    } catch (error) {
+        console.error("Unable to load status options from Supabase:", error);
+    }
+
+    statusOptions = remoteStatuses;
+    populateStatusOptions(statusOptions);
+    populateStatusFilterOptions(statusOptions);
+
+    return statusOptions;
+}
+
+async function deleteClassificationFromSheet(name) {
+    if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
+        throw new Error("Supabase config is incomplete.");
+    }
+
+    const response = await fetch(`${supabaseUrl}/rest/v1/classifications?classification_name=eq.${encodeURIComponent(name)}`, {
+        method: "DELETE",
+        headers: supabaseHeaders
+    });
+
+    if (!response.ok) {
+        throw new Error("Unable to delete classification from Supabase.");
+    }
+
+    return response;
+}
+
+async function deleteStatusFromSheet(name) {
+    if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
+        throw new Error("Supabase config is incomplete.");
+    }
+
+    const response = await fetch(`${supabaseUrl}/rest/v1/statuses?status_name=eq.${encodeURIComponent(name)}`, {
+        method: "DELETE",
+        headers: supabaseHeaders
+    });
+
+    if (!response.ok) {
+        throw new Error("Unable to delete status from Supabase.");
+    }
+
+    return response;
+}
+
+async function removeStatusOption(value) {
+    const normalized = String(value || "").trim();
+    if (!normalized) return;
+
+    statusOptions = statusOptions.filter((item) => item.toLowerCase() !== normalized.toLowerCase());
+    dom.status.value = "";
+    populateStatusOptions(statusOptions);
+    populateStatusFilterOptions(statusOptions);
+
+    try {
+        const response = await deleteStatusFromSheet(normalized);
+        if (response && response.ok) {
+            showToast(`Status "${normalized}" deleted.`);
+            await loadStatusOptions();
+        } else {
+            showToast(`Failed to remove status "${normalized}" from Supabase.`);
+        }
+    } catch (error) {
+        console.error(error);
+        showToast(`Failed to remove status "${normalized}" from Supabase.`);
+    }
+}
+
+async function removeClassificationOption(value) {
+    const normalized = String(value || "").trim();
+    if (!normalized) return;
+
+    classificationOptions = classificationOptions.filter((item) => item.toLowerCase() !== normalized.toLowerCase());
+    savePersistedClassifications(classificationOptions);
+    dom.itemClassification.value = "";
+    populateClassificationOptions(classificationOptions);
+
+    try {
+        const response = await deleteClassificationFromSheet(normalized);
+        if (response && response.ok) {
+            showToast(`Classification "${normalized}" deleted.`);
+            await loadClassificationOptions();
+        } else {
+            showToast(`Failed to remove classification "${normalized}" from Supabase.`);
+        }
+    } catch (error) {
+        console.error(error);
+        showToast(`Failed to remove classification "${normalized}" from Supabase.`);
+    }
+}
+
+function parseClassificationOptions(csv) {
+    return [];
+}
+
+function populateClassificationOptions(options) {
+    isRefreshingClassificationOptions = true;
+    isClassificationSelectionLocked = true;
+    const currentValue = dom.itemClassification.value.trim();
+    const values = sortClassificationValues(options || []);
+    const shouldPreserveValue = currentValue && currentValue !== "__add_new__" && values.includes(currentValue);
+
+    if (currentValue && currentValue !== "__add_new__" && !values.includes(currentValue)) {
+        values.unshift(currentValue);
+        values.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    }
+
+    dom.itemClassification.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select";
+    dom.itemClassification.appendChild(placeholder);
+
+    values.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        dom.itemClassification.appendChild(option);
+    });
+
+    if (shouldPreserveValue) {
+        dom.itemClassification.value = currentValue;
+    } else {
+        dom.itemClassification.selectedIndex = 0;
+        dom.itemClassification.value = "";
+    }
+
+    window.setTimeout(() => {
+        isRefreshingClassificationOptions = false;
+        isClassificationSelectionLocked = false;
+    }, 0);
+}
+
+async function loadItems() {
+    setDatabaseStatus("Connecting to Supabase...", "Loading inventory records from the backend.");
+
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,fund_cluster,property_no,item_classification,item_brand_model,serial_no,acquisition_cost,acquisition_date,accountable_person,school_level,date_issue,status,remarks,created_at,updated_at`, {
+            headers: supabaseHeaders
+        });
+
+        if (!response.ok) throw new Error("Unable to load inventory from Supabase.");
+
+        const rows = await response.json();
+        items = (rows || []).map((row) => ({
+            assetId: row.asset_id || row.assetId || "",
+            fundCluster: row.fund_cluster || row.fundCluster || "",
+            propertyNo: row.property_no || row.propertyNo || "",
+            itemClassification: row.item_classification || row.itemClassification || "",
+            itemBrandModel: row.item_brand_model || row.itemBrandModel || "",
+            serialNo: row.serial_no || row.serialNo || "",
+            acquisitionCost: row.acquisition_cost || row.acquisitionCost || "",
+            acquisitionDate: row.acquisition_date || row.acquisitionDate || "",
+            accountable: row.accountable_person || row.accountable || "",
+            schoolLevel: row.school_level || row.schoolLevel || row.schoollevel || "",
+            dateIssue: row.date_issue || row.dateIssue || "",
+            status: row.status || "",
+            remarks: row.remarks || "",
+            createdAt: row.created_at || row.createdAt || "",
+            updatedAt: row.updated_at || row.updatedAt || ""
+        }));
+
+        usingRemoteBackend = true;
+        localStorage.setItem(storageKey, JSON.stringify(items));
+        setDatabaseStatus("Connected to Supabase.", `${items.length} records loaded from the backend.`);
+    } catch (error) {
+        console.error(error);
+        items = fallbackItems();
+        usingRemoteBackend = false;
+        setDatabaseStatus("Local fallback is active.", "Supabase is unavailable right now. Your latest local data is still available.");
+    }
+}
+
+function normalizeDate(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toISOString().slice(0, 10);
+}
+
+function ensureSelectOption(selectElement, value) {
+    const normalized = String(value || "").trim();
+    if (!normalized) return;
+    if (![...selectElement.options].some((option) => option.value === normalized)) {
+        const option = document.createElement("option");
+        option.value = normalized;
+        option.textContent = normalized;
+        selectElement.appendChild(option);
+    }
+}
+
+async function syncToSheet(action, item) {
+    saveLocal();
+
+    if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
+        setDatabaseStatus("Local fallback is active.", "Add your Supabase anon key in supabase-config.js to persist data remotely.");
+        return;
+    }
+
+    const payload = {
+        asset_id: item.assetId,
+        fund_cluster: item.fundCluster,
+        property_no: item.propertyNo,
+        item_classification: item.itemClassification,
+        item_brand_model: item.itemBrandModel,
+        serial_no: item.serialNo,
+        acquisition_cost: item.acquisitionCost,
+        acquisition_date: item.acquisitionDate,
+        accountable_person: item.accountable,
+        school_level: item.schoolLevel || "",
+        date_issue: item.dateIssue,
+        status: item.status,
+        remarks: item.remarks,
+        created_at: item.createdAt,
+        updated_at: item.updatedAt
+    };
+
+    const options = {
+        method: action === "delete" ? "DELETE" : (action === "update" ? "PATCH" : "POST"),
+        headers: {
+            ...supabaseHeaders,
+            "Content-Type": "application/json",
+            Prefer: "return=representation"
+        },
+        body: JSON.stringify(payload)
+    };
+
+    if (action === "delete") {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets?asset_id=eq.${encodeURIComponent(item.assetId)}`, options);
+        if (!response.ok) throw new Error("Delete failed");
+    } else if (action === "update") {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets?asset_id=eq.${encodeURIComponent(item.assetId)}`, options);
+        if (!response.ok) throw new Error("Update failed");
+    } else {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets`, options);
+        if (!response.ok) throw new Error("Create failed");
+    }
+
+    setDatabaseStatus("Synced to Supabase.", "Changes were sent to the backend database.");
+}
+
+function saveLocal() {
+    localStorage.setItem(storageKey, JSON.stringify(items));
+}
+
+function setDatabaseStatus(status, message) {
+    dom.databaseStatus.textContent = status;
+    dom.databaseMessage.textContent = message;
+}
+
+function getFormData() {
+    const now = new Date().toISOString();
+    const existing = items.find((item) => item.assetId === dom.editingId.value);
+
+    return {
+        assetId: normalizeAssetId(dom.editingId.value || dom.assetId.value.trim() || createId()),
+        fundCluster: dom.fundCluster.value.trim(),
+        propertyNo: dom.propertyNo.value.trim(),
+        itemClassification: dom.itemClassification.value.trim(),
+        itemBrandModel: dom.itemBrandModel.value.trim(),
+        serialNo: dom.serialNo.value.trim(),
+        acquisitionCost: dom.acquisitionCost.value.trim(),
+        acquisitionDate: dom.acquisitionDate.value,
+        accountable: dom.accountable.value.trim(),
+        schoolLevel: dom.schoolLevel.value.trim(),
+        dateIssue: dom.dateIssue.value,
+        status: dom.status.value || "",
+        remarks: dom.remarks.value.trim(),
+        createdAt: (existing && existing.createdAt) || now,
+        updatedAt: now
+    };
+}
+
+function normalizeAssetId(value, fallbackIndex = 1) {
+    const trimmed = String(value || "").trim();
+    if (!trimmed) return formatAssetId(fallbackIndex);
+
+    if (/^AST\d+$/.test(trimmed)) {
+        return `AST${String(Number(trimmed.replace(/^AST/i, ""))).padStart(6, "0")}`;
+    }
+
+    const numericMatch = trimmed.match(/^\d+$/);
+    if (numericMatch) {
+        return formatAssetId(Number(trimmed));
+    }
+
+    const legacyMatch = trimmed.match(/^AST[-_]?(\d{4})[-_]?(\d+)$/i);
+    if (legacyMatch) {
+        return `AST${String(Number(legacyMatch[2])).padStart(6, "0")}`;
+    }
+
+    return trimmed;
+}
+
+function formatAssetId(sequence) {
+    return `AST${String(Number(sequence)).padStart(6, "0")}`;
+}
+
+function createId() {
+    return formatAssetId(getNextAssetId(items));
+}
+
+function getAssetSequence(id) {
+    const trimmed = String(id || "").trim();
+    if (!trimmed) return null;
+
+    if (/^AST\d+$/.test(trimmed)) {
+        return Number(trimmed.replace(/^AST/i, ""));
+    }
+
+    const numericMatch = trimmed.match(/^\d+$/);
+    if (numericMatch) {
+        return Number(trimmed);
+    }
+
+    const legacyMatch = trimmed.match(/^AST[-_]?(\d{4})[-_]?(\d+)$/i);
+    if (legacyMatch) {
+        return Number(legacyMatch[2]);
+    }
+
+    return null;
+}
+
+function getNextAssetId(items) {
+    const sequences = items
+        .map((item) => getAssetSequence(item.assetId))
+        .filter((value) => Number.isFinite(value));
+
+    if (!sequences.length) {
+        return 1;
+    }
+
+    return Math.max(...sequences) + 1;
+}
+
+function fillForm(item) {
+    dom.editingId.value = item.assetId;
+    dom.assetId.value = item.assetId;
+    dom.fundCluster.value = item.fundCluster;
+    dom.propertyNo.value = item.propertyNo;
+    ensureSelectOption(dom.itemClassification, item.itemClassification);
+    dom.itemClassification.value = item.itemClassification;
+    dom.itemBrandModel.value = item.itemBrandModel;
+    dom.serialNo.value = item.serialNo;
+    dom.acquisitionCost.value = item.acquisitionCost;
+    dom.acquisitionDate.value = item.acquisitionDate;
+    ensureSelectOption(dom.accountable, item.accountable);
+    dom.accountable.value = item.accountable;
+    dom.schoolLevel.value = item.schoolLevel || "";
+    if (!dom.schoolLevel.value) {
+        applySelectedTeacherSchoolLevel();
+    }
+    ensureSelectOption(dom.status, item.status || "");
+    dom.status.value = item.status || "";
+    dom.dateIssue.value = item.dateIssue;
+    dom.remarks.value = item.remarks;
+    dom.formTitle.textContent = "Edit Property Item";
+}
+
+function applySelectedTeacherSchoolLevel() {
+    const selectedTeacher = dom.accountable.value.trim();
+    const matchedTeacher = teacherOptions.find((teacher) => teacher.name.toLowerCase() === selectedTeacher.toLowerCase());
+    dom.schoolLevel.value = (matchedTeacher && matchedTeacher.schoolLevel) || "";
+}
+
+function resetForm() {
+    dom.form.reset();
+    dom.editingId.value = "";
+    dom.assetId.value = createId();
+    dom.schoolLevel.value = "";
+    dom.formTitle.textContent = "Add Property Item";
+    dom.propertyNo.focus();
+}
+
+function getAssetDetailUrl(assetId) {
+    const configuredUrl = (window.SUPABASE_CONFIG && String(window.SUPABASE_CONFIG.assetUrl || "").trim()) || "";
+    const safeId = encodeURIComponent(String(assetId || "UNKNOWN").trim());
+    const query = `?assetId=${safeId}`;
+
+    if (configuredUrl) {
+        return `${configuredUrl.replace(/\/+$|\?+$/g, "")}${query}`;
+    }
+
+    try {
+        const url = new URL(window.location.href);
+        url.pathname = url.pathname.replace(/[^/]*$/, "asset.html");
+        url.search = query;
+        url.hash = "";
+        return url.toString();
+    } catch {
+        return `asset.html${query}`;
+    }
+}
+
+function getQrPayload(item) {
+    const assetId = String(item.assetId || "UNKNOWN").trim() || "UNKNOWN";
+    return getAssetDetailUrl(assetId);
+}
+
+function getComputedStatus(item) {
+    return item.status || "";
+}
+
+function normalizeStatusValue(status) {
+    const value = String(status || "").trim();
+    if (!value) return "Unspecified";
+
+    const normalized = value.toLowerCase();
+    if (normalized === "unserviciable" || normalized === "unserviceable") return "Unserviceable";
+    if (normalized === "for repair" || normalized === "under repair" || normalized === "repair") return "For Repair";
+    if (normalized === "under maintenance") return "For Repair";
+    return value;
+}
+
+function isRepairStatus(status) {
+    const normalized = normalizeStatusValue(status).toLowerCase();
+    return normalized === "for repair" || normalized.includes("repair") || normalized.includes("maintenance");
+}
+
+function getVisibleStatusNames() {
+    const statusCounts = {};
+    const preferredOrder = ["Available", "Assigned", "For Repair", "In Use", "Unserviceable", "Disposed", "Unspecified"];
+
+    items.forEach((item) => {
+        const rawStatus = getComputedStatus(item);
+        const status = normalizeStatusValue(rawStatus);
+        if (!status || status === "Unspecified" && !String(rawStatus || "").trim()) {
+            statusCounts.Unspecified = (statusCounts.Unspecified || 0) + 1;
+            return;
+        }
+
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+
+    const statuses = Object.keys(statusCounts).filter((status) => statusCounts[status] > 0);
+    const orderedStatuses = [...statuses].sort((first, second) => {
+        const firstCount = statusCounts[first];
+        const secondCount = statusCounts[second];
+        if (firstCount !== secondCount) return secondCount - firstCount;
+
+        const firstIndex = preferredOrder.indexOf(first);
+        const secondIndex = preferredOrder.indexOf(second);
+        if (firstIndex !== -1 || secondIndex !== -1) {
+            return (firstIndex === -1 ? preferredOrder.length : firstIndex) - (secondIndex === -1 ? preferredOrder.length : secondIndex);
+        }
+        return first.localeCompare(second, undefined, { sensitivity: "base" });
+    });
+
+    return orderedStatuses.length ? orderedStatuses : ["Unspecified"];
+}
+
+function renderStats() {
+    const accountablePersons = new Set(items.map((item) => String(item.accountable || "").trim()).filter(Boolean));
+    const classifications = new Set(items.map((item) => String(item.itemClassification || "").trim()).filter(Boolean));
+
+    dom.totalItems.textContent = items.length;
+    dom.assignedItems.textContent = accountablePersons.size;
+    dom.repairItems.textContent = classifications.size;
+    dom.qrItems.textContent = items.length;
+}
+
+function renderDashboard() {
+    const statusCounts = getStatusCounts();
+    const totalCost = items.reduce((sum, item) => sum + parseMoney(item.acquisitionCost), 0);
+    const schoolLevelEntries = getSchoolLevelEntries();
+    const acquisitionYearEntries = getYearDistribution("acquisitionDate");
+    const dateIssueYearEntries = getYearDistribution("dateIssue");
+    const accountableEntries = getAccountablePersonEntries();
+
+    if (dom.totalAcquisitionCost) {
+        dom.totalAcquisitionCost.textContent = "";
+    }
+    if (dom.portfolioChart && dom.portfolioLegend) {
+        renderPortfolioChart(schoolLevelEntries);
+    }
+    if (dom.qrCoverage) {
+        dom.qrCoverage.textContent = items.length ? "100%" : "0%";
+    }
+    renderStatusPie(statusCounts);
+    renderMiniDistributionChart(dom.schoolLevelChart, schoolLevelEntries);
+    renderMiniDistributionChart(dom.acquisitionYearChart, acquisitionYearEntries);
+    renderMiniDistributionChart(dom.dateIssueYearChart, dateIssueYearEntries);
+    renderAccountableBarChart(accountableEntries);
+    renderRecentAssets();
+}
+
+function getSchoolLevelEntries() {
+    const counts = items.reduce((bucket, item) => {
+        const schoolLevel = String(item.schoolLevel || "").trim();
+        if (!schoolLevel) return bucket;
+
+        const normalized = schoolLevel.toLowerCase();
+        let label = schoolLevel;
+        if (normalized.includes("elementary")) label = "Elementary";
+        else if (normalized.includes("junior") || normalized.includes("high school") || normalized.includes("junior high")) label = "Junior High";
+        else if (normalized.includes("senior") || normalized.includes("senior high")) label = "Senior High";
+
+        bucket[label] = (bucket[label] || 0) + 1;
+        return bucket;
+    }, {});
+
+    return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([label, value], index) => ({
+            label,
+            value,
+            color: ["#27e6a6", "#b79cff", "#f7b955", "#4dd0ff", "#ff7a59"][index % 5]
+        }));
+}
+
+function getYearDistribution(field) {
+    const counts = items.reduce((bucket, item) => {
+        const rawValue = String(item[field] || "").trim();
+        if (!rawValue) return bucket;
+
+        const year = new Date(rawValue);
+        if (Number.isNaN(year.getTime())) return bucket;
+
+        const label = String(year.getFullYear());
+        bucket[label] = (bucket[label] || 0) + 1;
+        return bucket;
+    }, {});
+
+    const colorPalette = ["#669900", "#99cc33", "#ccee66", "#006699", "#3399cc", "#990066", "#cc3399", "#ff6600", "#ff9900", "#ffcc00"];
+
+    return Object.entries(counts)
+        .sort((a, b) => Number(b[0]) - Number(a[0]))
+        .map(([label, value], index) => ({
+            label,
+            value,
+            color: colorPalette[index % colorPalette.length]
+        }));
+}
+
+function getAccountablePersonEntries() {
+    const counts = items.reduce((bucket, item) => {
+        const person = String(item.accountable || "").trim();
+        if (!person) return bucket;
+
+        bucket[person] = (bucket[person] || 0) + 1;
+        return bucket;
+    }, {});
+
+    return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([label, value], index) => ({
+            label,
+            value,
+            color: ["#27e6a6", "#b79cff", "#f7b955", "#4dd0ff", "#ff7a59", "#6ef7ff", "#ff5f7a", "#9be15d"][index % 8]
+        }));
+}
+
+function renderAccountableBarChart(entries) {
+    if (!dom.accountablePersonChart) return;
+
+    if (!entries.length) {
+        dom.accountablePersonChart.innerHTML = '<div class="mini-chart-empty">No accountable persons yet.</div>';
+        return;
+    }
+
+    const maxValue = Math.max(...entries.map((entry) => entry.value), 1);
+    const pageSize = 15;
+    const totalPages = Math.max(1, Math.ceil(entries.length / pageSize));
+
+    const renderPage = (page) => {
+        const safePage = Math.min(Math.max(1, page), totalPages);
+        const startIndex = (safePage - 1) * pageSize;
+        const pageEntries = entries.slice(startIndex, startIndex + pageSize);
+
+        const pageButtons = [];
+        if (totalPages > 1) {
+            pageButtons.push(`<button class="accountable-page-btn accountably-nav-btn" type="button" data-page="${Math.max(1, safePage - 1)}" ${safePage === 1 ? "disabled" : ""}>‹</button>`);
+            for (let index = 1; index <= totalPages; index += 1) {
+                pageButtons.push(`<button class="accountable-page-btn ${index === safePage ? "active" : ""}" type="button" data-page="${index}">${index}</button>`);
+            }
+            pageButtons.push(`<button class="accountable-page-btn accountably-nav-btn" type="button" data-page="${Math.min(totalPages, safePage + 1)}" ${safePage === totalPages ? "disabled" : ""}>›</button>`);
+        }
+
+        dom.accountablePersonChart.innerHTML = `
+            <div class="accountable-chart-grid">
+                ${pageEntries.map((entry) => `
+                    <div class="accountable-bar-row">
+                        <div class="accountable-bar-figure">
+                            <div class="accountable-bar-track">
+                                <span class="accountable-bar-fill" style="height:${Math.max(10, Math.round((entry.value / maxValue) * 100))}%; background:${entry.color};"></span>
+                            </div>
+                            <strong class="accountable-bar-count">${entry.value}</strong>
+                        </div>
+                        <div class="accountable-bar-label">
+                            <span>${escapeHtml(entry.label)}</span>
+                        </div>
+                    </div>
+                `).join("")}
+            </div>
+            ${totalPages > 1 ? `<div class="accountable-pagination">${pageButtons.join("")}</div>` : ""}
+        `;
+    };
+
+    dom.accountablePersonChart.onclick = (event) => {
+        const button = event.target.closest(".accountable-page-btn");
+        if (!button) return;
+        const page = Number(button.dataset.page || 1);
+        renderPage(page);
+    };
+
+    renderPage(1);
+}
+
+function renderMiniDistributionChart(container, entries) {
+    if (!container) return;
+
+    const rows = entries.length
+        ? entries.map((entry) => `
+            <div class="mini-chart-row">
+                <div class="mini-chart-meta">
+                    <span>${escapeHtml(entry.label)}</span>
+                    <strong>${entry.value}</strong>
+                </div>
+                <div class="mini-chart-track">
+                    <span class="mini-chart-fill" style="width:${Math.max(12, Math.round((entry.value / Math.max(entries[0].value, 1)) * 100))}%; background:${entry.color};"></span>
+                </div>
+            </div>
+        `).join("")
+        : '<div class="mini-chart-empty">No available data</div>';
+
+    container.innerHTML = rows;
+}
+
+function renderPortfolioChart(levels) {
+    if (!dom.portfolioChart || !dom.portfolioLegend) return;
+
+    const chartLevels = levels.length ? levels : [{ label: "No School Level", value: 0, color: "#27e6a6" }];
+
+    const maxValue = Math.max(...chartLevels.map((level) => level.value), 1);
+    const chartPoints = chartLevels.map((level, index) => {
+        const x = 8 + (index / Math.max(chartLevels.length - 1, 1)) * 84;
+        const y = 92 - (level.value / maxValue) * 76;
+        return { ...level, x, y };
+    });
+    const linePoints = chartPoints.map((point) => `${point.x},${point.y}`).join(" ");
+
+    dom.portfolioChart.innerHTML = `
+        <div class="line-chart-shell">
+            <svg viewBox="0 0 100 100" class="line-chart" role="img" aria-label="School level trend chart">
+                <line x1="8" y1="92" x2="92" y2="92" class="line-chart-grid"></line>
+                <line x1="8" y1="70" x2="92" y2="70" class="line-chart-grid"></line>
+                <line x1="8" y1="48" x2="92" y2="48" class="line-chart-grid"></line>
+                <line x1="8" y1="26" x2="92" y2="26" class="line-chart-grid"></line>
+                <polyline points="${linePoints}" class="line-chart-line"></polyline>
+                ${chartPoints.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="3.4" fill="${point.color}" stroke="#fff" stroke-width="0.8"></circle>`).join("")}
+            </svg>
+            <div class="line-chart-labels">
+                ${chartLevels.map((level) => `<span style="color:${level.color}">${escapeHtml(level.label)}</span>`).join("")}
+            </div>
+        </div>
+    `;
+    dom.portfolioLegend.innerHTML = chartLevels.map((level) => `
+        <div class="hero-metric-card">
+            <span>${escapeHtml(level.label)}</span>
+            <strong>${level.value}</strong>
+        </div>
+    `).join("");
+}
+
+function renderStatusPie(statusCounts) {
+    const statuses = getVisibleStatusNames();
+    const total = Math.max(items.length, 1);
+    const slices = statuses.map((status) => {
+        const normalizedStatus = normalizeStatusValue(status);
+        const count = statusCounts[normalizedStatus] || 0;
+        const percent = count / total;
+        return {
+            status: normalizedStatus,
+            count,
+            percent,
+            color: getStatusColor(normalizedStatus)
+        };
+    }).filter((slice) => slice.count > 0);
+
+    if (!slices.length) {
+        dom.statusLineChart.innerHTML = '<div class="status-empty">No status data yet.</div>';
+        return;
+    }
+
+    const radius = 36;
+    const circumference = 2 * Math.PI * radius;
+    let offset = 0;
+
+    const segments = slices.map((slice) => {
+        const dash = circumference * slice.percent;
+        const circle = `<circle cx="50" cy="50" r="${radius}" fill="transparent" stroke="${slice.color}" stroke-width="18" stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 50 50)"></circle>`;
+        offset += dash;
+        return circle;
+    }).join("");
+
+    dom.statusLineChart.innerHTML = `
+        <div class="status-pie-shell">
+            <svg viewBox="0 0 100 100" class="status-pie-svg" role="img" aria-label="Status distribution pie chart">
+                <circle cx="50" cy="50" r="${radius}" fill="transparent" stroke="rgba(255,255,255,0.12)" stroke-width="18"></circle>
+                ${segments}
+            </svg>
+            <div class="status-pie-legend">
+                ${slices.map((slice) => `
+                    <div class="status-pie-item">
+                        <span class="legend-dot" style="background:${slice.color}"></span>
+                        <span style="color:${slice.color}">${escapeHtml(slice.status)}</span>
+                        <strong>${slice.count}</strong>
+                    </div>
+                `).join("")}
+            </div>
+        </div>
+    `;
+}
+
+function getStatusCounts() {
+    const counts = {};
+
+    items.forEach((item) => {
+        const status = normalizeStatusValue(getComputedStatus(item));
+        if (!status || status === "Unspecified" && !String(getComputedStatus(item) || "").trim()) {
+            counts.Unspecified = (counts.Unspecified || 0) + 1;
+            return;
+        }
+
+        counts[status] = (counts[status] || 0) + 1;
+    });
+
+    return counts;
+}
+
+function getStatusColor(status) {
+    const normalized = normalizeStatusValue(status);
+    const palette = {
+        Available: "#669900",
+        Assigned: "#99cc33",
+        "For Repair": "#ccee66",
+        "In Use": "#006699",
+        Unserviceable: "#3399cc",
+        Disposed: "#990066",
+        Returned: "#cc3399",
+        Stolen: "#ff6600",
+        Borrowed: "#ff9900",
+        Unspecified: "#ffcc00",
+        Maintenance: "#669900",
+        Issued: "#99cc33",
+        Lost: "#ccee66",
+        Damaged: "#006699",
+        Transferred: "#3399cc",
+        Pending: "#990066",
+        Other: "#cc3399"
+    };
+
+    if (palette[normalized]) {
+        return palette[normalized];
+    }
+
+    const colorList = ["#669900", "#99cc33", "#ccee66", "#006699", "#3399cc", "#990066", "#cc3399", "#ff6600", "#ff9900", "#ffcc00"];
+    const hash = [...normalized].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return colorList[hash % colorList.length];
+}
+
+function renderRecentAssets() {
+    const recent = [...items]
+        .sort((first, second) => getTimestamp(second.updatedAt || second.createdAt) - getTimestamp(first.updatedAt || first.createdAt))
+        .slice(0, 8);
+
+    dom.recentAssets.innerHTML = recent.length
+        ? recent.map((item) => `
+            <div class="recent-item">
+                <div>
+                    <strong>${escapeHtml(item.itemBrandModel || item.propertyNo || item.assetId)}</strong>
+                    <span>${escapeHtml(item.propertyNo || item.assetId)} · ${escapeHtml(item.accountable || "Unassigned")}</span>
+                </div>
+                <time>${escapeHtml(formatShortDate(item.updatedAt || item.createdAt))}</time>
+            </div>
+        `).join("")
+        : `<div class="recent-item"><div><strong>No records yet</strong><span>Add an asset to populate the dashboard.</span></div><time>-</time></div>`;
+}
+
+function renderQrAssetList() {
+    if (!dom.qrAssetList) return;
+
+    const totalQrPages = Math.max(1, Math.ceil(items.length / qrRowsPerPage));
+    const startIndex = (qrPage - 1) * qrRowsPerPage;
+    const visibleItems = items.slice(startIndex, startIndex + qrRowsPerPage);
+
+    dom.qrAssetList.innerHTML = items.length
+        ? `
+            <div class="qr-selection-table">
+                <div class="qr-selection-header">
+                    <span>Property No.</span>
+                    <span>Item/Brand/Model</span>
+                    <span>Serial No.</span>
+                    <span>Classification</span>
+                    <span>Accountable</span>
+                    <span>Status</span>
+                    <span>Actions</span>
+                </div>
+                ${visibleItems.map((item) => {
+                    const isSelected = item.assetId === selectedId;
+                    const status = getComputedStatus(item);
+                    return `
+                        <div class="qr-selection-row ${isSelected ? "active" : ""}" data-qr-id="${escapeHtml(item.assetId)}">
+                            <span class="qr-cell qr-property-no">${escapeHtml(item.propertyNo || item.assetId)}</span>
+                            <span class="qr-cell qr-item">${escapeHtml(item.itemBrandModel || "-")}</span>
+                            <span class="qr-cell qr-serial">${escapeHtml(item.serialNo || "-")}</span>
+                            <span class="qr-cell qr-classification">${escapeHtml(item.itemClassification || "-")}</span>
+                            <span class="qr-cell qr-accountable">${escapeHtml(item.accountable || "Unassigned")}</span>
+                            <span class="qr-cell qr-status"><span class="badge" style="${getStatusBadgeStyles(status)}">${escapeHtml(status || "Unspecified")}</span></span>
+                            <span class="qr-cell qr-actions">
+                                <button class="qr-action-btn" type="button" data-qr-id="${escapeHtml(item.assetId)}">${isSelected ? "Selected" : "Select"}</button>
+                            </span>
+                        </div>
+                    `;
+                }).join("")}
+                ${totalQrPages > 1 ? `
+                    <div class="qr-pagination">
+                        <button class="inventory-page-btn" type="button" data-qr-page="prev" data-qr-id="" ${qrPage === 1 ? "disabled" : ""}>Previous</button>
+                        <span class="inventory-page-status">Page ${qrPage} of ${totalQrPages}</span>
+                        <button class="inventory-page-btn" type="button" data-qr-page="next" data-qr-id="" ${qrPage === totalQrPages ? "disabled" : ""}>Next</button>
+                    </div>
+                ` : ""}
+            </div>
+        `
+        : `<div class="report-item"><strong>No assets available</strong><span>Add assets in the Inventory module first.</span></div>`;
+}
+
+function renderReports() {
+    const statusCounts = getStatusCounts();
+    const totalCost = items.reduce((sum, item) => sum + parseMoney(item.acquisitionCost), 0);
+    const assigned = items.filter((item) => String(item.accountable || "").trim()).length;
+    const rows = [
+        ["Total Assets", items.length],
+        ["Total Acquisition Cost", formatPeso(totalCost)],
+        ["Assigned Assets", assigned],
+        ["Available Assets", statusCounts.Available],
+        ["For Repair", statusCounts["For Repair"]],
+        ["Disposed", statusCounts.Disposed]
+    ];
+
+    dom.reportSummary.innerHTML = rows.map(([label, value]) => `
+        <div class="report-item">
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(value)}</strong>
+        </div>
+    `).join("");
+}
+
+function parseMoney(value) {
+    const number = Number(String(value || "").replace(/[^0-9.-]/g, ""));
+    return Number.isFinite(number) ? number : 0;
+}
+
+function formatPeso(value) {
+    return new Intl.NumberFormat("en-PH", {
+        style: "currency",
+        currency: "PHP",
+        maximumFractionDigits: 2
+    }).format(value);
+}
+
+function getTimestamp(value) {
+    const timestamp = new Date(value || 0).getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function formatShortDate(value) {
+    const timestamp = getTimestamp(value);
+    if (!timestamp) return "No date";
+
+    return new Intl.DateTimeFormat("en-PH", {
+        month: "short",
+        day: "numeric"
+    }).format(new Date(timestamp));
+}
+
+function getFilteredItems() {
+    const query = dom.searchInput.value.trim().toLowerCase();
+    const status = dom.statusFilter.value;
+
+    return items.filter((item) => {
+        const itemStatus = getComputedStatus(item);
+        const searchable = [
+            item.assetId,
+            item.fundCluster,
+            item.propertyNo,
+            item.itemClassification,
+            item.itemBrandModel,
+            item.serialNo,
+            item.acquisitionCost,
+            item.acquisitionDate,
+            item.accountable,
+            item.schoolLevel,
+            item.dateIssue,
+            item.status,
+            item.remarks,
+            itemStatus
+        ].join(" ").toLowerCase();
+
+        const matchesQuery = !query || searchable.includes(query);
+        const matchesStatus = status === "All" || itemStatus === status;
+        return matchesQuery && matchesStatus;
+    });
+}
+
+function getStatusBadgeStyles(status) {
+    const normalized = normalizeStatusValue(status);
+    const palette = {
+        Available: { color: "#669900", background: "rgba(102, 153, 0, 0.16)", border: "rgba(102, 153, 0, 0.28)" },
+        Assigned: { color: "#99cc33", background: "rgba(153, 204, 51, 0.16)", border: "rgba(153, 204, 51, 0.28)" },
+        "For Repair": { color: "#ccee66", background: "rgba(204, 238, 102, 0.16)", border: "rgba(204, 238, 102, 0.28)" },
+        "In Use": { color: "#006699", background: "rgba(0, 102, 153, 0.16)", border: "rgba(0, 102, 153, 0.28)" },
+        Unserviceable: { color: "#3399cc", background: "rgba(51, 153, 204, 0.16)", border: "rgba(51, 153, 204, 0.28)" },
+        Disposed: { color: "#990066", background: "rgba(153, 0, 102, 0.16)", border: "rgba(153, 0, 102, 0.28)" },
+        Returned: { color: "#cc3399", background: "rgba(204, 51, 153, 0.16)", border: "rgba(204, 51, 153, 0.28)" },
+        Stolen: { color: "#ff6600", background: "rgba(255, 102, 0, 0.16)", border: "rgba(255, 102, 0, 0.28)" },
+        Borrowed: { color: "#ff9900", background: "rgba(255, 153, 0, 0.16)", border: "rgba(255, 153, 0, 0.28)" },
+        Unspecified: { color: "#ffcc00", background: "rgba(255, 204, 0, 0.16)", border: "rgba(255, 204, 0, 0.28)" },
+        Maintenance: { color: "#669900", background: "rgba(102, 153, 0, 0.16)", border: "rgba(102, 153, 0, 0.28)" },
+        Issued: { color: "#99cc33", background: "rgba(153, 204, 51, 0.16)", border: "rgba(153, 204, 51, 0.28)" },
+        Lost: { color: "#ccee66", background: "rgba(204, 238, 102, 0.16)", border: "rgba(204, 238, 102, 0.28)" },
+        Damaged: { color: "#006699", background: "rgba(0, 102, 153, 0.16)", border: "rgba(0, 102, 153, 0.28)" },
+        Transferred: { color: "#3399cc", background: "rgba(51, 153, 204, 0.16)", border: "rgba(51, 153, 204, 0.28)" },
+        Pending: { color: "#990066", background: "rgba(153, 0, 102, 0.16)", border: "rgba(153, 0, 102, 0.28)" },
+        Other: { color: "#cc3399", background: "rgba(204, 51, 153, 0.16)", border: "rgba(204, 51, 153, 0.28)" }
+    };
+
+    const match = palette[normalized] || palette.Other;
+    return `--badge-color:${match.color};--badge-background:${match.background};--badge-border:${match.border};`;
+}
+
+function renderTable() {
+    const filteredItems = getFilteredItems();
+    const totalPages = Math.max(1, Math.ceil(filteredItems.length / inventoryRowsPerPage));
+
+    if (inventoryPage > totalPages) {
+        inventoryPage = totalPages;
+    }
+
+    const startIndex = (inventoryPage - 1) * inventoryRowsPerPage;
+    const visibleItems = filteredItems.slice(startIndex, startIndex + inventoryRowsPerPage);
+
+    dom.table.innerHTML = "";
+    dom.emptyState.style.display = filteredItems.length ? "none" : "block";
+
+    visibleItems.forEach((item) => {
+        const status = getComputedStatus(item);
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${escapeHtml(item.propertyNo || item.assetId)}</td>
+            <td>
+                <span class="item-title">
+                    <strong>${escapeHtml(item.itemBrandModel)}</strong>
+                </span>
+            </td>
+            <td>${escapeHtml(item.serialNo || "-")}</td>
+            <td>${escapeHtml(item.itemClassification || "-")}</td>
+            <td>${escapeHtml(item.accountable || "Unassigned")}</td>
+            <td><span class="badge" style="${getStatusBadgeStyles(status)}">${escapeHtml(status || "Unspecified")}</span></td>
+            <td>
+                <div class="row-actions">
+                    <button type="button" data-action="qr" data-id="${escapeHtml(item.assetId)}">QR</button>
+                    <button type="button" data-action="edit" data-id="${escapeHtml(item.assetId)}">Edit</button>
+                    <button type="button" data-action="delete" data-id="${escapeHtml(item.assetId)}">Delete</button>
+                </div>
+            </td>
+        `;
+        dom.table.appendChild(row);
+    });
+
+    if (filteredItems.length > inventoryRowsPerPage) {
+        dom.pagination.innerHTML = `
+            <button class="inventory-page-btn" type="button" data-page="prev" ${inventoryPage === 1 ? "disabled" : ""}>Previous</button>
+            <span class="inventory-page-status">Page ${inventoryPage} of ${totalPages}</span>
+            <button class="inventory-page-btn" type="button" data-page="next" ${inventoryPage === totalPages ? "disabled" : ""}>Next</button>
+        `;
+    } else {
+        dom.pagination.innerHTML = "";
+    }
+}
+
+function renderQr() {
+    const item = items.find((entry) => entry.assetId === selectedId);
+    dom.qrCode.innerHTML = "";
+
+    if (!item) {
+        dom.qrTitle.textContent = "Select an item";
+        dom.qrStatus.textContent = "Waiting";
+        dom.qrCode.textContent = "Choose an inventory record to generate its QR code.";
+        setQrDetails();
+        return;
+    }
+
+    dom.qrTitle.textContent = item.itemBrandModel || item.propertyNo || item.assetId;
+    dom.qrStatus.textContent = item.status || "Unspecified";
+    setQrDetails(item);
+
+    if (!window.QRCode) {
+        dom.qrCode.textContent = "QR library is loading. Check your internet connection and refresh.";
+        return;
+    }
+
+    new QRCode(dom.qrCode, {
+        text: getQrPayload(item),
+        width: 300,
+        height: 300,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+    });
+}
+
+function setQrDetails(item) {
+    const details = item
+        ? [item.propertyNo || item.assetId, item.accountable || "Unassigned", item.serialNo || "Not specified"]
+        : ["-", "-", "-"];
+
+    dom.qrDetails.querySelectorAll("dd").forEach((node, index) => {
+        node.textContent = details[index];
+    });
+}
+
+function renderApp() {
+    selectedId = selectedId || (items[0] && items[0].assetId) || null;
+    renderStats();
+    renderDashboard();
+    renderTable();
+    renderQr();
+    if (dom.qrAssetList) {
+        renderQrAssetList();
+    }
+    renderReports();
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function showToast(message) {
+    dom.toast.textContent = message;
+    dom.toast.classList.add("show");
+    window.setTimeout(() => dom.toast.classList.remove("show"), 2200);
+}
+
+function downloadQr() {
+    const item = items.find((entry) => entry.assetId === selectedId);
+    const canvas = dom.qrCode.querySelector("canvas");
+    const image = dom.qrCode.querySelector("img");
+
+    if (!item || (!canvas && !image)) {
+        showToast("Select an item with a generated QR code first.");
+        return;
+    }
+
+    // prepare source canvas (either existing canvas or drawn from image)
+    const makeSrcCanvas = () => new Promise((resolve, reject) => {
+        if (canvas) return resolve(canvas);
+        const img = image.cloneNode();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            try {
+                const tmp = document.createElement("canvas");
+                tmp.width = img.naturalWidth || img.width;
+                tmp.height = img.naturalHeight || img.height;
+                const tctx = tmp.getContext("2d");
+                tctx.drawImage(img, 0, 0);
+                resolve(tmp);
+            } catch (err) {
+                reject(err);
+            }
+        };
+        img.onerror = () => reject(new Error("Image load failed"));
+        img.src = image.src;
+    });
+
+    makeSrcCanvas()
+        .then((src) => {
+            try {
+                const sctx = src.getContext("2d");
+                const w = src.width;
+                const h = src.height;
+                let moduleSize = 0;
+
+                // attempt to detect first dark pixel to compute module size
+                try {
+                    const data = sctx.getImageData(0, 0, w, h).data;
+                    const isDark = (x, y) => {
+                        const i = (y * w + x) * 4;
+                        const r = data[i], g = data[i + 1], b = data[i + 2];
+                        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                        return lum < 128;
+                    };
+
+                    let firstX = -1, firstY = -1;
+                    outer: for (let y = 0; y < h; y++) {
+                        for (let x = 0; x < w; x++) {
+                            if (isDark(x, y)) {
+                                firstX = x;
+                                firstY = y;
+                                break outer;
+                            }
+                        }
+                    }
+
+                    if (firstX >= 0) {
+                        // measure run length of the first black region horizontally
+                        let x1 = firstX;
+                        while (x1 < w && isDark(x1, firstY)) x1++;
+                        const blackWidth = x1 - firstX;
+                        // Finder outer square is 7 modules wide
+                        moduleSize = Math.max(1, Math.round(blackWidth / 7));
+                    }
+                } catch (err) {
+                    moduleSize = 0;
+                }
+
+                let quietAdd = 0;
+
+                if (moduleSize > 0) {
+                    // compute existing quiet (distance from left edge to first dark pixel)
+                    let existingQuiet = 0;
+                    try {
+                        const data = sctx.getImageData(0, 0, w, h).data;
+                        const isDark = (x, y) => {
+                            const i = (y * w + x) * 4;
+                            const r = data[i], g = data[i + 1], b = data[i + 2];
+                            const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                            return lum < 128;
+                        };
+                        outer2: for (let y = 0; y < h; y++) {
+                            for (let x = 0; x < w; x++) {
+                                if (isDark(x, y)) {
+                                    existingQuiet = x;
+                                    break outer2;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        existingQuiet = 0;
+                    }
+
+                    const requiredQuiet = moduleSize * 4; // exact 4-module quiet zone
+                    if (existingQuiet < requiredQuiet) {
+                        quietAdd = requiredQuiet - existingQuiet;
+                    }
+                }
+
+                // fallback if detection failed
+                if (!quietAdd && moduleSize === 0) {
+                    const srcSize = Math.max(src.width, src.height);
+                    quietAdd = Math.max(20, Math.round(srcSize * 0.1));
+                }
+
+                const outW = src.width + quietAdd * 2;
+                const outH = src.height + quietAdd * 2;
+                const out = document.createElement("canvas");
+                out.width = outW;
+                out.height = outH;
+                const ctx = out.getContext("2d");
+
+                // white background
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, outW, outH);
+
+                // draw centered with added quiet (if any)
+                ctx.drawImage(src, quietAdd, quietAdd, src.width, src.height);
+
+                const link = document.createElement("a");
+                link.download = `${item.propertyNo || item.assetId}-qr.png`;
+                link.href = out.toDataURL("image/png");
+                link.click();
+            } catch (err) {
+                showToast("Unable to prepare QR image for download.");
+            }
+        })
+        .catch(() => showToast("Unable to prepare QR image for download."));
+}
+
+function copyQrData() {
+    const item = items.find((entry) => entry.assetId === selectedId);
+
+    if (!item) {
+        showToast("Select an item first.");
+        return;
+    }
+
+    navigator.clipboard
+        .writeText(getQrPayload(item))
+        .then(() => showToast("QR data copied."))
+        .catch(() => showToast("Unable to copy QR data."));
+}
+
+async function handleSave(event) {
+    event.preventDefault();
+    const data = getFormData();
+    const existingIndex = items.findIndex((item) => item.assetId === dom.editingId.value);
+    const duplicate = items.some((item, index) => item.propertyNo === data.propertyNo && index !== existingIndex);
+
+    if (data.propertyNo && duplicate) {
+        showToast("Property number already exists.");
+        return;
+    }
+
+    const action = existingIndex >= 0 ? "update" : "create";
+
+    if (existingIndex >= 0) {
+        items[existingIndex] = data;
+    } else {
+        items.unshift(data);
+    }
+
+    selectedId = data.assetId;
+    saveLocal();
+    renderApp();
+    resetForm();
+
+    try {
+        await syncToSheet(action, data);
+        await loadItems();
+        renderApp();
+        showToast(action === "update" ? "Asset updated." : "Asset saved and QR generated.");
+    } catch (error) {
+        console.error(error);
+        showToast("Saved locally. Supabase sync failed.");
+        setDatabaseStatus("Local fallback is active.", "The backend could not receive the latest change.");
+    }
+}
+
+async function handleTableClick(event) {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+
+    const item = items.find((entry) => entry.assetId === button.dataset.id);
+    if (!item) return;
+
+    if (button.dataset.action === "qr") {
+        selectedId = item.assetId;
+        renderQr();
+        if (dom.qrAssetList) {
+            renderQrAssetList();
+        }
+        showModule("qr");
+        showToast("QR preview updated.");
+        return;
+    }
+
+    if (button.dataset.action === "edit") {
+        selectedId = item.assetId;
+        fillForm(item);
+        renderQr();
+        showModule("inventory");
+        return;
+    }
+
+    if (button.dataset.action === "delete") {
+        const confirmed = window.confirm(`Delete ${item.propertyNo || item.assetId}?`);
+        if (!confirmed) return;
+
+        items = items.filter((entry) => entry.assetId !== item.assetId);
+        selectedId = (items[0] && items[0].assetId) || null;
+        saveLocal();
+        renderApp();
+
+        try {
+            await syncToSheet("delete", item);
+            await loadItems();
+            renderApp();
+            showToast("Asset deleted.");
+        } catch (error) {
+            console.error(error);
+            showToast("Deleted locally. Supabase sync failed.");
+        }
+    }
+}
+
+function getPopupPosition(width, height) {
+    const screenX = typeof window.screenX === "number" ? window.screenX : window.screenLeft;
+    const screenY = typeof window.screenY === "number" ? window.screenY : window.screenTop;
+    const outerWidth = typeof window.outerWidth === "number" ? window.outerWidth : document.documentElement.clientWidth;
+    const outerHeight = typeof window.outerHeight === "number" ? window.outerHeight : document.documentElement.clientHeight;
+
+    const left = Math.round(screenX + Math.max(0, (outerWidth - width) / 2));
+    const top = Math.round(screenY + Math.max(0, (outerHeight - height) / 2));
+
+    return { left, top };
+}
+
+function openClassificationModal() {
+    if (!canOpenClassificationModal) return;
+
+    const { left, top } = getPopupPosition(440, 250);
+    const popup = window.open(
+        "popup-editor.html",
+        "classificationPopup",
+        `width=440,height=250,left=${left},top=${top}`
+    );
+    if (!popup) {
+        showToast("Please allow popups for this site.");
+        return;
+    }
+}
+
+function openStatusModal() {
+    if (!canOpenStatusModal) return;
+
+    const { left, top } = getPopupPosition(440, 250);
+    const popup = window.open(
+        "popup-editor.html",
+        "statusPopup",
+        `width=440,height=250,left=${left},top=${top}`
+    );
+    if (!popup) {
+        showToast("Please allow popups for this site.");
+        return;
+    }
+}
+
+async function saveStatusOption(name) {
+    const trimmedName = String(name || "").trim();
+
+    if (!trimmedName) {
+        showToast("Please enter a status name.");
+        return;
+    }
+
+    const normalizedName = trimmedName.replace(/\s+/g, " ").trim();
+    const existing = statusOptions.some((value) => value.toLowerCase() === normalizedName.toLowerCase());
+
+    if (existing) {
+        showToast("This status already exists.");
+        return;
+    }
+
+    try {
+        const response = await syncStatusToSheet(normalizedName);
+        await loadStatusOptions();
+        dom.status.value = normalizedName;
+
+        if (response && response.ok) {
+            setDatabaseStatus("Synced to Supabase.", `Status "${normalizedName}" was saved to the backend.`);
+            showToast("Status added.");
+        } else {
+            setDatabaseStatus("Supabase save failed.", "Unable to save the new status to the backend.");
+            showToast("Failed to save status to Supabase.");
+        }
+    } catch (error) {
+        console.error(error);
+        setDatabaseStatus("Supabase save failed.", "Unable to save the new status to the backend.");
+        showToast("Failed to save status to Supabase.");
+    }
+}
+
+async function saveClassification(name) {
+    const trimmedName = String(name || "").trim();
+
+    if (!trimmedName) {
+        showToast("Please enter a classification name.");
+        return;
+    }
+
+    const normalizedName = trimmedName.replace(/\s+/g, " ").trim();
+    const existing = classificationOptions.some((value) => value.toLowerCase() === normalizedName.toLowerCase());
+
+    if (existing) {
+        showToast("This classification already exists.");
+        return;
+    }
+
+    classificationOptions = sortClassificationValues([normalizedName, ...classificationOptions.filter((value) => value.toLowerCase() !== normalizedName.toLowerCase())]);
+    savePersistedClassifications(classificationOptions);
+    populateClassificationOptions(classificationOptions);
+    dom.itemClassification.value = normalizedName;
+
+    try {
+        const response = await syncClassificationToSheet(normalizedName);
+        await loadClassificationOptions();
+        dom.itemClassification.value = normalizedName;
+
+        if (response && response.ok) {
+            setDatabaseStatus("Synced to Supabase.", `Classification "${normalizedName}" was saved to the backend.`);
+            showToast("Classification added.");
+        } else {
+            setDatabaseStatus("Local classification saved.", "The new classification was stored locally, but the backend did not confirm the save.");
+            showToast("Classification saved locally.");
+        }
+    } catch (error) {
+        console.error(error);
+        setDatabaseStatus("Local classification saved.", "The new classification was stored locally; backend sync may be unavailable.");
+        showToast("Classification saved locally.");
+    }
+}
+
+async function syncClassificationToSheet(name) {
+    if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
+        throw new Error("Supabase config is incomplete.");
+    }
+
+    const response = await fetch(`${supabaseUrl}/rest/v1/classifications`, {
+        method: "POST",
+        headers: {
+            ...supabaseHeaders,
+            "Content-Type": "application/json",
+            Prefer: "return=representation"
+        },
+        body: JSON.stringify({ classification_name: name })
+    });
+
+    if (!response.ok) {
+        throw new Error("Unable to save classification to Supabase.");
+    }
+
+    return response;
+}
+
+async function syncStatusToSheet(name) {
+    if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
+        throw new Error("Supabase config is incomplete.");
+    }
+
+    const payloadCandidates = [
+        { status_name: name },
+        { status: name },
+        { name: name },
+        { label: name }
+    ];
+
+    let lastError;
+
+    for (const payload of payloadCandidates) {
+        try {
+            const response = await fetch(`${supabaseUrl}/rest/v1/statuses`, {
+                method: "POST",
+                headers: {
+                    ...supabaseHeaders,
+                    "Content-Type": "application/json",
+                    Prefer: "return=representation"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                return response;
+            }
+
+            lastError = new Error(`Supabase status insert failed with status ${response.status}`);
+            const text = await response.text();
+            console.warn("Status insert failed payload", payload, response.status, text);
+        } catch (error) {
+            lastError = error;
+            console.warn("Status insert attempt failed", payload, error);
+        }
+    }
+
+    throw lastError || new Error("Unable to save status to Supabase.");
+}
+
+function showModule(moduleName) {
+    document.querySelectorAll(".module-view").forEach((module) => {
+        module.classList.toggle("active", module.dataset.module === moduleName);
+    });
+
+    document.querySelectorAll(".nav-item").forEach((button) => {
+        button.classList.toggle("active", button.dataset.view === moduleName);
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function applyTheme(theme) {
+    const selectedTheme = theme === "light" ? "light" : "dark";
+    document.body.dataset.theme = selectedTheme;
+    localStorage.setItem(themeKey, selectedTheme);
+
+    document.querySelectorAll(".nav-icon").forEach((icon) => {
+        const lightSrc = icon.dataset.themeIconLight;
+        const darkSrc = icon.dataset.themeIcon;
+        icon.src = selectedTheme === "light" ? (lightSrc || darkSrc) : (darkSrc || lightSrc);
+    });
+
+    dom.themeButtons.forEach((button) => {
+        const isActive = button.dataset.themeChoice === selectedTheme;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+    });
+}
+
+function loadTheme() {
+    applyTheme(localStorage.getItem(themeKey) || "dark");
+}
+
+function wireEvents() {
+    dom.form.addEventListener("submit", handleSave);
+    dom.table.addEventListener("click", handleTableClick);
+    dom.pagination.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-page]");
+        if (!button) return;
+
+        if (button.dataset.page === "prev") {
+            inventoryPage = Math.max(1, inventoryPage - 1);
+        } else if (button.dataset.page === "next") {
+            inventoryPage += 1;
+        }
+
+        renderTable();
+    });
+    dom.searchInput.addEventListener("input", () => {
+        inventoryPage = 1;
+        renderTable();
+    });
+    dom.statusFilter.addEventListener("change", () => {
+        inventoryPage = 1;
+        renderTable();
+    });
+    dom.resetFormBtn.addEventListener("click", resetForm);
+    dom.accountable.addEventListener("change", applySelectedTeacherSchoolLevel);
+    dom.addClassificationBtn.addEventListener("click", () => {
+        if (!canOpenClassificationModal) return;
+        openClassificationModal();
+    });
+    dom.addStatusBtn.addEventListener("click", () => {
+        if (!canOpenStatusModal) return;
+        openStatusModal();
+    });
+    if (dom.deleteClassificationBtn) {
+        dom.deleteClassificationBtn.addEventListener("click", () => {
+            const selectedValue = dom.itemClassification.value.trim();
+            if (!selectedValue) {
+                showToast("Select a classification to delete.");
+                return;
+            }
+            removeClassificationOption(selectedValue);
+        });
+    }
+    if (dom.deleteStatusBtn) {
+        dom.deleteStatusBtn.addEventListener("click", () => {
+            const selectedValue = dom.status.value.trim();
+            if (!selectedValue) {
+                showToast("Select a status to delete.");
+                return;
+            }
+            removeStatusOption(selectedValue);
+        });
+    }
+    if (dom.newItemBtnInline) {
+        dom.newItemBtnInline.addEventListener("click", () => {
+            resetForm();
+            showModule("inventory");
+        });
+    }
+    if (dom.downloadQrBtn) {
+        dom.downloadQrBtn.addEventListener("click", downloadQr);
+    }
+    if (dom.copyQrBtn) {
+        dom.copyQrBtn.addEventListener("click", copyQrData);
+    }
+    if (dom.printQrBtn) {
+        dom.printQrBtn.addEventListener("click", () => window.print());
+    }
+    if (dom.printReportBtn) {
+        dom.printReportBtn.addEventListener("click", () => window.print());
+    }
+    if (dom.qrAssetList) {
+        dom.qrAssetList.addEventListener("click", (event) => {
+            const button = event.target.closest("[data-qr-id], [data-qr-page]");
+            if (!button) return;
+
+            if (button.dataset.qrPage) {
+                if (button.dataset.qrPage === "prev" && qrPage > 1) {
+                    qrPage -= 1;
+                } else if (button.dataset.qrPage === "next") {
+                    qrPage += 1;
+                }
+                renderQrAssetList();
+                return;
+            }
+
+            selectedId = button.dataset.qrId;
+            renderQr();
+            renderQrAssetList();
+        });
+    }
+    const dashboardQrBtn = document.querySelector("[data-dashboard-action='qr']");
+    if (dashboardQrBtn) {
+        dashboardQrBtn.addEventListener("click", () => {
+            showModule("qr");
+        });
+    }
+
+    dom.themeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            applyTheme(button.dataset.themeChoice);
+            showToast(`${button.textContent.trim()} mode applied.`);
+        });
+    });
+
+    document.querySelectorAll(".nav-item").forEach((button) => {
+        button.addEventListener("click", () => {
+            showModule(button.dataset.view);
+        });
+    });
+}
+
+async function init() {
+    loadTheme();
+    wireEvents();
+    await loadItems();
+    await loadTeacherOptions();
+    await loadClassificationOptions();
+    await loadStatusOptions();
+    canOpenClassificationModal = true;
+    canOpenStatusModal = true;
+    resetForm();
+    renderApp();
+
+    if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
+        setDatabaseStatus("Supabase config pending.", "Set your Supabase anon key in supabase-config.js to enable remote persistence.");
+    }
+}
+
+init();

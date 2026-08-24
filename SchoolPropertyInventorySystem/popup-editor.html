@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Item</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #111623;
+      color: #ffffff;
+    }
+    .wrap {
+      max-width: 380px;
+      margin: 0 auto;
+    }
+    h3 {
+      margin: 0 0 12px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #ffffff;
+    }
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    button {
+      padding: 9px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .cancel {
+      background: #334155;
+      color: #ffffff;
+    }
+    .save {
+      background: #3b82f6;
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <form class="wrap" id="popupForm" autocomplete="off">
+    <input type="text" name="fakefield" style="display:none" autocomplete="off" tabindex="-1" />
+    <h3 id="title">Add Item</h3>
+    <label for="itemName" id="fieldLabel">Name</label>
+    <input id="itemName" name="itemName" type="text" placeholder="Enter a value" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
+    <div class="actions">
+      <button class="cancel" id="cancelBtn" type="button">Cancel</button>
+      <button class="save" id="saveBtn" type="button">Save</button>
+    </div>
+  </form>
+  <script>
+    const modeFromName = window.name === "statusPopup" ? "status" : "classification";
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get("mode") || modeFromName;
+    const isStatus = mode === "status";
+    const title = document.getElementById("title");
+    const label = document.getElementById("fieldLabel");
+    const input = document.getElementById("itemName");
+
+    title.textContent = isStatus ? "Add Status Option" : "Add Item Classification";
+    document.title = title.textContent;
+    label.textContent = isStatus ? "Status Name" : "Item Classification Name";
+    input.placeholder = isStatus ? "e.g. Pending Review" : "e.g. Furniture";
+
+    document.getElementById("cancelBtn").addEventListener("click", function () {
+      window.close();
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", function () {
+      const value = input.value.trim();
+      const opener = window.opener;
+
+      if (!value) {
+        window.close();
+        return;
+      }
+
+      if (opener && isStatus && typeof opener.saveStatusOption === "function") {
+        opener.saveStatusOption(value, window);
+        window.close();
+      } else if (opener && !isStatus && typeof opener.saveClassification === "function") {
+        opener.saveClassification(value, window);
+        window.close();
+      } else {
+        window.close();
+      }
+    });
+
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById("saveBtn").click();
+      }
+    });
+
+    input.focus();
+  </script>
+</body>
+</html>

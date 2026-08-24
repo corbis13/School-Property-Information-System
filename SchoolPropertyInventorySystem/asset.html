@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Detail</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <main class="main-panel">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">Asset Detail</p>
+                    <h1 id="assetTitle">Loading asset...</h1>
+                </div>
+                <div class="topbar-actions">
+                    <a class="secondary-button" href="index.html">Back to Inventory</a>
+                </div>
+            </header>
+
+            <section class="module-view active" data-module="assetDetail">
+                <div class="dashboard-card" style="padding: 24px;">
+                    <div id="message" class="module-copy" aria-live="polite"></div>
+                    <dl id="assetDetailList" class="detail-list" style="margin-top: 24px; display: none;"></dl>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="supabase-config.js"></script>
+    <script src="js/asset.js"></script>
+</body>
+</html>
