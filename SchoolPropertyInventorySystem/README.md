@@ -14,11 +14,12 @@ Update [supabase-config.js](supabase-config.js) with your Supabase URL and anon 
 
 - assets
 - classifications
+- inventory_item (source for inventory item type options)
 
 ### Expected asset columns
 
 ```text
-asset_id, fund_cluster, property_no, item_classification, item_brand_model, serial_no, acquisition_cost, acquisition_date, accountable_person, date_issue, status, remarks, created_at, updated_at
+asset_id, fund_cluster, inventory_type, property_no, item_classification, item_brand_model, serial_no, acquisition_date, accountable_person, school_level, semi_expandable_no, unit_value, total, unit_measurement, balance, on_hand, shortage_overage_qty, shortage_overage_value, location, mooe_month, mooe_year, date_issue, status, remarks, created_at, updated_at
 ```
 
 ### Expected classification columns

@@ -16,7 +16,6 @@ const seedItems = [
         itemClassification: "Computer Equipment",
         itemBrandModel: "Dell Latitude 5440 Laptop",
         serialNo: "DL-5440-9281",
-        acquisitionCost: "45000",
         acquisitionDate: "2026-02-12",
         accountable: "Maria Santos",
         dateIssue: "2026-02-14",
@@ -32,7 +31,6 @@ const seedItems = [
         itemClassification: "Office Equipment",
         itemBrandModel: "HP LaserJet Pro Printer",
         serialNo: "HP-LJ-3308",
-        acquisitionCost: "18500",
         acquisitionDate: "2026-03-08",
         accountable: "",
         dateIssue: "",
@@ -49,14 +47,26 @@ const dom = {
     editingId: document.querySelector("#editingId"),
     assetId: document.querySelector("#assetId"),
     fundCluster: document.querySelector("#fundCluster"),
+    inventoryType: document.querySelector("#inventoryType"),
     propertyNo: document.querySelector("#propertyNo"),
     itemClassification: document.querySelector("#itemClassification"),
     itemBrandModel: document.querySelector("#itemBrandModel"),
     serialNo: document.querySelector("#serialNo"),
-    acquisitionCost: document.querySelector("#acquisitionCost"),
     acquisitionDate: document.querySelector("#acquisitionDate"),
     accountable: document.querySelector("#accountable"),
+    position: document.querySelector("#position"),
     schoolLevel: document.querySelector("#schoolLevel"),
+    semiExpandableNo: document.querySelector("#semiExpandableNo"),
+    unitValue: document.querySelector("#unitValue"),
+    total: document.querySelector("#total"),
+    unitMeasurement: document.querySelector("#unitMeasurement"),
+    balance: document.querySelector("#balance"),
+    onHand: document.querySelector("#onHand"),
+    shortageOverageQty: document.querySelector("#shortageOverageQty"),
+    shortageOverageValue: document.querySelector("#shortageOverageValue"),
+    location: document.querySelector("#location"),
+    mooeMonth: document.querySelector("#mooeMonth"),
+    mooeYear: document.querySelector("#mooeYear"),
     dateIssue: document.querySelector("#dateIssue"),
     status: document.querySelector("#status"),
     remarks: document.querySelector("#remarks"),
@@ -73,7 +83,6 @@ const dom = {
     assignedItems: document.querySelector("#assignedItems"),
     repairItems: document.querySelector("#repairItems"),
     qrItems: document.querySelector("#qrItems"),
-    totalAcquisitionCost: document.querySelector("#totalAcquisitionCost"),
     portfolioChart: document.querySelector("#portfolioChart"),
     portfolioLegend: document.querySelector("#portfolioLegend"),
     statusBars: document.querySelector("#statusBars"),
@@ -225,7 +234,7 @@ async function loadTeacherOptions() {
     teacherOptions = [];
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/geras_teacher?select=teacher_name,school_level`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/geras_teacher?select=teacher_name,position,school_level`, {
             headers: supabaseHeaders
         });
 
@@ -235,6 +244,7 @@ async function loadTeacherOptions() {
         teacherOptions = (rows || [])
             .map((row) => ({
                 name: String(row.teacher_name || row.name || row.full_name || "").trim(),
+                position: String(row.position || row.teacher_position || "").trim(),
                 schoolLevel: String(row.school_level || row.schoolLevel || row.schoollevel || "").trim()
             }))
             .filter((row) => row.name)
@@ -274,6 +284,49 @@ async function loadTeacherOptions() {
         dom.accountable.selectedIndex = 0;
         dom.accountable.value = "";
     }
+
+    applySelectedTeacherDetails();
+}
+
+async function loadInventoryTypeOptions() {
+    const currentValue = dom.inventoryType.value.trim();
+    let values = [];
+
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/inventory_item?select=inventory_item_type`, {
+            headers: supabaseHeaders
+        });
+
+        if (!response.ok) throw new Error("Unable to load inventory item types from Supabase.");
+
+        const rows = await response.json();
+        values = [...new Set((rows || [])
+            .map((row) => String(row.inventory_item_type || "").trim())
+            .filter(Boolean))]
+            .sort((first, second) => first.localeCompare(second, undefined, { sensitivity: "base" }));
+    } catch (error) {
+        console.error(error);
+    }
+
+    if (currentValue && !values.includes(currentValue)) {
+        values.unshift(currentValue);
+    }
+
+    dom.inventoryType.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select item type";
+    dom.inventoryType.appendChild(placeholder);
+
+    values.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        dom.inventoryType.appendChild(option);
+    });
+
+    dom.inventoryType.value = currentValue;
 }
 
 function populateStatusFilterOptions(options) {
@@ -450,7 +503,7 @@ async function loadItems() {
     setDatabaseStatus("Connecting to Supabase...", "Loading inventory records from the backend.");
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,fund_cluster,property_no,item_classification,item_brand_model,serial_no,acquisition_cost,acquisition_date,accountable_person,school_level,date_issue,status,remarks,created_at,updated_at`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,remarks,created_at,updated_at`, {
             headers: supabaseHeaders
         });
 
@@ -460,14 +513,25 @@ async function loadItems() {
         items = (rows || []).map((row) => ({
             assetId: row.asset_id || row.assetId || "",
             fundCluster: row.fund_cluster || row.fundCluster || "",
+            inventoryType: row.inventory_type || row.inventoryType || "",
             propertyNo: row.property_no || row.propertyNo || "",
             itemClassification: row.item_classification || row.itemClassification || "",
             itemBrandModel: row.item_brand_model || row.itemBrandModel || "",
             serialNo: row.serial_no || row.serialNo || "",
-            acquisitionCost: row.acquisition_cost || row.acquisitionCost || "",
             acquisitionDate: row.acquisition_date || row.acquisitionDate || "",
             accountable: row.accountable_person || row.accountable || "",
             schoolLevel: row.school_level || row.schoolLevel || row.schoollevel || "",
+            semiExpandableNo: row.semi_expandable_no || row.semiExpandableNo || "",
+            unitValue: row.unit_value ?? row.unitValue ?? "",
+            total: row.total ?? "",
+            unitMeasurement: row.unit_measurement || row.unitMeasurement || "",
+            balance: row.balance ?? "",
+            onHand: row.on_hand ?? row.onHand ?? "",
+            shortageOverageQty: row.shortage_overage_qty ?? row.shortageOverageQty ?? "",
+            shortageOverageValue: row.shortage_overage_value ?? row.shortageOverageValue ?? "",
+            location: row.location || "",
+            mooeMonth: row.mooe_month ?? row.mooeMonth ?? "",
+            mooeYear: row.mooe_year ?? row.mooeYear ?? "",
             dateIssue: row.date_issue || row.dateIssue || "",
             status: row.status || "",
             remarks: row.remarks || "",
@@ -515,14 +579,25 @@ async function syncToSheet(action, item) {
     const payload = {
         asset_id: item.assetId,
         fund_cluster: item.fundCluster,
+        inventory_type: item.inventoryType || "",
         property_no: item.propertyNo,
         item_classification: item.itemClassification,
         item_brand_model: item.itemBrandModel,
         serial_no: item.serialNo,
-        acquisition_cost: item.acquisitionCost,
         acquisition_date: item.acquisitionDate,
         accountable_person: item.accountable,
         school_level: item.schoolLevel || "",
+        semi_expandable_no: item.semiExpandableNo || "",
+        unit_value: item.unitValue === "" ? null : item.unitValue,
+        total: item.total === "" ? null : item.total,
+        unit_measurement: item.unitMeasurement || "",
+        balance: item.balance === "" ? null : item.balance,
+        on_hand: item.onHand === "" ? null : item.onHand,
+        shortage_overage_qty: item.shortageOverageQty === "" ? null : item.shortageOverageQty,
+        shortage_overage_value: item.shortageOverageValue === "" ? null : item.shortageOverageValue,
+        location: item.location || "",
+        mooe_month: item.mooeMonth === "" ? null : item.mooeMonth,
+        mooe_year: item.mooeYear === "" ? null : item.mooeYear,
         date_issue: item.dateIssue,
         status: item.status,
         remarks: item.remarks,
@@ -563,6 +638,15 @@ function setDatabaseStatus(status, message) {
     dom.databaseMessage.textContent = message;
 }
 
+function updateTotal() {
+    const unitValue = Number(dom.unitValue.value);
+    const onHand = Number(dom.onHand.value);
+
+    dom.total.value = dom.unitValue.value !== "" && dom.onHand.value !== "" && Number.isFinite(unitValue) && Number.isFinite(onHand)
+        ? (unitValue * onHand).toFixed(2)
+        : "";
+}
+
 function getFormData() {
     const now = new Date().toISOString();
     const existing = items.find((item) => item.assetId === dom.editingId.value);
@@ -570,14 +654,25 @@ function getFormData() {
     return {
         assetId: normalizeAssetId(dom.editingId.value || dom.assetId.value.trim() || createId()),
         fundCluster: dom.fundCluster.value.trim(),
+        inventoryType: dom.inventoryType.value.trim(),
         propertyNo: dom.propertyNo.value.trim(),
         itemClassification: dom.itemClassification.value.trim(),
         itemBrandModel: dom.itemBrandModel.value.trim(),
         serialNo: dom.serialNo.value.trim(),
-        acquisitionCost: dom.acquisitionCost.value.trim(),
         acquisitionDate: dom.acquisitionDate.value,
         accountable: dom.accountable.value.trim(),
         schoolLevel: dom.schoolLevel.value.trim(),
+        semiExpandableNo: dom.semiExpandableNo.value.trim(),
+        unitValue: dom.unitValue.value.trim(),
+        total: dom.total.value.trim(),
+        unitMeasurement: dom.unitMeasurement.value.trim(),
+        balance: dom.balance.value.trim(),
+        onHand: dom.onHand.value.trim(),
+        shortageOverageQty: dom.shortageOverageQty.value.trim(),
+        shortageOverageValue: dom.shortageOverageValue.value.trim(),
+        location: dom.location.value.trim(),
+        mooeMonth: dom.mooeMonth.value.trim(),
+        mooeYear: dom.mooeYear.value.trim(),
         dateIssue: dom.dateIssue.value,
         status: dom.status.value || "",
         remarks: dom.remarks.value.trim(),
@@ -652,19 +747,27 @@ function fillForm(item) {
     dom.editingId.value = item.assetId;
     dom.assetId.value = item.assetId;
     dom.fundCluster.value = item.fundCluster;
+    dom.inventoryType.value = item.inventoryType || "";
     dom.propertyNo.value = item.propertyNo;
     ensureSelectOption(dom.itemClassification, item.itemClassification);
     dom.itemClassification.value = item.itemClassification;
     dom.itemBrandModel.value = item.itemBrandModel;
     dom.serialNo.value = item.serialNo;
-    dom.acquisitionCost.value = item.acquisitionCost;
     dom.acquisitionDate.value = item.acquisitionDate;
     ensureSelectOption(dom.accountable, item.accountable);
     dom.accountable.value = item.accountable;
-    dom.schoolLevel.value = item.schoolLevel || "";
-    if (!dom.schoolLevel.value) {
-        applySelectedTeacherSchoolLevel();
-    }
+    applySelectedTeacherDetails();
+    dom.semiExpandableNo.value = item.semiExpandableNo || "";
+    dom.unitValue.value = item.unitValue ?? "";
+    dom.unitMeasurement.value = item.unitMeasurement || "";
+    dom.balance.value = item.balance ?? "";
+    dom.onHand.value = item.onHand ?? "";
+    updateTotal();
+    dom.shortageOverageQty.value = item.shortageOverageQty ?? "";
+    dom.shortageOverageValue.value = item.shortageOverageValue ?? "";
+    dom.location.value = item.location || "";
+    dom.mooeMonth.value = item.mooeMonth ?? "";
+    dom.mooeYear.value = item.mooeYear ?? "";
     ensureSelectOption(dom.status, item.status || "");
     dom.status.value = item.status || "";
     dom.dateIssue.value = item.dateIssue;
@@ -672,9 +775,10 @@ function fillForm(item) {
     dom.formTitle.textContent = "Edit Property Item";
 }
 
-function applySelectedTeacherSchoolLevel() {
+function applySelectedTeacherDetails() {
     const selectedTeacher = dom.accountable.value.trim();
     const matchedTeacher = teacherOptions.find((teacher) => teacher.name.toLowerCase() === selectedTeacher.toLowerCase());
+    dom.position.value = (matchedTeacher && matchedTeacher.position) || "";
     dom.schoolLevel.value = (matchedTeacher && matchedTeacher.schoolLevel) || "";
 }
 
@@ -682,6 +786,7 @@ function resetForm() {
     dom.form.reset();
     dom.editingId.value = "";
     dom.assetId.value = createId();
+    dom.position.value = "";
     dom.schoolLevel.value = "";
     dom.formTitle.textContent = "Add Property Item";
     dom.propertyNo.focus();
@@ -776,15 +881,11 @@ function renderStats() {
 
 function renderDashboard() {
     const statusCounts = getStatusCounts();
-    const totalCost = items.reduce((sum, item) => sum + parseMoney(item.acquisitionCost), 0);
     const schoolLevelEntries = getSchoolLevelEntries();
     const acquisitionYearEntries = getYearDistribution("acquisitionDate");
     const dateIssueYearEntries = getYearDistribution("dateIssue");
     const accountableEntries = getAccountablePersonEntries();
 
-    if (dom.totalAcquisitionCost) {
-        dom.totalAcquisitionCost.textContent = "";
-    }
     if (dom.portfolioChart && dom.portfolioLegend) {
         renderPortfolioChart(schoolLevelEntries);
     }
@@ -1142,11 +1243,10 @@ function renderQrAssetList() {
 
 function renderReports() {
     const statusCounts = getStatusCounts();
-    const totalCost = items.reduce((sum, item) => sum + parseMoney(item.acquisitionCost), 0);
     const assigned = items.filter((item) => String(item.accountable || "").trim()).length;
     const rows = [
         ["Total Assets", items.length],
-        ["Total Acquisition Cost", formatPeso(totalCost)],
+        ["Total Property Value", formatPeso(items.reduce((sum, item) => sum + parseMoney(item.total), 0))],
         ["Assigned Assets", assigned],
         ["Available Assets", statusCounts.Available],
         ["For Repair", statusCounts["For Repair"]],
@@ -1198,11 +1298,11 @@ function getFilteredItems() {
         const searchable = [
             item.assetId,
             item.fundCluster,
+            item.inventoryType,
             item.propertyNo,
             item.itemClassification,
             item.itemBrandModel,
             item.serialNo,
-            item.acquisitionCost,
             item.acquisitionDate,
             item.accountable,
             item.schoolLevel,
@@ -1840,7 +1940,9 @@ function wireEvents() {
         renderTable();
     });
     dom.resetFormBtn.addEventListener("click", resetForm);
-    dom.accountable.addEventListener("change", applySelectedTeacherSchoolLevel);
+    dom.accountable.addEventListener("change", applySelectedTeacherDetails);
+    dom.unitValue.addEventListener("input", updateTotal);
+    dom.onHand.addEventListener("input", updateTotal);
     dom.addClassificationBtn.addEventListener("click", () => {
         if (!canOpenClassificationModal) return;
         openClassificationModal();
@@ -1930,6 +2032,7 @@ async function init() {
     wireEvents();
     await loadItems();
     await loadTeacherOptions();
+    await loadInventoryTypeOptions();
     await loadClassificationOptions();
     await loadStatusOptions();
     canOpenClassificationModal = true;

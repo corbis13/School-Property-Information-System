@@ -23,14 +23,25 @@ function renderError(text) {
 function renderAssetDetails(item) {
     const fields = [
         ["Asset ID", item.assetId],
+        ["Inventory Item Type", item.inventoryType],
         ["Property Number", item.propertyNo],
         ["Item/Brand/Model", item.itemBrandModel],
         ["Serial Number", item.serialNo],
         ["Classification", item.itemClassification],
         ["Accountable Person", item.accountable],
         ["School Level", item.schoolLevel],
+        ["Semi-Expandable No.", item.semiExpandableNo],
+        ["Unit Value", item.unitValue],
+        ["Total", item.total],
+        ["Unit Measurement", item.unitMeasurement],
+        ["Balance", item.balance],
+        ["On Hand", item.onHand],
+        ["Shortage/Overage Quantity", item.shortageOverageQty],
+        ["Shortage/Overage Value", item.shortageOverageValue],
+        ["Location", item.location],
+        ["MOOE Month", item.mooeMonth],
+        ["MOOE Year", item.mooeYear],
         ["Status", item.status],
-        ["Acquisition Cost", item.acquisitionCost],
         ["Acquisition Date", item.acquisitionDate],
         ["Date Issued", item.dateIssue],
         ["Remarks", item.remarks]
@@ -64,7 +75,7 @@ async function loadAsset() {
     }
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,fund_cluster,property_no,item_classification,item_brand_model,serial_no,acquisition_cost,acquisition_date,accountable_person,school_level,date_issue,status,remarks,created_at,updated_at&asset_id=eq.${encodeURIComponent(assetId)}` , {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,remarks,created_at,updated_at&asset_id=eq.${encodeURIComponent(assetId)}` , {
             headers: {
                 ...supabaseHeaders,
                 Accept: "application/json"
@@ -86,14 +97,25 @@ async function loadAsset() {
         renderAssetDetails({
             assetId: item.asset_id || item.assetId || "",
             fundCluster: item.fund_cluster || item.fundCluster || "",
+            inventoryType: item.inventory_type || item.inventoryType || "",
             propertyNo: item.property_no || item.propertyNo || "",
             itemClassification: item.item_classification || item.itemClassification || "",
             itemBrandModel: item.item_brand_model || item.itemBrandModel || "",
             serialNo: item.serial_no || item.serialNo || "",
-            acquisitionCost: item.acquisition_cost || item.acquisitionCost || "",
             acquisitionDate: item.acquisition_date || item.acquisitionDate || "",
             accountable: item.accountable_person || item.accountable || "",
             schoolLevel: item.school_level || item.schoolLevel || item.schoollevel || "",
+            semiExpandableNo: item.semi_expandable_no || item.semiExpandableNo || "",
+            unitValue: item.unit_value ?? item.unitValue ?? "",
+            total: item.total ?? "",
+            unitMeasurement: item.unit_measurement || item.unitMeasurement || "",
+            balance: item.balance ?? "",
+            onHand: item.on_hand ?? item.onHand ?? "",
+            shortageOverageQty: item.shortage_overage_qty ?? item.shortageOverageQty ?? "",
+            shortageOverageValue: item.shortage_overage_value ?? item.shortageOverageValue ?? "",
+            location: item.location || "",
+            mooeMonth: item.mooe_month ?? item.mooeMonth ?? "",
+            mooeYear: item.mooe_year ?? item.mooeYear ?? "",
             dateIssue: item.date_issue || item.dateIssue || "",
             status: item.status || "",
             remarks: item.remarks || ""

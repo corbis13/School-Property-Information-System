@@ -48,7 +48,7 @@ function mapAssetRow(row) {
     itemClassification: row.item_classification || row.itemClassification || '',
     accountable: row.accountable_person || row.accountable || '',
     status: row.status || '',
-    acquisitionCost: row.acquisition_cost || row.acquisitionCost || 0,
+    total: row.total || 0,
     dateIssue: row.date_issue || row.dateIssue || '',
     createdAt: row.created_at || row.createdAt || '',
     updatedAt: row.updated_at || row.updatedAt || ''
@@ -60,7 +60,7 @@ async function loadDashboardAssets() {
     return [];
   }
 
-  const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,property_no,item_brand_model,item_classification,accountable_person,status,acquisition_cost,date_issue,created_at,updated_at`, {
+  const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,property_no,item_brand_model,item_classification,accountable_person,status,total,date_issue,created_at,updated_at`, {
     headers: supabaseHeaders
   });
 
@@ -85,7 +85,7 @@ function buildDashboardMetrics() {
   const issued = assets.filter((item) => normalizeStatus(item.status) === 'Issued').length;
   const borrowed = assets.filter((item) => normalizeStatus(item.status) === 'Borrowed').length;
   const unserviceable = assets.filter((item) => normalizeStatus(item.status) === 'Unserviceable').length;
-  const totalPropertyValue = assets.reduce((sum, item) => sum + parseMoney(item.acquisitionCost), 0);
+  const totalPropertyValue = assets.reduce((sum, item) => sum + parseMoney(item.total), 0);
 
   setMetricValue('totalPropertyCount', totalPropertyCount.toLocaleString());
   setMetricValue('availableItems', available.toLocaleString());
