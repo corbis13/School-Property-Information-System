@@ -766,7 +766,7 @@ function getVisibleStatusNames() {
 
 function renderStats() {
     const accountablePersons = new Set(items.map((item) => String(item.accountable || "").trim()).filter(Boolean));
-    const classifications = new Set(items.map((item) => String(item.itemClassification || "").trim()).filter(Boolean));
+    const classifications = new Set(items.map((item) => String(item.itemClassification || "").trim().toLocaleLowerCase()).filter(Boolean));
 
     dom.totalItems.textContent = items.length;
     dom.assignedItems.textContent = accountablePersons.size;

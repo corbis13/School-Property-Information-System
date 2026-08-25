@@ -853,7 +853,7 @@ body[data-theme="light"] .dashboard-card {
     grid-row: 1 / span 2;
     display: grid;
     gap: 16px;
-    min-height: 460px;
+    min-height: 675px;
 }
 
 .dashboard-summary-row {
