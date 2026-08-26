@@ -1673,6 +1673,19 @@ function copyQrData() {
         .catch(() => showToast("Unable to copy QR data."));
 }
 
+function openSelectedAssetLink() {
+    const item = items.find((entry) => entry.assetId === selectedId);
+    if (!item) {
+        showToast("Select an item first.");
+        return;
+    }
+
+    const popup = window.open(getQrPayload(item), "_blank", "noopener,noreferrer");
+    if (!popup) {
+        showToast("Please allow popups for this site.");
+    }
+}
+
 async function handleSave(event) {
     event.preventDefault();
     const data = getFormData();
@@ -2036,10 +2049,7 @@ function wireEvents() {
         dom.downloadQrBtn.addEventListener("click", downloadQr);
     }
     if (dom.openQrLinkBtn) {
-        dom.openQrLinkBtn.addEventListener("click", () => {
-            const assetLink = dom.openQrLinkBtn.dataset.assetUrl;
-            if (assetLink) window.open(assetLink, "_blank", "noopener,noreferrer");
-        });
+        dom.openQrLinkBtn.addEventListener("click", openSelectedAssetLink);
     }
     if (dom.copyQrBtn) {
         dom.copyQrBtn.addEventListener("click", copyQrData);
