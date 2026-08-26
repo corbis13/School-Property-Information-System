@@ -1448,7 +1448,7 @@ function renderQr() {
     const item = items.find((entry) => entry.assetId === selectedId);
     dom.qrCode.innerHTML = "";
     dom.openQrLinkBtn.hidden = true;
-    dom.openQrLinkBtn.removeAttribute("href");
+    dom.openQrLinkBtn.removeAttribute("data-asset-url");
 
     if (!item) {
         dom.qrTitle.textContent = "Select an item";
@@ -1461,7 +1461,7 @@ function renderQr() {
     dom.qrTitle.textContent = item.itemBrandModel || item.propertyNo || item.assetId;
     dom.qrStatus.textContent = item.status || "Unspecified";
     const assetLink = getQrPayload(item);
-    dom.openQrLinkBtn.href = assetLink;
+    dom.openQrLinkBtn.dataset.assetUrl = assetLink;
     dom.openQrLinkBtn.hidden = false;
     setQrDetails(item);
 
@@ -2034,6 +2034,12 @@ function wireEvents() {
     }
     if (dom.downloadQrBtn) {
         dom.downloadQrBtn.addEventListener("click", downloadQr);
+    }
+    if (dom.openQrLinkBtn) {
+        dom.openQrLinkBtn.addEventListener("click", () => {
+            const assetLink = dom.openQrLinkBtn.dataset.assetUrl;
+            if (assetLink) window.open(assetLink, "_blank", "noopener,noreferrer");
+        });
     }
     if (dom.copyQrBtn) {
         dom.copyQrBtn.addEventListener("click", copyQrData);

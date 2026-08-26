@@ -1688,6 +1688,14 @@ body[data-theme="light"] .asset-detail-row {
     margin-bottom: 8px;
 }
 
+.qr-link-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+}
+
 @media (min-width: 721px) {
     .asset-detail-page .topbar {
         align-items: center;
