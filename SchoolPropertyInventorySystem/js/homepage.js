@@ -7,6 +7,15 @@ const supabaseHeaders = {
   Authorization: `Bearer ${supabaseAnonKey}`
 };
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
 function setMetricValue(id, value) {
   const node = document.getElementById(id);
   if (node) node.textContent = value;
@@ -105,8 +114,8 @@ function buildRecentTransactions() {
 
   list.innerHTML = sorted.map((row) => `
     <li>
-      <strong>${row.propertyNo || row.assetId}</strong>
-      <small>${row.itemBrandModel || 'Asset'} • ${normalizeStatus(row.status)} • ${formatDateLabel(row.updatedAt || row.createdAt)}</small>
+      <strong>${escapeHtml(row.propertyNo || row.assetId)}</strong>
+      <small>${escapeHtml(row.itemBrandModel || 'Asset')} • ${escapeHtml(normalizeStatus(row.status))} • ${escapeHtml(formatDateLabel(row.updatedAt || row.createdAt))}</small>
     </li>
   `).join('');
 }
@@ -128,7 +137,7 @@ function buildLowStockAlerts() {
   list.innerHTML = alerts.length
     ? alerts.map((row) => `
         <li>
-          <strong>${row.item}</strong>
+          <strong>${escapeHtml(row.item)}</strong>
           <small>Stock ${row.quantity} | Reorder at ${row.threshold}</small>
         </li>
       `).join('')
@@ -146,8 +155,8 @@ function buildMaintenance() {
   list.innerHTML = maintenanceItems.length
     ? maintenanceItems.map((row) => `
         <li>
-          <strong>${row.propertyNo || row.assetId}</strong>
-          <small>Due ${formatDateLabel(row.updatedAt || row.createdAt)} • ${row.itemBrandModel || 'Asset'}</small>
+          <strong>${escapeHtml(row.propertyNo || row.assetId)}</strong>
+          <small>Due ${escapeHtml(formatDateLabel(row.updatedAt || row.createdAt))} • ${escapeHtml(row.itemBrandModel || 'Asset')}</small>
         </li>
       `).join('')
     : '<li><strong>No maintenance scheduled</strong><small>All active items are in good condition.</small></li>';
@@ -167,8 +176,8 @@ function buildActivityLog() {
 
   list.innerHTML = logs.map((entry) => `
     <div class="log-item">
-      <strong>${entry.action}</strong>
-      <small>${entry.time}</small>
+          <strong>${escapeHtml(entry.action)}</strong>
+          <small>${escapeHtml(entry.time)}</small>
     </div>
   `).join('');
 }
@@ -218,6 +227,13 @@ function renderCharts() {
   const monthlyData = buildMonthlyIssuanceData();
   const categoryData = buildCategoryData();
   const accountableData = buildAccountablePersonData();
+
+  [monthlyCtx, categoryCtx, accountableCtx].forEach((canvas) => {
+    if (canvas && window.Chart) {
+      const existingChart = Chart.getChart(canvas);
+      if (existingChart) existingChart.destroy();
+    }
+  });
 
   if (monthlyCtx && window.Chart) {
     new Chart(monthlyCtx, {

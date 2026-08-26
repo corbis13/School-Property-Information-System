@@ -20,6 +20,15 @@ function renderError(text) {
     assetDetailList.style.display = "none";
 }
 
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
 function renderAssetDetails(item) {
     const fields = [
         ["Asset ID", item.assetId],
@@ -53,8 +62,8 @@ function renderAssetDetails(item) {
         .filter(([, value]) => String(value || "").trim())
         .map(([label, value]) => `
             <div class="asset-detail-row">
-                <dt>${label}</dt>
-                <dd>${String(value)}</dd>
+                <dt>${escapeHtml(label)}</dt>
+                <dd>${escapeHtml(value)}</dd>
             </div>
         `)
         .join("");

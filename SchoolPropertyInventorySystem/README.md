@@ -10,6 +10,10 @@ The app is configured to use Supabase as its primary backend.
 
 Update [supabase-config.js](supabase-config.js) with your Supabase URL and anon key.
 
+Create staff users in Supabase Authentication. Inventory changes require a signed-in user; anonymous visitors can only read asset data and public lookup options.
+
+Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the `inventory_item` and `geras_teacher` lookup tables and configures authenticated-only write policies.
+
 ### Expected tables
 
 - assets

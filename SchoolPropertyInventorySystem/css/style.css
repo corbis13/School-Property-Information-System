@@ -2350,6 +2350,22 @@ body[data-theme="light"] .toast {
         width: 100%;
     }
 
+    .classification-controls {
+        min-width: 0;
+        flex-wrap: nowrap;
+    }
+
+    .classification-controls select {
+        min-width: 0;
+    }
+
+    .classification-controls .ghost-button {
+        flex: 0 0 42px;
+        width: 42px;
+        min-width: 42px;
+        padding: 0;
+    }
+
     .dashboard-board {
         display: grid;
         grid-template-columns: 1fr;

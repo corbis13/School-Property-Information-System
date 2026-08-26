@@ -7,6 +7,7 @@ const supabaseHeaders = {
     apikey: supabaseAnonKey,
     Authorization: `Bearer ${supabaseAnonKey}`
 };
+let accessToken = "";
 
 const seedItems = [
     {
@@ -42,6 +43,12 @@ const seedItems = [
 ];
 
 const dom = {
+    authForm: document.querySelector("#authForm"),
+    authEmail: document.querySelector("#authEmail"),
+    authPassword: document.querySelector("#authPassword"),
+    signInBtn: document.querySelector("#signInBtn"),
+    signOutBtn: document.querySelector("#signOutBtn"),
+    authStatus: document.querySelector("#authStatus"),
     form: document.querySelector("#itemForm"),
     formTitle: document.querySelector("#formTitle"),
     editingId: document.querySelector("#editingId"),
@@ -571,6 +578,10 @@ function ensureSelectOption(selectElement, value) {
 async function syncToSheet(action, item) {
     saveLocal();
 
+    if (!accessToken) {
+        throw new Error("Sign in required for remote changes.");
+    }
+
     if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
         setDatabaseStatus("Local fallback is active.", "Add your Supabase anon key in supabase-config.js to persist data remotely.");
         return;
@@ -609,6 +620,7 @@ async function syncToSheet(action, item) {
         method: action === "delete" ? "DELETE" : (action === "update" ? "PATCH" : "POST"),
         headers: {
             ...supabaseHeaders,
+            Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
             Prefer: "return=representation"
         },
@@ -636,6 +648,37 @@ function saveLocal() {
 function setDatabaseStatus(status, message) {
     dom.databaseStatus.textContent = status;
     dom.databaseMessage.textContent = message;
+}
+
+function updateAuthStatus(message, signedIn) {
+    dom.authStatus.textContent = message;
+    dom.signInBtn.hidden = signedIn;
+    dom.signOutBtn.hidden = !signedIn;
+    dom.authEmail.hidden = signedIn;
+    dom.authPassword.hidden = signedIn;
+}
+
+async function signIn(event) {
+    event.preventDefault();
+    const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+        method: "POST",
+        headers: { apikey: supabaseAnonKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: dom.authEmail.value.trim(), password: dom.authPassword.value })
+    });
+
+    if (!response.ok) throw new Error("Sign in failed");
+    const session = await response.json();
+    accessToken = session.access_token || "";
+    if (!accessToken) throw new Error("No access token returned");
+    dom.authPassword.value = "";
+    updateAuthStatus(`Signed in as ${dom.authEmail.value.trim()}`, true);
+    showToast("Signed in.");
+}
+
+function signOut() {
+    accessToken = "";
+    updateAuthStatus("Sign in to edit inventory.", false);
+    showToast("Signed out.");
 }
 
 function updateTotal() {
@@ -1917,6 +1960,16 @@ function loadTheme() {
 }
 
 function wireEvents() {
+    dom.authForm.addEventListener("submit", async (event) => {
+        try {
+            await signIn(event);
+        } catch (error) {
+            console.error(error);
+            showToast("Sign in failed.");
+        }
+    });
+    dom.signOutBtn.addEventListener("click", signOut);
+
     dom.form.addEventListener("submit", handleSave);
     dom.table.addEventListener("click", handleTableClick);
     dom.pagination.addEventListener("click", (event) => {
