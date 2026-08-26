@@ -1688,6 +1688,17 @@ body[data-theme="light"] .asset-detail-row {
     margin-bottom: 8px;
 }
 
+@media (min-width: 721px) {
+    .asset-detail-page .topbar {
+        align-items: center;
+        text-align: center;
+    }
+
+    .asset-detail-page .asset-detail-back {
+        align-self: center;
+    }
+}
+
 .asset-detail-card .asset-detail-row {
     flex-direction: column;
     align-items: center;

@@ -57,7 +57,7 @@ function renderAssetDetails(item) {
     ];
 
     assetTitle.textContent = item.itemBrandModel || item.propertyNo || item.assetId || "Asset Detail";
-    message.textContent = "Here is the current asset detail from Supabase.";
+    message.textContent = "Here is the current asset detail.";
     assetDetailList.innerHTML = fields
         .filter(([, value]) => String(value || "").trim())
         .map(([label, value]) => `
