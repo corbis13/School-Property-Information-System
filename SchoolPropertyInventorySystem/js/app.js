@@ -2107,10 +2107,19 @@ async function init() {
     await loadEducationLevelOptions();
     await loadClassificationOptions();
     await loadStatusOptions();
+    const params = new URLSearchParams(window.location.search);
+    const requestedAssetId = params.get("assetId");
+    if (requestedAssetId && items.some((item) => item.assetId === requestedAssetId)) {
+        selectedId = requestedAssetId;
+    }
     canOpenClassificationModal = true;
     canOpenStatusModal = true;
     resetForm();
     renderApp();
+
+    if (params.get("module") === "qr") {
+        showModule("qr");
+    }
 
     if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
         setDatabaseStatus("Supabase config pending.", "Set your Supabase anon key in supabase-config.js to enable remote persistence.");
