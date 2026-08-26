@@ -287,6 +287,11 @@ body[data-theme="light"] .sidebar-note {
     width: 100%;
 }
 
+.asset-detail-page .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+}
+
 .topbar,
 .section-heading,
 .inventory-heading {
@@ -1676,6 +1681,13 @@ body[data-theme="light"] .asset-detail-row {
     text-align: center;
 }
 
+.asset-detail-back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 42px;
+    margin-bottom: 8px;
+}
+
 .asset-detail-card .asset-detail-row {
     flex-direction: column;
     align-items: center;
@@ -2404,6 +2416,10 @@ body[data-theme="light"] .toast {
     .ghost-button,
     .form-action-btn {
         width: 100%;
+    }
+
+    .asset-detail-back {
+        width: fit-content;
     }
 
     .dashboard-board {
