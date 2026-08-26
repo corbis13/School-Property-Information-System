@@ -99,6 +99,7 @@ const dom = {
     newItemBtnInline: document.querySelector("#newItemBtnInline"),
     resetFormBtn: document.querySelector("#resetFormBtn"),
     downloadQrBtn: document.querySelector("#downloadQrBtn"),
+    openQrLinkBtn: document.querySelector("#openQrLinkBtn"),
     copyQrBtn: document.querySelector("#copyQrBtn"),
     printReportBtn: document.querySelector("#printReportBtn"),
     themeButtons: document.querySelectorAll("[data-theme-choice]"),
@@ -1446,6 +1447,8 @@ function renderTable() {
 function renderQr() {
     const item = items.find((entry) => entry.assetId === selectedId);
     dom.qrCode.innerHTML = "";
+    dom.openQrLinkBtn.hidden = true;
+    dom.openQrLinkBtn.removeAttribute("href");
 
     if (!item) {
         dom.qrTitle.textContent = "Select an item";
@@ -1457,6 +1460,9 @@ function renderQr() {
 
     dom.qrTitle.textContent = item.itemBrandModel || item.propertyNo || item.assetId;
     dom.qrStatus.textContent = item.status || "Unspecified";
+    const assetLink = getQrPayload(item);
+    dom.openQrLinkBtn.href = assetLink;
+    dom.openQrLinkBtn.hidden = false;
     setQrDetails(item);
 
     if (!window.QRCode) {
@@ -1465,7 +1471,7 @@ function renderQr() {
     }
 
     new QRCode(dom.qrCode, {
-        text: getQrPayload(item),
+        text: assetLink,
         width: 300,
         height: 300,
         colorDark: "#000000",
