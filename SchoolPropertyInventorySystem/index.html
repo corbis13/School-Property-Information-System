@@ -194,10 +194,10 @@
                             Item Classification
                             <div class="classification-controls" style="display:flex; gap:8px; align-items:center;">
                                 <select id="itemClassification" style="flex:1;">
-                                    <option value=""></option>
+                                    <option value="">Select classification</option>
                                 </select>
-                                <button class="ghost-button" id="addClassificationBtn" type="button">+</button>
-                                <button class="ghost-button" id="deleteClassificationBtn" type="button" title="Delete selected classification">-</button>
+                                <button class="ghost-button" id="addClassificationBtn" type="button" title="Add classification" aria-label="Add classification">+</button>
+                                <button class="ghost-button" id="deleteClassificationBtn" type="button" title="Delete selected classification" aria-label="Delete selected classification">-</button>
                             </div>
                         </label>
                     </div>
@@ -313,10 +313,10 @@
                             Status
                             <div class="classification-controls" style="display:flex; gap:8px; align-items:center;">
                                 <select id="status" style="flex:1;">
-                                    <option value="" selected></option>
+                                    <option value="" selected>Select status</option>
                                 </select>
-                                <button class="ghost-button" id="addStatusBtn" type="button">+</button>
-                                <button class="ghost-button" id="deleteStatusBtn" type="button" title="Delete selected status">-</button>
+                                <button class="ghost-button" id="addStatusBtn" type="button" title="Add status" aria-label="Add status">+</button>
+                                <button class="ghost-button" id="deleteStatusBtn" type="button" title="Delete selected status" aria-label="Delete selected status">-</button>
                             </div>
                         </label>
                         <div aria-hidden="true"></div>
@@ -540,6 +540,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="supabase-config.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/app.js?v=20260826"></script>
 </body>
 </html>

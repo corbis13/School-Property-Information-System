@@ -483,7 +483,7 @@ function populateClassificationOptions(options) {
 
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = "Select";
+    placeholder.textContent = "Select classification";
     dom.itemClassification.appendChild(placeholder);
 
     values.forEach((value) => {
