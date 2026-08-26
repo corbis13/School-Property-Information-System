@@ -33,8 +33,8 @@ classification_name
 
 ### QR asset detail page
 
-The QR payload now encodes a public asset detail URL such as:
+The QR payload encodes the GitHub Pages asset detail URL:
 
-`https://yourdomain.com/asset.html?assetId=AST000001`
+`https://corbis13.github.io/School-Property-Information-System/SchoolPropertyInventorySystem/asset.html?assetId=AST000001`
 
-To make QR scanning open the detail page automatically, host the app on a public web server and update `supabase-config.js` `assetUrl` to your hosted `asset.html` location.
+QR scanning opens the asset detail page automatically. Keep the `assetUrl` value in `supabase-config.js` pointed at the GitHub Pages deployment.

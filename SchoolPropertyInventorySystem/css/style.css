@@ -273,6 +273,20 @@ body[data-theme="light"] .sidebar-note {
     padding: 28px;
 }
 
+.asset-detail-page .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.asset-detail-page .main-panel {
+    width: min(100%, 1100px);
+    margin: 0 auto;
+}
+
+.asset-detail-page .module-view.active,
+.asset-detail-page .asset-detail-card {
+    width: 100%;
+}
+
 .topbar,
 .section-heading,
 .inventory-heading {
@@ -1658,6 +1672,24 @@ body[data-theme="light"] .asset-detail-row {
     word-break: break-word;
 }
 
+.asset-detail-card {
+    text-align: center;
+}
+
+.asset-detail-card .asset-detail-row {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.asset-detail-card .asset-detail-row dt,
+.asset-detail-card .asset-detail-row dd {
+    width: 100%;
+    min-width: 0;
+    flex: 0 1 auto;
+}
+
 .scan-label {
     position: absolute;
     bottom: 18px;
@@ -1928,6 +1960,8 @@ body[data-theme="light"] .qr-stage {
 .qr-code {
     display: grid;
     width: fit-content;
+    justify-items: center;
+    margin: 0 auto;
     padding: 20px;
     border-radius: 16px;
     background: #ffffff;
@@ -1936,6 +1970,8 @@ body[data-theme="light"] .qr-stage {
 
 .qr-code img,
 .qr-code canvas {
+    display: block;
+    margin: 0 auto;
     width: 300px;
     height: 300px;
     image-rendering: pixelated;
