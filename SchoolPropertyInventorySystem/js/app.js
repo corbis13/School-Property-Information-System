@@ -7,11 +7,11 @@ const supabaseHeaders = {
     apikey: supabaseAnonKey,
     Authorization: `Bearer ${supabaseAnonKey}`
 };
-let accessToken = "";
 
 const seedItems = [
     {
         assetId: "AST000001",
+        educationLevel: "Elementary",
         fundCluster: "01",
         propertyNo: "PROP-2026-001",
         itemClassification: "Computer Equipment",
@@ -27,6 +27,7 @@ const seedItems = [
     },
     {
         assetId: "AST000002",
+        educationLevel: "Elementary",
         fundCluster: "01",
         propertyNo: "PROP-2026-002",
         itemClassification: "Office Equipment",
@@ -43,15 +44,10 @@ const seedItems = [
 ];
 
 const dom = {
-    authForm: document.querySelector("#authForm"),
-    authEmail: document.querySelector("#authEmail"),
-    authPassword: document.querySelector("#authPassword"),
-    signInBtn: document.querySelector("#signInBtn"),
-    signOutBtn: document.querySelector("#signOutBtn"),
-    authStatus: document.querySelector("#authStatus"),
     form: document.querySelector("#itemForm"),
     formTitle: document.querySelector("#formTitle"),
     editingId: document.querySelector("#editingId"),
+    educationLevel: document.querySelector("#educationLevel"),
     assetId: document.querySelector("#assetId"),
     fundCluster: document.querySelector("#fundCluster"),
     inventoryType: document.querySelector("#inventoryType"),
@@ -336,6 +332,47 @@ async function loadInventoryTypeOptions() {
     dom.inventoryType.value = currentValue;
 }
 
+async function loadEducationLevelOptions() {
+    const currentValue = dom.educationLevel.value.trim();
+    let values = [];
+
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/education_level?select=education_level`, {
+            headers: supabaseHeaders
+        });
+
+        if (!response.ok) throw new Error("Unable to load education level options from Supabase.");
+
+        const rows = await response.json();
+        values = [...new Set((rows || [])
+            .map((row) => String(row.education_level || "").trim())
+            .filter(Boolean))]
+            .sort((first, second) => first.localeCompare(second, undefined, { sensitivity: "base" }));
+    } catch (error) {
+        console.error(error);
+    }
+
+    if (currentValue && !values.includes(currentValue)) {
+        values.unshift(currentValue);
+    }
+
+    dom.educationLevel.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select education level";
+    dom.educationLevel.appendChild(placeholder);
+
+    values.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        dom.educationLevel.appendChild(option);
+    });
+
+    dom.educationLevel.value = currentValue;
+}
+
 function populateStatusFilterOptions(options) {
     const values = sortStatusValues(options || []);
     dom.statusFilter.innerHTML = "";
@@ -510,7 +547,7 @@ async function loadItems() {
     setDatabaseStatus("Connecting to Supabase...", "Loading inventory records from the backend.");
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,remarks,created_at,updated_at`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,education_level,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,remarks,created_at,updated_at`, {
             headers: supabaseHeaders
         });
 
@@ -519,6 +556,7 @@ async function loadItems() {
         const rows = await response.json();
         items = (rows || []).map((row) => ({
             assetId: row.asset_id || row.assetId || "",
+            educationLevel: row.education_level || row.educationLevel || "",
             fundCluster: row.fund_cluster || row.fundCluster || "",
             inventoryType: row.inventory_type || row.inventoryType || "",
             propertyNo: row.property_no || row.propertyNo || "",
@@ -578,10 +616,6 @@ function ensureSelectOption(selectElement, value) {
 async function syncToSheet(action, item) {
     saveLocal();
 
-    if (!accessToken) {
-        throw new Error("Sign in required for remote changes.");
-    }
-
     if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
         setDatabaseStatus("Local fallback is active.", "Add your Supabase anon key in supabase-config.js to persist data remotely.");
         return;
@@ -589,6 +623,7 @@ async function syncToSheet(action, item) {
 
     const payload = {
         asset_id: item.assetId,
+        education_level: item.educationLevel || "",
         fund_cluster: item.fundCluster,
         inventory_type: item.inventoryType || "",
         property_no: item.propertyNo,
@@ -620,7 +655,6 @@ async function syncToSheet(action, item) {
         method: action === "delete" ? "DELETE" : (action === "update" ? "PATCH" : "POST"),
         headers: {
             ...supabaseHeaders,
-            Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
             Prefer: "return=representation"
         },
@@ -650,37 +684,6 @@ function setDatabaseStatus(status, message) {
     dom.databaseMessage.textContent = message;
 }
 
-function updateAuthStatus(message, signedIn) {
-    dom.authStatus.textContent = message;
-    dom.signInBtn.hidden = signedIn;
-    dom.signOutBtn.hidden = !signedIn;
-    dom.authEmail.hidden = signedIn;
-    dom.authPassword.hidden = signedIn;
-}
-
-async function signIn(event) {
-    event.preventDefault();
-    const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
-        method: "POST",
-        headers: { apikey: supabaseAnonKey, "Content-Type": "application/json" },
-        body: JSON.stringify({ email: dom.authEmail.value.trim(), password: dom.authPassword.value })
-    });
-
-    if (!response.ok) throw new Error("Sign in failed");
-    const session = await response.json();
-    accessToken = session.access_token || "";
-    if (!accessToken) throw new Error("No access token returned");
-    dom.authPassword.value = "";
-    updateAuthStatus(`Signed in as ${dom.authEmail.value.trim()}`, true);
-    showToast("Signed in.");
-}
-
-function signOut() {
-    accessToken = "";
-    updateAuthStatus("Sign in to edit inventory.", false);
-    showToast("Signed out.");
-}
-
 function updateTotal() {
     const unitValue = Number(dom.unitValue.value);
     const onHand = Number(dom.onHand.value);
@@ -696,6 +699,7 @@ function getFormData() {
 
     return {
         assetId: normalizeAssetId(dom.editingId.value || dom.assetId.value.trim() || createId()),
+        educationLevel: dom.educationLevel.value.trim(),
         fundCluster: dom.fundCluster.value.trim(),
         inventoryType: dom.inventoryType.value.trim(),
         propertyNo: dom.propertyNo.value.trim(),
@@ -789,6 +793,8 @@ function getNextAssetId(items) {
 function fillForm(item) {
     dom.editingId.value = item.assetId;
     dom.assetId.value = item.assetId;
+    ensureSelectOption(dom.educationLevel, item.educationLevel);
+    dom.educationLevel.value = item.educationLevel || "";
     dom.fundCluster.value = item.fundCluster;
     dom.inventoryType.value = item.inventoryType || "";
     dom.propertyNo.value = item.propertyNo;
@@ -1960,16 +1966,6 @@ function loadTheme() {
 }
 
 function wireEvents() {
-    dom.authForm.addEventListener("submit", async (event) => {
-        try {
-            await signIn(event);
-        } catch (error) {
-            console.error(error);
-            showToast("Sign in failed.");
-        }
-    });
-    dom.signOutBtn.addEventListener("click", signOut);
-
     dom.form.addEventListener("submit", handleSave);
     dom.table.addEventListener("click", handleTableClick);
     dom.pagination.addEventListener("click", (event) => {
@@ -2086,6 +2082,7 @@ async function init() {
     await loadItems();
     await loadTeacherOptions();
     await loadInventoryTypeOptions();
+    await loadEducationLevelOptions();
     await loadClassificationOptions();
     await loadStatusOptions();
     canOpenClassificationModal = true;
