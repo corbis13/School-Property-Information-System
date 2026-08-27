@@ -1395,6 +1395,14 @@ body[data-theme="light"] .qr-summary-card p {
     white-space: nowrap;
 }
 
+.all-assets-table th:nth-child(25),
+.all-assets-table td:nth-child(25),
+.all-assets-table th:nth-child(26),
+.all-assets-table td:nth-child(26) {
+    width: 180px;
+    min-width: 180px;
+}
+
 .all-assets-table th {
     position: sticky;
     top: 0;
@@ -2308,6 +2316,11 @@ textarea {
     height: 105px;
     min-height: 105px;
     line-height: 1.5;
+}
+
+#remarks {
+    height: 73.5px;
+    min-height: 73.5px;
 }
 
 input:focus,

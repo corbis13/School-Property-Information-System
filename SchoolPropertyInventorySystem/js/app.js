@@ -72,6 +72,7 @@ const dom = {
     mooeYear: document.querySelector("#mooeYear"),
     dateIssue: document.querySelector("#dateIssue"),
     status: document.querySelector("#status"),
+    additionalItem: document.querySelector("#additionalItem"),
     remarks: document.querySelector("#remarks"),
     table: document.querySelector("#inventoryTable"),
     emptyState: document.querySelector("#emptyState"),
@@ -592,7 +593,7 @@ async function loadItems() {
     setDatabaseStatus("Connecting to Supabase...", "Loading inventory records from the backend.");
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,education_level,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,remarks,created_at,updated_at`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,education_level,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,additional_item,remarks,created_at,updated_at`, {
             headers: supabaseHeaders
         });
 
@@ -624,6 +625,7 @@ async function loadItems() {
             mooeYear: row.mooe_year ?? row.mooeYear ?? "",
             dateIssue: row.date_issue || row.dateIssue || "",
             status: row.status || "",
+            additionalItem: row.additional_item || row.additionalItem || "",
             remarks: row.remarks || "",
             createdAt: row.created_at || row.createdAt || "",
             updatedAt: row.updated_at || row.updatedAt || ""
@@ -691,6 +693,7 @@ async function syncToSheet(action, item) {
         mooe_year: item.mooeYear === "" ? null : item.mooeYear,
         date_issue: item.dateIssue,
         status: item.status,
+        additional_item: item.additionalItem || "",
         remarks: item.remarks,
         created_at: item.createdAt,
         updated_at: item.updatedAt
@@ -767,6 +770,7 @@ function getFormData() {
         mooeYear: dom.mooeYear.value.trim(),
         dateIssue: dom.dateIssue.value,
         status: dom.status.value || "",
+        additionalItem: dom.additionalItem.value.trim(),
         remarks: dom.remarks.value.trim(),
         createdAt: (existing && existing.createdAt) || now,
         updatedAt: now
@@ -865,6 +869,7 @@ function fillForm(item) {
     ensureSelectOption(dom.status, item.status || "");
     dom.status.value = item.status || "";
     dom.dateIssue.value = item.dateIssue;
+    dom.additionalItem.value = item.additionalItem || "";
     dom.remarks.value = item.remarks;
     dom.formTitle.textContent = "Edit Property Item";
 }
@@ -1352,13 +1357,13 @@ function renderAllAssetsView() {
         "assetId", "educationLevel", "fundCluster", "inventoryType", "propertyNo", "itemClassification",
         "itemBrandModel", "serialNo", "acquisitionDate", "accountable", "schoolLevel", "semiExpandableNo",
         "unitValue", "total", "unitMeasurement", "balance", "onHand", "shortageOverageQty", "shortageOverageValue",
-        "location", "mooeMonth", "mooeYear", "dateIssue", "status", "remarks", "createdAt", "updatedAt"
+        "location", "mooeMonth", "mooeYear", "dateIssue", "status", "additionalItem", "remarks"
     ];
 
     dom.assetCount.textContent = `${filteredItems.length} ${filteredItems.length === 1 ? "asset" : "assets"}`;
     dom.allAssetsTable.innerHTML = filteredItems.length
         ? filteredItems.map((item) => `<tr>${fields.map((field) => `<td>${reportCell(item[field], "-")}</td>`).join("")}</tr>`).join("")
-        : `<tr><td colspan="27" class="report-empty-row">No matching assets</td></tr>`;
+        : `<tr><td colspan="26" class="report-empty-row">No matching assets</td></tr>`;
 }
 
 function getReportItems() {
