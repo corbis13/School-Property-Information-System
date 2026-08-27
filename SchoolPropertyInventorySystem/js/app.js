@@ -1501,19 +1501,40 @@ async function generateReportPdf() {
         const { jsPDF } = window.jspdf;
         const pageWidth = 13;
         const pageHeight = 8.5;
-        const pageMargin = 0.25;
+        const pageMargin = 0.2;
+        const bottomMargin = 0.5;
         const contentWidth = pageWidth - (pageMargin * 2);
-        const contentHeight = pageHeight - (pageMargin * 2);
+        const contentHeight = pageHeight - pageMargin - bottomMargin;
         const pdf = new jsPDF({ orientation: "landscape", unit: "in", format: [pageWidth, pageHeight] });
         const imageWidth = contentWidth;
         const imageHeight = (canvas.height * imageWidth) / canvas.width;
-        const imageData = canvas.toDataURL("image/png");
-        let offset = 0;
+        const sourcePageHeight = Math.floor((contentHeight * canvas.width) / imageWidth);
+        let sourceOffset = 0;
 
-        while (offset < imageHeight) {
-            if (offset > 0) pdf.addPage([pageWidth, pageHeight], "landscape");
-            pdf.addImage(imageData, "PNG", pageMargin, pageMargin - offset, imageWidth, imageHeight);
-            offset += contentHeight;
+        while (sourceOffset < canvas.height) {
+            if (sourceOffset > 0) pdf.addPage([pageWidth, pageHeight], "landscape");
+
+            const sliceHeight = Math.min(sourcePageHeight, canvas.height - sourceOffset);
+            const pageCanvas = document.createElement("canvas");
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = sliceHeight;
+            pageCanvas.getContext("2d").drawImage(
+                canvas,
+                0,
+                sourceOffset,
+                canvas.width,
+                sliceHeight,
+                0,
+                0,
+                canvas.width,
+                sliceHeight
+            );
+
+            const pageImageHeight = (sliceHeight * imageWidth) / canvas.width;
+            pdf.addImage(pageCanvas.toDataURL("image/png"), "PNG", pageMargin, pageMargin, imageWidth, pageImageHeight);
+            pdf.setFillColor(255, 255, 255);
+            pdf.rect(0, pageHeight - bottomMargin, pageWidth, bottomMargin, "F");
+            sourceOffset += sliceHeight;
         }
 
         pdf.save(`physical-count-report-${dom.reportAsOf.value || "undated"}.pdf`);
