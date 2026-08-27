@@ -95,7 +95,16 @@ const dom = {
     recentAssets: document.querySelector("#recentAssets"),
     accountablePersonChart: document.querySelector("#accountablePersonChart"),
     qrAssetList: document.querySelector("#qrAssetList"),
-    reportSummary: document.querySelector("#reportSummary"),
+    physicalReport: document.querySelector("#physicalReport"),
+    allAssetsTable: document.querySelector("#allAssetsTable"),
+    assetCount: document.querySelector("#assetCount"),
+    assetDatabaseSearch: document.querySelector("#assetDatabaseSearch"),
+    reportInventoryType: document.querySelector("#reportInventoryType"),
+    reportFundCluster: document.querySelector("#reportFundCluster"),
+    reportAsOf: document.querySelector("#reportAsOf"),
+    certifiedCorrectedBy: document.querySelector("#certifiedCorrectedBy"),
+    approvedBy: document.querySelector("#approvedBy"),
+    verifiedBy: document.querySelector("#verifiedBy"),
     newItemBtnInline: document.querySelector("#newItemBtnInline"),
     resetFormBtn: document.querySelector("#resetFormBtn"),
     downloadQrBtn: document.querySelector("#downloadQrBtn"),
@@ -120,6 +129,7 @@ let selectedId = null;
 let classificationOptions = [];
 let statusOptions = [];
 let teacherOptions = [];
+let signatoryOptions = [];
 let canOpenClassificationModal = false;
 let canOpenStatusModal = false;
 let inventoryPage = 1;
@@ -290,6 +300,34 @@ async function loadTeacherOptions() {
     }
 
     applySelectedTeacherDetails();
+}
+
+async function loadSignatoryOptions() {
+    signatoryOptions = [];
+
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/signatories?select=signatory`, {
+            headers: supabaseHeaders
+        });
+
+        if (!response.ok) throw new Error("Unable to load signatory options from Supabase.");
+
+        const rows = await response.json();
+        signatoryOptions = [...new Set((rows || [])
+            .map((row) => String(row.signatory || "").trim())
+            .filter(Boolean))]
+            .sort((first, second) => first.localeCompare(second, undefined, { sensitivity: "base" }));
+    } catch (error) {
+        console.error(error);
+    }
+
+    [dom.certifiedCorrectedBy, dom.approvedBy, dom.verifiedBy].forEach((select) => {
+        if (!select) return;
+        const currentValue = select.value;
+        select.innerHTML = `<option value="">Select signatory</option>${signatoryOptions
+            .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+        if (signatoryOptions.includes(currentValue)) select.value = currentValue;
+    });
 }
 
 async function loadInventoryTypeOptions() {
@@ -1292,23 +1330,131 @@ function renderQrAssetList() {
 }
 
 function renderReports() {
-    const statusCounts = getStatusCounts();
-    const assigned = items.filter((item) => String(item.accountable || "").trim()).length;
-    const rows = [
-        ["Total Assets", items.length],
-        ["Total Property Value", formatPeso(items.reduce((sum, item) => sum + parseMoney(item.total), 0))],
-        ["Assigned Assets", assigned],
-        ["Available Assets", statusCounts.Available],
-        ["For Repair", statusCounts["For Repair"]],
-        ["Disposed", statusCounts.Disposed]
+    renderReportOptions();
+    if (!dom.reportAsOf.value) {
+        dom.reportAsOf.value = new Date().toISOString().slice(0, 10);
+    }
+    renderPhysicalCountReport();
+    renderAllAssetsView();
+}
+
+function renderAllAssetsView() {
+    if (!dom.allAssetsTable) return;
+    const query = (dom.assetDatabaseSearch?.value || "").trim().toLowerCase();
+    const filteredItems = items.filter((item) => !query || Object.values(item).join(" ").toLowerCase().includes(query));
+    const fields = [
+        "assetId", "educationLevel", "fundCluster", "inventoryType", "propertyNo", "itemClassification",
+        "itemBrandModel", "serialNo", "acquisitionDate", "accountable", "schoolLevel", "semiExpandableNo",
+        "unitValue", "total", "unitMeasurement", "balance", "onHand", "shortageOverageQty", "shortageOverageValue",
+        "location", "mooeMonth", "mooeYear", "dateIssue", "status", "remarks", "createdAt", "updatedAt"
     ];
 
-    dom.reportSummary.innerHTML = rows.map(([label, value]) => `
-        <div class="report-item">
-            <span>${escapeHtml(label)}</span>
-            <strong>${escapeHtml(value)}</strong>
+    dom.assetCount.textContent = `${filteredItems.length} ${filteredItems.length === 1 ? "asset" : "assets"}`;
+    dom.allAssetsTable.innerHTML = filteredItems.length
+        ? filteredItems.map((item) => `<tr>${fields.map((field) => `<td>${reportCell(item[field], "-")}</td>`).join("")}</tr>`).join("")
+        : `<tr><td colspan="27" class="report-empty-row">No matching assets</td></tr>`;
+}
+
+function getReportItems() {
+    const inventoryType = dom.reportInventoryType.value;
+    const fundCluster = dom.reportFundCluster.value;
+
+    return items.filter((item) => {
+        const matchesType = !inventoryType || (item.inventoryType || "") === inventoryType;
+        const matchesFund = !fundCluster || (item.fundCluster || "") === fundCluster;
+        return matchesType && matchesFund;
+    });
+}
+
+function formatReportDate(value) {
+    if (!value) return "________________";
+    return new Intl.DateTimeFormat("en-PH", { month: "long", day: "numeric", year: "numeric" })
+        .format(new Date(`${value}T00:00:00`));
+}
+
+function renderReportOptions() {
+    const selectedType = dom.reportInventoryType.value;
+    const selectedFund = dom.reportFundCluster.value;
+    const types = [...new Set(items.map((item) => item.inventoryType).filter(Boolean))].sort();
+    const funds = [...new Set(items.map((item) => item.fundCluster).filter(Boolean))].sort();
+
+    dom.reportInventoryType.innerHTML = `<option value="">All inventory types</option>${types.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+    dom.reportFundCluster.innerHTML = `<option value="">All fund clusters</option>${funds.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+    dom.reportInventoryType.value = types.includes(selectedType) ? selectedType : "";
+    dom.reportFundCluster.value = funds.includes(selectedFund) ? selectedFund : "";
+}
+
+function reportCell(value, fallback = "") {
+    return escapeHtml(value === 0 ? "0" : (value || fallback));
+}
+
+function renderPhysicalCountReport() {
+    if (!dom.physicalReport) return;
+    const reportItems = getReportItems();
+    const inventoryType = dom.reportInventoryType.value || "SCHOOL FURNITURES";
+    const fundCluster = dom.reportFundCluster.value || "____________________________";
+
+    dom.physicalReport.innerHTML = `
+        <div class="physical-report-header">
+            <strong>REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY</strong>
+            <strong class="report-title-underline">${escapeHtml(inventoryType.toUpperCase())}</strong>
+            <span>(Type of Inventory Item)</span>
+            <span>As of <u>${formatReportDate(dom.reportAsOf.value)}</u></span>
         </div>
-    `).join("");
+        <div class="report-fund-cluster"><strong>Fund Cluster :</strong> ${escapeHtml(fundCluster)}</div>
+        <div class="physical-report-table-wrap">
+            <table class="physical-report-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Article</th>
+                        <th rowspan="2">Description</th>
+                        <th rowspan="2">Semi-Expandable<br>Property Number</th>
+                        <th rowspan="2">Unit of<br>Measure</th>
+                        <th colspan="2">Amount</th>
+                        <th rowspan="2">Date<br>Acquired</th>
+                        <th rowspan="2">Balance Per<br>Card<br><small>(Quantity)</small></th>
+                        <th rowspan="2">On Hand<br>Per Count<br><small>(Quantity)</small></th>
+                        <th colspan="2">Shortage/Overage</th>
+                        <th colspan="3">Remarks</th>
+                    </tr>
+                    <tr>
+                        <th>Unit Value</th>
+                        <th>Total</th>
+                        <th>Quantity</th>
+                        <th>Value</th>
+                        <th>Current Accountable Personnel</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${reportItems.length ? reportItems.map((item) => `
+                        <tr>
+                            <td>${reportCell(item.inventoryType || item.itemClassification)}</td>
+                            <td>${reportCell(item.itemBrandModel)}</td>
+                            <td>${reportCell(item.semiExpandableNo || item.propertyNo)}</td>
+                            <td>${reportCell(item.unitMeasurement)}</td>
+                            <td>${reportCell(item.unitValue)}</td>
+                            <td>${reportCell(item.total)}</td>
+                            <td>${reportCell(item.acquisitionDate)}</td>
+                            <td>${reportCell(item.balance)}</td>
+                            <td>${reportCell(item.onHand)}</td>
+                            <td>${reportCell(item.shortageOverageQty)}</td>
+                            <td>${reportCell(item.shortageOverageValue)}</td>
+                            <td>${reportCell(item.accountable)}</td>
+                            <td>${reportCell(item.location)}</td>
+                            <td>${reportCell(item.status)}</td>
+                        </tr>
+                    `).join("") : `<tr><td colspan="14" class="report-empty-row">No matching inventory records</td></tr>`}
+                </tbody>
+            </table>
+        </div>
+        <div class="report-signatures">
+            <div><span>Certified Correct by:</span><i></i><small>Signature over Printed Name of Inventory<br>Committee Chair and Members</small></div>
+            <div><span>Approved by:</span><i></i><small>Signature over Printed Name of Head of<br>Agency/Entity or Authorized</small></div>
+            <div><span>Verified by:</span><i></i><small>Signature over Printed Name of COA Representative</small></div>
+        </div>
+    `;
 }
 
 function parseMoney(value) {
@@ -2057,6 +2203,12 @@ function wireEvents() {
     if (dom.printReportBtn) {
         dom.printReportBtn.addEventListener("click", () => window.print());
     }
+    [dom.reportInventoryType, dom.reportFundCluster, dom.reportAsOf].forEach((control) => {
+        if (control) control.addEventListener("input", renderPhysicalCountReport);
+    });
+    if (dom.assetDatabaseSearch) {
+        dom.assetDatabaseSearch.addEventListener("input", renderAllAssetsView);
+    }
     if (dom.qrAssetList) {
         dom.qrAssetList.addEventListener("click", (event) => {
             const button = event.target.closest("[data-qr-id], [data-qr-page]");
@@ -2103,6 +2255,7 @@ async function init() {
     wireEvents();
     await loadItems();
     await loadTeacherOptions();
+    await loadSignatoryOptions();
     await loadInventoryTypeOptions();
     await loadEducationLevelOptions();
     await loadClassificationOptions();

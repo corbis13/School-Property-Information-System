@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260827a">
 </head>
 <body>
     <div class="app-shell">
@@ -250,19 +250,19 @@
                             <input id="unitMeasurement" type="text" placeholder="e.g. pcs">
                         </label>
                         <label>
-                            Total
-                            <input id="total" type="number" min="0" step="0.01" readonly>
+                            On Hand
+                            <input id="onHand" type="number" min="0" step="0.01">
                         </label>
                     </div>
 
                     <div class="two-column">
                         <label>
-                            Balance
-                            <input id="balance" type="number" min="0" step="0.01">
+                            Total
+                            <input id="total" type="number" min="0" step="0.01" readonly>
                         </label>
                         <label>
-                            On Hand
-                            <input id="onHand" type="number" min="0" step="0.01">
+                            Balance
+                            <input id="balance" type="number" min="0" step="0.01">
                         </label>
                     </div>
 
@@ -436,16 +436,110 @@
 
             <div class="module-view" data-module="reports">
                 <section class="reports-grid">
-                    <article class="module-card">
-                        <p class="eyebrow">Reports</p>
-                        <h2>Inventory Summary</h2>
-                        <div class="report-list" id="reportSummary"></div>
+                    <article class="module-card report-generator-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Report Generator</p>
+                                <h2>Physical Count Report</h2>
+                            </div>
+                            <button class="secondary-button" type="button" id="printReportBtn">Print Report</button>
+                        </div>
+                        <div class="report-controls" aria-label="Report filters">
+                            <label>
+                                Type of Inventory Item
+                                <select id="reportInventoryType">
+                                    <option value="">All inventory types</option>
+                                </select>
+                            </label>
+                            <label>
+                                Fund Cluster
+                                <select id="reportFundCluster">
+                                    <option value="">All fund clusters</option>
+                                </select>
+                            </label>
+                            <label>
+                                As of
+                                <input id="reportAsOf" type="date">
+                            </label>
+                        </div>
+                        <div class="physical-report" id="physicalReport" aria-live="polite"></div>
                     </article>
-                    <article class="module-card">
-                        <p class="eyebrow">Export</p>
-                        <h2>Printable Records</h2>
-                        <p class="module-copy">Generate a browser printout from the current inventory table or export from your Supabase-backed data source.</p>
-                        <button class="secondary-button" type="button" id="printReportBtn">Print Report</button>
+                    <article class="module-card signatory-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Signatories</p>
+                                <h2>Report Signatories</h2>
+                            </div>
+                        </div>
+                        <div class="signatory-fields">
+                            <label>
+                                Certified corrected by:
+                                <select id="certifiedCorrectedBy">
+                                    <option value="">Select signatory</option>
+                                </select>
+                            </label>
+                            <label>
+                                Approved by:
+                                <select id="approvedBy">
+                                    <option value="">Select signatory</option>
+                                </select>
+                            </label>
+                            <label>
+                                Verified by:
+                                <select id="verifiedBy">
+                                    <option value="">Select signatory</option>
+                                </select>
+                            </label>
+                        </div>
+                    </article>
+                    <article class="module-card all-assets-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Database View</p>
+                                <h2>All Assets</h2>
+                            </div>
+                            <span class="asset-count" id="assetCount">0 assets</span>
+                        </div>
+                        <label class="asset-search">
+                            Search all asset data
+                            <input id="assetDatabaseSearch" type="search" placeholder="Search property number, person, status...">
+                        </label>
+                        <div class="all-assets-table-wrap">
+                            <table class="all-assets-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asset ID</th>
+                                        <th>Education Level</th>
+                                        <th>Fund Cluster</th>
+                                        <th>Inventory Type</th>
+                                        <th>Property No.</th>
+                                        <th>Classification</th>
+                                        <th>Item/Brand/Model</th>
+                                        <th>Serial No.</th>
+                                        <th>Acquisition Date</th>
+                                        <th>Accountable Person</th>
+                                        <th>School Level</th>
+                                        <th>Semi-Expandable No.</th>
+                                        <th>Unit Value</th>
+                                        <th>Total</th>
+                                        <th>Unit Measurement</th>
+                                        <th>Balance</th>
+                                        <th>On Hand</th>
+                                        <th>Shortage/Overage Qty</th>
+                                        <th>Shortage/Overage Value</th>
+                                        <th>Location</th>
+                                        <th>MOOE Month</th>
+                                        <th>MOOE Year</th>
+                                        <th>Date Issued</th>
+                                        <th>Status</th>
+                                        <th>Remarks</th>
+                                        <th>Created</th>
+                                        <th>Updated</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="allAssetsTable"></tbody>
+                            </table>
+                        </div>
                     </article>
                 </section>
             </div>
