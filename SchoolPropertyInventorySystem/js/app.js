@@ -111,7 +111,6 @@ const dom = {
     downloadQrBtn: document.querySelector("#downloadQrBtn"),
     openQrLinkBtn: document.querySelector("#openQrLinkBtn"),
     copyQrBtn: document.querySelector("#copyQrBtn"),
-    printReportBtn: document.querySelector("#printReportBtn"),
     themeButtons: document.querySelectorAll("[data-theme-choice]"),
     toast: document.querySelector("#toast"),
     databaseStatus: document.querySelector("#databaseStatus"),
@@ -2292,9 +2291,6 @@ function wireEvents() {
     }
     if (dom.copyQrBtn) {
         dom.copyQrBtn.addEventListener("click", copyQrData);
-    }
-    if (dom.printReportBtn) {
-        dom.printReportBtn.addEventListener("click", () => window.print());
     }
     if (dom.generatePdfBtn) {
         dom.generatePdfBtn.addEventListener("click", generateReportPdf);

@@ -1355,7 +1355,7 @@ body[data-theme="light"] .qr-summary-card p {
 
 .all-assets-table-wrap {
     width: 100%;
-    max-height: 560px;
+    max-height: 450px;
     margin-top: 16px;
     overflow: scroll;
     border: 1px solid var(--line);
@@ -1431,12 +1431,15 @@ body[data-theme="light"] .qr-summary-card p {
 .report-actions {
     display: flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 8px;
+    margin-top: 20px;
 }
 
 .signatory-card {
     order: 3;
+    display: flex;
+    flex-direction: column;
 }
 
 .signatory-fields {
@@ -1444,6 +1447,11 @@ body[data-theme="light"] .qr-summary-card p {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
     margin-top: 16px;
+}
+
+.signatory-card .report-actions {
+    margin-top: auto;
+    padding-top: 20px;
 }
 
 .signatory-fields label {
@@ -1471,7 +1479,7 @@ body[data-theme="light"] .qr-summary-card p {
 
 .physical-report {
     margin-top: 20px;
-    max-height: 700px;
+    max-height: 500px;
     padding: 24px;
     overflow: scroll;
     scrollbar-width: auto !important;
