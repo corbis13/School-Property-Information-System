@@ -2380,3 +2380,486 @@ async function init() {
 }
 
 init();
+
+const inventoryCustodianSlipStorageKey = "propertyInventoryCustodianSlips";
+let inventoryCustodianSlips = [];
+
+function hasInventoryCustodianSlipRemoteDatabase() {
+    return Boolean(supabaseUrl && supabaseAnonKey && supabaseAnonKey !== "YOUR_SUPABASE_ANON_KEY");
+}
+
+function loadInventoryCustodianSlips() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(inventoryCustodianSlipStorageKey) || "[]");
+        return Array.isArray(stored) ? stored : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveInventoryCustodianSlips() {
+    try {
+        localStorage.setItem(inventoryCustodianSlipStorageKey, JSON.stringify(inventoryCustodianSlips));
+    } catch (error) {
+        console.error("Unable to save Inventory Custodian Slips locally.", error);
+    }
+}
+
+function getInventoryCustodianSlipHeaderPayload(slip) {
+    return {
+        ics_no: slip.icsNo,
+        entity_name: slip.entityName,
+        fund_cluster: slip.fundCluster || null,
+        received_from_name: slip.receivedFrom || null,
+        received_from_position: slip.receivedFromPosition || null,
+        received_from_date: slip.receivedFromDate || null,
+        received_by_name: slip.receivedBy || null,
+        received_by_position: slip.receivedByPosition || null,
+        received_by_date: slip.receivedByDate || null
+    };
+}
+
+function getInventoryCustodianSlipItemPayload(slip, slipId, lineNo) {
+    return {
+        ics_slip_id: slipId,
+        line_no: lineNo,
+        asset_id: null,
+        inventory_item_no: slip.inventoryItemNo || null,
+        description_snapshot: slip.description,
+        quantity: Number(slip.quantity),
+        unit: slip.unit || null,
+        unit_cost: Number(slip.unitCost),
+        total_cost: Number(slip.totalCost),
+        estimated_useful_life: slip.estimatedUsefulLife || null
+    };
+}
+
+function mapInventoryCustodianSlipRows(rows) {
+    return (rows || []).flatMap((header) => {
+        const lineItems = Array.isArray(header.ics_slip_items) ? header.ics_slip_items : [];
+        return lineItems
+            .sort((first, second) => Number(first.line_no) - Number(second.line_no))
+            .map((item) => ({
+                id: `ICS-${header.id}-${item.id}`,
+                dbSlipId: header.id,
+                dbItemId: item.id,
+                lineNo: item.line_no,
+                entityName: header.entity_name || "",
+                fundCluster: header.fund_cluster || "",
+                icsNo: header.ics_no || "",
+                inventoryItemNo: item.inventory_item_no || "",
+                description: item.description_snapshot || "",
+                quantity: item.quantity ?? "",
+                unit: item.unit || "",
+                unitCost: item.unit_cost ?? "",
+                totalCost: item.total_cost ?? "",
+                estimatedUsefulLife: item.estimated_useful_life || "",
+                receivedFrom: header.received_from_name || "",
+                receivedBy: header.received_by_name || "",
+                receivedFromPosition: header.received_from_position || "",
+                receivedByPosition: header.received_by_position || "",
+                receivedFromDate: header.received_from_date || "",
+                receivedByDate: header.received_by_date || ""
+            }));
+    });
+}
+
+async function loadInventoryCustodianSlipsFromDatabase() {
+    if (!hasInventoryCustodianSlipRemoteDatabase()) return false;
+
+    const select = [
+        "id", "ics_no", "entity_name", "fund_cluster",
+        "received_from_name", "received_from_position", "received_from_date",
+        "received_by_name", "received_by_position", "received_by_date",
+        "ics_slip_items(id,line_no,inventory_item_no,description_snapshot,quantity,unit,unit_cost,total_cost,estimated_useful_life)"
+    ].join(",");
+    const response = await fetch(`${supabaseUrl}/rest/v1/ics_slips?select=${encodeURIComponent(select)}&order=created_at.desc`, {
+        headers: supabaseHeaders
+    });
+
+    if (!response.ok) {
+        throw new Error(`Unable to load Inventory Custodian Slips: HTTP ${response.status}`);
+    }
+
+    inventoryCustodianSlips = mapInventoryCustodianSlipRows(await response.json());
+    saveInventoryCustodianSlips();
+    return true;
+}
+
+async function requestInventoryCustodianSlipDatabase(path, options = {}) {
+    const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
+        ...options,
+        headers: {
+            ...supabaseHeaders,
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+            ...(options.headers || {})
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`ICS database request failed: HTTP ${response.status}`);
+    }
+
+    return response;
+}
+
+async function saveInventoryCustodianSlipToDatabase(action, slip) {
+    const sameSlipRows = inventoryCustodianSlips.filter((entry) => entry.dbSlipId && entry.icsNo === slip.icsNo);
+    let slipId = slip.dbSlipId || sameSlipRows[0]?.dbSlipId;
+    const headerPayload = getInventoryCustodianSlipHeaderPayload(slip);
+
+    if (slipId) {
+        await requestInventoryCustodianSlipDatabase(`ics_slips?id=eq.${encodeURIComponent(slipId)}`, {
+            method: "PATCH",
+            body: JSON.stringify(headerPayload)
+        });
+    } else {
+        const response = await requestInventoryCustodianSlipDatabase("ics_slips", {
+            method: "POST",
+            body: JSON.stringify(headerPayload)
+        });
+        const rows = await response.json();
+        slipId = rows[0]?.id;
+        if (!slipId) throw new Error("ICS header was created without an identifier.");
+    }
+
+    if (action === "update" && slip.dbItemId) {
+        await requestInventoryCustodianSlipDatabase(`ics_slip_items?id=eq.${encodeURIComponent(slip.dbItemId)}`, {
+            method: "PATCH",
+            body: JSON.stringify(getInventoryCustodianSlipItemPayload(slip, slipId, slip.lineNo || 1))
+        });
+    } else {
+        const lineNo = Math.max(0, ...sameSlipRows.map((entry) => Number(entry.lineNo) || 0)) + 1;
+        await requestInventoryCustodianSlipDatabase("ics_slip_items", {
+            method: "POST",
+            body: JSON.stringify(getInventoryCustodianSlipItemPayload(slip, slipId, lineNo))
+        });
+    }
+}
+
+async function deleteInventoryCustodianSlipFromDatabase(slip) {
+    const itemCount = inventoryCustodianSlips.filter((entry) => entry.dbSlipId === slip.dbSlipId).length;
+    if (slip.dbSlipId && itemCount <= 1) {
+        await requestInventoryCustodianSlipDatabase(`ics_slips?id=eq.${encodeURIComponent(slip.dbSlipId)}`, { method: "DELETE" });
+        return;
+    }
+
+    if (slip.dbItemId) {
+        await requestInventoryCustodianSlipDatabase(`ics_slip_items?id=eq.${encodeURIComponent(slip.dbItemId)}`, { method: "DELETE" });
+    }
+}
+
+function updateInventoryCustodianSlipTotal() {
+    const quantity = Number(document.querySelector("#icsQuantity").value);
+    const unitCost = Number(document.querySelector("#icsUnitCost").value);
+    const totalCost = document.querySelector("#icsTotalCost");
+    totalCost.value = Number.isFinite(quantity) && Number.isFinite(unitCost)
+        ? (quantity * unitCost).toFixed(2)
+        : "";
+}
+
+function resetInventoryCustodianSlipForm() {
+    const form = document.querySelector("#icsSlipForm");
+    if (!form) return;
+
+    form.reset();
+    document.querySelector("#icsEditingId").value = "";
+    document.querySelector("#icsTotalCost").value = "";
+    document.querySelector("#icsFormTitle").textContent = "Inventory Custodian Slip";
+}
+
+function getInventoryCustodianSlipFormData() {
+    const value = (selector) => document.querySelector(selector).value.trim();
+
+    return {
+        id: document.querySelector("#icsEditingId").value || `ICS-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        entityName: value("#icsEntityName"),
+        fundCluster: value("#icsFundCluster"),
+        icsNo: value("#icsNo"),
+        inventoryItemNo: value("#icsInventoryItemNo"),
+        description: value("#icsDescription"),
+        quantity: value("#icsQuantity"),
+        unit: value("#icsUnit"),
+        unitCost: value("#icsUnitCost"),
+        totalCost: value("#icsTotalCost"),
+        estimatedUsefulLife: value("#icsEstimatedUsefulLife"),
+        receivedFrom: value("#icsReceivedFrom"),
+        receivedBy: value("#icsReceivedBy"),
+        receivedFromPosition: value("#icsReceivedFromPosition"),
+        receivedByPosition: value("#icsReceivedByPosition"),
+        receivedFromDate: value("#icsReceivedFromDate"),
+        receivedByDate: value("#icsReceivedByDate")
+    };
+}
+
+function renderInventoryCustodianSlipTable() {
+    const table = document.querySelector("#icsSlipTable");
+    if (!table) return;
+
+    table.innerHTML = inventoryCustodianSlips.length
+        ? inventoryCustodianSlips.map((slip) => `
+            <tr>
+                <td>${escapeHtml(slip.icsNo)}</td>
+                <td>${escapeHtml(slip.entityName)}</td>
+                <td>${escapeHtml(slip.description)}</td>
+                <td>${escapeHtml(slip.receivedBy || "-")}</td>
+                <td>${escapeHtml(formatPeso(Number(slip.totalCost) || 0))}</td>
+                <td>
+                    <div class="row-actions">
+                        <button type="button" data-ics-action="open" data-ics-id="${escapeHtml(slip.id)}">Open</button>
+                        <button type="button" data-ics-action="edit" data-ics-id="${escapeHtml(slip.id)}">Edit</button>
+                        <button type="button" data-ics-action="delete" data-ics-id="${escapeHtml(slip.id)}">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `).join("")
+        : '<tr><td colspan="6">No Inventory Custodian Slip records yet.</td></tr>';
+}
+
+function editInventoryCustodianSlip(id) {
+    const slip = inventoryCustodianSlips.find((entry) => entry.id === id);
+    if (!slip) return;
+
+    const fieldMap = {
+        icsEditingId: "id",
+        icsEntityName: "entityName",
+        icsFundCluster: "fundCluster",
+        icsNo: "icsNo",
+        icsInventoryItemNo: "inventoryItemNo",
+        icsDescription: "description",
+        icsQuantity: "quantity",
+        icsUnit: "unit",
+        icsUnitCost: "unitCost",
+        icsTotalCost: "totalCost",
+        icsEstimatedUsefulLife: "estimatedUsefulLife",
+        icsReceivedFrom: "receivedFrom",
+        icsReceivedBy: "receivedBy",
+        icsReceivedFromPosition: "receivedFromPosition",
+        icsReceivedByPosition: "receivedByPosition",
+        icsReceivedFromDate: "receivedFromDate",
+        icsReceivedByDate: "receivedByDate"
+    };
+
+    Object.entries(fieldMap).forEach(([elementId, property]) => {
+        document.querySelector(`#${elementId}`).value = slip[property] || "";
+    });
+    document.querySelector("#icsFormTitle").textContent = "Edit Inventory Custodian Slip";
+    showModule("document");
+}
+
+async function initInventoryCustodianSlipCrud() {
+    const form = document.querySelector("#icsSlipForm");
+    const table = document.querySelector("#icsSlipTable");
+    if (!form || !table) return;
+
+    inventoryCustodianSlips = loadInventoryCustodianSlips();
+    renderInventoryCustodianSlipTable();
+
+    try {
+        if (await loadInventoryCustodianSlipsFromDatabase()) {
+            renderInventoryCustodianSlipTable();
+        }
+    } catch (error) {
+        console.error(error);
+        showToast("ICS database unavailable. Using local saved slips.");
+    }
+
+    ["#icsQuantity", "#icsUnitCost"].forEach((selector) => {
+        document.querySelector(selector).addEventListener("input", updateInventoryCustodianSlipTotal);
+    });
+
+    document.querySelector("#icsClearBtn").addEventListener("click", resetInventoryCustodianSlipForm);
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+
+        const slip = getInventoryCustodianSlipFormData();
+        const existingIndex = inventoryCustodianSlips.findIndex((entry) => entry.id === slip.id);
+        const action = existingIndex >= 0 ? "update" : "create";
+
+        try {
+            if (hasInventoryCustodianSlipRemoteDatabase()) {
+                const existing = existingIndex >= 0 ? inventoryCustodianSlips[existingIndex] : null;
+                await saveInventoryCustodianSlipToDatabase(action, { ...existing, ...slip });
+                await loadInventoryCustodianSlipsFromDatabase();
+            } else if (existingIndex >= 0) {
+                inventoryCustodianSlips[existingIndex] = slip;
+            } else {
+                inventoryCustodianSlips.unshift(slip);
+            }
+
+            saveInventoryCustodianSlips();
+            renderInventoryCustodianSlipTable();
+            resetInventoryCustodianSlipForm();
+            showToast(action === "update" ? "Inventory Custodian Slip updated." : "Inventory Custodian Slip saved.");
+        } catch (error) {
+            console.error(error);
+            showToast("Unable to save the Inventory Custodian Slip to Supabase.");
+        }
+    });
+
+    table.addEventListener("click", async (event) => {
+        const button = event.target.closest("button[data-ics-action]");
+        if (!button) return;
+
+        const slip = inventoryCustodianSlips.find((entry) => entry.id === button.dataset.icsId);
+        if (!slip) return;
+
+        if (button.dataset.icsAction === "open") {
+            openInventoryCustodianSlipPdf(slip);
+            return;
+        }
+
+        if (button.dataset.icsAction === "edit") {
+            editInventoryCustodianSlip(slip.id);
+            return;
+        }
+
+        if (button.dataset.icsAction === "delete") {
+            if (!window.confirm(`Delete ICS item from ${slip.icsNo}?`)) return;
+
+            try {
+                if (hasInventoryCustodianSlipRemoteDatabase()) {
+                    await deleteInventoryCustodianSlipFromDatabase(slip);
+                    await loadInventoryCustodianSlipsFromDatabase();
+                } else {
+                    inventoryCustodianSlips = inventoryCustodianSlips.filter((entry) => entry.id !== slip.id);
+                }
+
+                saveInventoryCustodianSlips();
+                renderInventoryCustodianSlipTable();
+                resetInventoryCustodianSlipForm();
+                showToast("Inventory Custodian Slip deleted.");
+            } catch (error) {
+                console.error(error);
+                showToast("Unable to delete the Inventory Custodian Slip from Supabase.");
+            }
+        }
+    });
+}
+
+initInventoryCustodianSlipCrud();
+function openInventoryCustodianSlipPdf(slip) {
+    const JsPdf = window.jspdf && window.jspdf.jsPDF;
+    if (!JsPdf) {
+        showToast("PDF generation library is unavailable.");
+        return;
+    }
+
+    const slipItems = inventoryCustodianSlips
+        .filter((entry) => slip.dbSlipId ? entry.dbSlipId === slip.dbSlipId : entry.icsNo === slip.icsNo)
+        .sort((first, second) => Number(first.lineNo || 0) - Number(second.lineNo || 0));
+    if (!slipItems.length) {
+        showToast("No ICS items are available for this document.");
+        return;
+    }
+
+    const pdf = new JsPdf({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageWidth = 297;
+    const pageHeight = 210;
+    const margin = 10;
+    const columns = [18, 18, 27, 27, 83, 47, 47];
+    const headers = ["Quantity", "Unit", "Unit Cost", "Total Cost", "Description", "Inventory Item No.", "Estimated Useful Life"];
+    const formatAmount = (value) => `PHP ${Number(value || 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const headerSlip = slipItems[0];
+    let y = 12;
+
+    const drawDocumentHeading = () => {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(14);
+        pdf.text("INVENTORY CUSTODIAN SLIP", pageWidth / 2, y, { align: "center" });
+        y += 10;
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+        pdf.text(`Entity Name: ${headerSlip.entityName || "-"}`, margin, y);
+        pdf.text(`Fund Cluster: ${headerSlip.fundCluster || "-"}`, margin, y + 6);
+        pdf.text(`ICS No.: ${headerSlip.icsNo || "-"}`, pageWidth - margin, y + 6, { align: "right" });
+        y += 15;
+    };
+
+    const drawTableHeader = () => {
+        let x = margin;
+        const headerHeight = 12;
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7);
+        headers.forEach((header, index) => {
+            pdf.rect(x, y, columns[index], headerHeight);
+            const lines = pdf.splitTextToSize(header, columns[index] - 3);
+            pdf.text(lines, x + columns[index] / 2, y + 4.5, { align: "center" });
+            x += columns[index];
+        });
+        pdf.setFont("helvetica", "normal");
+        y += headerHeight;
+    };
+
+    drawDocumentHeading();
+    drawTableHeader();
+
+    slipItems.forEach((item) => {
+        const values = [
+            item.quantity,
+            item.unit,
+            formatAmount(item.unitCost),
+            formatAmount(item.totalCost),
+            item.description,
+            item.inventoryItemNo,
+            item.estimatedUsefulLife || "-"
+        ];
+        const wrappedValues = values.map((value, index) => pdf.splitTextToSize(String(value || "-"), columns[index] - 3));
+        const rowHeight = Math.max(9, ...wrappedValues.map((lines) => lines.length * 4.2 + 3));
+
+        if (y + rowHeight > 165) {
+            pdf.addPage();
+            y = 12;
+            drawDocumentHeading();
+            drawTableHeader();
+        }
+
+        let x = margin;
+        pdf.setFontSize(7);
+        wrappedValues.forEach((lines, index) => {
+            pdf.rect(x, y, columns[index], rowHeight);
+            pdf.text(lines, x + 1.5, y + 4.5);
+            x += columns[index];
+        });
+        y += rowHeight;
+    });
+
+    if (y + 36 > pageHeight - margin) {
+        pdf.addPage();
+        y = 18;
+    } else {
+        y += 12;
+    }
+
+    const signatureWidth = 115;
+    const rightSignatureX = pageWidth - margin - signatureWidth;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.text("Received from:", margin, y);
+    pdf.text("Received by:", rightSignatureX, y);
+    y += 17;
+    pdf.line(margin, y, margin + signatureWidth, y);
+    pdf.line(rightSignatureX, y, rightSignatureX + signatureWidth, y);
+    pdf.setFontSize(8);
+    pdf.text(headerSlip.receivedFrom || "Signature over printed name", margin + signatureWidth / 2, y + 4, { align: "center" });
+    pdf.text(headerSlip.receivedBy || "Signature over printed name", rightSignatureX + signatureWidth / 2, y + 4, { align: "center" });
+    y += 12;
+    pdf.text(headerSlip.receivedFromPosition || "Position/Office", margin + signatureWidth / 2, y, { align: "center" });
+    pdf.text(headerSlip.receivedByPosition || "Position/Office", rightSignatureX + signatureWidth / 2, y, { align: "center" });
+    y += 8;
+    pdf.text(`Date: ${headerSlip.receivedFromDate || "-"}`, margin + signatureWidth / 2, y, { align: "center" });
+    pdf.text(`Date: ${headerSlip.receivedByDate || "-"}`, rightSignatureX + signatureWidth / 2, y, { align: "center" });
+
+    const fileName = `ICS-${String(headerSlip.icsNo || "document").replace(/[<>:"/\\|?*]+/g, "-")}.pdf`;
+    const pdfUrl = URL.createObjectURL(pdf.output("blob"));
+    const preview = window.open(pdfUrl, "_blank");
+    if (!preview) {
+        pdf.save(fileName);
+        showToast("PDF preview was blocked, so the document was downloaded.");
+    } else {
+        window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 60000);
+        showToast("Inventory Custodian Slip PDF opened.");
+    }
+}

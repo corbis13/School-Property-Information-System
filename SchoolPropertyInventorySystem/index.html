@@ -32,6 +32,10 @@
                     <img class="nav-icon" src="images/qr_code_1.svg" alt="QR Codes" data-theme-icon="images/qr_code_1.svg" data-theme-icon-light="images/qr_code_2.svg">
                     QR Codes
                 </button>
+                <button class="nav-item" type="button" data-view="document">
+                    <img class="nav-icon" src="images/document_2.svg" alt="Document" data-theme-icon="images/document_2.svg" data-theme-icon-light="images/document_1.svg">
+                    Document
+                </button>
                 <button class="nav-item" type="button" data-view="reports">
                     <img class="nav-icon" src="images/report_1.svg" alt="Reports" data-theme-icon="images/report_1.svg" data-theme-icon-light="images/report_2.svg">
                     Reports
@@ -550,7 +554,82 @@
                 </section>
             </div>
 
-            <div class="module-view" data-module="settings">
+            <div class="module-view" data-module="document">
+                <section class="reports-grid">
+                    <form class="item-form" id="icsSlipForm">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Document Template</p>
+                                <h2 id="icsFormTitle">Inventory Custodian Slip</h2>
+                            </div>
+                        </div>
+                        <p class="module-copy">Create and manage Inventory Custodian Slip records based on the standard ICS form.</p>
+                        <input id="icsEditingId" type="hidden">
+
+                        <div class="two-column">
+                            <label>Entity Name<input id="icsEntityName" type="text" required></label>
+                            <label>Fund Cluster<input id="icsFundCluster" type="text" required></label>
+                        </div>
+                        <div class="two-column">
+                            <label>ICS No.<input id="icsNo" type="text" required></label>
+                            <label>Inventory Item No.<input id="icsInventoryItemNo" type="text" required></label>
+                        </div>
+                        <label class="full-width">Description<textarea id="icsDescription" rows="3" required></textarea></label>
+                        <div class="two-column">
+                            <label>Quantity<input id="icsQuantity" type="number" min="0" step="1" required></label>
+                            <label>Unit<input id="icsUnit" type="text" placeholder="e.g. pcs" required></label>
+                        </div>
+                        <div class="two-column">
+                            <label>Unit Cost<input id="icsUnitCost" type="number" min="0" step="0.01" required></label>
+                            <label>Total Cost<input id="icsTotalCost" type="number" min="0" step="0.01" readonly></label>
+                        </div>
+                        <div class="two-column">
+                            <label>Estimated Useful Life<input id="icsEstimatedUsefulLife" type="text" placeholder="e.g. 5 years"></label>
+                            <div aria-hidden="true"></div>
+                        </div>
+                        <div class="two-column">
+                            <label>Received From<input id="icsReceivedFrom" type="text"></label>
+                            <label>Received By<input id="icsReceivedBy" type="text"></label>
+                        </div>
+                        <div class="two-column">
+                            <label>From Position/Office<input id="icsReceivedFromPosition" type="text"></label>
+                            <label>Recipient Position/Office<input id="icsReceivedByPosition" type="text"></label>
+                        </div>
+                        <div class="two-column">
+                            <label>Date Received From<input id="icsReceivedFromDate" type="date"></label>
+                            <label>Date Received By<input id="icsReceivedByDate" type="date"></label>
+                        </div>
+                        <div class="form-actions-row">
+                            <button class="secondary-button" id="icsClearBtn" type="button">Clear</button>
+                            <button class="primary-button" type="submit">Save Slip</button>
+                        </div>
+                    </form>
+
+                    <article class="module-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Saved Documents</p>
+                                <h2>Inventory Custodian Slips</h2>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ICS No.</th>
+                                        <th>Entity</th>
+                                        <th>Description</th>
+                                        <th>Recipient</th>
+                                        <th>Total Cost</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="icsSlipTable"></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </section>
+            </div>            <div class="module-view" data-module="settings">
                 <section class="settings-grid">
                     <article class="module-card">
                         <p class="eyebrow">Appearance</p>
@@ -623,7 +702,7 @@
                     <article class="module-card">
                         <p class="eyebrow">Modules</p>
                         <h2>Included Menus</h2>
-                        <p class="module-copy">Dashboard, Inventory, QR Codes, Reports, Settings, and About are available from the sidebar navigation.</p>
+                        <p class="module-copy">Dashboard, Inventory, QR Codes, Reports, Document, Settings, and About are available from the sidebar navigation.</p>
                     </article>
                     <article class="module-card">
                         <p class="eyebrow">Developer</p>

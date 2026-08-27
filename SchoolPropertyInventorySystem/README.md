@@ -19,6 +19,8 @@ Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The scr
 - inventory_item (source for inventory item type options)
 - education_level (source for education level options; column: `education_level`)
 - signatories (source for report signatory options; column: `signatory`)
+- ics_slips (Inventory Custodian Slip headers)
+- ics_slip_items (line items linked to slips and optional assets)
 
 ### Expected asset columns
 

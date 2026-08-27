@@ -1387,7 +1387,7 @@ body[data-theme="light"] .qr-summary-card p {
 
 .all-assets-table th,
 .all-assets-table td {
-    min-width: 112px;
+    min-width: 90px;
     padding: 9px 10px;
     border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
@@ -1397,6 +1397,12 @@ body[data-theme="light"] .qr-summary-card p {
 
 .all-assets-table th:nth-child(25),
 .all-assets-table td:nth-child(25),
+.all-assets-table th:nth-child(26),
+.all-assets-table td:nth-child(26) {
+    width: 360px;
+    min-width: 360px;
+}
+
 .all-assets-table th:nth-child(26),
 .all-assets-table td:nth-child(26) {
     width: 180px;
