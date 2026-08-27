@@ -102,6 +102,7 @@ const dom = {
     reportInventoryType: document.querySelector("#reportInventoryType"),
     reportFundCluster: document.querySelector("#reportFundCluster"),
     reportAsOf: document.querySelector("#reportAsOf"),
+    generatePdfBtn: document.querySelector("#generatePdfBtn"),
     certifiedCorrectedBy: document.querySelector("#certifiedCorrectedBy"),
     approvedBy: document.querySelector("#approvedBy"),
     verifiedBy: document.querySelector("#verifiedBy"),
@@ -130,6 +131,7 @@ let classificationOptions = [];
 let statusOptions = [];
 let teacherOptions = [];
 let signatoryOptions = [];
+let signatoryLoadFailed = false;
 let canOpenClassificationModal = false;
 let canOpenStatusModal = false;
 let inventoryPage = 1;
@@ -304,6 +306,7 @@ async function loadTeacherOptions() {
 
 async function loadSignatoryOptions() {
     signatoryOptions = [];
+    signatoryLoadFailed = false;
 
     try {
         const response = await fetch(`${supabaseUrl}/rest/v1/signatories?select=signatory`, {
@@ -319,12 +322,16 @@ async function loadSignatoryOptions() {
             .sort((first, second) => first.localeCompare(second, undefined, { sensitivity: "base" }));
     } catch (error) {
         console.error(error);
+        signatoryLoadFailed = true;
     }
 
     [dom.certifiedCorrectedBy, dom.approvedBy, dom.verifiedBy].forEach((select) => {
         if (!select) return;
         const currentValue = select.value;
-        select.innerHTML = `<option value="">Select signatory</option>${signatoryOptions
+        const unavailableOption = signatoryLoadFailed
+            ? `<option value="" disabled>Signatories table unavailable</option>`
+            : "";
+        select.innerHTML = `${unavailableOption}<option value="">Select signatory</option>${signatoryOptions
             .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
         if (signatoryOptions.includes(currentValue)) select.value = currentValue;
     });
@@ -1393,6 +1400,11 @@ function renderPhysicalCountReport() {
     const reportItems = getReportItems();
     const inventoryType = dom.reportInventoryType.value || "SCHOOL FURNITURES";
     const fundCluster = dom.reportFundCluster.value || "____________________________";
+    const signatories = [
+        ["Certified Correct by:", dom.certifiedCorrectedBy?.value || ""],
+        ["Approved by:", dom.approvedBy?.value || ""],
+        ["Verified by:", dom.verifiedBy?.value || ""]
+    ];
 
     dom.physicalReport.innerHTML = `
         <div class="physical-report-header">
@@ -1404,6 +1416,22 @@ function renderPhysicalCountReport() {
         <div class="report-fund-cluster"><strong>Fund Cluster :</strong> ${escapeHtml(fundCluster)}</div>
         <div class="physical-report-table-wrap">
             <table class="physical-report-table">
+                <colgroup>
+                    <col class="report-col-article">
+                    <col class="report-col-description">
+                    <col class="report-col-property-number">
+                    <col class="report-col-unit-measure">
+                    <col class="report-col-unit-value">
+                    <col class="report-col-total">
+                    <col class="report-col-date-acquired">
+                    <col class="report-col-balance">
+                    <col class="report-col-on-hand">
+                    <col class="report-col-shortage-quantity">
+                    <col class="report-col-shortage-value">
+                    <col class="report-col-accountable">
+                    <col class="report-col-location">
+                    <col class="report-col-status">
+                </colgroup>
                 <thead>
                     <tr>
                         <th rowspan="2">Article</th>
@@ -1450,11 +1478,55 @@ function renderPhysicalCountReport() {
             </table>
         </div>
         <div class="report-signatures">
-            <div><span>Certified Correct by:</span><i></i><small>Signature over Printed Name of Inventory<br>Committee Chair and Members</small></div>
-            <div><span>Approved by:</span><i></i><small>Signature over Printed Name of Head of<br>Agency/Entity or Authorized</small></div>
-            <div><span>Verified by:</span><i></i><small>Signature over Printed Name of COA Representative</small></div>
+            ${signatories.map(([label, value], index) => `<div><span>${label}</span><strong class="report-signatory-name">${reportCell(value, "")}</strong><i></i><small>${index === 0 ? "Signature over Printed Name of Inventory<br>Committee Chair and Members" : index === 1 ? "Signature over Printed Name of Head of<br>Agency/Entity or Authorized" : "Signature over Printed Name of COA Representative"}</small></div>`).join("")}
         </div>
     `;
+}
+
+async function generateReportPdf() {
+    if (!window.html2canvas || !window.jspdf?.jsPDF) {
+        showToast("PDF tools are still loading. Check your internet connection and try again.");
+        return;
+    }
+
+    const report = dom.physicalReport;
+    const previous = { overflow: report.style.overflow, maxHeight: report.style.maxHeight, width: report.style.width };
+    report.style.overflow = "visible";
+    report.style.maxHeight = "none";
+    report.style.width = `${report.scrollWidth}px`;
+    report.classList.add("pdf-export");
+
+    try {
+        const canvas = await window.html2canvas(report, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+        const { jsPDF } = window.jspdf;
+        const pageWidth = 13;
+        const pageHeight = 8.5;
+        const pageMargin = 0.25;
+        const contentWidth = pageWidth - (pageMargin * 2);
+        const contentHeight = pageHeight - (pageMargin * 2);
+        const pdf = new jsPDF({ orientation: "landscape", unit: "in", format: [pageWidth, pageHeight] });
+        const imageWidth = contentWidth;
+        const imageHeight = (canvas.height * imageWidth) / canvas.width;
+        const imageData = canvas.toDataURL("image/png");
+        let offset = 0;
+
+        while (offset < imageHeight) {
+            if (offset > 0) pdf.addPage([pageWidth, pageHeight], "landscape");
+            pdf.addImage(imageData, "PNG", pageMargin, pageMargin - offset, imageWidth, imageHeight);
+            offset += contentHeight;
+        }
+
+        pdf.save(`physical-count-report-${dom.reportAsOf.value || "undated"}.pdf`);
+        showToast("PDF generated successfully.");
+    } catch (error) {
+        console.error(error);
+        showToast("Unable to generate the PDF.");
+    } finally {
+        report.style.overflow = previous.overflow;
+        report.style.maxHeight = previous.maxHeight;
+        report.style.width = previous.width;
+        report.classList.remove("pdf-export");
+    }
 }
 
 function parseMoney(value) {
@@ -2203,8 +2275,14 @@ function wireEvents() {
     if (dom.printReportBtn) {
         dom.printReportBtn.addEventListener("click", () => window.print());
     }
+    if (dom.generatePdfBtn) {
+        dom.generatePdfBtn.addEventListener("click", generateReportPdf);
+    }
     [dom.reportInventoryType, dom.reportFundCluster, dom.reportAsOf].forEach((control) => {
         if (control) control.addEventListener("input", renderPhysicalCountReport);
+    });
+    [dom.certifiedCorrectedBy, dom.approvedBy, dom.verifiedBy].forEach((control) => {
+        if (control) control.addEventListener("change", renderPhysicalCountReport);
     });
     if (dom.assetDatabaseSearch) {
         dom.assetDatabaseSearch.addEventListener("input", renderAllAssetsView);

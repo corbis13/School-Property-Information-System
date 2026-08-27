@@ -10,7 +10,7 @@ The app is configured to use Supabase as its primary backend.
 
 Update [supabase-config.js](supabase-config.js) with your Supabase URL and anon key.
 
-Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the `inventory_item` and `geras_teacher` lookup tables and configures public read/write policies for this no-login app.
+Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the `inventory_item`, `geras_teacher`, and `signatories` lookup tables and configures public read/write policies for this no-login app.
 
 ### Expected tables
 
@@ -18,6 +18,7 @@ Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The scr
 - classifications
 - inventory_item (source for inventory item type options)
 - education_level (source for education level options; column: `education_level`)
+- signatories (source for report signatory options; column: `signatory`)
 
 ### Expected asset columns
 

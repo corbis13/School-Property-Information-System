@@ -1428,6 +1428,13 @@ body[data-theme="light"] .qr-summary-card p {
     min-width: 0;
 }
 
+.report-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
 .signatory-card {
     order: 3;
 }
@@ -1522,6 +1529,56 @@ body[data-theme="light"] .qr-summary-card p {
     font-size: 10px;
 }
 
+.physical-report-table .report-col-article {
+    width: 8%;
+}
+
+.physical-report-table .report-col-description {
+    width: 11%;
+}
+
+.physical-report-table .report-col-property-number {
+    width: 10%;
+}
+
+.physical-report-table .report-col-unit-measure {
+    width: 5%;
+}
+
+.physical-report-table .report-col-unit-value {
+    width: 6%;
+}
+
+.physical-report-table .report-col-total {
+    width: 7%;
+}
+
+.physical-report-table .report-col-date-acquired {
+    width: 7%;
+}
+
+.physical-report-table .report-col-balance,
+.physical-report-table .report-col-on-hand {
+    width: 6%;
+}
+
+.physical-report-table .report-col-shortage-quantity {
+    width: 5%;
+}
+
+.physical-report-table .report-col-shortage-value {
+    width: 6%;
+}
+
+.physical-report-table .report-col-accountable {
+    width: 11%;
+}
+
+.physical-report-table .report-col-location,
+.physical-report-table .report-col-status {
+    width: 6%;
+}
+
 .physical-report-table th,
 .physical-report-table td {
     padding: 5px 4px;
@@ -1557,6 +1614,62 @@ body[data-theme="light"] .qr-summary-card p {
     font-style: italic;
 }
 
+.physical-report.pdf-export {
+    padding: 16px;
+}
+
+.physical-report.pdf-export .physical-report-header {
+    font-size: 12px;
+}
+
+.physical-report.pdf-export .physical-report-header span:last-child {
+    margin-top: 8px;
+}
+
+.physical-report.pdf-export .report-fund-cluster {
+    margin: 16px 0 10px;
+    font-size: 11px;
+}
+
+.physical-report.pdf-export .physical-report-table {
+    font-size: 8px;
+}
+
+.physical-report.pdf-export .physical-report-table th,
+.physical-report.pdf-export .physical-report-table td {
+    padding: 3px 2px;
+    border-width: 0.5px;
+}
+
+.physical-report.pdf-export .physical-report-table th {
+    font-size: 8px;
+}
+
+.physical-report.pdf-export .physical-report-table th small {
+    margin-top: 2px;
+    font-size: 7px;
+}
+
+.physical-report.pdf-export .physical-report-table td {
+    height: 20px;
+    font-size: 8px;
+}
+
+.physical-report.pdf-export .report-signatures {
+    gap: 24px;
+    margin-top: 16px;
+    font-size: 10px;
+}
+
+.physical-report.pdf-export .report-signatory-name {
+    min-height: 13px;
+    font-size: 9px;
+}
+
+.physical-report.pdf-export .report-signatures small {
+    font-size: 8px;
+}
+
 .report-signatures {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1566,22 +1679,36 @@ body[data-theme="light"] .qr-summary-card p {
 }
 
 .report-signatures > div {
-    display: grid;
-    gap: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     text-align: center;
 }
 
 .report-signatures span {
+    order: 1;
     text-align: left;
+}
+
+.report-signatory-name {
+    position: relative;
+    margin-bottom: -10px;
+    min-height: 16px;
+    order: 2;
+    line-height: 1.2;
+    font-size: 11px;
+    font-weight: 700;
 }
 
 .report-signatures i {
     display: block;
-    height: 32px;
+    order: 3;
+    height: 8px;
     border-bottom: 1px solid #111111;
 }
 
 .report-signatures small {
+    order: 4;
     font-size: 10px;
 }
 
