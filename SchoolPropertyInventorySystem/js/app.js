@@ -2071,24 +2071,29 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
         }
 
         .ics-header {
-            display: grid;
-            grid-template-columns: 50px 1fr 50px;
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 6px;
+            justify-content: center;
+            text-align: center;
+            gap: 6px;
+            margin-bottom: 8px;
         }
 
         .ics-logo {
-            width: 44px;
-            height: 44px;
+            width: 50px;
+            height: 50px;
             object-fit: contain;
+            display: block;
+            margin: 0 auto;
         }
 
         h1 {
             margin: 0;
             text-align: center;
-            font-size: 15px;
-            letter-spacing: 0;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
 
         .ics-meta {
@@ -2101,7 +2106,7 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
         .ics-meta td {
             height: 24px;
             padding: 3px 4px;
-            border: 1px solid #000000;
+            border: none;
             vertical-align: bottom;
         }
 
@@ -2190,17 +2195,29 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
 
         .no-print {
             position: fixed;
-            top: 10px;
-            right: 10px;
+            top: 14px;
+            right: 14px;
+            z-index: 9999;
+            display: flex;
+            gap: 8px;
         }
 
         .no-print button {
-            padding: 8px 12px;
-            border: 1px solid #000000;
-            color: #000000;
-            background: #ffffff;
+            padding: 8px 16px;
+            border: 1px solid #1a2640;
+            border-radius: 6px;
+            color: #ffffff;
+            background: #0f172a;
             font: inherit;
+            font-size: 12px;
+            font-weight: 600;
             cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: background 0.15s ease;
+        }
+
+        .no-print button:hover {
+            background: #1e293b;
         }
 
         @media print {
@@ -2220,8 +2237,7 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
     <main class="ics-sheet">
         <header class="ics-header">
             <img class="ics-logo" src="${logoSrc}" alt="CASO logo">
-            <h1>INVENTORY CUSTODIAN SLIP</h1>
-            <span></span>
+            <h1><strong>INVENTORY CUSTODIAN SLIP</strong></h1>
         </header>
 
         <table class="ics-meta" aria-label="Inventory custodian slip details">
@@ -2239,10 +2255,10 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
 
         <table class="ics-table" aria-label="Inventory items">
             <colgroup>
+                <col style="width: 8%;">
+                <col style="width: 8%;">
                 <col style="width: 11%;">
-                <col style="width: 6%;">
-                <col style="width: 9%;">
-                <col style="width: 9%;">
+                <col style="width: 11%;">
                 <col style="width: 35%;">
                 <col style="width: 15%;">
                 <col style="width: 15%;">
@@ -2289,19 +2305,6 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
             </tr>
         </table>
     </main>
-    <script>
-        window.addEventListener("load", () => {
-            const logo = document.querySelector(".ics-logo");
-            const printSlip = () => window.setTimeout(() => window.print(), 150);
-
-            if (logo && !logo.complete) {
-                logo.addEventListener("load", printSlip, { once: true });
-                logo.addEventListener("error", printSlip, { once: true });
-            } else {
-                printSlip();
-            }
-        });
-    </script>
 </body>
 </html>`;
 }
