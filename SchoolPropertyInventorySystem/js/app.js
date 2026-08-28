@@ -72,6 +72,7 @@ const dom = {
     mooeYear: document.querySelector("#mooeYear"),
     dateIssue: document.querySelector("#dateIssue"),
     status: document.querySelector("#status"),
+    additionalItem: document.querySelector("#additionalItem"),
     remarks: document.querySelector("#remarks"),
     table: document.querySelector("#inventoryTable"),
     emptyState: document.querySelector("#emptyState"),
@@ -95,13 +96,22 @@ const dom = {
     recentAssets: document.querySelector("#recentAssets"),
     accountablePersonChart: document.querySelector("#accountablePersonChart"),
     qrAssetList: document.querySelector("#qrAssetList"),
-    reportSummary: document.querySelector("#reportSummary"),
+    physicalReport: document.querySelector("#physicalReport"),
+    allAssetsTable: document.querySelector("#allAssetsTable"),
+    assetCount: document.querySelector("#assetCount"),
+    assetDatabaseSearch: document.querySelector("#assetDatabaseSearch"),
+    reportInventoryType: document.querySelector("#reportInventoryType"),
+    reportFundCluster: document.querySelector("#reportFundCluster"),
+    reportAsOf: document.querySelector("#reportAsOf"),
+    generatePdfBtn: document.querySelector("#generatePdfBtn"),
+    certifiedCorrectedBy: document.querySelector("#certifiedCorrectedBy"),
+    approvedBy: document.querySelector("#approvedBy"),
+    verifiedBy: document.querySelector("#verifiedBy"),
     newItemBtnInline: document.querySelector("#newItemBtnInline"),
     resetFormBtn: document.querySelector("#resetFormBtn"),
     downloadQrBtn: document.querySelector("#downloadQrBtn"),
     openQrLinkBtn: document.querySelector("#openQrLinkBtn"),
     copyQrBtn: document.querySelector("#copyQrBtn"),
-    printReportBtn: document.querySelector("#printReportBtn"),
     themeButtons: document.querySelectorAll("[data-theme-choice]"),
     toast: document.querySelector("#toast"),
     databaseStatus: document.querySelector("#databaseStatus"),
@@ -120,6 +130,8 @@ let selectedId = null;
 let classificationOptions = [];
 let statusOptions = [];
 let teacherOptions = [];
+let signatoryOptions = [];
+let signatoryLoadFailed = false;
 let canOpenClassificationModal = false;
 let canOpenStatusModal = false;
 let inventoryPage = 1;
@@ -290,6 +302,39 @@ async function loadTeacherOptions() {
     }
 
     applySelectedTeacherDetails();
+}
+
+async function loadSignatoryOptions() {
+    signatoryOptions = [];
+    signatoryLoadFailed = false;
+
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/signatories?select=signatory`, {
+            headers: supabaseHeaders
+        });
+
+        if (!response.ok) throw new Error("Unable to load signatory options from Supabase.");
+
+        const rows = await response.json();
+        signatoryOptions = [...new Set((rows || [])
+            .map((row) => String(row.signatory || "").trim())
+            .filter(Boolean))]
+            .sort((first, second) => first.localeCompare(second, undefined, { sensitivity: "base" }));
+    } catch (error) {
+        console.error(error);
+        signatoryLoadFailed = true;
+    }
+
+    [dom.certifiedCorrectedBy, dom.approvedBy, dom.verifiedBy].forEach((select) => {
+        if (!select) return;
+        const currentValue = select.value;
+        const unavailableOption = signatoryLoadFailed
+            ? `<option value="" disabled>Signatories table unavailable</option>`
+            : "";
+        select.innerHTML = `${unavailableOption}<option value="">Select signatory</option>${signatoryOptions
+            .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+        if (signatoryOptions.includes(currentValue)) select.value = currentValue;
+    });
 }
 
 async function loadInventoryTypeOptions() {
@@ -548,7 +593,7 @@ async function loadItems() {
     setDatabaseStatus("Connecting to Supabase...", "Loading inventory records from the backend.");
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,education_level,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,remarks,created_at,updated_at`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,education_level,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,additional_item,remarks,created_at,updated_at`, {
             headers: supabaseHeaders
         });
 
@@ -580,6 +625,7 @@ async function loadItems() {
             mooeYear: row.mooe_year ?? row.mooeYear ?? "",
             dateIssue: row.date_issue || row.dateIssue || "",
             status: row.status || "",
+            additionalItem: row.additional_item || row.additionalItem || "",
             remarks: row.remarks || "",
             createdAt: row.created_at || row.createdAt || "",
             updatedAt: row.updated_at || row.updatedAt || ""
@@ -647,6 +693,7 @@ async function syncToSheet(action, item) {
         mooe_year: item.mooeYear === "" ? null : item.mooeYear,
         date_issue: item.dateIssue,
         status: item.status,
+        additional_item: item.additionalItem || "",
         remarks: item.remarks,
         created_at: item.createdAt,
         updated_at: item.updatedAt
@@ -723,6 +770,7 @@ function getFormData() {
         mooeYear: dom.mooeYear.value.trim(),
         dateIssue: dom.dateIssue.value,
         status: dom.status.value || "",
+        additionalItem: dom.additionalItem.value.trim(),
         remarks: dom.remarks.value.trim(),
         createdAt: (existing && existing.createdAt) || now,
         updatedAt: now
@@ -821,6 +869,7 @@ function fillForm(item) {
     ensureSelectOption(dom.status, item.status || "");
     dom.status.value = item.status || "";
     dom.dateIssue.value = item.dateIssue;
+    dom.additionalItem.value = item.additionalItem || "";
     dom.remarks.value = item.remarks;
     dom.formTitle.textContent = "Edit Property Item";
 }
@@ -1292,23 +1341,217 @@ function renderQrAssetList() {
 }
 
 function renderReports() {
-    const statusCounts = getStatusCounts();
-    const assigned = items.filter((item) => String(item.accountable || "").trim()).length;
-    const rows = [
-        ["Total Assets", items.length],
-        ["Total Property Value", formatPeso(items.reduce((sum, item) => sum + parseMoney(item.total), 0))],
-        ["Assigned Assets", assigned],
-        ["Available Assets", statusCounts.Available],
-        ["For Repair", statusCounts["For Repair"]],
-        ["Disposed", statusCounts.Disposed]
+    renderReportOptions();
+    if (!dom.reportAsOf.value) {
+        dom.reportAsOf.value = new Date().toISOString().slice(0, 10);
+    }
+    renderPhysicalCountReport();
+    renderAllAssetsView();
+}
+
+function renderAllAssetsView() {
+    if (!dom.allAssetsTable) return;
+    const query = (dom.assetDatabaseSearch?.value || "").trim().toLowerCase();
+    const filteredItems = items.filter((item) => !query || Object.values(item).join(" ").toLowerCase().includes(query));
+    const fields = [
+        "assetId", "educationLevel", "fundCluster", "inventoryType", "propertyNo", "itemClassification",
+        "itemBrandModel", "serialNo", "acquisitionDate", "accountable", "schoolLevel", "semiExpandableNo",
+        "unitValue", "total", "unitMeasurement", "balance", "onHand", "shortageOverageQty", "shortageOverageValue",
+        "location", "mooeMonth", "mooeYear", "dateIssue", "status", "additionalItem", "remarks"
     ];
 
-    dom.reportSummary.innerHTML = rows.map(([label, value]) => `
-        <div class="report-item">
-            <span>${escapeHtml(label)}</span>
-            <strong>${escapeHtml(value)}</strong>
+    dom.assetCount.textContent = `${filteredItems.length} ${filteredItems.length === 1 ? "asset" : "assets"}`;
+    dom.allAssetsTable.innerHTML = filteredItems.length
+        ? filteredItems.map((item) => `<tr>${fields.map((field) => `<td>${reportCell(item[field], "-")}</td>`).join("")}</tr>`).join("")
+        : `<tr><td colspan="26" class="report-empty-row">No matching assets</td></tr>`;
+}
+
+function getReportItems() {
+    const inventoryType = dom.reportInventoryType.value;
+    const fundCluster = dom.reportFundCluster.value;
+
+    return items.filter((item) => {
+        const matchesType = !inventoryType || (item.inventoryType || "") === inventoryType;
+        const matchesFund = !fundCluster || (item.fundCluster || "") === fundCluster;
+        return matchesType && matchesFund;
+    });
+}
+
+function formatReportDate(value) {
+    if (!value) return "________________";
+    return new Intl.DateTimeFormat("en-PH", { month: "long", day: "numeric", year: "numeric" })
+        .format(new Date(`${value}T00:00:00`));
+}
+
+function renderReportOptions() {
+    const selectedType = dom.reportInventoryType.value;
+    const selectedFund = dom.reportFundCluster.value;
+    const types = [...new Set(items.map((item) => item.inventoryType).filter(Boolean))].sort();
+    const funds = [...new Set(items.map((item) => item.fundCluster).filter(Boolean))].sort();
+
+    dom.reportInventoryType.innerHTML = `<option value="">All inventory types</option>${types.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+    dom.reportFundCluster.innerHTML = `<option value="">All fund clusters</option>${funds.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+    dom.reportInventoryType.value = types.includes(selectedType) ? selectedType : "";
+    dom.reportFundCluster.value = funds.includes(selectedFund) ? selectedFund : "";
+}
+
+function reportCell(value, fallback = "") {
+    return escapeHtml(value === 0 ? "0" : (value || fallback));
+}
+
+function renderPhysicalCountReport() {
+    if (!dom.physicalReport) return;
+    const reportItems = getReportItems();
+    const inventoryType = dom.reportInventoryType.value || "SCHOOL FURNITURES";
+    const fundCluster = dom.reportFundCluster.value || "____________________________";
+    const signatories = [
+        ["Certified Correct by:", dom.certifiedCorrectedBy?.value || ""],
+        ["Approved by:", dom.approvedBy?.value || ""],
+        ["Verified by:", dom.verifiedBy?.value || ""]
+    ];
+
+    dom.physicalReport.innerHTML = `
+        <div class="physical-report-header">
+            <strong>REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY</strong>
+            <strong class="report-title-underline">${escapeHtml(inventoryType.toUpperCase())}</strong>
+            <span>(Type of Inventory Item)</span>
+            <span>As of <u>${formatReportDate(dom.reportAsOf.value)}</u></span>
         </div>
-    `).join("");
+        <div class="report-fund-cluster"><strong>Fund Cluster :</strong> ${escapeHtml(fundCluster)}</div>
+        <div class="physical-report-table-wrap">
+            <table class="physical-report-table">
+                <colgroup>
+                    <col class="report-col-article">
+                    <col class="report-col-description">
+                    <col class="report-col-property-number">
+                    <col class="report-col-unit-measure">
+                    <col class="report-col-unit-value">
+                    <col class="report-col-total">
+                    <col class="report-col-date-acquired">
+                    <col class="report-col-balance">
+                    <col class="report-col-on-hand">
+                    <col class="report-col-shortage-quantity">
+                    <col class="report-col-shortage-value">
+                    <col class="report-col-accountable">
+                    <col class="report-col-location">
+                    <col class="report-col-status">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th rowspan="2">Article</th>
+                        <th rowspan="2">Description</th>
+                        <th rowspan="2">Semi-Expandable<br>Property Number</th>
+                        <th rowspan="2">Unit of<br>Measure</th>
+                        <th colspan="2">Amount</th>
+                        <th rowspan="2">Date<br>Acquired</th>
+                        <th rowspan="2">Balance Per<br>Card<br><small>(Quantity)</small></th>
+                        <th rowspan="2">On Hand<br>Per Count<br><small>(Quantity)</small></th>
+                        <th colspan="2">Shortage/Overage</th>
+                        <th colspan="3">Remarks</th>
+                    </tr>
+                    <tr>
+                        <th>Unit Value</th>
+                        <th>Total</th>
+                        <th>Quantity</th>
+                        <th>Value</th>
+                        <th>Current Accountable Personnel</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${reportItems.length ? reportItems.map((item) => `
+                        <tr>
+                            <td>${reportCell(item.inventoryType || item.itemClassification)}</td>
+                            <td>${reportCell(item.itemBrandModel)}</td>
+                            <td>${reportCell(item.semiExpandableNo || item.propertyNo)}</td>
+                            <td>${reportCell(item.unitMeasurement)}</td>
+                            <td>${reportCell(item.unitValue)}</td>
+                            <td>${reportCell(item.total)}</td>
+                            <td>${reportCell(item.acquisitionDate)}</td>
+                            <td>${reportCell(item.balance)}</td>
+                            <td>${reportCell(item.onHand)}</td>
+                            <td>${reportCell(item.shortageOverageQty)}</td>
+                            <td>${reportCell(item.shortageOverageValue)}</td>
+                            <td>${reportCell(item.accountable)}</td>
+                            <td>${reportCell(item.location)}</td>
+                            <td>${reportCell(item.status)}</td>
+                        </tr>
+                    `).join("") : `<tr><td colspan="14" class="report-empty-row">No matching inventory records</td></tr>`}
+                </tbody>
+            </table>
+        </div>
+        <div class="report-signatures">
+            ${signatories.map(([label, value], index) => `<div><span>${label}</span><strong class="report-signatory-name">${reportCell(value, "")}</strong><i></i><small>${index === 0 ? "Signature over Printed Name of Inventory<br>Committee Chair and Members" : index === 1 ? "Signature over Printed Name of Head of<br>Agency/Entity or Authorized" : "Signature over Printed Name of COA Representative"}</small></div>`).join("")}
+        </div>
+    `;
+}
+
+async function generateReportPdf() {
+    if (!window.html2canvas || !window.jspdf?.jsPDF) {
+        showToast("PDF tools are still loading. Check your internet connection and try again.");
+        return;
+    }
+
+    const report = dom.physicalReport;
+    const previous = { overflow: report.style.overflow, maxHeight: report.style.maxHeight, width: report.style.width };
+    report.style.overflow = "visible";
+    report.style.maxHeight = "none";
+    report.style.width = `${report.scrollWidth}px`;
+    report.classList.add("pdf-export");
+
+    try {
+        const canvas = await window.html2canvas(report, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+        const { jsPDF } = window.jspdf;
+        const pageWidth = 13;
+        const pageHeight = 8.5;
+        const pageMargin = 0.2;
+        const bottomMargin = 0.5;
+        const contentWidth = pageWidth - (pageMargin * 2);
+        const contentHeight = pageHeight - pageMargin - bottomMargin;
+        const pdf = new jsPDF({ orientation: "landscape", unit: "in", format: [pageWidth, pageHeight] });
+        const imageWidth = contentWidth;
+        const imageHeight = (canvas.height * imageWidth) / canvas.width;
+        const sourcePageHeight = Math.floor((contentHeight * canvas.width) / imageWidth);
+        let sourceOffset = 0;
+
+        while (sourceOffset < canvas.height) {
+            if (sourceOffset > 0) pdf.addPage([pageWidth, pageHeight], "landscape");
+
+            const sliceHeight = Math.min(sourcePageHeight, canvas.height - sourceOffset);
+            const pageCanvas = document.createElement("canvas");
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = sliceHeight;
+            pageCanvas.getContext("2d").drawImage(
+                canvas,
+                0,
+                sourceOffset,
+                canvas.width,
+                sliceHeight,
+                0,
+                0,
+                canvas.width,
+                sliceHeight
+            );
+
+            const pageImageHeight = (sliceHeight * imageWidth) / canvas.width;
+            pdf.addImage(pageCanvas.toDataURL("image/png"), "PNG", pageMargin, pageMargin, imageWidth, pageImageHeight);
+            pdf.setFillColor(255, 255, 255);
+            pdf.rect(0, pageHeight - bottomMargin, pageWidth, bottomMargin, "F");
+            sourceOffset += sliceHeight;
+        }
+
+        pdf.save(`physical-count-report-${dom.reportAsOf.value || "undated"}.pdf`);
+        showToast("PDF generated successfully.");
+    } catch (error) {
+        console.error(error);
+        showToast("Unable to generate the PDF.");
+    } finally {
+        report.style.overflow = previous.overflow;
+        report.style.maxHeight = previous.maxHeight;
+        report.style.width = previous.width;
+        report.classList.remove("pdf-export");
+    }
 }
 
 function parseMoney(value) {
@@ -1710,7 +1953,7 @@ function getSharedField(records, key) {
 
 function getSlipDescription(item) {
     return [
-        item.itemBrandModel || item.itemClassification || "Inventory item",
+        item.description || item.itemBrandModel || item.itemClassification || "Inventory item",
         item.serialNo ? `Serial No. ${item.serialNo}` : "",
         item.itemClassification && item.itemBrandModel ? item.itemClassification : ""
     ].filter(Boolean).join(" / ");
@@ -1734,20 +1977,23 @@ function createSlipRows(records) {
             `;
         }
 
-        const quantity = item.onHand || item.balance || "1";
-        const unitCost = item.unitValue ? formatPeso(parseMoney(item.unitValue)) : "";
-        const totalCost = item.total ? formatPeso(parseMoney(item.total)) : unitCost;
-        const inventoryNumber = item.semiExpandableNo || item.propertyNo || item.assetId || "";
+        const quantity = item.quantity || item.onHand || item.balance || "1";
+        const unitCostValue = item.unitCost ?? item.unitValue ?? "";
+        const totalCostValue = item.totalCost ?? item.total ?? "";
+        const unitCost = unitCostValue !== "" ? formatPeso(parseMoney(unitCostValue)) : "";
+        const totalCost = totalCostValue !== "" ? formatPeso(parseMoney(totalCostValue)) : unitCost;
+        const inventoryNumber = item.inventoryItemNo || item.semiExpandableNo || item.propertyNo || item.assetId || "";
+        const estimatedUsefulLife = item.estimatedUsefulLife || item.remarks || "";
 
         return `
             <tr>
                 <td>${escapeHtml(quantity)}</td>
-                <td>${escapeHtml(item.unitMeasurement || "unit")}</td>
+                <td>${escapeHtml(item.unit || item.unitMeasurement || "unit")}</td>
                 <td>${escapeHtml(unitCost)}</td>
                 <td>${escapeHtml(totalCost)}</td>
                 <td class="ics-description">${escapeHtml(getSlipDescription(item))}</td>
                 <td>${escapeHtml(inventoryNumber)}</td>
-                <td>${escapeHtml(item.remarks || "")}</td>
+                <td>${escapeHtml(estimatedUsefulLife)}</td>
             </tr>
         `;
     }).join("");
@@ -1773,12 +2019,16 @@ async function getLogoDataUrl() {
     }
 }
 
-function buildInventoryCustodianSlip(records, logoSrc) {
-    const entityName = "School Property Information System";
-    const fundCluster = getSharedField(records, "fundCluster");
-    const icsNo = getSharedField(records, "propertyNo") || getSharedField(records, "assetId");
-    const receivedBy = getSharedField(records, "accountable");
-    const dateIssued = formatSlipDate(getSharedField(records, "dateIssue")) || formatSlipDate(new Date().toISOString());
+function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
+    const entityName = options.entityName || "School Property Information System";
+    const fundCluster = options.fundCluster || getSharedField(records, "fundCluster");
+    const icsNo = options.icsNo || getSharedField(records, "propertyNo") || getSharedField(records, "assetId");
+    const receivedFrom = options.receivedFrom || getSharedField(records, "receivedFrom");
+    const receivedBy = options.receivedBy || getSharedField(records, "accountable") || getSharedField(records, "receivedBy");
+    const receivedFromPosition = options.receivedFromPosition || getSharedField(records, "receivedFromPosition");
+    const receivedByPosition = options.receivedByPosition || getSharedField(records, "receivedByPosition");
+    const receivedFromDate = formatSlipDate(options.receivedFromDate || getSharedField(records, "receivedFromDate"));
+    const receivedByDate = formatSlipDate(options.receivedByDate || getSharedField(records, "receivedByDate") || getSharedField(records, "dateIssue")) || formatSlipDate(new Date().toISOString());
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -2023,19 +2273,19 @@ function buildInventoryCustodianSlip(records, logoSrc) {
             </tr>
             <tr>
                 <td>
-                    <div class="signature-line">&nbsp;<span class="caption">Signature Over Printed Name</span></div>
+                    <div class="signature-line">${escapeHtml(receivedFrom)}<span class="caption">Signature Over Printed Name</span></div>
                 </td>
                 <td>
                     <div class="signature-line">${escapeHtml(receivedBy)}<span class="caption">Signature Over Printed Name</span></div>
                 </td>
             </tr>
             <tr>
-                <td class="position-line"><span class="caption">Position/Office</span></td>
-                <td class="position-line"><span class="caption">Position/Office</span></td>
+                <td class="position-line">${escapeHtml(receivedFromPosition)}<span class="caption">Position/Office</span></td>
+                <td class="position-line">${escapeHtml(receivedByPosition)}<span class="caption">Position/Office</span></td>
             </tr>
             <tr>
-                <td class="date-line"><span class="caption">Date</span></td>
-                <td class="date-line">${escapeHtml(dateIssued)}<span class="caption">Date</span></td>
+                <td class="date-line">${escapeHtml(receivedFromDate)}<span class="caption">Date</span></td>
+                <td class="date-line">${escapeHtml(receivedByDate)}<span class="caption">Date</span></td>
             </tr>
         </table>
     </main>
@@ -2443,8 +2693,17 @@ function wireEvents() {
     if (dom.copyQrBtn) {
         dom.copyQrBtn.addEventListener("click", copyQrData);
     }
-    if (dom.printReportBtn) {
-        dom.printReportBtn.addEventListener("click", generateInventoryCustodianSlip);
+    if (dom.generatePdfBtn) {
+        dom.generatePdfBtn.addEventListener("click", generateReportPdf);
+    }
+    [dom.reportInventoryType, dom.reportFundCluster, dom.reportAsOf].forEach((control) => {
+        if (control) control.addEventListener("input", renderPhysicalCountReport);
+    });
+    [dom.certifiedCorrectedBy, dom.approvedBy, dom.verifiedBy].forEach((control) => {
+        if (control) control.addEventListener("change", renderPhysicalCountReport);
+    });
+    if (dom.assetDatabaseSearch) {
+        dom.assetDatabaseSearch.addEventListener("input", renderAllAssetsView);
     }
     if (dom.qrAssetList) {
         dom.qrAssetList.addEventListener("click", (event) => {
@@ -2492,6 +2751,7 @@ async function init() {
     wireEvents();
     await loadItems();
     await loadTeacherOptions();
+    await loadSignatoryOptions();
     await loadInventoryTypeOptions();
     await loadEducationLevelOptions();
     await loadClassificationOptions();
@@ -2516,3 +2776,395 @@ async function init() {
 }
 
 init();
+
+const inventoryCustodianSlipStorageKey = "propertyInventoryCustodianSlips";
+let inventoryCustodianSlips = [];
+
+function hasInventoryCustodianSlipRemoteDatabase() {
+    return Boolean(supabaseUrl && supabaseAnonKey && supabaseAnonKey !== "YOUR_SUPABASE_ANON_KEY");
+}
+
+function loadInventoryCustodianSlips() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(inventoryCustodianSlipStorageKey) || "[]");
+        return Array.isArray(stored) ? stored : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveInventoryCustodianSlips() {
+    try {
+        localStorage.setItem(inventoryCustodianSlipStorageKey, JSON.stringify(inventoryCustodianSlips));
+    } catch (error) {
+        console.error("Unable to save Inventory Custodian Slips locally.", error);
+    }
+}
+
+function getInventoryCustodianSlipHeaderPayload(slip) {
+    return {
+        ics_no: slip.icsNo,
+        entity_name: slip.entityName,
+        fund_cluster: slip.fundCluster || null,
+        received_from_name: slip.receivedFrom || null,
+        received_from_position: slip.receivedFromPosition || null,
+        received_from_date: slip.receivedFromDate || null,
+        received_by_name: slip.receivedBy || null,
+        received_by_position: slip.receivedByPosition || null,
+        received_by_date: slip.receivedByDate || null
+    };
+}
+
+function getInventoryCustodianSlipItemPayload(slip, slipId, lineNo) {
+    return {
+        ics_slip_id: slipId,
+        line_no: lineNo,
+        asset_id: null,
+        inventory_item_no: slip.inventoryItemNo || null,
+        description_snapshot: slip.description,
+        quantity: Number(slip.quantity),
+        unit: slip.unit || null,
+        unit_cost: Number(slip.unitCost),
+        total_cost: Number(slip.totalCost),
+        estimated_useful_life: slip.estimatedUsefulLife || null
+    };
+}
+
+function mapInventoryCustodianSlipRows(rows) {
+    return (rows || []).flatMap((header) => {
+        const lineItems = Array.isArray(header.ics_slip_items) ? header.ics_slip_items : [];
+        return lineItems
+            .sort((first, second) => Number(first.line_no) - Number(second.line_no))
+            .map((item) => ({
+                id: `ICS-${header.id}-${item.id}`,
+                dbSlipId: header.id,
+                dbItemId: item.id,
+                lineNo: item.line_no,
+                entityName: header.entity_name || "",
+                fundCluster: header.fund_cluster || "",
+                icsNo: header.ics_no || "",
+                inventoryItemNo: item.inventory_item_no || "",
+                description: item.description_snapshot || "",
+                quantity: item.quantity ?? "",
+                unit: item.unit || "",
+                unitCost: item.unit_cost ?? "",
+                totalCost: item.total_cost ?? "",
+                estimatedUsefulLife: item.estimated_useful_life || "",
+                receivedFrom: header.received_from_name || "",
+                receivedBy: header.received_by_name || "",
+                receivedFromPosition: header.received_from_position || "",
+                receivedByPosition: header.received_by_position || "",
+                receivedFromDate: header.received_from_date || "",
+                receivedByDate: header.received_by_date || ""
+            }));
+    });
+}
+
+async function loadInventoryCustodianSlipsFromDatabase() {
+    if (!hasInventoryCustodianSlipRemoteDatabase()) return false;
+
+    const select = [
+        "id", "ics_no", "entity_name", "fund_cluster",
+        "received_from_name", "received_from_position", "received_from_date",
+        "received_by_name", "received_by_position", "received_by_date",
+        "ics_slip_items(id,line_no,inventory_item_no,description_snapshot,quantity,unit,unit_cost,total_cost,estimated_useful_life)"
+    ].join(",");
+    const response = await fetch(`${supabaseUrl}/rest/v1/ics_slips?select=${encodeURIComponent(select)}&order=created_at.desc`, {
+        headers: supabaseHeaders
+    });
+
+    if (!response.ok) {
+        throw new Error(`Unable to load Inventory Custodian Slips: HTTP ${response.status}`);
+    }
+
+    inventoryCustodianSlips = mapInventoryCustodianSlipRows(await response.json());
+    saveInventoryCustodianSlips();
+    return true;
+}
+
+async function requestInventoryCustodianSlipDatabase(path, options = {}) {
+    const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
+        ...options,
+        headers: {
+            ...supabaseHeaders,
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+            ...(options.headers || {})
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`ICS database request failed: HTTP ${response.status}`);
+    }
+
+    return response;
+}
+
+async function saveInventoryCustodianSlipToDatabase(action, slip) {
+    const sameSlipRows = inventoryCustodianSlips.filter((entry) => entry.dbSlipId && entry.icsNo === slip.icsNo);
+    let slipId = slip.dbSlipId || sameSlipRows[0]?.dbSlipId;
+    const headerPayload = getInventoryCustodianSlipHeaderPayload(slip);
+
+    if (slipId) {
+        await requestInventoryCustodianSlipDatabase(`ics_slips?id=eq.${encodeURIComponent(slipId)}`, {
+            method: "PATCH",
+            body: JSON.stringify(headerPayload)
+        });
+    } else {
+        const response = await requestInventoryCustodianSlipDatabase("ics_slips", {
+            method: "POST",
+            body: JSON.stringify(headerPayload)
+        });
+        const rows = await response.json();
+        slipId = rows[0]?.id;
+        if (!slipId) throw new Error("ICS header was created without an identifier.");
+    }
+
+    if (action === "update" && slip.dbItemId) {
+        await requestInventoryCustodianSlipDatabase(`ics_slip_items?id=eq.${encodeURIComponent(slip.dbItemId)}`, {
+            method: "PATCH",
+            body: JSON.stringify(getInventoryCustodianSlipItemPayload(slip, slipId, slip.lineNo || 1))
+        });
+    } else {
+        const lineNo = Math.max(0, ...sameSlipRows.map((entry) => Number(entry.lineNo) || 0)) + 1;
+        await requestInventoryCustodianSlipDatabase("ics_slip_items", {
+            method: "POST",
+            body: JSON.stringify(getInventoryCustodianSlipItemPayload(slip, slipId, lineNo))
+        });
+    }
+}
+
+async function deleteInventoryCustodianSlipFromDatabase(slip) {
+    const itemCount = inventoryCustodianSlips.filter((entry) => entry.dbSlipId === slip.dbSlipId).length;
+    if (slip.dbSlipId && itemCount <= 1) {
+        await requestInventoryCustodianSlipDatabase(`ics_slips?id=eq.${encodeURIComponent(slip.dbSlipId)}`, { method: "DELETE" });
+        return;
+    }
+
+    if (slip.dbItemId) {
+        await requestInventoryCustodianSlipDatabase(`ics_slip_items?id=eq.${encodeURIComponent(slip.dbItemId)}`, { method: "DELETE" });
+    }
+}
+
+function updateInventoryCustodianSlipTotal() {
+    const quantity = Number(document.querySelector("#icsQuantity").value);
+    const unitCost = Number(document.querySelector("#icsUnitCost").value);
+    const totalCost = document.querySelector("#icsTotalCost");
+    totalCost.value = Number.isFinite(quantity) && Number.isFinite(unitCost)
+        ? (quantity * unitCost).toFixed(2)
+        : "";
+}
+
+function resetInventoryCustodianSlipForm() {
+    const form = document.querySelector("#icsSlipForm");
+    if (!form) return;
+
+    form.reset();
+    document.querySelector("#icsEditingId").value = "";
+    document.querySelector("#icsTotalCost").value = "";
+    document.querySelector("#icsFormTitle").textContent = "Inventory Custodian Slip";
+}
+
+function getInventoryCustodianSlipFormData() {
+    const value = (selector) => document.querySelector(selector).value.trim();
+
+    return {
+        id: document.querySelector("#icsEditingId").value || `ICS-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        entityName: value("#icsEntityName"),
+        fundCluster: value("#icsFundCluster"),
+        icsNo: value("#icsNo"),
+        inventoryItemNo: value("#icsInventoryItemNo"),
+        description: value("#icsDescription"),
+        quantity: value("#icsQuantity"),
+        unit: value("#icsUnit"),
+        unitCost: value("#icsUnitCost"),
+        totalCost: value("#icsTotalCost"),
+        estimatedUsefulLife: value("#icsEstimatedUsefulLife"),
+        receivedFrom: value("#icsReceivedFrom"),
+        receivedBy: value("#icsReceivedBy"),
+        receivedFromPosition: value("#icsReceivedFromPosition"),
+        receivedByPosition: value("#icsReceivedByPosition"),
+        receivedFromDate: value("#icsReceivedFromDate"),
+        receivedByDate: value("#icsReceivedByDate")
+    };
+}
+
+function renderInventoryCustodianSlipTable() {
+    const table = document.querySelector("#icsSlipTable");
+    if (!table) return;
+
+    table.innerHTML = inventoryCustodianSlips.length
+        ? inventoryCustodianSlips.map((slip) => `
+            <tr>
+                <td>${escapeHtml(slip.icsNo)}</td>
+                <td>${escapeHtml(slip.entityName)}</td>
+                <td>${escapeHtml(slip.description)}</td>
+                <td>${escapeHtml(slip.receivedBy || "-")}</td>
+                <td>${escapeHtml(formatPeso(Number(slip.totalCost) || 0))}</td>
+                <td>
+                    <div class="row-actions">
+                        <button type="button" data-ics-action="open" data-ics-id="${escapeHtml(slip.id)}">Open</button>
+                        <button type="button" data-ics-action="edit" data-ics-id="${escapeHtml(slip.id)}">Edit</button>
+                        <button type="button" data-ics-action="delete" data-ics-id="${escapeHtml(slip.id)}">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `).join("")
+        : '<tr><td colspan="6">No Inventory Custodian Slip records yet.</td></tr>';
+}
+
+function editInventoryCustodianSlip(id) {
+    const slip = inventoryCustodianSlips.find((entry) => entry.id === id);
+    if (!slip) return;
+
+    const fieldMap = {
+        icsEditingId: "id",
+        icsEntityName: "entityName",
+        icsFundCluster: "fundCluster",
+        icsNo: "icsNo",
+        icsInventoryItemNo: "inventoryItemNo",
+        icsDescription: "description",
+        icsQuantity: "quantity",
+        icsUnit: "unit",
+        icsUnitCost: "unitCost",
+        icsTotalCost: "totalCost",
+        icsEstimatedUsefulLife: "estimatedUsefulLife",
+        icsReceivedFrom: "receivedFrom",
+        icsReceivedBy: "receivedBy",
+        icsReceivedFromPosition: "receivedFromPosition",
+        icsReceivedByPosition: "receivedByPosition",
+        icsReceivedFromDate: "receivedFromDate",
+        icsReceivedByDate: "receivedByDate"
+    };
+
+    Object.entries(fieldMap).forEach(([elementId, property]) => {
+        document.querySelector(`#${elementId}`).value = slip[property] || "";
+    });
+    document.querySelector("#icsFormTitle").textContent = "Edit Inventory Custodian Slip";
+    showModule("document");
+}
+
+async function initInventoryCustodianSlipCrud() {
+    const form = document.querySelector("#icsSlipForm");
+    const table = document.querySelector("#icsSlipTable");
+    if (!form || !table) return;
+
+    inventoryCustodianSlips = loadInventoryCustodianSlips();
+    renderInventoryCustodianSlipTable();
+
+    try {
+        if (await loadInventoryCustodianSlipsFromDatabase()) {
+            renderInventoryCustodianSlipTable();
+        }
+    } catch (error) {
+        console.error(error);
+        showToast("ICS database unavailable. Using local saved slips.");
+    }
+
+    ["#icsQuantity", "#icsUnitCost"].forEach((selector) => {
+        document.querySelector(selector).addEventListener("input", updateInventoryCustodianSlipTotal);
+    });
+
+    document.querySelector("#icsClearBtn").addEventListener("click", resetInventoryCustodianSlipForm);
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+
+        const slip = getInventoryCustodianSlipFormData();
+        const existingIndex = inventoryCustodianSlips.findIndex((entry) => entry.id === slip.id);
+        const action = existingIndex >= 0 ? "update" : "create";
+
+        try {
+            if (hasInventoryCustodianSlipRemoteDatabase()) {
+                const existing = existingIndex >= 0 ? inventoryCustodianSlips[existingIndex] : null;
+                await saveInventoryCustodianSlipToDatabase(action, { ...existing, ...slip });
+                await loadInventoryCustodianSlipsFromDatabase();
+            } else if (existingIndex >= 0) {
+                inventoryCustodianSlips[existingIndex] = slip;
+            } else {
+                inventoryCustodianSlips.unshift(slip);
+            }
+
+            saveInventoryCustodianSlips();
+            renderInventoryCustodianSlipTable();
+            resetInventoryCustodianSlipForm();
+            showToast(action === "update" ? "Inventory Custodian Slip updated." : "Inventory Custodian Slip saved.");
+        } catch (error) {
+            console.error(error);
+            showToast("Unable to save the Inventory Custodian Slip to Supabase.");
+        }
+    });
+
+    table.addEventListener("click", async (event) => {
+        const button = event.target.closest("button[data-ics-action]");
+        if (!button) return;
+
+        const slip = inventoryCustodianSlips.find((entry) => entry.id === button.dataset.icsId);
+        if (!slip) return;
+
+        if (button.dataset.icsAction === "open") {
+            openInventoryCustodianSlipPdf(slip);
+            return;
+        }
+
+        if (button.dataset.icsAction === "edit") {
+            editInventoryCustodianSlip(slip.id);
+            return;
+        }
+
+        if (button.dataset.icsAction === "delete") {
+            if (!window.confirm(`Delete ICS item from ${slip.icsNo}?`)) return;
+
+            try {
+                if (hasInventoryCustodianSlipRemoteDatabase()) {
+                    await deleteInventoryCustodianSlipFromDatabase(slip);
+                    await loadInventoryCustodianSlipsFromDatabase();
+                } else {
+                    inventoryCustodianSlips = inventoryCustodianSlips.filter((entry) => entry.id !== slip.id);
+                }
+
+                saveInventoryCustodianSlips();
+                renderInventoryCustodianSlipTable();
+                resetInventoryCustodianSlipForm();
+                showToast("Inventory Custodian Slip deleted.");
+            } catch (error) {
+                console.error(error);
+                showToast("Unable to delete the Inventory Custodian Slip from Supabase.");
+            }
+        }
+    });
+}
+
+initInventoryCustodianSlipCrud();
+async function openInventoryCustodianSlipPdf(slip) {
+    const slipItems = inventoryCustodianSlips
+        .filter((entry) => slip.dbSlipId ? entry.dbSlipId === slip.dbSlipId : entry.icsNo === slip.icsNo)
+        .sort((first, second) => Number(first.lineNo || 0) - Number(second.lineNo || 0));
+    if (!slipItems.length) {
+        showToast("No ICS items are available for this document.");
+        return;
+    }
+
+    const headerSlip = slipItems[0];
+
+    const preview = window.open("", "_blank");
+    if (!preview) {
+        showToast("Please allow popups to generate the ICS PDF.");
+        return;
+    }
+
+    preview.document.open();
+    preview.document.write(buildInventoryCustodianSlip(slipItems, await getLogoDataUrl(), {
+        entityName: headerSlip.entityName,
+        fundCluster: headerSlip.fundCluster,
+        icsNo: headerSlip.icsNo,
+        receivedFrom: headerSlip.receivedFrom,
+        receivedBy: headerSlip.receivedBy,
+        receivedFromPosition: headerSlip.receivedFromPosition,
+        receivedByPosition: headerSlip.receivedByPosition,
+        receivedFromDate: headerSlip.receivedFromDate,
+        receivedByDate: headerSlip.receivedByDate
+    }));
+    preview.document.close();
+    showToast("Inventory Custodian Slip PDF opened.");
+}

@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260827c">
 </head>
 <body>
     <div class="app-shell">
@@ -31,6 +31,10 @@
                 <button class="nav-item" type="button" data-view="qr">
                     <img class="nav-icon" src="images/qr_code_1.svg" alt="QR Codes" data-theme-icon="images/qr_code_1.svg" data-theme-icon-light="images/qr_code_2.svg">
                     QR Codes
+                </button>
+                <button class="nav-item" type="button" data-view="document">
+                    <img class="nav-icon" src="images/document_2.svg" alt="Document" data-theme-icon="images/document_2.svg" data-theme-icon-light="images/document_1.svg">
+                    Document
                 </button>
                 <button class="nav-item" type="button" data-view="reports">
                     <img class="nav-icon" src="images/report_1.svg" alt="Reports" data-theme-icon="images/report_1.svg" data-theme-icon-light="images/report_2.svg">
@@ -250,19 +254,19 @@
                             <input id="unitMeasurement" type="text" placeholder="e.g. pcs">
                         </label>
                         <label>
-                            Total
-                            <input id="total" type="number" min="0" step="0.01" readonly>
+                            On Hand
+                            <input id="onHand" type="number" min="0" step="0.01">
                         </label>
                     </div>
 
                     <div class="two-column">
                         <label>
-                            Balance
-                            <input id="balance" type="number" min="0" step="0.01">
+                            Total
+                            <input id="total" type="number" min="0" step="0.01" readonly>
                         </label>
                         <label>
-                            On Hand
-                            <input id="onHand" type="number" min="0" step="0.01">
+                            Balance
+                            <input id="balance" type="number" min="0" step="0.01">
                         </label>
                     </div>
 
@@ -324,6 +328,11 @@
                         </label>
                         <div aria-hidden="true"></div>
                     </div>
+
+                    <label class="full-width">
+                        Additional Item
+                        <textarea id="additionalItem" class="large-remarks" rows="4" placeholder="Additional item details..."></textarea>
+                    </label>
 
                     <label class="full-width">
                         Remarks
@@ -436,21 +445,191 @@
 
             <div class="module-view" data-module="reports">
                 <section class="reports-grid">
-                    <article class="module-card">
-                        <p class="eyebrow">Reports</p>
-                        <h2>Inventory Summary</h2>
-                        <div class="report-list" id="reportSummary"></div>
+                    <article class="module-card report-generator-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Report Generator</p>
+                                <h2>Physical Count Report</h2>
+                            </div>
+                        </div>
+                        <div class="report-controls" aria-label="Report filters">
+                            <label>
+                                Type of Inventory Item
+                                <select id="reportInventoryType">
+                                    <option value="">All inventory types</option>
+                                </select>
+                            </label>
+                            <label>
+                                Fund Cluster
+                                <select id="reportFundCluster">
+                                    <option value="">All fund clusters</option>
+                                </select>
+                            </label>
+                            <label>
+                                As of
+                                <input id="reportAsOf" type="date">
+                            </label>
+                        </div>
+                        <div class="physical-report" id="physicalReport" aria-live="polite"></div>
                     </article>
-                    <article class="module-card">
-                        <p class="eyebrow">Export</p>
-                        <h2>Printable Records</h2>
-                        <p class="module-copy">Generate the Inventory Custodian Slip from the current inventory table or export from your Supabase-backed data source.</p>
-                        <button class="secondary-button" type="button" id="printReportBtn">Generate ICS PDF</button>
+                    <article class="module-card signatory-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Signatories</p>
+                                <h2>Report Signatories</h2>
+                            </div>
+                        </div>
+                        <div class="signatory-fields">
+                            <label>
+                                Certified corrected by:
+                                <select id="certifiedCorrectedBy">
+                                    <option value="">Select signatory</option>
+                                </select>
+                            </label>
+                            <label>
+                                Approved by:
+                                <select id="approvedBy">
+                                    <option value="">Select signatory</option>
+                                </select>
+                            </label>
+                            <label>
+                                Verified by:
+                                <select id="verifiedBy">
+                                    <option value="">Select signatory</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="report-actions">
+                            <button class="secondary-button" type="button" id="generatePdfBtn">Generate PDF</button>
+                        </div>
+                    </article>
+                    <article class="module-card all-assets-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Database View</p>
+                                <h2>All Assets</h2>
+                            </div>
+                            <span class="asset-count" id="assetCount">0 assets</span>
+                        </div>
+                        <label class="asset-search">
+                            Search all asset data
+                            <input id="assetDatabaseSearch" type="search" placeholder="Search property number, person, status...">
+                        </label>
+                        <div class="all-assets-table-wrap">
+                            <table class="all-assets-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asset ID</th>
+                                        <th>Education Level</th>
+                                        <th>Fund Cluster</th>
+                                        <th>Inventory Type</th>
+                                        <th>Property No.</th>
+                                        <th>Classification</th>
+                                        <th>Item/Brand/Model</th>
+                                        <th>Serial No.</th>
+                                        <th>Acquisition Date</th>
+                                        <th>Accountable Person</th>
+                                        <th>School Level</th>
+                                        <th>Semi-Expandable No.</th>
+                                        <th>Unit Value</th>
+                                        <th>Total</th>
+                                        <th>Unit Measurement</th>
+                                        <th>Balance</th>
+                                        <th>On Hand</th>
+                                        <th>Shortage/Overage Qty</th>
+                                        <th>Shortage/Overage Value</th>
+                                        <th>Location</th>
+                                        <th>MOOE Month</th>
+                                        <th>MOOE Year</th>
+                                        <th>Date Issued</th>
+                                        <th>Status</th>
+                                        <th>Additional Item</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="allAssetsTable"></tbody>
+                            </table>
+                        </div>
                     </article>
                 </section>
             </div>
 
-            <div class="module-view" data-module="settings">
+            <div class="module-view" data-module="document">
+                <section class="reports-grid">
+                    <form class="item-form" id="icsSlipForm">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Document Template</p>
+                                <h2 id="icsFormTitle">Inventory Custodian Slip</h2>
+                            </div>
+                        </div>
+                        <p class="module-copy">Create and manage Inventory Custodian Slip records based on the standard ICS form.</p>
+                        <input id="icsEditingId" type="hidden">
+
+                        <div class="two-column">
+                            <label>Entity Name<input id="icsEntityName" type="text" required></label>
+                            <label>Fund Cluster<input id="icsFundCluster" type="text" required></label>
+                        </div>
+                        <div class="two-column">
+                            <label>ICS No.<input id="icsNo" type="text" required></label>
+                            <label>Inventory Item No.<input id="icsInventoryItemNo" type="text" required></label>
+                        </div>
+                        <label class="full-width">Description<textarea id="icsDescription" rows="3" required></textarea></label>
+                        <div class="two-column">
+                            <label>Quantity<input id="icsQuantity" type="number" min="0" step="1" required></label>
+                            <label>Unit<input id="icsUnit" type="text" placeholder="e.g. pcs" required></label>
+                        </div>
+                        <div class="two-column">
+                            <label>Unit Cost<input id="icsUnitCost" type="number" min="0" step="0.01" required></label>
+                            <label>Total Cost<input id="icsTotalCost" type="number" min="0" step="0.01" readonly></label>
+                        </div>
+                        <div class="two-column">
+                            <label>Estimated Useful Life<input id="icsEstimatedUsefulLife" type="text" placeholder="e.g. 5 years"></label>
+                            <div aria-hidden="true"></div>
+                        </div>
+                        <div class="two-column">
+                            <label>Received From<input id="icsReceivedFrom" type="text"></label>
+                            <label>Received By<input id="icsReceivedBy" type="text"></label>
+                        </div>
+                        <div class="two-column">
+                            <label>From Position/Office<input id="icsReceivedFromPosition" type="text"></label>
+                            <label>Recipient Position/Office<input id="icsReceivedByPosition" type="text"></label>
+                        </div>
+                        <div class="two-column">
+                            <label>Date Received From<input id="icsReceivedFromDate" type="date"></label>
+                            <label>Date Received By<input id="icsReceivedByDate" type="date"></label>
+                        </div>
+                        <div class="form-actions-row">
+                            <button class="secondary-button" id="icsClearBtn" type="button">Clear</button>
+                            <button class="primary-button" type="submit">Save Slip</button>
+                        </div>
+                    </form>
+
+                    <article class="module-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Saved Documents</p>
+                                <h2>Inventory Custodian Slips</h2>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ICS No.</th>
+                                        <th>Entity</th>
+                                        <th>Description</th>
+                                        <th>Recipient</th>
+                                        <th>Total Cost</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="icsSlipTable"></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </section>
+            </div>            <div class="module-view" data-module="settings">
                 <section class="settings-grid">
                     <article class="module-card">
                         <p class="eyebrow">Appearance</p>
@@ -523,7 +702,7 @@
                     <article class="module-card">
                         <p class="eyebrow">Modules</p>
                         <h2>Included Menus</h2>
-                        <p class="module-copy">Dashboard, Inventory, QR Codes, Reports, Settings, and About are available from the sidebar navigation.</p>
+                        <p class="module-copy">Dashboard, Inventory, QR Codes, Reports, Document, Settings, and About are available from the sidebar navigation.</p>
                     </article>
                     <article class="module-card">
                         <p class="eyebrow">Developer</p>
@@ -543,6 +722,8 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="supabase-config.js?v=20260826"></script>
     <script src="js/app.js?v=20260828ics"></script>
 </body>
