@@ -1339,6 +1339,17 @@ function formatShortDate(value) {
     }).format(new Date(timestamp));
 }
 
+function formatSlipDate(value) {
+    const timestamp = getTimestamp(value);
+    if (!timestamp) return "";
+
+    return new Intl.DateTimeFormat("en-PH", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    }).format(new Date(timestamp));
+}
+
 function getFilteredItems() {
     const query = dom.searchInput.value.trim().toLowerCase();
     const status = dom.statusFilter.value;
@@ -1684,6 +1695,384 @@ function openSelectedAssetLink() {
     if (!popup) {
         showToast("Please allow popups for this site.");
     }
+}
+
+function getSlipRecords() {
+    const filteredItems = getFilteredItems();
+    return filteredItems.length ? filteredItems : items;
+}
+
+function getSharedField(records, key) {
+    const values = [...new Set(records.map((item) => String(item[key] || "").trim()).filter(Boolean))];
+    if (!values.length) return "";
+    return values.length === 1 ? values[0] : "Multiple";
+}
+
+function getSlipDescription(item) {
+    return [
+        item.itemBrandModel || item.itemClassification || "Inventory item",
+        item.serialNo ? `Serial No. ${item.serialNo}` : "",
+        item.itemClassification && item.itemBrandModel ? item.itemClassification : ""
+    ].filter(Boolean).join(" / ");
+}
+
+function createSlipRows(records) {
+    const visibleRows = Math.max(records.length, 8);
+    return Array.from({ length: visibleRows }, (_, index) => {
+        const item = records[index];
+        if (!item) {
+            return `
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            `;
+        }
+
+        const quantity = item.onHand || item.balance || "1";
+        const unitCost = item.unitValue ? formatPeso(parseMoney(item.unitValue)) : "";
+        const totalCost = item.total ? formatPeso(parseMoney(item.total)) : unitCost;
+        const inventoryNumber = item.semiExpandableNo || item.propertyNo || item.assetId || "";
+
+        return `
+            <tr>
+                <td>${escapeHtml(quantity)}</td>
+                <td>${escapeHtml(item.unitMeasurement || "unit")}</td>
+                <td>${escapeHtml(unitCost)}</td>
+                <td>${escapeHtml(totalCost)}</td>
+                <td class="ics-description">${escapeHtml(getSlipDescription(item))}</td>
+                <td>${escapeHtml(inventoryNumber)}</td>
+                <td>${escapeHtml(item.remarks || "")}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+async function getLogoDataUrl() {
+    const logoUrl = new URL("images/caso_logo.png", window.location.href).href;
+
+    try {
+        const response = await fetch(logoUrl);
+        if (!response.ok) throw new Error("Logo load failed");
+        const blob = await response.blob();
+
+        return await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error || new Error("Logo read failed"));
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.warn("Unable to embed CASO logo, falling back to image path.", error);
+        return logoUrl;
+    }
+}
+
+function buildInventoryCustodianSlip(records, logoSrc) {
+    const entityName = "School Property Information System";
+    const fundCluster = getSharedField(records, "fundCluster");
+    const icsNo = getSharedField(records, "propertyNo") || getSharedField(records, "assetId");
+    const receivedBy = getSharedField(records, "accountable");
+    const dateIssued = formatSlipDate(getSharedField(records, "dateIssue")) || formatSlipDate(new Date().toISOString());
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventory Custodian Slip</title>
+    <style>
+        @page {
+            size: 210mm 297mm;
+            margin: 10mm 12mm;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0;
+            background: #ffffff;
+        }
+
+        body {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            color: #000000;
+            background: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            line-height: 1.25;
+        }
+
+        .ics-sheet {
+            width: 186mm;
+            min-height: 277mm;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        .ics-header {
+            display: grid;
+            grid-template-columns: 50px 1fr 50px;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .ics-logo {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+        }
+
+        h1 {
+            margin: 0;
+            text-align: center;
+            font-size: 15px;
+            letter-spacing: 0;
+        }
+
+        .ics-meta {
+            width: 100%;
+            margin-bottom: 8px;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .ics-meta td {
+            height: 24px;
+            padding: 3px 4px;
+            border: 1px solid #000000;
+            vertical-align: bottom;
+        }
+
+        .ics-meta .label {
+            width: 78px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .ics-meta .ics-number-label {
+            width: 58px;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .ics-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .ics-table th,
+        .ics-table td {
+            border: 1px solid #000000;
+            padding: 4px 5px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .ics-table th {
+            height: 26px;
+            font-weight: 700;
+        }
+
+        .ics-table td {
+            height: 28px;
+        }
+
+        .ics-table .amount-heading {
+            border-bottom: 1px solid #000000;
+        }
+
+        .ics-table .ics-description {
+            text-align: left;
+        }
+
+        .ics-signatures {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .ics-signatures td {
+            border: 1px solid #000000;
+            padding: 5px 8px;
+            vertical-align: top;
+        }
+
+        .ics-signatures .sign-title {
+            height: 28px;
+            font-weight: 700;
+        }
+
+        .signature-line {
+            height: 42px;
+            padding-top: 22px;
+            text-align: center;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .caption {
+            display: block;
+            margin-top: 2px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 400;
+            text-transform: none;
+        }
+
+        .position-line,
+        .date-line {
+            height: 28px;
+            text-align: center;
+        }
+
+        .no-print {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+        }
+
+        .no-print button {
+            padding: 8px 12px;
+            border: 1px solid #000000;
+            color: #000000;
+            background: #ffffff;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+
+            .ics-sheet {
+                width: 186mm;
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print"><button type="button" onclick="window.print()">Print / Save PDF</button></div>
+    <main class="ics-sheet">
+        <header class="ics-header">
+            <img class="ics-logo" src="${logoSrc}" alt="CASO logo">
+            <h1>INVENTORY CUSTODIAN SLIP</h1>
+            <span></span>
+        </header>
+
+        <table class="ics-meta" aria-label="Inventory custodian slip details">
+            <tr>
+                <td class="label">Entity Name:</td>
+                <td>${escapeHtml(entityName)}</td>
+                <td class="ics-number-label" rowspan="2">ICS No.:</td>
+                <td rowspan="2">${escapeHtml(icsNo)}</td>
+            </tr>
+            <tr>
+                <td class="label">Fund Cluster:</td>
+                <td>${escapeHtml(fundCluster)}</td>
+            </tr>
+        </table>
+
+        <table class="ics-table" aria-label="Inventory items">
+            <colgroup>
+                <col style="width: 11%;">
+                <col style="width: 6%;">
+                <col style="width: 9%;">
+                <col style="width: 9%;">
+                <col style="width: 35%;">
+                <col style="width: 15%;">
+                <col style="width: 15%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th rowspan="2">Quantity</th>
+                    <th rowspan="2">Unit</th>
+                    <th class="amount-heading" colspan="2">Amount</th>
+                    <th rowspan="2">Description</th>
+                    <th rowspan="2">Inventory Item No.</th>
+                    <th rowspan="2">Estimated Useful Life</th>
+                </tr>
+                <tr>
+                    <th>Unit Cost</th>
+                    <th>Total Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${createSlipRows(records)}
+            </tbody>
+        </table>
+
+        <table class="ics-signatures" aria-label="Received signatures">
+            <tr>
+                <td class="sign-title">Received from:</td>
+                <td class="sign-title">Received by:</td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="signature-line">&nbsp;<span class="caption">Signature Over Printed Name</span></div>
+                </td>
+                <td>
+                    <div class="signature-line">${escapeHtml(receivedBy)}<span class="caption">Signature Over Printed Name</span></div>
+                </td>
+            </tr>
+            <tr>
+                <td class="position-line"><span class="caption">Position/Office</span></td>
+                <td class="position-line"><span class="caption">Position/Office</span></td>
+            </tr>
+            <tr>
+                <td class="date-line"><span class="caption">Date</span></td>
+                <td class="date-line">${escapeHtml(dateIssued)}<span class="caption">Date</span></td>
+            </tr>
+        </table>
+    </main>
+    <script>
+        window.addEventListener("load", () => {
+            const logo = document.querySelector(".ics-logo");
+            const printSlip = () => window.setTimeout(() => window.print(), 150);
+
+            if (logo && !logo.complete) {
+                logo.addEventListener("load", printSlip, { once: true });
+                logo.addEventListener("error", printSlip, { once: true });
+            } else {
+                printSlip();
+            }
+        });
+    </script>
+</body>
+</html>`;
+}
+
+async function generateInventoryCustodianSlip() {
+    const records = getSlipRecords();
+
+    if (!records.length) {
+        showToast("Add inventory records before generating an ICS PDF.");
+        return;
+    }
+
+    const slipWindow = window.open("", "_blank");
+    if (!slipWindow) {
+        showToast("Please allow popups to generate the ICS PDF.");
+        return;
+    }
+
+    slipWindow.document.open();
+    slipWindow.document.write(buildInventoryCustodianSlip(records, await getLogoDataUrl()));
+    slipWindow.document.close();
 }
 
 async function handleSave(event) {
@@ -2055,7 +2444,7 @@ function wireEvents() {
         dom.copyQrBtn.addEventListener("click", copyQrData);
     }
     if (dom.printReportBtn) {
-        dom.printReportBtn.addEventListener("click", () => window.print());
+        dom.printReportBtn.addEventListener("click", generateInventoryCustodianSlip);
     }
     if (dom.qrAssetList) {
         dom.qrAssetList.addEventListener("click", (event) => {
