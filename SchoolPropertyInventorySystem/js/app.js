@@ -111,6 +111,7 @@ const dom = {
     resetFormBtn: document.querySelector("#resetFormBtn"),
     downloadQrBtn: document.querySelector("#downloadQrBtn"),
     openQrLinkBtn: document.querySelector("#openQrLinkBtn"),
+    qrNextBtn: document.querySelector(".qr-next-button"),
     copyQrBtn: document.querySelector("#copyQrBtn"),
     themeButtons: document.querySelectorAll("[data-theme-choice]"),
     toast: document.querySelector("#toast"),
@@ -142,6 +143,7 @@ let isRefreshingStatusOptions = false;
 let isStatusSelectionLocked = false;
 let isRefreshingClassificationOptions = false;
 let isClassificationSelectionLocked = false;
+let usingRemoteBackend = false;
 
 function loadPersistedClassifications() {
     try {
@@ -544,10 +546,6 @@ async function removeClassificationOption(value) {
         console.error(error);
         showToast(`Failed to remove classification "${normalized}" from Supabase.`);
     }
-}
-
-function parseClassificationOptions(csv) {
-    return [];
 }
 
 function populateClassificationOptions(options) {
@@ -969,11 +967,11 @@ function getVisibleStatusNames() {
 }
 
 function renderStats() {
-    const accountablePersons = new Set(items.map((item) => String(item.accountable || "").trim()).filter(Boolean));
+    const assignedCount = items.filter((item) => String(item.accountable || "").trim()).length;
     const classifications = new Set(items.map((item) => String(item.itemClassification || "").trim().toLocaleLowerCase()).filter(Boolean));
 
     dom.totalItems.textContent = items.length;
-    dom.assignedItems.textContent = accountablePersons.size;
+    dom.assignedItems.textContent = assignedCount;
     dom.repairItems.textContent = classifications.size;
     dom.qrItems.textContent = items.length;
 }
@@ -1929,6 +1927,21 @@ function openSelectedAssetLink() {
     }
 }
 
+function selectNextQrItem() {
+    if (!items.length) {
+        showToast("No assets available.");
+        return;
+    }
+    const currentIndex = items.findIndex((item) => item.assetId === selectedId);
+    const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % items.length : 0;
+    selectedId = items[nextIndex].assetId;
+    renderQr();
+    if (dom.qrAssetList) {
+        renderQrAssetList();
+    }
+    showToast("QR preview advanced to next item.");
+}
+
 async function handleSave(event) {
     event.preventDefault();
     const data = getFormData();
@@ -2293,6 +2306,9 @@ function wireEvents() {
     }
     if (dom.openQrLinkBtn) {
         dom.openQrLinkBtn.addEventListener("click", openSelectedAssetLink);
+    }
+    if (dom.qrNextBtn) {
+        dom.qrNextBtn.addEventListener("click", selectNextQrItem);
     }
     if (dom.copyQrBtn) {
         dom.copyQrBtn.addEventListener("click", copyQrData);
@@ -2740,7 +2756,7 @@ async function initInventoryCustodianSlipCrud() {
 }
 
 initInventoryCustodianSlipCrud();
-function openInventoryCustodianSlipPdf(slip) {
+async function openInventoryCustodianSlipPdf(slip) {
     const JsPdf = window.jspdf && window.jspdf.jsPDF;
     if (!JsPdf) {
         showToast("PDF generation library is unavailable.");
@@ -2755,42 +2771,69 @@ function openInventoryCustodianSlipPdf(slip) {
         return;
     }
 
-    const pdf = new JsPdf({ orientation: "landscape", unit: "mm", format: "a4" });
-    const pageWidth = 297;
-    const pageHeight = 210;
-    const margin = 10;
-    const columns = [18, 18, 27, 27, 83, 47, 47];
-    const headers = ["Quantity", "Unit", "Unit Cost", "Total Cost", "Description", "Inventory Item No.", "Estimated Useful Life"];
+    const pdf = new JsPdf({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const margin = 8;
+    // Column ratios follow the uploaded ICS.xlsx template (A:H), including its merged Description field.
+    const columns = [20, 11, 14.5, 16.5, 61.5, 29, 28.5];
     const formatAmount = (value) => `PHP ${Number(value || 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const headerSlip = slipItems[0];
-    let y = 12;
+    const tableStartY = 61;
+    const tableBottomY = 167;
+    let y = margin;
+
+    const loadSeal = () => new Promise((resolve) => {
+        const seal = new Image();
+        seal.onload = () => resolve(seal);
+        seal.onerror = () => resolve(null);
+        seal.src = "images/caso_logo.png";
+    });
+    const seal = await loadSeal();
 
     const drawDocumentHeading = () => {
+        if (seal) pdf.addImage(seal, "PNG", pageWidth - margin - 19, y, 19, 19);
         pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(14);
-        pdf.text("INVENTORY CUSTODIAN SLIP", pageWidth / 2, y, { align: "center" });
-        y += 10;
+        pdf.setFontSize(16);
+        pdf.text("INVENTORY CUSTODIAN SLIP", pageWidth / 2, y + 8, { align: "center" });
         pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(9);
-        pdf.text(`Entity Name: ${headerSlip.entityName || "-"}`, margin, y);
-        pdf.text(`Fund Cluster: ${headerSlip.fundCluster || "-"}`, margin, y + 6);
-        pdf.text(`ICS No.: ${headerSlip.icsNo || "-"}`, pageWidth - margin, y + 6, { align: "right" });
-        y += 15;
+        pdf.setFontSize(10);
+        pdf.text("Entity Name:", margin, y + 27);
+        pdf.text(String(headerSlip.entityName || "-"), margin + 25, y + 27);
+        pdf.text("Fund Cluster:", margin, y + 35);
+        pdf.text(String(headerSlip.fundCluster || "-"), margin + 25, y + 35);
+        pdf.text("ICS No.:", pageWidth - margin - 46, y + 35);
+        pdf.text(String(headerSlip.icsNo || "-"), pageWidth - margin, y + 35, { align: "right" });
+        y = tableStartY;
     };
 
     const drawTableHeader = () => {
         let x = margin;
-        const headerHeight = 12;
+        const headerHeight = 14;
+        const subHeaderHeight = 8;
+        const fullHeight = headerHeight + subHeaderHeight;
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(7);
-        headers.forEach((header, index) => {
-            pdf.rect(x, y, columns[index], headerHeight);
-            const lines = pdf.splitTextToSize(header, columns[index] - 3);
-            pdf.text(lines, x + columns[index] / 2, y + 4.5, { align: "center" });
-            x += columns[index];
+        [["Quantity", columns[0]], ["Unit", columns[1]]].forEach(([label, width]) => {
+            pdf.rect(x, y, width, fullHeight);
+            pdf.text(label, x + width / 2, y + fullHeight / 2 + 1.5, { align: "center" });
+            x += width;
+        });
+        pdf.rect(x, y, columns[2] + columns[3], headerHeight);
+        pdf.text("Amount", x + (columns[2] + columns[3]) / 2, y + 5.5, { align: "center" });
+        pdf.rect(x, y + headerHeight, columns[2], subHeaderHeight);
+        pdf.text("Unit Cost", x + columns[2] / 2, y + headerHeight + 5, { align: "center" });
+        x += columns[2];
+        pdf.rect(x, y + headerHeight, columns[3], subHeaderHeight);
+        pdf.text("Total Cost", x + columns[3] / 2, y + headerHeight + 5, { align: "center" });
+        x += columns[3];
+        [["Description", columns[4]], ["Inventory Item No.", columns[5]], ["Estimated Useful Life", columns[6]]].forEach(([label, width]) => {
+            pdf.rect(x, y, width, fullHeight);
+            pdf.text(pdf.splitTextToSize(label, width - 3), x + width / 2, y + fullHeight / 2 - 1, { align: "center" });
+            x += width;
         });
         pdf.setFont("helvetica", "normal");
-        y += headerHeight;
+        y += fullHeight;
     };
 
     drawDocumentHeading();
@@ -2807,11 +2850,11 @@ function openInventoryCustodianSlipPdf(slip) {
             item.estimatedUsefulLife || "-"
         ];
         const wrappedValues = values.map((value, index) => pdf.splitTextToSize(String(value || "-"), columns[index] - 3));
-        const rowHeight = Math.max(9, ...wrappedValues.map((lines) => lines.length * 4.2 + 3));
+        const rowHeight = Math.max(7, ...wrappedValues.map((lines) => lines.length * 3.6 + 3));
 
-        if (y + rowHeight > 165) {
+        if (y + rowHeight > tableBottomY) {
             pdf.addPage();
-            y = 12;
+            y = margin;
             drawDocumentHeading();
             drawTableHeader();
         }
@@ -2820,35 +2863,45 @@ function openInventoryCustodianSlipPdf(slip) {
         pdf.setFontSize(7);
         wrappedValues.forEach((lines, index) => {
             pdf.rect(x, y, columns[index], rowHeight);
-            pdf.text(lines, x + 1.5, y + 4.5);
+            pdf.text(lines, x + 1.5, y + 4.2);
             x += columns[index];
         });
         y += rowHeight;
     });
 
-    if (y + 36 > pageHeight - margin) {
-        pdf.addPage();
-        y = 18;
-    } else {
-        y += 12;
+    while (y < tableBottomY) {
+        const rowHeight = Math.min(7, tableBottomY - y);
+        let x = margin;
+        columns.forEach((width) => {
+            pdf.rect(x, y, width, rowHeight);
+            x += width;
+        });
+        y += rowHeight;
     }
 
-    const signatureWidth = 115;
+    if (y + 49 > pageHeight - margin) {
+        pdf.addPage();
+        y = pageHeight - 57;
+    } else {
+        y = Math.max(y + 12, tableBottomY + 8);
+    }
+
+    const signatureWidth = 88;
     const rightSignatureX = pageWidth - margin - signatureWidth;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
+    pdf.setFontSize(10);
     pdf.text("Received from:", margin, y);
     pdf.text("Received by:", rightSignatureX, y);
-    y += 17;
+    y += 16;
     pdf.line(margin, y, margin + signatureWidth, y);
     pdf.line(rightSignatureX, y, rightSignatureX + signatureWidth, y);
-    pdf.setFontSize(8);
+    pdf.setFontSize(9);
     pdf.text(headerSlip.receivedFrom || "Signature over printed name", margin + signatureWidth / 2, y + 4, { align: "center" });
     pdf.text(headerSlip.receivedBy || "Signature over printed name", rightSignatureX + signatureWidth / 2, y + 4, { align: "center" });
-    y += 12;
+    y += 11;
     pdf.text(headerSlip.receivedFromPosition || "Position/Office", margin + signatureWidth / 2, y, { align: "center" });
     pdf.text(headerSlip.receivedByPosition || "Position/Office", rightSignatureX + signatureWidth / 2, y, { align: "center" });
-    y += 8;
+    y += 9;
     pdf.text(`Date: ${headerSlip.receivedFromDate || "-"}`, margin + signatureWidth / 2, y, { align: "center" });
     pdf.text(`Date: ${headerSlip.receivedByDate || "-"}`, rightSignatureX + signatureWidth / 2, y, { align: "center" });
 

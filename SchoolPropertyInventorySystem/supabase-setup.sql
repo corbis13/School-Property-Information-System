@@ -229,3 +229,71 @@ create policy "Allow public ICS slip access" on public.ics_slips
 
 create policy "Allow public ICS slip item access" on public.ics_slip_items
   for all to anon, authenticated using (true) with check (true);
+
+-- ============================================================================
+-- PRODUCTION HARDENING
+-- ----------------------------------------------------------------------------
+-- The policies above are intentionally permissive so the no-login app works out
+-- of the box. Before deploying to a real environment, run the statements below
+-- to switch to the recommended security baseline:
+--
+--   * Public (anon) can only READ asset/lookup data (needed for the QR asset
+--     detail page and public dashboard).
+--   * All INSERT / UPDATE / DELETE operations require a signed-in user
+--     (the `authenticated` role).
+--
+-- You must also enable Supabase Auth (e.g. email/password) and have the app
+-- attach the user's access token to the Authorization header on mutations.
+-- ============================================================================
+
+-- assets: keep public read, restrict mutations to authenticated
+drop policy if exists "Allow public insert access to assets" on public.assets;
+drop policy if exists "Allow public update access to assets" on public.assets;
+drop policy if exists "Allow public delete access to assets" on public.assets;
+
+create policy "Allow authenticated insert access to assets" on public.assets
+  for insert to authenticated with check (true);
+
+create policy "Allow authenticated update access to assets" on public.assets
+  for update to authenticated using (true) with check (true);
+
+create policy "Allow authenticated delete access to assets" on public.assets
+  for delete to authenticated using (true);
+
+-- classifications: keep public read, restrict mutations to authenticated
+drop policy if exists "Allow public insert access to classifications" on public.classifications;
+drop policy if exists "Allow public update access to classifications" on public.classifications;
+drop policy if exists "Allow public delete access to classifications" on public.classifications;
+
+create policy "Allow authenticated insert access to classifications" on public.classifications
+  for insert to authenticated with check (true);
+
+create policy "Allow authenticated update access to classifications" on public.classifications
+  for update to authenticated using (true) with check (true);
+
+create policy "Allow authenticated delete access to classifications" on public.classifications
+  for delete to authenticated using (true);
+
+-- statuses: keep public read, restrict mutations to authenticated
+drop policy if exists "Allow public insert access to statuses" on public.statuses;
+drop policy if exists "Allow public update access to statuses" on public.statuses;
+drop policy if exists "Allow public delete access to statuses" on public.statuses;
+
+create policy "Allow authenticated insert access to statuses" on public.statuses
+  for insert to authenticated with check (true);
+
+create policy "Allow authenticated update access to statuses" on public.statuses
+  for update to authenticated using (true) with check (true);
+
+create policy "Allow authenticated delete access to statuses" on public.statuses
+  for delete to authenticated using (true);
+
+-- ICS: keep public read, restrict mutations to authenticated
+drop policy if exists "Allow public ICS slip access" on public.ics_slips;
+drop policy if exists "Allow public ICS slip item access" on public.ics_slip_items;
+
+create policy "Allow authenticated ICS slip access" on public.ics_slips
+  for all to authenticated using (true) with check (true);
+
+create policy "Allow authenticated ICS slip item access" on public.ics_slip_items
+  for all to authenticated using (true) with check (true);

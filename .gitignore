@@ -1,0 +1,25 @@
+# Windows metadata
+desktop.ini
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Temp / scratch
+tmp_*.py
+*.log
+*.tmp
+
+# OS
+.DS_Store
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+
+# Supabase secrets - never commit real keys
+.env
+.env.*
