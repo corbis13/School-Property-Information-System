@@ -132,6 +132,7 @@ let classificationOptions = [];
 let statusOptions = [];
 let teacherOptions = [];
 let signatoryOptions = [];
+let signatoryEntries = [];
 let signatoryLoadFailed = false;
 let canOpenClassificationModal = false;
 let canOpenStatusModal = false;
@@ -304,23 +305,30 @@ async function loadTeacherOptions() {
     }
 
     applySelectedTeacherDetails();
+    populateIcsReceivedByDropdown();
 }
 
 async function loadSignatoryOptions() {
     signatoryOptions = [];
+    signatoryEntries = [];
     signatoryLoadFailed = false;
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/signatories?select=signatory`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/signatories?select=signatory,position`, {
             headers: supabaseHeaders
         });
 
         if (!response.ok) throw new Error("Unable to load signatory options from Supabase.");
 
         const rows = await response.json();
-        signatoryOptions = [...new Set((rows || [])
-            .map((row) => String(row.signatory || "").trim())
-            .filter(Boolean))]
+        signatoryEntries = (rows || [])
+            .map((row) => ({
+                name: String(row.signatory || "").trim(),
+                position: String(row.position || "").trim()
+            }))
+            .filter((entry) => entry.name);
+
+        signatoryOptions = [...new Set(signatoryEntries.map((entry) => entry.name))]
             .sort((first, second) => first.localeCompare(second, undefined, { sensitivity: "base" }));
     } catch (error) {
         console.error(error);
@@ -337,6 +345,51 @@ async function loadSignatoryOptions() {
             .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
         if (signatoryOptions.includes(currentValue)) select.value = currentValue;
     });
+
+    populateIcsReceivedFromDropdown();
+    populateIcsReceivedByDropdown();
+}
+
+function populateIcsReceivedFromDropdown() {
+    const select = document.querySelector("#icsReceivedFrom");
+    if (!select) return;
+
+    const currentValue = select.value;
+    const unavailableOption = signatoryLoadFailed
+        ? `<option value="" disabled>Signatories table unavailable</option>`
+        : "";
+    select.innerHTML = `${unavailableOption}<option value="">Select signatory</option>${signatoryOptions
+        .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+
+    if (currentValue && !signatoryOptions.includes(currentValue)) {
+        const customOpt = document.createElement("option");
+        customOpt.value = currentValue;
+        customOpt.textContent = currentValue;
+        select.appendChild(customOpt);
+    }
+    if (currentValue) select.value = currentValue;
+}
+
+function populateIcsReceivedByDropdown() {
+    const select = document.querySelector("#icsReceivedBy");
+    if (!select) return;
+
+    const currentValue = select.value;
+    const allNames = [...new Set([
+        ...teacherOptions.map((t) => t.name),
+        ...signatoryEntries.map((s) => s.name)
+    ].filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+
+    select.innerHTML = `<option value="">Select recipient</option>${allNames
+        .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+
+    if (currentValue && !allNames.includes(currentValue)) {
+        const customOpt = document.createElement("option");
+        customOpt.value = currentValue;
+        customOpt.textContent = currentValue;
+        select.appendChild(customOpt);
+    }
+    if (currentValue) select.value = currentValue;
 }
 
 async function loadInventoryTypeOptions() {
@@ -1965,11 +2018,21 @@ function getSharedField(records, key) {
 }
 
 function getSlipDescription(item) {
-    return [
+    const matchedAsset = (typeof items !== "undefined" && Array.isArray(items))
+        ? items.find((a) =>
+            (a.propertyNo && a.propertyNo === (item.inventoryItemNo || item.propertyNo || item.assetId)) ||
+            (a.semiExpandableNo && a.semiExpandableNo === item.inventoryItemNo) ||
+            (a.assetId && a.assetId === (item.inventoryItemNo || item.assetId))
+        )
+        : null;
+    const dateAcquired = item.acquisitionDate || (matchedAsset && matchedAsset.acquisitionDate) || item.receivedFromDate || "";
+    const mainDesc = [
         item.description || item.itemBrandModel || item.itemClassification || "Inventory item",
         item.serialNo ? `Serial No. ${item.serialNo}` : "",
         item.itemClassification && item.itemBrandModel ? item.itemClassification : ""
     ].filter(Boolean).join(" / ");
+
+    return dateAcquired ? `${mainDesc}<br><small>Date Acquired: ${escapeHtml(dateAcquired)}</small>` : mainDesc;
 }
 
 function createSlipRows(records) {
@@ -2013,7 +2076,7 @@ function createSlipRows(records) {
 }
 
 async function getLogoDataUrl() {
-    const logoUrl = new URL("images/caso_logo.png", window.location.href).href;
+    const logoUrl = new URL("images/deped_logo.png", window.location.href).href;
 
     try {
         const response = await fetch(logoUrl);
@@ -3057,7 +3120,19 @@ function editInventoryCustodianSlip(id) {
     };
 
     Object.entries(fieldMap).forEach(([elementId, property]) => {
-        document.querySelector(`#${elementId}`).value = slip[property] || "";
+        const el = document.querySelector(`#${elementId}`);
+        if (!el) return;
+        const val = slip[property] || "";
+        if ((elementId === "icsReceivedFrom" || elementId === "icsReceivedBy") && val) {
+            const hasOption = Array.from(el.options).some((opt) => opt.value === val);
+            if (!hasOption) {
+                const opt = document.createElement("option");
+                opt.value = val;
+                opt.textContent = val;
+                el.appendChild(opt);
+            }
+        }
+        el.value = val;
     });
     document.querySelector("#icsFormTitle").textContent = "Edit Inventory Custodian Slip";
     showModule("document");
@@ -3068,6 +3143,8 @@ async function initInventoryCustodianSlipCrud() {
     const table = document.querySelector("#icsSlipTable");
     if (!form || !table) return;
 
+    populateIcsReceivedFromDropdown();
+    populateIcsReceivedByDropdown();
     inventoryCustodianSlips = loadInventoryCustodianSlips();
     renderInventoryCustodianSlipTable();
 
@@ -3078,6 +3155,38 @@ async function initInventoryCustodianSlipCrud() {
     } catch (error) {
         console.error(error);
         showToast("ICS database unavailable. Using local saved slips.");
+    }
+
+    const receivedFromSelect = document.querySelector("#icsReceivedFrom");
+    if (receivedFromSelect) {
+        receivedFromSelect.addEventListener("change", () => {
+            const selectedName = receivedFromSelect.value.trim();
+            const positionInput = document.querySelector("#icsReceivedFromPosition");
+            if (!positionInput) return;
+            const matched = signatoryEntries.find((entry) => entry.name.toLowerCase() === selectedName.toLowerCase());
+            if (matched && matched.position) {
+                positionInput.value = matched.position;
+            } else if (!selectedName) {
+                positionInput.value = "";
+            }
+        });
+    }
+
+    const receivedBySelect = document.querySelector("#icsReceivedBy");
+    if (receivedBySelect) {
+        receivedBySelect.addEventListener("change", () => {
+            const selectedName = receivedBySelect.value.trim();
+            const positionInput = document.querySelector("#icsReceivedByPosition");
+            if (!positionInput) return;
+            const matchedTeacher = teacherOptions.find((entry) => entry.name.toLowerCase() === selectedName.toLowerCase());
+            const matchedSignatory = signatoryEntries.find((entry) => entry.name.toLowerCase() === selectedName.toLowerCase());
+            const matchedPosition = (matchedTeacher && matchedTeacher.position) || (matchedSignatory && matchedSignatory.position) || "";
+            if (matchedPosition) {
+                positionInput.value = matchedPosition;
+            } else if (!selectedName) {
+                positionInput.value = "";
+            }
+        });
     }
 
     ["#icsQuantity", "#icsUnitCost"].forEach((selector) => {
@@ -3173,20 +3282,33 @@ async function openInventoryCustodianSlipPdf(slip) {
     const pdf = new JsPdf({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = 210;
     const pageHeight = 297;
-    const margin = 8;
+    const marginX = 13; // left & right margin in mm  ← change this to adjust left/right margins
+    const marginY = 8;  // top margin in mm            ← change this to adjust top margin
+
+    // ── Font sizes (pt) ─────────────────────────────────────────────────────
+    const fontTitle         = 16; // "INVENTORY CUSTODIAN SLIP" heading
+    const fontMeta          = 11; // Entity Name / Fund Cluster / ICS No. lines
+    const fontTableHeader   =  10; // column header labels inside the table
+    const fontTableCell     =  10; // data rows inside the table  ← change this to resize cell text
+    const fontSignature     = 11; // "Received from / by" labels
+    const fontSignatureNote =  11; // name / position / date lines under signatures
+    // ────────────────────────────────────────────────────────────────────────
+
     // Column ratios follow the uploaded ICS.xlsx template (A:H), including its merged Description field.
-    const columns = [20, 11, 14.5, 16.5, 61.5, 29, 28.5];
-    const formatAmount = (value) => `PHP ${Number(value || 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const columns = [14, 13, 22, 22, 68, 30, 20];
+    const formatAmount = (value) => `${Number(value || 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const headerSlip = slipItems[0];
-    const tableStartY = 61;
+    const tableStartY = 55;
     const tableBottomY = 167;
-    let y = margin;
+    let y = marginY;
+
+
 
     const loadSeal = () => new Promise((resolve) => {
         const seal = new Image();
         seal.onload = () => resolve(seal);
         seal.onerror = () => resolve(null);
-        seal.src = "images/caso_logo.png";
+        seal.src = "images/deped_logo.png";
     });
     const seal = await loadSeal();
 
@@ -3194,28 +3316,27 @@ async function openInventoryCustodianSlipPdf(slip) {
         // Logo — centered horizontally above the title
         if (seal) pdf.addImage(seal, "PNG", pageWidth / 2 - 9.5, y, 19, 19);
         pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(16);
+        pdf.setFontSize(fontTitle);
         // Title sits just below the logo (logo height 19 + 3 mm gap)
         pdf.text("INVENTORY CUSTODIAN SLIP", pageWidth / 2, y + 24, { align: "center" });
         pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(10);
-        pdf.text("Entity Name:", margin, y + 36);
-        pdf.text(String(headerSlip.entityName || "-"), margin + 25, y + 36);
-        pdf.text("Fund Cluster:", margin, y + 44);
-        pdf.text(String(headerSlip.fundCluster || "-"), margin + 25, y + 44);
-        pdf.text("ICS No.:", pageWidth - margin - 46, y + 44);
-        pdf.text(String(headerSlip.icsNo || "-"), pageWidth - margin, y + 44, { align: "right" });
+        pdf.setFontSize(fontMeta);
+        pdf.text("Entity Name:", marginX, y + 36);
+        pdf.text(String(headerSlip.entityName || "-"), marginX + 25, y + 36);
+        pdf.text("Fund Cluster:", marginX, y + 44);
+        pdf.text(String(headerSlip.fundCluster || "-"), marginX + 25, y + 44);
+        pdf.text("ICS No.:", pageWidth - marginX - 46, y + 44);
+        pdf.text(String(headerSlip.icsNo || "-"), pageWidth - marginX, y + 44, { align: "right" });
         y = tableStartY;
     };
 
-
     const drawTableHeader = () => {
-        let x = margin;
+        let x = marginX;
         const headerHeight = 14;
         const subHeaderHeight = 8;
         const fullHeight = headerHeight + subHeaderHeight;
         pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(7);
+        pdf.setFontSize(fontTableHeader);
         [["Quantity", columns[0]], ["Unit", columns[1]]].forEach(([label, width]) => {
             pdf.rect(x, y, width, fullHeight);
             pdf.text(label, x + width / 2, y + fullHeight / 2 + 1.5, { align: "center" });
@@ -3241,70 +3362,97 @@ async function openInventoryCustodianSlipPdf(slip) {
     drawDocumentHeading();
     drawTableHeader();
 
+    const tableRows = [];
     slipItems.forEach((item) => {
-        const values = [
-            item.quantity,
-            item.unit,
+        const matchedAsset = (typeof items !== "undefined" && Array.isArray(items))
+            ? items.find((a) =>
+                (a.propertyNo && a.propertyNo === item.inventoryItemNo) ||
+                (a.semiExpandableNo && a.semiExpandableNo === item.inventoryItemNo) ||
+                (a.assetId && a.assetId === item.inventoryItemNo)
+            )
+            : null;
+        const dateAcquired = item.acquisitionDate || (matchedAsset && matchedAsset.acquisitionDate) || item.receivedFromDate || "";
+
+        // First row: main item details
+        tableRows.push([
+            item.quantity ?? "",
+            item.unit || "",
             formatAmount(item.unitCost),
             formatAmount(item.totalCost),
-            item.description,
-            item.inventoryItemNo,
+            item.description || "-",
+            item.inventoryItemNo || "",
             item.estimatedUsefulLife || "-"
-        ];
-        const wrappedValues = values.map((value, index) => pdf.splitTextToSize(String(value || "-"), columns[index] - 3));
+        ]);
+
+        // Next row: Date Acquired row under description
+        if (dateAcquired) {
+            tableRows.push([
+                "",
+                "",
+                "",
+                "",
+                `Date Acquired: ${dateAcquired}`,
+                "",
+                ""
+            ]);
+        }
+    });
+
+    // Limit table to exactly 10 rows
+    const maxTableRows = 10;
+    const finalRows = tableRows.slice(0, maxTableRows);
+    while (finalRows.length < maxTableRows) {
+        finalRows.push(["", "", "", "", "", "", ""]);
+    }
+
+    finalRows.forEach((rowValues) => {
+        const wrappedValues = rowValues.map((value, index) => pdf.splitTextToSize(String(value || ""), columns[index] - 3));
         const rowHeight = Math.max(7, ...wrappedValues.map((lines) => lines.length * 3.6 + 3));
 
-        if (y + rowHeight > tableBottomY) {
-            pdf.addPage();
-            y = margin;
-            drawDocumentHeading();
-            drawTableHeader();
-        }
-
-        let x = margin;
-        pdf.setFontSize(7);
+        let x = marginX;
+        pdf.setFontSize(fontTableCell);
         wrappedValues.forEach((lines, index) => {
             pdf.rect(x, y, columns[index], rowHeight);
-            pdf.text(lines, x + 1.5, y + 4.2);
+            if (lines && lines.length > 0 && lines[0] !== "") {
+                if (index === 0 || index === 1) {
+                    // Align center for Quantity and Unit
+                    pdf.text(lines, x + columns[index] / 2, y + 4.2, { align: "center" });
+                } else if (index === 2 || index === 3 || index === 5) {
+                    // Align right for Unit Cost, Total Cost, and Inventory Item No.
+                    pdf.text(lines, x + columns[index] - 1.5, y + 4.2, { align: "right" });
+                } else if (index === 6) {
+                    // Align center for Estimated Useful Life
+                    pdf.text(lines, x + columns[index] / 2, y + 4.2, { align: "center" });
+                } else {
+                    // Align left for Description
+                    pdf.text(lines, x + 1.5, y + 4.2);
+                }
+            }
             x += columns[index];
         });
         y += rowHeight;
     });
 
-    while (y < tableBottomY) {
-        const rowHeight = Math.min(7, tableBottomY - y);
-        let x = margin;
-        columns.forEach((width) => {
-            pdf.rect(x, y, width, rowHeight);
-            x += width;
-        });
-        y += rowHeight;
-    }
+    // Dynamically position signature section directly below the table
+    y += 8;
 
-    if (y + 49 > pageHeight - margin) {
-        pdf.addPage();
-        y = pageHeight - 57;
-    } else {
-        y = Math.max(y + 12, tableBottomY + 8);
-    }
-
-    const signatureWidth = 88;
-    const rightSignatureX = pageWidth - margin - signatureWidth;
+    const signatureWidth = (pageWidth - marginX * 2) / 2 - 4;
+    const rightSignatureX = pageWidth - marginX - signatureWidth;
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(10);
-    pdf.text("Received from:", margin, y);
+    pdf.setFontSize(fontSignature);
+    pdf.text("Received from:", marginX, y);
     pdf.text("Received by:", rightSignatureX, y);
     y += 16;
-    pdf.line(margin, y, margin + signatureWidth, y);
-    pdf.line(rightSignatureX, y, rightSignatureX + signatureWidth, y);
-    pdf.setFontSize(9);
-    pdf.text(headerSlip.receivedFrom || "Signature over printed name", margin + signatureWidth / 2, y + 4, { align: "center" });
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(fontSignatureNote);
+    pdf.text(headerSlip.receivedFrom || "Signature over printed name", marginX + signatureWidth / 2, y + 4, { align: "center" });
     pdf.text(headerSlip.receivedBy || "Signature over printed name", rightSignatureX + signatureWidth / 2, y + 4, { align: "center" });
-    y += 11;
-    pdf.text(headerSlip.receivedFromPosition || "Position/Office", margin + signatureWidth / 2, y, { align: "center" });
+    y += 9.5;
+    pdf.setFont("helvetica", "normal");
+    pdf.text(headerSlip.receivedFromPosition || "Position/Office", marginX + signatureWidth / 2, y, { align: "center" });
     pdf.text(headerSlip.receivedByPosition || "Position/Office", rightSignatureX + signatureWidth / 2, y, { align: "center" });
-    y += 9;
-    pdf.text(`Date: ${headerSlip.receivedFromDate || "-"}`, margin + signatureWidth / 2, y, { align: "center" });
+    y += 5;
+    pdf.text(`Date: ${headerSlip.receivedFromDate || "-"}`, marginX + signatureWidth / 2, y, { align: "center" });
     pdf.text(`Date: ${headerSlip.receivedByDate || "-"}`, rightSignatureX + signatureWidth / 2, y, { align: "center" });
 
     const fileName = `ICS-${String(headerSlip.icsNo || "document").replace(/[<>:"/\\|?*]+/g, "-")}.pdf`;
@@ -3315,3 +3463,4 @@ async function openInventoryCustodianSlipPdf(slip) {
         return;
     }
 }
+

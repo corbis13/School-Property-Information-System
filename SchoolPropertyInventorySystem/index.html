@@ -584,12 +584,20 @@
                             <div aria-hidden="true"></div>
                         </div>
                         <div class="two-column">
-                            <label>Received From<input id="icsReceivedFrom" type="text"></label>
-                            <label>Received By<input id="icsReceivedBy" type="text"></label>
+                            <label>Received From
+                                <select id="icsReceivedFrom">
+                                    <option value="">Select signatory</option>
+                                </select>
+                            </label>
+                            <label>Received By
+                                <select id="icsReceivedBy">
+                                    <option value="">Select recipient</option>
+                                </select>
+                            </label>
                         </div>
                         <div class="two-column">
-                            <label>From Position/Office<input id="icsReceivedFromPosition" type="text"></label>
-                            <label>Recipient Position/Office<input id="icsReceivedByPosition" type="text"></label>
+                            <label>From Position/Office<input id="icsReceivedFromPosition" type="text" readonly></label>
+                            <label>Recipient Position/Office<input id="icsReceivedByPosition" type="text" readonly></label>
                         </div>
                         <div class="two-column">
                             <label>Date Received From<input id="icsReceivedFromDate" type="date"></label>
@@ -720,7 +728,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="supabase-config.js?v=20260826"></script>
-    <script src="js/app.js?v=20260828spis"></script>
+    <script src="supabase-config.js?v=20260901"></script>
+    <script src="js/app.js?v=20260901_v10"></script>
 </body>
 </html>
