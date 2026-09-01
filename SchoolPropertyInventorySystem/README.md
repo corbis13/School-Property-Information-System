@@ -8,7 +8,13 @@ The app is configured to use Supabase as its primary backend.
 
 ### Required config
 
-Update [supabase-config.js](supabase-config.js) with your Supabase URL and anon key.
+`supabase-config.js` is listed in `.gitignore` and is **not committed to the repository**.
+
+To get started:
+
+1. Copy `supabase-config.example.js` → `supabase-config.js`
+2. Fill in your Supabase **Project URL** and **anon / public key** (Project Settings → API in the Supabase dashboard).
+3. Set `assetUrl` to the GitHub Pages URL of `asset.html` (used as the QR code payload).
 
 Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the `inventory_item`, `geras_teacher`, and `signatories` lookup tables and configures public read/write policies for this no-login app.
 

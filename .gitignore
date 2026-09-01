@@ -1,25 +1,58 @@
-# Windows metadata
+# Operating System Files
 desktop.ini
+Desktop.ini
+[Dd]esktop.ini
 Thumbs.db
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-
-# Temp / scratch
-tmp_*.py
-*.log
-*.tmp
-
-# OS
+ehthumbs.db
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 
-# Editors / IDEs
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+env/
+venv/
+ENV/
+
+# Scratch & Temporary Files
+tmp_*
+tmp_*.py
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+*.log
+
+# Editor & IDE Directories
 .vscode/
 .idea/
-*.swp
+*.sublime-project
+*.sublime-workspace
 
-# Supabase secrets - never commit real keys
+# Environment / Local Configurations
 .env
-.env.*
+.env.local
+.env.*.local
+
+# Supabase credentials — copy supabase-config.example.js and fill in your own values
+SchoolPropertyInventorySystem/supabase-config.js
+
+
+# Node.js (for future tooling)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
