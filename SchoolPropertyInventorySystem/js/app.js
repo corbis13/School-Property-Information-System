@@ -1,4 +1,4 @@
-﻿const storageKey = "propertyInventoryItems";
+const storageKey = "propertyInventoryItems";
 const classificationStorageKey = "propertyInventoryClassifications";
 const themeKey = "propertyInventoryTheme";
 const supabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
@@ -3191,20 +3191,23 @@ async function openInventoryCustodianSlipPdf(slip) {
     const seal = await loadSeal();
 
     const drawDocumentHeading = () => {
-        if (seal) pdf.addImage(seal, "PNG", pageWidth - margin - 19, y, 19, 19);
+        // Logo — centered horizontally above the title
+        if (seal) pdf.addImage(seal, "PNG", pageWidth / 2 - 9.5, y, 19, 19);
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(16);
-        pdf.text("INVENTORY CUSTODIAN SLIP", pageWidth / 2, y + 8, { align: "center" });
+        // Title sits just below the logo (logo height 19 + 3 mm gap)
+        pdf.text("INVENTORY CUSTODIAN SLIP", pageWidth / 2, y + 24, { align: "center" });
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(10);
-        pdf.text("Entity Name:", margin, y + 27);
-        pdf.text(String(headerSlip.entityName || "-"), margin + 25, y + 27);
-        pdf.text("Fund Cluster:", margin, y + 35);
-        pdf.text(String(headerSlip.fundCluster || "-"), margin + 25, y + 35);
-        pdf.text("ICS No.:", pageWidth - margin - 46, y + 35);
-        pdf.text(String(headerSlip.icsNo || "-"), pageWidth - margin, y + 35, { align: "right" });
+        pdf.text("Entity Name:", margin, y + 36);
+        pdf.text(String(headerSlip.entityName || "-"), margin + 25, y + 36);
+        pdf.text("Fund Cluster:", margin, y + 44);
+        pdf.text(String(headerSlip.fundCluster || "-"), margin + 25, y + 44);
+        pdf.text("ICS No.:", pageWidth - margin - 46, y + 44);
+        pdf.text(String(headerSlip.icsNo || "-"), pageWidth - margin, y + 44, { align: "right" });
         y = tableStartY;
     };
+
 
     const drawTableHeader = () => {
         let x = margin;
