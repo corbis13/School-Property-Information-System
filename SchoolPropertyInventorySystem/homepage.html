@@ -121,15 +121,15 @@
       box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
     }
   </style>
-  <link rel="stylesheet" href="css/spis-modules.css?v=20260903d">
+  <link rel="stylesheet" href="css/spis-modules.css?v=20260903f">
 </head>
 <body class="bg-[#f0f4f8] text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-green selection:text-white">
 
   <!-- Main Container -->
-  <div class="flex flex-1 min-h-screen overflow-hidden">
+  <div class="app-shell flex flex-1 min-h-screen overflow-hidden">
     
     <!-- LEFT SIDEBAR -->
-    <aside class="w-[260px] sidebar-bg text-white flex flex-col justify-between shrink-0 z-30 shadow-xl relative select-none">
+    <aside class="app-sidebar w-[260px] sidebar-bg text-white flex flex-col justify-between shrink-0 z-30 shadow-xl relative select-none">
       
       <!-- Top Section -->
       <div>
@@ -241,7 +241,7 @@
     </aside>
 
     <!-- RIGHT MAIN WRAPPER -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <div class="app-main flex-1 flex flex-col min-w-0 overflow-y-auto">
       
       <!-- TOP NAVBAR -->
       <header class="bg-white border-b border-slate-200 px-6 py-3.5 flex items-center justify-between sticky top-0 z-20 shadow-sm">
@@ -301,7 +301,6 @@
         <div id="schoolLevelChart" style="display:none;"></div>
         <div id="acquisitionYearChart" style="display:none;"></div>
         <div id="dateIssueYearChart" style="display:none;"></div>
-        <div id="recentAssets" style="display:none;"></div>
         <div id="accountablePersonChart" style="display:none;"></div>
         <div id="portfolioChart" style="display:none;"></div>
         <div id="portfolioLegend" style="display:none;"></div>
@@ -373,7 +372,7 @@
             </div>
 
             <!-- 4 STAT CARDS (KEY METRICS) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+            <div class="dashboard-stats-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
               
               <!-- Stat 1: Total Properties -->
               <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow card-shadow-hover flex flex-col justify-between">
@@ -454,7 +453,7 @@
             </div>
 
             <!-- 2 MIDDLE CARDS (Property by Category & Maintenance Requests) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="dashboard-middle-grid grid grid-cols-1 md:grid-cols-2 gap-6">
               
               <!-- CARD 1: PROPERTY BY CATEGORY -->
               <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow flex flex-col justify-between">
@@ -465,12 +464,12 @@
                       PROPERTY BY CATEGORY
                     </h2>
                     <div class="relative">
-                      <select class="appearance-none text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md px-2.5 py-1 pr-6 cursor-pointer focus:outline-none focus:border-[#004c87]">
+                      <select class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-4 pr-9 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
                         <option>This Month</option>
                         <option>Last Month</option>
                         <option>This Year</option>
                       </select>
-                      <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                      <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
                     </div>
                   </div>
 
@@ -512,7 +511,7 @@
                     </div>
 
                     <!-- Legend Items -->
-                    <div class="space-y-2 text-xs">
+                    <div class="category-legend space-y-2 text-xs">
                       <div class="flex items-center space-x-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-[#004c87] shrink-0"></span>
                         <span class="text-slate-600 font-medium">Buildings:</span>
@@ -646,12 +645,12 @@
                   <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">ACCOUNTABLE PERSON</h2>
                 </div>
                 <div class="relative">
-                  <select class="appearance-none text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md px-2.5 py-1 pr-6 cursor-pointer focus:outline-none focus:border-[#004c87]">
+                  <select class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-4 pr-9 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
                     <option>All Items</option>
                     <option>Buildings</option>
                     <option>Inventory</option>
                   </select>
-                  <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                  <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
                 </div>
               </div>
 
@@ -856,47 +855,7 @@
               </div>
 
               <!-- Activity Timeline -->
-              <div class="relative pl-6 space-y-5">
-                <!-- Timeline vertical connecting line -->
-                <div class="absolute left-2.5 top-2 bottom-2 w-0.5 bg-slate-200"></div>
-
-                <!-- Node 1: New property added -->
-                <div class="relative">
-                  <span class="absolute -left-6 top-0.5 w-5 h-5 rounded-full bg-[#004c87] text-white flex items-center justify-center ring-4 ring-white shadow-sm">
-                    <i data-lucide="building-2" class="w-2.5 h-2.5"></i>
-                  </span>
-                  <div>
-                    <p class="text-xs font-extrabold text-slate-800">New property added</p>
-                    <p class="text-[11px] text-slate-600 font-semibold">Science Laboratory</p>
-                    <p class="text-[10px] text-slate-400 font-medium">May 21, 2026 • 10:30 AM</p>
-                  </div>
-                </div>
-
-                <!-- Node 2: Inventory updated -->
-                <div class="relative">
-                  <span class="absolute -left-6 top-0.5 w-5 h-5 rounded-full bg-[#449e38] text-white flex items-center justify-center ring-4 ring-white shadow-sm">
-                    <i data-lucide="box" class="w-2.5 h-2.5"></i>
-                  </span>
-                  <div>
-                    <p class="text-xs font-extrabold text-slate-800">Inventory updated</p>
-                    <p class="text-[11px] text-slate-600 font-semibold">10 units of Monoblock Chair</p>
-                    <p class="text-[10px] text-slate-400 font-medium">May 21, 2026 • 9:15 AM</p>
-                  </div>
-                </div>
-
-                <!-- Node 3: Maintenance request created -->
-                <div class="relative">
-                  <span class="absolute -left-6 top-0.5 w-5 h-5 rounded-full bg-[#f29913] text-white flex items-center justify-center ring-4 ring-white shadow-sm">
-                    <i data-lucide="wrench" class="w-2.5 h-2.5"></i>
-                  </span>
-                  <div>
-                    <p class="text-xs font-extrabold text-slate-800">Maintenance request created</p>
-                    <p class="text-[11px] text-slate-600 font-semibold">Leaky Faucet in CR</p>
-                    <p class="text-[10px] text-slate-400 font-medium">May 20, 2026 • 2:45 PM</p>
-                  </div>
-                </div>
-
-              </div>
+              <div id="recentAssets" class="recent-list" aria-live="polite"></div>
             </div>
 
             <!-- PROPERTY BREAKDOWN CARD -->
@@ -1075,6 +1034,18 @@
           </div>
 
         </div>
+        </div>
+
+        <!-- MOBILE SCHOOL INFORMATION CARD -->
+        <div class="mobile-school-info-card relative overflow-hidden p-3 bg-[#002444]/95 border-t border-white/10 text-white items-center gap-2.5">
+          <div class="w-10 h-10 rounded-full border border-white/30 bg-white/10 p-0.5 shrink-0 flex items-center justify-center shadow-sm">
+            <img src="images/geras_logo.png" alt="Geras Integrated School" class="w-full h-full object-contain rounded-full" />
+          </div>
+          <div class="min-w-0">
+            <p class="text-[12px] font-extrabold text-white leading-tight">Geras Integrated School</p>
+            <p class="text-[10px] text-sky-200 font-semibold leading-tight mt-0.5">School ID: <strong class="text-white font-bold">500243</strong></p>
+            <p class="text-[9px] text-sky-300/80 font-medium leading-tight mt-0.5">Connected to Supabase.</p>
+          </div>
         </div>
 
         <!-- MODULE 2: INVENTORY -->
@@ -1272,15 +1243,15 @@
 
                     <div class="inventory-actions-row form-actions-row">
                         <button class="primary-button form-action-btn" id="newItemBtnInline" type="button">
-                            <img src="images/add_new_1.svg" alt="" class="action-icon" data-theme-icon="images/add_new_1.svg" data-theme-icon-light="images/add_new_2.svg">
+                            <i data-lucide="plus" class="action-icon"></i>
                             <span>New</span>
                         </button>
                         <button class="primary-button form-action-btn" id="resetFormBtn" type="button">
-                            <img src="images/clear_1.svg" alt="" class="action-icon" data-theme-icon="images/clear_1.svg" data-theme-icon-light="images/clear_2.svg">
+                            <i data-lucide="rotate-ccw" class="action-icon"></i>
                             <span>Clear</span>
                         </button>
                         <button class="primary-button form-action-btn" type="submit">
-                            <img src="images/save_1.svg" alt="" class="action-icon" data-theme-icon="images/save_1.svg" data-theme-icon-light="images/save_2.svg">
+                            <i data-lucide="save" class="action-icon"></i>
                             <span>Save</span>
                         </button>
                     </div>

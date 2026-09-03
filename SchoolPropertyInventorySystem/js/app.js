@@ -138,6 +138,8 @@ let canOpenClassificationModal = false;
 let canOpenStatusModal = false;
 let inventoryPage = 1;
 let qrPage = 1;
+const inventoryCustodianSlipStorageKey = "propertyInventoryCustodianSlips";
+let inventoryCustodianSlips = [];
 const inventoryRowsPerPage = 12;
 const qrRowsPerPage = 8;
 let isRefreshingStatusOptions = false;
@@ -939,7 +941,6 @@ function resetForm() {
     dom.position.value = "";
     dom.schoolLevel.value = "";
     dom.formTitle.textContent = "Add Property Item";
-    dom.propertyNo.focus();
 }
 
 function getAssetDetailUrl(assetId) {
@@ -1326,21 +1327,53 @@ function getStatusColor(status) {
 }
 
 function renderRecentAssets() {
-    const recent = [...items]
-        .sort((first, second) => getTimestamp(second.updatedAt || second.createdAt) - getTimestamp(first.updatedAt || first.createdAt))
-        .slice(0, 8);
+    if (!dom.recentAssets) return;
 
-    dom.recentAssets.innerHTML = recent.length
-        ? recent.map((item) => `
-            <div class="recent-item">
-                <div>
-                    <strong>${escapeHtml(item.itemBrandModel || item.propertyNo || item.assetId)}</strong>
-                    <span>${escapeHtml(item.propertyNo || item.assetId)} Â· ${escapeHtml(item.accountable || "Unassigned")}</span>
-                </div>
-                <time>${escapeHtml(formatShortDate(item.updatedAt || item.createdAt))}</time>
+    const newestItem = [...items].sort((first, second) =>
+        getTimestamp(second.updatedAt || second.createdAt) - getTimestamp(first.updatedAt || first.createdAt)
+    )[0];
+    const newestSlip = [...inventoryCustodianSlips].sort((first, second) =>
+        getTimestamp(second.savedAt || second.receivedByDate || second.receivedFromDate || second.id) -
+        getTimestamp(first.savedAt || first.receivedByDate || first.receivedFromDate || first.id)
+    )[0];
+    const recentModules = [
+        {
+            icon: "box",
+            color: "#004c87",
+            action: newestItem ? "Inventory updated" : "Inventory",
+            detail: newestItem ? (newestItem.itemBrandModel || newestItem.propertyNo || newestItem.assetId) : "No inventory records yet",
+            time: newestItem ? (newestItem.updatedAt || newestItem.createdAt) : "-"
+        },
+        {
+            icon: "qr-code",
+            color: "#449e38",
+            action: newestItem ? "QR Code ready" : "QR Code",
+            detail: newestItem ? (newestItem.propertyNo || newestItem.assetId) : "No QR code records yet",
+            time: newestItem ? (newestItem.updatedAt || newestItem.createdAt) : "-"
+        },
+        {
+            icon: "file-text",
+            color: "#f29913",
+            action: newestSlip ? "Document saved" : "Document",
+            detail: newestSlip ? (newestSlip.icsNo || newestSlip.description || "Inventory Custodian Slip") : "No documents yet",
+            time: newestSlip ? (newestSlip.savedAt || newestSlip.receivedByDate || newestSlip.receivedFromDate || newestSlip.id) : "-"
+        }
+    ];
+
+    dom.recentAssets.innerHTML = recentModules.map((entry) => `
+        <div class="relative recent-activity-item" style="padding-left:30px;">
+            <span class="absolute left-0 top-0.5 w-5 h-5 rounded-full text-white flex items-center justify-center ring-4 ring-white shadow-sm" style="background-color:${entry.color};">
+                <i data-lucide="${entry.icon}" class="w-2.5 h-2.5"></i>
+            </span>
+            <div>
+                <p class="text-xs font-extrabold text-slate-800">${escapeHtml(entry.action)}</p>
+                <p class="text-[11px] text-slate-600 font-semibold">${escapeHtml(entry.detail)}</p>
+                <p class="text-[10px] text-slate-400 font-medium">${escapeHtml(entry.time === "-" ? "-" : formatShortDate(entry.time))}</p>
             </div>
-        `).join("")
-        : `<div class="recent-item"><div><strong>No records yet</strong><span>Add an asset to populate the dashboard.</span></div><time>-</time></div>`;
+        </div>
+    `).join("");
+
+    if (window.lucide) window.lucide.createIcons();
 }
 
 function renderQrAssetList() {
@@ -1644,11 +1677,19 @@ function formatSlipDate(value) {
     }).format(new Date(timestamp));
 }
 
+function sortItemsByNewest(itemsToSort) {
+    return [...itemsToSort].sort((first, second) => {
+        const firstTimestamp = getTimestamp(first.createdAt || first.updatedAt || first.acquisitionDate || first.dateIssue);
+        const secondTimestamp = getTimestamp(second.createdAt || second.updatedAt || second.acquisitionDate || second.dateIssue);
+        return secondTimestamp - firstTimestamp;
+    });
+}
+
 function getFilteredItems() {
     const query = dom.searchInput.value.trim().toLowerCase();
     const status = dom.statusFilter.value;
 
-    return items.filter((item) => {
+    return sortItemsByNewest(items).filter((item) => {
         const itemStatus = getComputedStatus(item);
         const searchable = [
             item.assetId,
@@ -1796,6 +1837,7 @@ function setQrDetails(item) {
 }
 
 function renderApp() {
+    items = sortItemsByNewest(items);
     selectedId = selectedId || (items[0] && items[0].assetId) || null;
     renderStats();
     renderDashboard();
@@ -2671,6 +2713,8 @@ async function syncStatusToSheet(name) {
 function showModule(moduleName) {
     if (!moduleName) return;
 
+    document.querySelector(".app-sidebar")?.classList.remove("mobile-open");
+
     document.querySelectorAll(".module-view").forEach((module) => {
         const isActive = module.dataset.module === moduleName;
         module.classList.toggle("active", isActive);
@@ -2718,9 +2762,10 @@ function applyTheme(theme) {
     document.body.dataset.theme = selectedTheme;
     localStorage.setItem(themeKey, selectedTheme);
 
-    document.querySelectorAll(".nav-icon").forEach((icon) => {
+    document.querySelectorAll(".nav-icon, .action-icon").forEach((icon) => {
         const lightSrc = icon.dataset.themeIconLight;
         const darkSrc = icon.dataset.themeIcon;
+        if (!lightSrc && !darkSrc) return;
         icon.src = selectedTheme === "light" ? (lightSrc || darkSrc) : (darkSrc || lightSrc);
     });
 
@@ -2736,6 +2781,14 @@ function loadTheme() {
 }
 
 function wireEvents() {
+    const sidebar = document.querySelector(".app-sidebar");
+    const sidebarToggle = document.querySelector("button[aria-label='Toggle Sidebar']");
+    if (sidebar && sidebarToggle) {
+        sidebarToggle.addEventListener("click", () => {
+            sidebar.classList.toggle("mobile-open");
+        });
+    }
+
     dom.form.addEventListener("submit", handleSave);
     dom.table.addEventListener("click", handleTableClick);
     dom.pagination.addEventListener("click", (event) => {
@@ -2892,9 +2945,6 @@ async function init() {
 }
 
 init();
-
-const inventoryCustodianSlipStorageKey = "propertyInventoryCustodianSlips";
-let inventoryCustodianSlips = [];
 
 function hasInventoryCustodianSlipRemoteDatabase() {
     return Boolean(supabaseUrl && supabaseAnonKey && supabaseAnonKey !== "YOUR_SUPABASE_ANON_KEY");
@@ -3101,7 +3151,8 @@ function getInventoryCustodianSlipFormData() {
         receivedFromPosition: value("#icsReceivedFromPosition"),
         receivedByPosition: value("#icsReceivedByPosition"),
         receivedFromDate: value("#icsReceivedFromDate"),
-        receivedByDate: value("#icsReceivedByDate")
+        receivedByDate: value("#icsReceivedByDate"),
+        savedAt: new Date().toISOString()
     };
 }
 
@@ -3181,10 +3232,12 @@ async function initInventoryCustodianSlipCrud() {
     populateIcsReceivedByDropdown();
     inventoryCustodianSlips = loadInventoryCustodianSlips();
     renderInventoryCustodianSlipTable();
+    renderRecentAssets();
 
     try {
         if (await loadInventoryCustodianSlipsFromDatabase()) {
             renderInventoryCustodianSlipTable();
+            renderRecentAssets();
         }
     } catch (error) {
         console.error(error);
@@ -3249,6 +3302,7 @@ async function initInventoryCustodianSlipCrud() {
 
             saveInventoryCustodianSlips();
             renderInventoryCustodianSlipTable();
+            renderRecentAssets();
             resetInventoryCustodianSlipForm();
             showToast(action === "update" ? "Inventory Custodian Slip updated." : "Inventory Custodian Slip saved.");
         } catch (error) {
@@ -3287,6 +3341,7 @@ async function initInventoryCustodianSlipCrud() {
 
                 saveInventoryCustodianSlips();
                 renderInventoryCustodianSlipTable();
+                renderRecentAssets();
                 resetInventoryCustodianSlipForm();
                 showToast("Inventory Custodian Slip deleted.");
             } catch (error) {
