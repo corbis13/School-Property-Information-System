@@ -2669,16 +2669,49 @@ async function syncStatusToSheet(name) {
 }
 
 function showModule(moduleName) {
+    if (!moduleName) return;
+
     document.querySelectorAll(".module-view").forEach((module) => {
-        module.classList.toggle("active", module.dataset.module === moduleName);
+        const isActive = module.dataset.module === moduleName;
+        module.classList.toggle("active", isActive);
+        module.style.display = isActive ? "block" : "none";
     });
 
-    document.querySelectorAll(".nav-item").forEach((button) => {
-        button.classList.toggle("active", button.dataset.view === moduleName);
+    document.querySelectorAll(".nav-item").forEach((item) => {
+        const isActive = item.dataset.view === moduleName;
+        item.classList.toggle("active", isActive);
+
+        const indicator = item.querySelector(".nav-indicator");
+        const icon = item.querySelector("[data-lucide], svg");
+
+        if (isActive) {
+            item.classList.add("bg-white", "text-[#00335e]", "font-bold", "shadow-md");
+            item.classList.remove("text-slate-100", "hover:bg-white/10");
+            if (indicator) indicator.classList.remove("hidden");
+            if (icon) {
+                icon.classList.remove("text-slate-200");
+                icon.classList.add("text-[#00335e]");
+            }
+        } else {
+            item.classList.remove("bg-white", "text-[#00335e]", "font-bold", "shadow-md");
+            item.classList.add("text-slate-100", "hover:bg-white/10");
+            if (indicator) indicator.classList.add("hidden");
+            if (icon) {
+                icon.classList.remove("text-[#00335e]");
+                icon.classList.add("text-slate-200");
+            }
+        }
     });
+
+    if (typeof lucide !== "undefined") {
+        lucide.createIcons();
+    }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
+
+// Expose globally so inline onclick handlers work
+window.showModule = showModule;
 
 function applyTheme(theme) {
     const selectedTheme = theme === "light" ? "light" : "dark";
@@ -2822,7 +2855,8 @@ function wireEvents() {
     });
 
     document.querySelectorAll(".nav-item").forEach((button) => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", (e) => {
+            e.preventDefault();
             showModule(button.dataset.view);
         });
     });

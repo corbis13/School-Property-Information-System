@@ -1,143 +1,1706 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Property Inventory System</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="css/homepage.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="supabase-config.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPIS - School Property Information System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              navy: '#00335e',
+              darkNavy: '#002544',
+              deepest: '#001a30',
+              blue: '#004c87',
+              sky: '#0284c7',
+              green: '#54a434',
+              greenDark: '#448b28',
+              amber: '#f29913',
+              badgeYellow: '#f59e0b',
+              lightBg: '#f2f6fa',
+              cardBg: '#ffffff',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f1f5f9;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    .sidebar-bg {
+      background: linear-gradient(180deg, #003666 0%, #002e56 70%, #002240 100%);
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, #eff7ff 0%, #e1f0fc 60%, #d5e9f8 100%);
+    }
+
+    /* Continuous Looping Cloud Drift Animations */
+    @keyframes cloudDriftSlow {
+      0% {
+        transform: translateX(-200px);
+      }
+      100% {
+        transform: translateX(1300px);
+      }
+    }
+
+    @keyframes cloudDriftMedium {
+      0% {
+        transform: translateX(-200px);
+      }
+      100% {
+        transform: translateX(1300px);
+      }
+    }
+
+    @keyframes cloudDriftFast {
+      0% {
+        transform: translateX(-200px);
+      }
+      100% {
+        transform: translateX(1300px);
+      }
+    }
+
+    .cloud-drift-slow {
+      animation: cloudDriftSlow 34s linear infinite;
+    }
+
+    .cloud-drift-medium {
+      animation: cloudDriftMedium 24s linear infinite;
+      animation-delay: -12s;
+    }
+
+    .cloud-drift-fast {
+      animation: cloudDriftFast 18s linear infinite;
+      animation-delay: -6s;
+    }
+
+    .card-shadow {
+      box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.06), 0 1px 3px -1px rgba(15, 23, 42, 0.04);
+    }
+    
+    .card-shadow-hover {
+      transition: all 0.2s ease-in-out;
+    }
+    .card-shadow-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
+    }
+  </style>
+  <link rel="stylesheet" href="css/spis-modules.css?v=20260903d">
 </head>
-<body>
-    <div class="app-shell">
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="brand-badge">PI</div>
-                <div>
-                    <strong>Property Inventory</strong>
-                    <small>School Asset System</small>
+<body class="bg-[#f0f4f8] text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-green selection:text-white">
+
+  <!-- Main Container -->
+  <div class="flex flex-1 min-h-screen overflow-hidden">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside class="w-[260px] sidebar-bg text-white flex flex-col justify-between shrink-0 z-30 shadow-xl relative select-none">
+      
+      <!-- Top Section -->
+      <div>
+        <!-- Brand / Logo Box -->
+        <div class="p-4 bg-white text-center border-b border-slate-100 flex flex-col items-center justify-center">
+          
+          <!-- Illustrated Logo using spis_town.png -->
+          <div class="relative w-full max-w-[170px] h-[95px] flex items-center justify-center mb-1">
+            <img src="images/spis_town.png" alt="SPIS Logo" class="h-full object-contain" />
+          </div>
+
+          <!-- Brand Text Under Logo -->
+          <div class="text-center">
+            <h1 class="text-3xl font-black text-[#00335e] tracking-tight leading-none mb-1 flex items-center justify-center">
+              <span>SP</span>
+              <span class="inline-flex flex-col items-center justify-end mx-0.5 h-[22px] pb-[1px]" title="Information">
+                <span class="w-2 h-2 rounded-full bg-[#55a83b] mb-0.5 shrink-0"></span>
+                <span class="w-2 h-3.5 rounded-xs bg-[#55a83b] shrink-0"></span>
+              </span>
+              <span>S</span>
+            </h1>
+            <p class="text-[10px] font-extrabold text-[#00335e] tracking-wider uppercase leading-tight">SCHOOL PROPERTY</p>
+            <p class="text-[10px] font-extrabold text-[#55a83b] tracking-wider uppercase leading-tight">INFORMATION SYSTEM</p>
+          </div>
+        </div>
+
+        <!-- Navigation Menu -->
+                <!-- Navigation Menu -->
+        <nav class="mt-4 px-3 space-y-1.5" aria-label="Sidebar Navigation">
+          
+          <!-- Active Dashboard Item with Left Green Bar -->
+          <a href="#" class="nav-item active relative flex items-center space-x-3 px-3.5 py-2.5 bg-white text-[#00335e] rounded-lg font-bold text-sm shadow-md transition-all group" data-view="dashboard">
+            <span class="nav-indicator absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+            <i data-lucide="layout-dashboard" class="w-5 h-5 text-[#00335e]"></i>
+            <span>Dashboard</span>
+          </a>
+
+          <!-- Inventory -->
+          <a href="#" class="nav-item flex items-center space-x-3 px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative" data-view="inventory">
+            <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+            <i data-lucide="box" class="w-5 h-5 text-slate-200"></i>
+            <span>Inventory</span>
+          </a>
+
+          <!-- QR Code -->
+          <a href="#" class="nav-item flex items-center space-x-3 px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative" data-view="qr">
+            <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+            <i data-lucide="qr-code" class="w-5 h-5 text-slate-200"></i>
+            <span>QR Code</span>
+          </a>
+
+          <!-- Document -->
+          <a href="#" class="nav-item flex items-center space-x-3 px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative" data-view="document">
+            <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+            <i data-lucide="file-text" class="w-5 h-5 text-slate-200"></i>
+            <span>Document</span>
+          </a>
+
+          <!-- Report -->
+          <a href="#" class="nav-item flex items-center space-x-3 px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative" data-view="reports">
+            <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+            <i data-lucide="bar-chart-2" class="w-5 h-5 text-slate-200"></i>
+            <span>Report</span>
+          </a>
+
+          <!-- Settings -->
+          <a href="#" class="nav-item flex items-center space-x-3 px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative" data-view="settings">
+            <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+            <i data-lucide="settings" class="w-5 h-5 text-slate-200"></i>
+            <span>Settings</span>
+          </a>
+
+          <!-- About -->
+          <a href="#" class="nav-item flex items-center space-x-3 px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative" data-view="about">
+            <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+            <i data-lucide="info" class="w-5 h-5 text-slate-200"></i>
+            <span>About</span>
+          </a>
+
+        </nav>
+      </div>
+
+      <!-- Bottom School Branch Info Bar -->
+      <div class="relative overflow-hidden p-3 bg-[#002444]/95 border-t border-white/10">
+        <!-- Subtle dot grid pattern -->
+        <div class="absolute right-0 bottom-0 opacity-10 pointer-events-none">
+          <svg width="80" height="60" viewBox="0 0 80 60">
+            <pattern id="dotPattern" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+              <circle cx="2" cy="2" r="1" fill="#ffffff" />
+            </pattern>
+            <rect width="80" height="60" fill="url(#dotPattern)" />
+          </svg>
+        </div>
+
+        <div class="flex items-center space-x-2.5 relative z-10">
+          <div class="w-10 h-10 rounded-full border border-white/30 bg-white/10 p-0.5 shrink-0 flex items-center justify-center shadow-sm">
+            <img src="images/geras_logo.png" alt="Geras Integrated School" class="w-full h-full object-contain rounded-full" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[12px] font-extrabold text-white leading-tight truncate" title="Geras Integrated School">Geras Integrated School</p>
+            <p class="text-[10px] text-sky-200 font-semibold leading-tight mt-0.5 flex items-center space-x-1">
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#55a83b]"></span>
+              <span>School ID: <strong class="text-white font-bold">500243</strong></span>
+            </p>
+            <p class="text-[9px] text-sky-300/80 font-medium truncate mt-0.5" id="databaseStatus">Connecting to Supabase...</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN WRAPPER -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      
+      <!-- TOP NAVBAR -->
+      <header class="bg-white border-b border-slate-200 px-6 py-3.5 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+        
+        <!-- Left title & toggle -->
+        <div class="flex items-center space-x-3">
+          <button class="text-[#00335e] hover:bg-slate-100 p-1.5 rounded-lg transition focus:outline-none" aria-label="Toggle Sidebar">
+            <i data-lucide="menu" class="w-6 h-6 text-[#00335e]"></i>
+          </button>
+          
+          <div class="flex items-center space-x-3">
+            <div class="flex items-center text-2xl font-black text-[#00335e] tracking-tight">
+              <span>SP</span>
+              <span class="inline-flex flex-col items-center justify-end mx-0.5 h-[18px] pb-[1px]" title="Information">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#55a83b] mb-0.5 shrink-0"></span>
+                <span class="w-1.5 h-3 rounded-xs bg-[#55a83b] shrink-0"></span>
+              </span>
+              <span>S</span>
+            </div>
+            <span class="text-xs font-extrabold text-[#55a83b] uppercase tracking-wider hidden sm:inline-block">
+              SCHOOL PROPERTY INFORMATION SYSTEM
+            </span>
+          </div>
+        </div>
+
+        <!-- Right actions: Notifications & User Profile -->
+        <div class="flex items-center space-x-5">
+          <!-- Notification Bell -->
+          <div class="relative cursor-pointer p-1 text-slate-700 hover:text-[#00335e] transition" title="3 New Notifications">
+            <i data-lucide="bell" class="w-6 h-6"></i>
+            <span class="absolute 0 top-0 right-0 bg-[#f59e0b] text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-white">
+              3
+            </span>
+          </div>
+
+          <!-- User Pill Top -->
+          <div class="flex items-center space-x-2.5 pl-3 border-l border-slate-200 cursor-pointer group">
+            <div class="w-9 h-9 rounded-full bg-[#00335e] text-white flex items-center justify-center shadow-sm">
+              <i data-lucide="user" class="w-5 h-5 text-white"></i>
+            </div>
+            <div class="text-left hidden sm:block">
+              <p class="text-xs font-extrabold text-slate-800 leading-tight group-hover:text-[#00335e] transition">Janine Tuwahan</p>
+              <p class="text-[10px] font-semibold text-slate-500 leading-tight">AO II</p>
+            </div>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 group-hover:text-slate-800 transition"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- MAIN CONTENT DASHBOARD BODY -->
+            <!-- MAIN CONTENT DASHBOARD & MODULE VIEWS BODY -->
+      <main class="p-6 space-y-6 flex-1 w-full">
+
+        <!-- Hidden elements needed by app.js data binding -->
+        <div id="databaseMessage" style="display:none;"></div>
+        <div id="statusLineChart" style="display:none;"></div>
+        <div id="schoolLevelChart" style="display:none;"></div>
+        <div id="acquisitionYearChart" style="display:none;"></div>
+        <div id="dateIssueYearChart" style="display:none;"></div>
+        <div id="recentAssets" style="display:none;"></div>
+        <div id="accountablePersonChart" style="display:none;"></div>
+        <div id="portfolioChart" style="display:none;"></div>
+        <div id="portfolioLegend" style="display:none;"></div>
+        <div id="qrCoverage" style="display:none;"></div>
+        <div id="statusBars" style="display:none;"></div>
+        <div id="statusChartLegend" style="display:none;"></div>
+        <div id="qrAssetList" style="display:none;"></div>
+        <button id="copyQrBtn" style="display:none;"></button>
+
+        <!-- MODULE 1: DASHBOARD -->
+        <div class="module-view active" data-module="dashboard">
+          <!-- 2-COLUMN MAIN DASHBOARD GRID (Left 3 cols, Right 2 cols) -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
+          
+          <!-- LEFT 3 COLUMNS (Welcome Banner + 4 Stats + 2 Cards + Accountable Person) -->
+          <div class="lg:col-span-3 flex flex-col h-full space-y-6">
+            
+            <!-- HERO WELCOME BANNER -->
+            <div class="hero-banner rounded-2xl relative overflow-hidden border border-[#d2e7f8] shadow-sm flex flex-col md:flex-row justify-between items-stretch">
+              
+              <!-- Looping Drifting Clouds (Option 1: Continuous Seamless Horizontal Drift) -->
+              <div class="absolute left-0 top-3 pointer-events-none z-0 opacity-70 cloud-drift-slow">
+                <svg width="150" height="50" viewBox="0 0 140 48">
+                  <path d="M12 36 Q28 14 55 24 Q78 8 106 20 Q128 16 135 36 Z" fill="#ffffff"/>
+                </svg>
+              </div>
+
+              <div class="absolute left-0 top-10 pointer-events-none z-0 opacity-50 cloud-drift-medium">
+                <svg width="120" height="42" viewBox="0 0 120 40">
+                  <path d="M10 30 Q25 10 50 20 Q70 5 95 18 Q115 15 118 30 Z" fill="#ffffff"/>
+                </svg>
+              </div>
+
+              <div class="absolute left-0 top-20 pointer-events-none z-0 opacity-40 cloud-drift-fast">
+                <svg width="100" height="36" viewBox="0 0 140 48">
+                  <path d="M12 36 Q28 14 55 24 Q78 8 106 20 Q128 16 135 36 Z" fill="#ffffff"/>
+                </svg>
+              </div>
+
+              <!-- Left Content -->
+              <div class="p-7 sm:p-9 max-w-xl z-10 flex flex-col justify-center">
+                <p class="text-sm font-medium text-slate-600 mb-1">Welcome,</p>
+                <h1 class="text-3xl sm:text-4xl font-black text-[#002d54] tracking-tight mb-2">
+                  Janine Tuwahan!
+                </h1>
+                <p class="text-slate-600 text-sm font-medium leading-relaxed max-w-md">
+                  Manage and monitor all school properties in one centralized system.
+                </p>
+              </div>
+
+              <!-- Right Hero Illustration Vector Area -->
+              <div class="relative shrink-0 flex items-end justify-end select-none pointer-events-none z-10">
+
+                <!-- spis_town.png Illustration (Locked Full Size) -->
+                <div class="relative flex items-end justify-center h-[240px] md:h-[260px] shrink-0 pr-2 sm:pr-6 md:pr-8">
+                  <img src="images/spis_town.png" alt="SPIS Town" class="h-full w-auto max-w-none shrink-0 object-contain drop-shadow-lg z-10 -translate-y-1" />
                 </div>
+              </div>
+
+              <!-- Bottom Dual Organic Waves (Light Blue & Green Ribbon) -->
+              <div class="absolute bottom-0 left-0 right-0 h-6 sm:h-7 pointer-events-none z-0">
+                <svg class="w-full h-full" viewBox="0 0 1000 30" preserveAspectRatio="none">
+                  <!-- Light Blue Wave -->
+                  <path d="M0,10 Q220,28 480,12 T1000,6 L1000,30 L0,30 Z" fill="#38bdf8" opacity="0.65"/>
+                  <!-- Green Wave -->
+                  <path d="M0,16 Q260,2 520,20 T1000,10 L1000,30 L0,30 Z" fill="#55a83b" opacity="0.9"/>
+                </svg>
+              </div>
             </div>
 
-            <nav class="menu-list" aria-label="Primary navigation">
-                <a class="menu-item active" href="#">
-                    <img class="nav-icon" src="images/dashboard_1.svg" alt="Dashboard">
-                    Dashboard
-                </a>
-                <a class="menu-item" href="#">
-                    <img class="nav-icon" src="images/inventory_1.svg" alt="Inventory">
-                    Inventory
-                </a>
-                <a class="menu-item" href="#">
-                    <img class="nav-icon" src="images/qr_code_1.svg" alt="QR Codes">
-                    QR Codes
-                </a>
-                <a class="menu-item" href="#">
-                    <img class="nav-icon" src="images/report_1.svg" alt="Reports">
-                    Reports
-                </a>
-                <a class="menu-item" href="#">
-                    <img class="nav-icon" src="images/setting_1.svg" alt="Settings">
-                    Settings
-                </a>
-                <a class="menu-item" href="#">
-                    <img class="nav-icon" src="images/about_1.svg" alt="About">
-                    About
-                </a>
-            </nav>
-        </aside>
+            <!-- 4 STAT CARDS (KEY METRICS) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+              
+              <!-- Stat 1: Total Properties -->
+              <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow card-shadow-hover flex flex-col justify-between">
+                <div class="flex items-center space-x-4">
+                  <div class="w-13 h-13 rounded-full bg-[#004c87] text-white flex items-center justify-center shrink-0 p-3 shadow-sm">
+                    <i data-lucide="building-2" class="w-6 h-6 text-white"></i>
+                  </div>
+                  <div>
+                    <p class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">TOTAL PROPERTIES</p>
+                    <p class="text-3xl font-black text-slate-800 leading-tight"><span id="totalItems">24</span></p>
+                  </div>
+                </div>
+                <div class="mt-3 pt-2 text-right">
+                  <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#004c87] inline-flex items-center transition">
+                    <span>View all properties</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                  </a>
+                </div>
+              </div>
 
-        <main class="main-content">
-            <header class="topbar">
+              <!-- Stat 2: Total Inventory -->
+              <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow card-shadow-hover flex flex-col justify-between">
+                <div class="flex items-center space-x-4">
+                  <div class="w-13 h-13 rounded-full bg-[#449e38] text-white flex items-center justify-center shrink-0 p-3 shadow-sm">
+                    <i data-lucide="box" class="w-6 h-6 text-white"></i>
+                  </div>
+                  <div>
+                    <p class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">TOTAL INVENTORY</p>
+                    <p class="text-3xl font-black text-slate-800 leading-tight"><span id="assignedItems">356</span></p>
+                  </div>
+                </div>
+                <div class="mt-3 pt-2 text-right">
+                  <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#449e38] inline-flex items-center transition">
+                    <span>View all inventory</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Stat 3: Maintenance Requests -->
+              <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow card-shadow-hover flex flex-col justify-between">
+                <div class="flex items-center space-x-4">
+                  <div class="w-13 h-13 rounded-full bg-[#f29913] text-white flex items-center justify-center shrink-0 p-3 shadow-sm">
+                    <i data-lucide="wrench" class="w-6 h-6 text-white"></i>
+                  </div>
+                  <div>
+                    <p class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">MAINTENANCE REQUESTS</p>
+                    <p class="text-3xl font-black text-slate-800 leading-tight"><span id="repairItems">7</span></p>
+                  </div>
+                </div>
+                <div class="mt-3 pt-2 text-right">
+                  <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#f29913] inline-flex items-center transition">
+                    <span>View all requests</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Stat 4: Completed This Month -->
+              <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow card-shadow-hover flex flex-col justify-between">
+                <div class="flex items-center space-x-4">
+                  <div class="w-13 h-13 rounded-full bg-[#0284c7] text-white flex items-center justify-center shrink-0 p-3 shadow-sm">
+                    <i data-lucide="clipboard-check" class="w-6 h-6 text-white"></i>
+                  </div>
+                  <div>
+                    <p class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">COMPLETED THIS MONTH</p>
+                    <p class="text-3xl font-black text-slate-800 leading-tight"><span id="qrItems">15</span></p>
+                  </div>
+                </div>
+                <div class="mt-3 pt-2 text-right">
+                  <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#0284c7] inline-flex items-center transition">
+                    <span>View all completed</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 2 MIDDLE CARDS (Property by Category & Maintenance Requests) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <!-- CARD 1: PROPERTY BY CATEGORY -->
+              <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow flex flex-col justify-between">
                 <div>
-                    <h1>School Property Inventory Dashboard</h1>
-                    <p>Government property monitoring for school assets and office inventory.</p>
+                  <!-- Header with Dropdown -->
+                  <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">
+                      PROPERTY BY CATEGORY
+                    </h2>
+                    <div class="relative">
+                      <select class="appearance-none text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md px-2.5 py-1 pr-6 cursor-pointer focus:outline-none focus:border-[#004c87]">
+                        <option>This Month</option>
+                        <option>Last Month</option>
+                        <option>This Year</option>
+                      </select>
+                      <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                    </div>
+                  </div>
+
+                  <!-- Donut Chart & Legend -->
+                  <div class="flex flex-col sm:flex-row items-center justify-around py-3 gap-4">
+                    
+                    <!-- SVG Donut Chart with Center Total -->
+                    <div class="relative w-36 h-36 flex items-center justify-center shrink-0">
+                      <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
+                        <!-- Background ring -->
+                        <circle cx="50" cy="50" r="38" fill="transparent" stroke="#f1f5f9" stroke-width="15" />
+                        
+                        <!-- Segment 1: Buildings 33% (#004c87) -->
+                        <circle cx="50" cy="50" r="38" fill="transparent" stroke="#004c87" stroke-width="15"
+                                stroke-dasharray="78.85 238.9" stroke-dashoffset="0" />
+                        
+                        <!-- Segment 2: Classrooms 25% (#449e38) -->
+                        <circle cx="50" cy="50" r="38" fill="transparent" stroke="#449e38" stroke-width="15"
+                                stroke-dasharray="59.73 238.9" stroke-dashoffset="-78.85" />
+                        
+                        <!-- Segment 3: Furniture & Fixtures 21% (#f29913) -->
+                        <circle cx="50" cy="50" r="38" fill="transparent" stroke="#f29913" stroke-width="15"
+                                stroke-dasharray="50.17 238.9" stroke-dashoffset="-138.58" />
+                        
+                        <!-- Segment 4: IT Equipment 12% (#0284c7) -->
+                        <circle cx="50" cy="50" r="38" fill="transparent" stroke="#0284c7" stroke-width="15"
+                                stroke-dasharray="28.67 238.9" stroke-dashoffset="-188.75" />
+                        
+                        <!-- Segment 5: Others 9% (#94a3b8) -->
+                        <circle cx="50" cy="50" r="38" fill="transparent" stroke="#94a3b8" stroke-width="15"
+                                stroke-dasharray="21.50 238.9" stroke-dashoffset="-217.42" />
+                      </svg>
+                      
+                      <!-- Center Text -->
+                      <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span class="text-2xl font-black text-slate-800 leading-none">24</span>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase mt-0.5">Total</span>
+                      </div>
+                    </div>
+
+                    <!-- Legend Items -->
+                    <div class="space-y-2 text-xs">
+                      <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#004c87] shrink-0"></span>
+                        <span class="text-slate-600 font-medium">Buildings:</span>
+                        <span class="font-extrabold text-slate-800">8 (33%)</span>
+                      </div>
+                      <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#449e38] shrink-0"></span>
+                        <span class="text-slate-600 font-medium">Classrooms:</span>
+                        <span class="font-extrabold text-slate-800">6 (25%)</span>
+                      </div>
+                      <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#f29913] shrink-0"></span>
+                        <span class="text-slate-600 font-medium">Furniture & Fixtures:</span>
+                        <span class="font-extrabold text-slate-800">5 (21%)</span>
+                      </div>
+                      <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#0284c7] shrink-0"></span>
+                        <span class="text-slate-600 font-medium">IT Equipment:</span>
+                        <span class="font-extrabold text-slate-800">3 (12%)</span>
+                      </div>
+                      <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#94a3b8] shrink-0"></span>
+                        <span class="text-slate-600 font-medium">Others:</span>
+                        <span class="font-extrabold text-slate-800">2 (9%)</span>
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
-                <div class="topbar-actions">
-                    <div class="status-pill" id="dataStatus">Loading live inventory data...</div>
-                    <button class="refresh-btn" id="refreshDashboardBtn" type="button">
-                        <i class="fa-solid fa-arrows-rotate"></i>
-                        Refresh Data
-                    </button>
-                    <label class="search-box" aria-label="Search">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" placeholder="Search items, report, or user">
+
+                <!-- Footer Button -->
+                <div class="mt-4 pt-2">
+                  <button class="w-full py-2 px-4 rounded-lg border border-[#004c87] text-[#004c87] hover:bg-[#004c87] hover:text-white font-bold text-xs transition text-center">
+                    View Full Report
+                  </button>
+                </div>
+              </div>
+
+              <!-- CARD 2: MAINTENANCE REQUESTS -->
+              <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow flex flex-col justify-between">
+                <div>
+                  <!-- Header with View All -->
+                  <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">
+                      MAINTENANCE REQUESTS
+                    </h2>
+                    <a href="#" onclick="event.preventDefault();showModule('inventory')" class="text-xs font-bold text-[#004c87] hover:underline">View All</a>
+                  </div>
+
+                  <!-- Requests List -->
+                  <div class="space-y-3">
+                    
+                    <!-- Item 1: Repair Classroom Door -->
+                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/80 hover:bg-slate-100 transition border border-slate-100">
+                      <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-[#f29913] text-white flex items-center justify-center shrink-0">
+                          <i data-lucide="wrench" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                          <p class="text-xs font-extrabold text-slate-800">Repair Classroom Door</p>
+                          <p class="text-[11px] text-slate-500 font-medium">Building A - Room 101</p>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <span class="px-2 py-0.5 text-[9px] font-black rounded-full bg-[#fef3c7] text-[#b45309] uppercase tracking-wider">
+                          PENDING
+                        </span>
+                        <p class="text-[10px] text-slate-400 font-semibold mt-0.5">May 20, 2026</p>
+                      </div>
+                    </div>
+
+                    <!-- Item 2: AC Unit Not Cooling -->
+                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/80 hover:bg-slate-100 transition border border-slate-100">
+                      <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-[#449e38] text-white flex items-center justify-center shrink-0">
+                          <i data-lucide="wrench" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                          <p class="text-xs font-extrabold text-slate-800">AC Unit Not Cooling</p>
+                          <p class="text-[11px] text-slate-500 font-medium">Building B - Faculty Room</p>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <span class="px-2 py-0.5 text-[9px] font-black rounded-full bg-[#dcfce7] text-[#15803d] uppercase tracking-wider">
+                          IN PROGRESS
+                        </span>
+                        <p class="text-[10px] text-slate-400 font-semibold mt-0.5">May 18, 2026</p>
+                      </div>
+                    </div>
+
+                    <!-- Item 3: Replace Chair Leg -->
+                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/80 hover:bg-slate-100 transition border border-slate-100">
+                      <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-[#0284c7] text-white flex items-center justify-center shrink-0">
+                          <i data-lucide="wrench" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                          <p class="text-xs font-extrabold text-slate-800">Replace Chair Leg</p>
+                          <p class="text-[11px] text-slate-500 font-medium">Building C - Room 203</p>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <span class="px-2 py-0.5 text-[9px] font-black rounded-full bg-[#fef3c7] text-[#b45309] uppercase tracking-wider">
+                          PENDING
+                        </span>
+                        <p class="text-[10px] text-slate-400 font-semibold mt-0.5">May 15, 2026</p>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- Footer Link -->
+                <div class="mt-4 pt-2">
+                  <a href="#" class="text-xs font-bold text-[#004c87] hover:underline flex items-center justify-between">
+                    <span>View All Requests</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ACCOUNTABLE PERSON CARD -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow flex flex-col flex-1 justify-between">
+
+              <!-- Header -->
+              <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center space-x-2">
+                  <span class="w-1.5 h-4 bg-[#004c87] rounded-full"></span>
+                  <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">ACCOUNTABLE PERSON</h2>
+                </div>
+                <div class="relative">
+                  <select class="appearance-none text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-md px-2.5 py-1 pr-6 cursor-pointer focus:outline-none focus:border-[#004c87]">
+                    <option>All Items</option>
+                    <option>Buildings</option>
+                    <option>Inventory</option>
+                  </select>
+                  <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                </div>
+              </div>
+
+              <!-- Bar Chart (10 Persons) -->
+              <div class="space-y-2.5">
+
+                <!-- Person 1 -->
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">J. Tuwahan</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                    <div class="h-full bg-[#004c87] rounded-full flex items-center justify-end pr-2" style="width: 85%">
+                      <span class="text-[10px] font-black text-white">85</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Person 2 -->
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">R. Dela Cruz</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                    <div class="h-full bg-[#449e38] rounded-full flex items-center justify-end pr-2" style="width: 68%">
+                      <span class="text-[10px] font-black text-white">68</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Person 3 -->
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">M. Santos</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                    <div class="h-full bg-[#f29913] rounded-full flex items-center justify-end pr-2" style="width: 54%">
+                      <span class="text-[10px] font-black text-white">54</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Person 4 -->
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">L. Reyes</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                    <div class="h-full bg-[#0284c7] rounded-full flex items-center justify-end pr-2" style="width: 40%">
+                      <span class="text-[10px] font-black text-white">40</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Person 5 -->
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">A. Garcia</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                    <div class="h-full bg-[#94a3b8] rounded-full flex items-center justify-end pr-2" style="width: 28%">
+                      <span class="text-[10px] font-black text-white">28</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Person 6 -->
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">E. Bautista</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                    <div class="h-full bg-[#6366f1] rounded-full flex items-center justify-end pr-2" style="width: 24%">
+                      <span class="text-[10px] font-black text-white">24</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Person 7 -->
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">C. Mendoza</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                    <div class="h-full bg-[#0d9488] rounded-full flex items-center justify-end pr-2" style="width: 19%">
+                      <span class="text-[10px] font-black text-white">19</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Person 8 -->
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">K. Ramos</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                    <div class="h-full bg-[#ec4899] rounded-full flex items-center justify-end pr-2" style="width: 15%">
+                      <span class="text-[10px] font-black text-white">15</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Person 9 -->
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">N. Gonzales</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                    <div class="h-full bg-[#8b5cf6] rounded-full flex items-center justify-end pr-2" style="width: 12%">
+                      <span class="text-[10px] font-black text-white">12</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Person 10 -->
+                <div class="flex items-center gap-3">
+                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">V. Fernandez</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                    <div class="h-full bg-[#64748b] rounded-full flex items-center justify-end pr-2" style="width: 8%">
+                      <span class="text-[10px] font-black text-white">8</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Footer -->
+              <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
+                <p class="text-[11px] text-slate-400 font-medium">Total assigned: <strong class="text-slate-700">353 items</strong></p>
+                <a href="#" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
+                  <span>View All</span>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </a>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- RIGHT COLUMN (Quick Actions, Recent Activity, Infographic) -->
+          <div class="lg:col-span-2 flex flex-col h-full space-y-6">
+            
+            <!-- QUICK ACTIONS CARD -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow space-y-3.5">
+              <div class="flex items-center space-x-2 border-b border-slate-100 pb-2">
+                <span class="w-1.5 h-4 bg-[#55a83b] rounded-full"></span>
+                <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">
+                  QUICK ACTIONS
+                </h2>
+              </div>
+
+              <div class="space-y-2.5">
+                
+                <!-- Action 1: Add New Property -->
+                <a href="#" onclick="event.preventDefault();showModule('inventory')" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 hover:border-[#004c87] hover:bg-slate-50 transition group">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-lg bg-[#004c87] text-white flex items-center justify-center shrink-0">
+                      <i data-lucide="plus" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <p class="text-xs font-extrabold text-slate-800 group-hover:text-[#004c87] transition">Add New Property</p>
+                      <p class="text-[10px] text-slate-500 font-medium">Register a new property</p>
+                    </div>
+                  </div>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-[#004c87] group-hover:translate-x-0.5 transition"></i>
+                </a>
+
+                <!-- Action 2: Add Inventory -->
+                <a href="#" onclick="event.preventDefault();showModule('inventory')" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 hover:border-[#449e38] hover:bg-slate-50 transition group">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-lg bg-[#449e38] text-white flex items-center justify-center shrink-0">
+                      <i data-lucide="box" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <p class="text-xs font-extrabold text-slate-800 group-hover:text-[#449e38] transition">Add Inventory</p>
+                      <p class="text-[10px] text-slate-500 font-medium">Add new inventory item</p>
+                    </div>
+                  </div>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-[#449e38] group-hover:translate-x-0.5 transition"></i>
+                </a>
+
+                <!-- Action 3: Report Maintenance -->
+                <a href="#" onclick="event.preventDefault();showModule('inventory')" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 hover:border-[#f29913] hover:bg-slate-50 transition group">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-lg bg-[#f29913] text-white flex items-center justify-center shrink-0">
+                      <i data-lucide="wrench" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <p class="text-xs font-extrabold text-slate-800 group-hover:text-[#f29913] transition">Report Maintenance</p>
+                      <p class="text-[10px] text-slate-500 font-medium">Create a maintenance request</p>
+                    </div>
+                  </div>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-[#f29913] group-hover:translate-x-0.5 transition"></i>
+                </a>
+
+                <!-- Action 4: Generate Report -->
+                <a href="#" onclick="event.preventDefault();showModule('reports')" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 hover:border-[#0284c7] hover:bg-slate-50 transition group">
+                  <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-lg bg-[#0284c7] text-white flex items-center justify-center shrink-0">
+                      <i data-lucide="file-text" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <p class="text-xs font-extrabold text-slate-800 group-hover:text-[#0284c7] transition">Generate Report</p>
+                      <p class="text-[10px] text-slate-500 font-medium">Create property reports</p>
+                    </div>
+                  </div>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-[#0284c7] group-hover:translate-x-0.5 transition"></i>
+                </a>
+
+              </div>
+            </div>
+
+            <!-- RECENT ACTIVITY CARD -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">
+                  RECENT ACTIVITY
+                </h2>
+                <a href="#" onclick="event.preventDefault();showModule('inventory')" class="text-xs font-bold text-[#004c87] hover:underline">View All</a>
+              </div>
+
+              <!-- Activity Timeline -->
+              <div class="relative pl-6 space-y-5">
+                <!-- Timeline vertical connecting line -->
+                <div class="absolute left-2.5 top-2 bottom-2 w-0.5 bg-slate-200"></div>
+
+                <!-- Node 1: New property added -->
+                <div class="relative">
+                  <span class="absolute -left-6 top-0.5 w-5 h-5 rounded-full bg-[#004c87] text-white flex items-center justify-center ring-4 ring-white shadow-sm">
+                    <i data-lucide="building-2" class="w-2.5 h-2.5"></i>
+                  </span>
+                  <div>
+                    <p class="text-xs font-extrabold text-slate-800">New property added</p>
+                    <p class="text-[11px] text-slate-600 font-semibold">Science Laboratory</p>
+                    <p class="text-[10px] text-slate-400 font-medium">May 21, 2026 • 10:30 AM</p>
+                  </div>
+                </div>
+
+                <!-- Node 2: Inventory updated -->
+                <div class="relative">
+                  <span class="absolute -left-6 top-0.5 w-5 h-5 rounded-full bg-[#449e38] text-white flex items-center justify-center ring-4 ring-white shadow-sm">
+                    <i data-lucide="box" class="w-2.5 h-2.5"></i>
+                  </span>
+                  <div>
+                    <p class="text-xs font-extrabold text-slate-800">Inventory updated</p>
+                    <p class="text-[11px] text-slate-600 font-semibold">10 units of Monoblock Chair</p>
+                    <p class="text-[10px] text-slate-400 font-medium">May 21, 2026 • 9:15 AM</p>
+                  </div>
+                </div>
+
+                <!-- Node 3: Maintenance request created -->
+                <div class="relative">
+                  <span class="absolute -left-6 top-0.5 w-5 h-5 rounded-full bg-[#f29913] text-white flex items-center justify-center ring-4 ring-white shadow-sm">
+                    <i data-lucide="wrench" class="w-2.5 h-2.5"></i>
+                  </span>
+                  <div>
+                    <p class="text-xs font-extrabold text-slate-800">Maintenance request created</p>
+                    <p class="text-[11px] text-slate-600 font-semibold">Leaky Faucet in CR</p>
+                    <p class="text-[10px] text-slate-400 font-medium">May 20, 2026 • 2:45 PM</p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- PROPERTY BREAKDOWN CARD -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow flex flex-col flex-1 space-y-4 overflow-y-auto">
+
+              <!-- Main Card Header -->
+              <div class="flex items-center space-x-2 border-b border-slate-100 pb-2">
+                <span class="w-1.5 h-4 bg-[#f29913] rounded-full"></span>
+                <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">PROPERTY BREAKDOWN</h2>
+              </div>
+
+              <!-- SUB-CARD 1: SCHOOL LEVEL -->
+              <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <div class="w-6 h-6 rounded-md bg-[#004c87]/10 text-[#004c87] flex items-center justify-center">
+                      <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-800">School Level</span>
+                  </div>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">356 items</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <div class="bg-white border border-[#bfdbfe] rounded-lg p-2 text-center shadow-2xs">
+                    <p class="text-[10px] font-semibold text-[#004c87] truncate">Elementary</p>
+                    <p class="text-xs font-black text-slate-800 mt-0.5">142</p>
+                  </div>
+                  <div class="bg-white border border-[#bbf7d0] rounded-lg p-2 text-center shadow-2xs">
+                    <p class="text-[10px] font-semibold text-[#449e38] truncate">Junior HS</p>
+                    <p class="text-xs font-black text-slate-800 mt-0.5">98</p>
+                  </div>
+                  <div class="bg-white border border-[#fde68a] rounded-lg p-2 text-center shadow-2xs">
+                    <p class="text-[10px] font-semibold text-[#d97706] truncate">Senior HS</p>
+                    <p class="text-xs font-black text-slate-800 mt-0.5">116</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SUB-CARD 2: ACQUISITION YEAR -->
+              <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <div class="w-6 h-6 rounded-md bg-[#0284c7]/10 text-[#0284c7] flex items-center justify-center">
+                      <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-800">Acquisition Year</span>
+                  </div>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">2021–2024</span>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2024</span>
+                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
+                      <div class="h-full bg-[#004c87] rounded-full" style="width:75%"></div>
+                    </div>
+                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">75</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2023</span>
+                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
+                      <div class="h-full bg-[#0284c7] rounded-full" style="width:58%"></div>
+                    </div>
+                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">58</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2022</span>
+                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
+                      <div class="h-full bg-[#38bdf8] rounded-full" style="width:42%"></div>
+                    </div>
+                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">42</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2021</span>
+                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
+                      <div class="h-full bg-[#94a3b8] rounded-full" style="width:25%"></div>
+                    </div>
+                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">25</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SUB-CARD 3: ISSUANCE YEAR -->
+              <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <div class="w-6 h-6 rounded-md bg-[#55a83b]/10 text-[#55a83b] flex items-center justify-center">
+                      <i data-lucide="file-check-2" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-800">Issuance Year</span>
+                  </div>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">2022–2025</span>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2025</span>
+                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
+                      <div class="h-full bg-[#449e38] rounded-full" style="width:82%"></div>
+                    </div>
+                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">82</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2024</span>
+                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
+                      <div class="h-full bg-[#55a83b] rounded-full" style="width:64%"></div>
+                    </div>
+                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">64</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2023</span>
+                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
+                      <div class="h-full bg-[#86efac] rounded-full" style="width:38%"></div>
+                    </div>
+                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">38</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2022</span>
+                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
+                      <div class="h-full bg-[#bbf7d0] rounded-full" style="width:20%"></div>
+                    </div>
+                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">20</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Footer link -->
+              <div class="mt-auto pt-2 border-t border-slate-100 flex items-center justify-between">
+                <a href="#" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
+                  <span>View All Breakdowns</span>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </a>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- MISSION & VALUES CARD -->
+        <div class="bg-[#ebf5fc] border border-[#d2e6f5] rounded-2xl px-6 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 w-full relative overflow-hidden card-shadow">
+
+          <!-- Left: Shield Badge + Mission Text -->
+          <div class="flex items-center space-x-3.5 shrink-0 min-w-0">
+            <div class="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center shrink-0 border border-blue-100/80">
+              <svg class="w-9 h-9" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 3L6 7.5V16.5C6 24.3 11.1 31.5 18 33C24.9 31.5 30 24.3 30 16.5V7.5L18 3Z" fill="#004c87" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="round"/>
+                <path d="M14 18L16.5 20.5L22 15" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <h4 class="text-sm font-bold text-[#003b73] leading-tight">Safe. Organized. Transparent.</h4>
+              <p class="text-[11px] text-[#2c5880] font-medium leading-snug mt-0.5">
+                SPIS helps our school manage assets efficiently<br class="hidden sm:inline" />for better learning environments.
+              </p>
+            </div>
+          </div>
+
+          <!-- Middle: Quote spanning center -->
+          <div class="flex-1 flex items-center justify-center space-x-3 px-2 sm:px-6 min-w-0">
+            <!-- Open Quote Icon -->
+            <svg class="w-5 h-5 text-[#004c87] shrink-0 fill-current opacity-90" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+            </svg>
+            <p class="text-xs sm:text-[13px] text-[#003366] font-semibold leading-snug text-center">
+              Good management of school properties<br />builds better opportunities for learners.
+            </p>
+            <!-- Close Quote Icon -->
+            <svg class="w-5 h-5 text-[#004c87] shrink-0 fill-current opacity-90 rotate-180" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+            </svg>
+          </div>
+
+          <!-- Right: School Building Illustration (docked at the lower right) -->
+          <div class="shrink-0 select-none pointer-events-none flex items-end self-end -mb-3.5 -mr-2">
+            <img src="images/school_bldg.png" alt="School Building" class="h-16 sm:h-20 w-auto object-contain object-bottom drop-shadow-xs" />
+          </div>
+
+        </div>
+        </div>
+
+        <!-- MODULE 2: INVENTORY -->
+        <div class="module-view" data-module="inventory" style="display:none;">
+          <section class="workspace-grid inventory-workspace">
+                <form class="item-form" id="itemForm">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">Property Details</p>
+                            <h2 id="formTitle">Add Property Item</h2>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="editingId">
+
+                    <div class="two-column">
+                        <label>
+                            AssetID
+                            <input id="assetId" type="text" placeholder="e.g. AST-2026-001" readonly>
+                        </label>
+                        <label>
+                            Education Level
+                            <select id="educationLevel">
+                                <option value="">Select education level</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Fund Cluster
+                            <input id="fundCluster" type="text" placeholder="e.g. 01 Regular Agency Fund">
+                        </label>
+                        <label>
+                            Inventory Item Type
+                            <select id="inventoryType">
+                                <option value="">Select item type</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Property No.
+                            <input id="propertyNo" type="text" placeholder="e.g. PROP-2026-001" required>
+                        </label>
+                        <label>
+                            Item/Brand/Model
+                            <input id="itemBrandModel" type="text" placeholder="e.g. Dell Latitude 5440 Laptop" required>
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Item Classification
+                            <div class="classification-controls" style="display:flex; gap:8px; align-items:center;">
+                                <select id="itemClassification" style="flex:1;">
+                                    <option value="">Select classification</option>
+                                </select>
+                                <button class="ghost-button" id="addClassificationBtn" type="button" title="Add classification" aria-label="Add classification">+</button>
+                                <button class="ghost-button" id="deleteClassificationBtn" type="button" title="Delete selected classification" aria-label="Delete selected classification">-</button>
+                            </div>
+                        </label>
+                        <label>
+                            Serial No.
+                            <input id="serialNo" type="text" placeholder="e.g. DL-5440-9281">
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Person Accountable
+                            <select id="accountable">
+                                <option value="">Select teacher</option>
+                            </select>
+                        </label>
+                        <label>
+                            Position
+                            <input id="position" type="text" placeholder="Auto-populates from selected teacher" readonly>
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            School Level
+                            <input id="schoolLevel" type="text" placeholder="Auto-populates from selected teacher" readonly>
+                        </label>
+                        <label>
+                            Semi-Expandable No.
+                            <input id="semiExpandableNo" type="text">
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Acquisition Date
+                            <input id="acquisitionDate" type="date">
+                        </label>
+                        <label>
+                            Unit Value
+                            <input id="unitValue" type="number" min="0" step="0.01">
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Unit Measurement
+                            <input id="unitMeasurement" type="text" placeholder="e.g. pcs">
+                        </label>
+                        <label>
+                            On Hand
+                            <input id="onHand" type="number" min="0" step="0.01">
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Total
+                            <input id="total" type="number" min="0" step="0.01" readonly>
+                        </label>
+                        <label>
+                            Balance
+                            <input id="balance" type="number" min="0" step="0.01">
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Shortage/Overage Quantity
+                            <input id="shortageOverageQty" type="number" step="0.01">
+                        </label>
+                        <label>
+                            Shortage/Overage Value
+                            <input id="shortageOverageValue" type="number" step="0.01">
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            MOOE Month
+                            <select id="mooeMonth">
+                                <option value="">Select month</option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
+                        </label>
+                        <label>
+                            MOOE Year
+                            <input id="mooeYear" type="number" min="1900" max="2200" step="1">
+                        </label>
+                    </div>
+
+                    <label class="full-width">
+                        Location
+                        <input id="location" type="text">
                     </label>
+
+                    <div class="two-column">
+                        <label>
+                            Date Issue
+                            <input id="dateIssue" type="date">
+                        </label>
+                        <label>
+                            Status
+                            <div class="classification-controls" style="display:flex; gap:8px; align-items:center;">
+                                <select id="status" style="flex:1;">
+                                    <option value="" selected>Select status</option>
+                                </select>
+                                <button class="ghost-button" id="addStatusBtn" type="button" title="Add status" aria-label="Add status">+</button>
+                                <button class="ghost-button" id="deleteStatusBtn" type="button" title="Delete selected status" aria-label="Delete selected status">-</button>
+                            </div>
+                        </label>
+                        <div aria-hidden="true"></div>
+                    </div>
+
+                    <label class="full-width">
+                        Additional Item
+                        <textarea id="additionalItem" class="large-remarks" rows="4" placeholder="Additional item details..."></textarea>
+                    </label>
+
+                    <label class="full-width">
+                        Remarks
+                        <textarea id="remarks" class="large-remarks" rows="4" placeholder="Other details about the item..."></textarea>
+                    </label>
+
+                    <div class="inventory-actions-row form-actions-row">
+                        <button class="primary-button form-action-btn" id="newItemBtnInline" type="button">
+                            <img src="images/add_new_1.svg" alt="" class="action-icon" data-theme-icon="images/add_new_1.svg" data-theme-icon-light="images/add_new_2.svg">
+                            <span>New</span>
+                        </button>
+                        <button class="primary-button form-action-btn" id="resetFormBtn" type="button">
+                            <img src="images/clear_1.svg" alt="" class="action-icon" data-theme-icon="images/clear_1.svg" data-theme-icon-light="images/clear_2.svg">
+                            <span>Clear</span>
+                        </button>
+                        <button class="primary-button form-action-btn" type="submit">
+                            <img src="images/save_1.svg" alt="" class="action-icon" data-theme-icon="images/save_1.svg" data-theme-icon-light="images/save_2.svg">
+                            <span>Save</span>
+                        </button>
+                    </div>
+
+                </form>
+                </section>
+
+                <section class="inventory-panel">
+                <div class="section-heading inventory-heading">
+                    <div>
+                        <p class="eyebrow">Property List</p>
+                        <h2>Inventory Records</h2>
+                    </div>
+                    <div class="filters">
+                        <input id="searchInput" type="search" placeholder="Search property, item, person...">
+                        <select id="statusFilter">
+                            <option value="All">All Status</option>
+                        </select>
+                    </div>
                 </div>
-            </header>
 
-            <section class="kpi-grid">
-                <article class="card kpi-card cyan">
-                    <div class="label"><span>Total Property Count</span><i class="fa-solid fa-boxes-stacked"></i></div>
-                    <strong id="totalPropertyCount">0</strong>
-                    <small>All tracked assets</small>
-                </article>
-                <article class="card kpi-card green">
-                    <div class="label"><span>Available Items</span><i class="fa-solid fa-check"></i></div>
-                    <strong id="availableItems">0</strong>
-                    <small>Ready for use</small>
-                </article>
-                <article class="card kpi-card cyan">
-                    <div class="label"><span>Issued Items</span><i class="fa-solid fa-share-from-square"></i></div>
-                    <strong id="issuedItems">0</strong>
-                    <small>Assigned to offices</small>
-                </article>
-                <article class="card kpi-card pink">
-                    <div class="label"><span>Borrowed Items</span><i class="fa-solid fa-hand-holding-hand"></i></div>
-                    <strong id="borrowedItems">0</strong>
-                    <small>Temporary release</small>
-                </article>
-                <article class="card kpi-card gold">
-                    <div class="label"><span>Unserviceable Items</span><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    <strong id="unserviceableItems">0</strong>
-                    <small>Needs action</small>
-                </article>
-                <article class="card kpi-card green">
-                    <div class="label"><span>Total Property Value</span><i class="fa-solid fa-peso-sign"></i></div>
-                    <strong id="totalPropertyValue">₱0</strong>
-                    <small>Estimated value</small>
-                </article>
-            </section>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Property No.</th>
+                                <th>Item/Brand/Model</th>
+                                <th>Serial No.</th>
+                                <th>Classification</th>
+                                <th>Accountable</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTable"></tbody>
+                    </table>
+                </div>
+                <div class="inventory-pagination" id="inventoryPagination" aria-label="Inventory pagination"></div>
+                <div class="empty-state" id="emptyState">
+                    <strong>No inventory records yet</strong>
+                    <span>Add your first property item to generate its QR code.</span>
+                </div>
+                </section>
+        </div>
 
-            <section class="charts-grid">
-                <article class="card canvas-card">
-                    <h3>Monthly Issuance Chart</h3>
-                    <canvas id="monthlyIssuanceChart"></canvas>
-                </article>
-                <article class="card canvas-card">
-                    <h3>Property Category Chart</h3>
-                    <canvas id="propertyCategoryChart"></canvas>
-                </article>
-                <article class="card canvas-card full-width-card">
-                    <h3>Accountable Person</h3>
-                    <canvas id="accountablePersonChart"></canvas>
-                </article>
-            </section>
+        <!-- MODULE 3: QR CODE -->
+        <div class="module-view" data-module="qr" style="display:none;">
+          <section class="qr-module-grid">
+                    <section class="qr-panel" aria-label="QR code preview">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Preview</p>
+                                <h2 id="qrTitle">Select an item</h2>
+                            </div>
+                            <span class="status-pill" id="qrStatus">Waiting</span>
+                        </div>
+                        <div class="qr-stage">
+                            <div id="qrCode" class="qr-code" aria-live="polite"></div>
+                        </div>
+                        <div class="qr-preview-meta">
+                            <span>Scannability:</span>
+                            <strong>EXCELLENT</strong>
+                        </div>
+                        <dl class="qr-details" id="qrDetails">
+                            <div>
+                                <dt>Classification</dt>
+                                <dd>-</dd>
+                            </div>
+                            <div>
+                                <dt>Property No.</dt>
+                                <dd>-</dd>
+                            </div>
+                            <div>
+                                <dt>Accountable</dt>
+                                <dd>-</dd>
+                            </div>
+                            <div>
+                                <dt>Serial No.</dt>
+                                <dd>-</dd>
+                            </div>
+                        </dl>
+                        <div class="button-row qr-preview-actions">
+                            <button class="secondary-button" id="downloadQrBtn" type="button">Download QR</button>
+                            <button class="secondary-button qr-link-button" id="openQrLinkBtn" type="button" hidden>Open Asset Link</button>
+                        </div>
+                        <button class="primary-button qr-next-button" type="button">Next</button>
+                    </section>
+                </section>
+        </div>
 
-            <section class="panel-grid">
-                <article class="card list-card">
-                    <h3>Recent Transactions</h3>
-                    <ul id="recentTransactions"></ul>
-                </article>
-                <article class="card list-card">
-                    <h3>Low Stock Alerts</h3>
-                    <ul id="lowStockAlerts"></ul>
-                </article>
-                <article class="card list-card">
-                    <h3>Upcoming Maintenance</h3>
-                    <ul id="upcomingMaintenance"></ul>
-                </article>
-                <article class="card list-card">
-                    <h3>User Activity Log</h3>
-                    <div class="activity-grid" id="userActivityLog"></div>
-                </article>
-            </section>
-        </main>
+        <!-- MODULE 4: DOCUMENT -->
+        <div class="module-view" data-module="document" style="display:none;">
+          <section class="reports-grid">
+                    <form class="item-form" id="icsSlipForm">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Document Template</p>
+                                <h2 id="icsFormTitle">Inventory Custodian Slip</h2>
+                            </div>
+                        </div>
+                        <p class="module-copy">Create and manage Inventory Custodian Slip records based on the standard ICS form.</p>
+                        <input id="icsEditingId" type="hidden">
+
+                        <div class="two-column">
+                            <label>Entity Name<input id="icsEntityName" type="text" required></label>
+                            <label>Fund Cluster<input id="icsFundCluster" type="text" required></label>
+                        </div>
+                        <div class="two-column">
+                            <label>ICS No.<input id="icsNo" type="text" required></label>
+                            <label>Inventory Item No.<input id="icsInventoryItemNo" type="text" required></label>
+                        </div>
+                        <label class="full-width">Description<textarea id="icsDescription" rows="3" required></textarea></label>
+                        <div class="two-column">
+                            <label>Quantity<input id="icsQuantity" type="number" min="0" step="1" required></label>
+                            <label>Unit<input id="icsUnit" type="text" placeholder="e.g. pcs" required></label>
+                        </div>
+                        <div class="two-column">
+                            <label>Unit Cost<input id="icsUnitCost" type="number" min="0" step="0.01" required></label>
+                            <label>Total Cost<input id="icsTotalCost" type="number" min="0" step="0.01" readonly></label>
+                        </div>
+                        <div class="two-column">
+                            <label>Estimated Useful Life<input id="icsEstimatedUsefulLife" type="text" placeholder="e.g. 5 years"></label>
+                            <div aria-hidden="true"></div>
+                        </div>
+                        <div class="two-column">
+                            <label>Received From
+                                <select id="icsReceivedFrom">
+                                    <option value="">Select signatory</option>
+                                </select>
+                            </label>
+                            <label>Received By
+                                <select id="icsReceivedBy">
+                                    <option value="">Select recipient</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="two-column">
+                            <label>From Position/Office<input id="icsReceivedFromPosition" type="text" readonly></label>
+                            <label>Recipient Position/Office<input id="icsReceivedByPosition" type="text" readonly></label>
+                        </div>
+                        <div class="two-column">
+                            <label>Date Received From<input id="icsReceivedFromDate" type="date"></label>
+                            <label>Date Received By<input id="icsReceivedByDate" type="date"></label>
+                        </div>
+                        <div class="form-actions-row">
+                            <button class="secondary-button" id="icsClearBtn" type="button">Clear</button>
+                            <button class="primary-button" type="submit">Save Slip</button>
+                        </div>
+                    </form>
+
+                    <article class="module-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Saved Documents</p>
+                                <h2>Inventory Custodian Slips</h2>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ICS No.</th>
+                                        <th>Entity</th>
+                                        <th>Description</th>
+                                        <th>Recipient</th>
+                                        <th>Total Cost</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="icsSlipTable"></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </section>
+        </div>
+
+        <!-- MODULE 5: REPORT -->
+        <div class="module-view" data-module="reports" style="display:none;">
+          <section class="reports-grid">
+                    <article class="module-card report-generator-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Report Generator</p>
+                                <h2>Physical Count Report</h2>
+                            </div>
+                        </div>
+                        <div class="report-controls" aria-label="Report filters">
+                            <label>
+                                Type of Inventory Item
+                                <select id="reportInventoryType">
+                                    <option value="">All inventory types</option>
+                                </select>
+                            </label>
+                            <label>
+                                Fund Cluster
+                                <select id="reportFundCluster">
+                                    <option value="">All fund clusters</option>
+                                </select>
+                            </label>
+                            <label>
+                                As of
+                                <input id="reportAsOf" type="date">
+                            </label>
+                        </div>
+                        <div class="physical-report" id="physicalReport" aria-live="polite"></div>
+                    </article>
+                    <article class="module-card signatory-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Signatories</p>
+                                <h2>Report Signatories</h2>
+                            </div>
+                        </div>
+                        <div class="signatory-fields">
+                            <label>
+                                Certified corrected by:
+                                <select id="certifiedCorrectedBy">
+                                    <option value="">Select signatory</option>
+                                </select>
+                            </label>
+                            <label>
+                                Approved by:
+                                <select id="approvedBy">
+                                    <option value="">Select signatory</option>
+                                </select>
+                            </label>
+                            <label>
+                                Verified by:
+                                <select id="verifiedBy">
+                                    <option value="">Select signatory</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="report-actions">
+                            <button class="secondary-button" type="button" id="generatePdfBtn">Generate PDF</button>
+                        </div>
+                    </article>
+                    <article class="module-card all-assets-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="eyebrow">Database View</p>
+                                <h2>All Assets</h2>
+                            </div>
+                            <span class="asset-count" id="assetCount">0 assets</span>
+                        </div>
+                        <label class="asset-search">
+                            Search all asset data
+                            <input id="assetDatabaseSearch" type="search" placeholder="Search property number, person, status...">
+                        </label>
+                        <div class="all-assets-table-wrap">
+                            <table class="all-assets-table">
+                                <thead>
+                                    <tr>
+                                        <th>Asset ID</th>
+                                        <th>Education Level</th>
+                                        <th>Fund Cluster</th>
+                                        <th>Inventory Type</th>
+                                        <th>Property No.</th>
+                                        <th>Classification</th>
+                                        <th>Item/Brand/Model</th>
+                                        <th>Serial No.</th>
+                                        <th>Acquisition Date</th>
+                                        <th>Accountable Person</th>
+                                        <th>School Level</th>
+                                        <th>Semi-Expandable No.</th>
+                                        <th>Unit Value</th>
+                                        <th>Total</th>
+                                        <th>Unit Measurement</th>
+                                        <th>Balance</th>
+                                        <th>On Hand</th>
+                                        <th>Shortage/Overage Qty</th>
+                                        <th>Shortage/Overage Value</th>
+                                        <th>Location</th>
+                                        <th>MOOE Month</th>
+                                        <th>MOOE Year</th>
+                                        <th>Date Issued</th>
+                                        <th>Status</th>
+                                        <th>Additional Item</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="allAssetsTable"></tbody>
+                            </table>
+                        </div>
+                    </article>
+                </section>
+        </div>
+
+        <!-- MODULE 6: SETTINGS -->
+        <div class="module-view" data-module="settings" style="display:none;">
+          <section class="settings-grid">
+                    <article class="module-card">
+                        <p class="eyebrow">Appearance</p>
+                        <h2>Theme</h2>
+                        <div class="theme-switcher" role="group" aria-label="Theme selection">
+                            <button class="theme-option active" type="button" data-theme-choice="dark">Dark</button>
+                            <button class="theme-option" type="button" data-theme-choice="light">Light</button>
+                        </div>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">Settings</p>
+                        <h2>Database Connection</h2>
+                        <dl class="settings-list">
+                            <div>
+                                <dt>Storage Mode</dt>
+                                <dd>Supabase REST API</dd>
+                            </div>
+                            <div>
+                                <dt>Configured Tables</dt>
+                                <dd>assets, classifications</dd>
+                            </div>
+                        </dl>
+                    </article>
+                </section>
+        </div>
+
+        <!-- MODULE 7: ABOUT -->
+        <div class="module-view" data-module="about" style="display:none;">
+          <section class="about-grid">
+                    <article class="module-card about-card">
+                        <p class="eyebrow">About</p>
+                        <h2>School Property Information System</h2>
+                        <p class="module-copy">A browser-based asset registry for recording property details, tracking accountable persons, monitoring item status, and generating QR codes for fast property verification.</p>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">Purpose</p>
+                        <h2>Inventory Control</h2>
+                        <div class="report-list">
+                            <div class="report-item">
+                                <span>Asset Records</span>
+                                <strong>Maintain property numbers, serial numbers, acquisition data, and remarks.</strong>
+                            </div>
+                            <div class="report-item">
+                                <span>Accountability</span>
+                                <strong>Track assigned personnel and item status across the property list.</strong>
+                            </div>
+                            <div class="report-item">
+                                <span>QR Support</span>
+                                <strong>Generate, copy, download, and print QR data for each registered asset.</strong>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">System Info</p>
+                        <h2>Data Source</h2>
+                        <dl class="settings-list">
+                            <div>
+                                <dt>Application Type</dt>
+                                <dd>Static browser app</dd>
+                            </div>
+                            <div>
+                                <dt>Database</dt>
+                                <dd>Supabase REST API</dd>
+                            </div>
+                            <div>
+                                <dt>Offline Fallback</dt>
+                                <dd>Local browser storage</dd>
+                            </div>
+                        </dl>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">Modules</p>
+                        <h2>Included Menus</h2>
+                        <p class="module-copy">Dashboard, Inventory, QR Codes, Reports, Document, Settings, and About are available from the sidebar navigation.</p>
+                    </article>
+                    <article class="module-card">
+                        <p class="eyebrow">Developer</p>
+                        <h2>Corbis</h2>
+                        <dl class="settings-list">
+                            <div>
+                                <dt>Email</dt>
+                                <dd><a href="mailto:corbis.official@gmail.com">corbis.official@gmail.com</a></dd>
+                            </div>
+                        </dl>
+                    </article>
+                </section>
+        </div>
+
+      </main>
+
+      <!-- FOOTER -->
+      <footer class="bg-[#002240] text-slate-300 text-xs px-6 py-3 flex flex-row items-center justify-between gap-4 border-t border-slate-700/60 shrink-0 select-none">
+
+        <!-- Left: Copyright -->
+        <p class="font-medium text-slate-400 shrink-0">© 2026 SPIS - School Property Information System. All rights reserved.</p>
+
+        <!-- Center: Logos -->
+        <div class="flex items-center space-x-3">
+          <img src="images/deped_logo.png" alt="DepEd Official Seal" class="h-10 w-auto object-contain opacity-90" />
+          <img src="images/deped_matatag.png" alt="DepEd MATATAG" class="h-10 w-auto object-contain opacity-90" />
+          <img src="images/bagong_pilipinas.png" alt="Bagong Pilipinas" class="h-10 w-auto object-contain opacity-90" />
+          <img src="images/sdo.png" alt="Schools Division Office" class="h-10 w-auto object-contain opacity-90" />
+        </div>
+
+        <!-- Right: Nav Links -->
+        <div class="flex items-center space-x-3 font-medium text-slate-400 shrink-0">
+          <a href="#" class="hover:text-white transition">Privacy Policy</a>
+          <span class="text-slate-600">|</span>
+          <a href="#" class="hover:text-white transition">Terms of Use</a>
+          <span class="text-slate-600">|</span>
+          <a href="#" class="hover:text-white transition">Help Center</a>
+        </div>
+
+      </footer>
+
     </div>
+  </div>
 
-    <script src="js/homepage.js"></script>
+  <!-- Initialize Lucide Icons -->
+    <!-- Toast Notification Container -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Core Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="supabase-config.js?v=20260901"></script>
+  <script src="js/app.js?v=20260903_v12"></script>
+  <script>
+    if (typeof lucide !== "undefined") { lucide.createIcons(); }
+  </script>
 </body>
 </html>
