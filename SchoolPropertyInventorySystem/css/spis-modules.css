@@ -46,6 +46,17 @@
   }
 }
 
+@media (min-width: 768px) {
+  .app-sidebar {
+    transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+  }
+
+  .app-sidebar.sidebar-collapsed {
+    margin-left: -260px;
+  }
+}
+
 @media (max-width: 767px) {
   .app-shell {
     display: block !important;
@@ -59,11 +70,13 @@
     right: auto !important;
     bottom: 0 !important;
     left: 0 !important;
-    width: 260px !important;
+    width: 270px !important;
     max-width: 86vw;
     transform: translateX(-105%);
-    transition: transform 0.2s ease;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 50;
+    overflow-y: auto;
+    box-shadow: 6px 0 28px rgba(0, 0, 0, 0.3);
   }
 
   .app-sidebar.mobile-open {
@@ -832,5 +845,34 @@ td button.btn-danger:hover {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+
+/* Dropdowns and Navigation Enhancements */
+#topNavMenu {
+  -webkit-overflow-scrolling: touch;
+}
+
+#topNavMenu::-webkit-scrollbar {
+  display: none;
+}
+
+.top-nav-btn {
+  user-select: none;
+  cursor: pointer;
+}
+
+#notifDropdown, #userDropdown {
+  animation: dropdownFade 0.15s ease-out;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
