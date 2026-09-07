@@ -84,7 +84,7 @@ const dom = {
     qrStatus: document.querySelector("#qrStatus"),
     qrDetails: document.querySelector("#qrDetails"),
     totalItems: document.querySelector("#totalItems"),
-    assignedItems: document.querySelector("#assignedItems"),
+    icsGenerated: document.querySelector("#icsGenerated"),
     repairItems: document.querySelector("#repairItems"),
     qrItems: document.querySelector("#qrItems"),
     portfolioChart: document.querySelector("#portfolioChart"),
@@ -1051,13 +1051,24 @@ function getVisibleStatusNames() {
 }
 
 function renderStats() {
-    const assignedCount = items.filter((item) => String(item.accountable || "").trim()).length;
     const classifications = new Set(items.map((item) => String(item.itemClassification || "").trim().toLocaleLowerCase()).filter(Boolean));
 
     dom.totalItems.textContent = items.length;
-    dom.assignedItems.textContent = assignedCount;
+    renderIcsGeneratedCount();
     dom.repairItems.textContent = classifications.size;
     dom.qrItems.textContent = items.length;
+}
+
+function renderIcsGeneratedCount() {
+    if (!dom.icsGenerated) return;
+
+    const slipKeys = new Set(inventoryCustodianSlips.map((slip) => {
+        if (slip.dbSlipId != null) return `database:${slip.dbSlipId}`;
+        if (String(slip.icsNo || "").trim()) return `local:${slip.icsNo}`;
+        return `local:${slip.id}`;
+    }));
+
+    dom.icsGenerated.textContent = slipKeys.size;
 }
 
 function renderDashboard() {
@@ -3415,11 +3426,13 @@ async function initInventoryCustodianSlipCrud() {
     populateIcsReceivedFromDropdown();
     populateIcsReceivedByDropdown();
     inventoryCustodianSlips = loadInventoryCustodianSlips();
+    renderIcsGeneratedCount();
     renderInventoryCustodianSlipTable();
     renderRecentAssets();
 
     try {
         if (await loadInventoryCustodianSlipsFromDatabase()) {
+            renderIcsGeneratedCount();
             renderInventoryCustodianSlipTable();
             renderRecentAssets();
         }
@@ -3485,6 +3498,7 @@ async function initInventoryCustodianSlipCrud() {
             }
 
             saveInventoryCustodianSlips();
+            renderIcsGeneratedCount();
             renderInventoryCustodianSlipTable();
             renderRecentAssets();
             resetInventoryCustodianSlipForm();
@@ -3524,6 +3538,7 @@ async function initInventoryCustodianSlipCrud() {
                 }
 
                 saveInventoryCustodianSlips();
+                renderIcsGeneratedCount();
                 renderInventoryCustodianSlipTable();
                 renderRecentAssets();
                 resetInventoryCustodianSlipForm();
