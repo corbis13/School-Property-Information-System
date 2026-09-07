@@ -735,7 +735,7 @@
               </div>
 
               <!-- Bar Chart (10 Persons) -->
-              <div class="space-y-2.5">
+              <div id="accountablePersonCardBody" class="space-y-2.5" aria-live="polite">
 
                 <!-- Person 1 -->
                 <div class="flex items-center gap-3">
@@ -841,8 +841,8 @@
 
               <!-- Footer -->
               <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
-                <p class="text-[11px] text-slate-400 font-medium">Total assigned: <strong class="text-slate-700">353 items</strong></p>
-                <a href="#" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
+                <p class="text-[11px] text-slate-400 font-medium">Total assigned: <strong id="accountablePersonTotal" class="text-slate-700">Loading...</strong></p>
+                <a id="accountablePersonViewAll" href="accountable-person-report.html" target="_blank" rel="noopener" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
                   <span>View All</span>
                   <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                 </a>
@@ -1588,7 +1588,6 @@
                                 <p class="eyebrow">Signatories</p>
                                 <h2>Report Signatories</h2>
                             </div>
-                            <span class="text-xs text-slate-500 font-medium hidden sm:inline-block">Official DepEd RPCSP Signatories</span>
                         </div>
                         <div class="signatory-fields">
                             <label>

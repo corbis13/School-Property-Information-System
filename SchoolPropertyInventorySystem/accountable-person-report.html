@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>All Accountable Persons</title>
+  <link rel="stylesheet" href="css/accountable-person-report.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>All Accountable Persons</h1>
+        <p>Asset assignments from the database</p>
+      </div>
+      <div id="totalAssigned" class="total">Loading...</div>
+    </header>
+    <section id="accountablePersonChart" class="chart" aria-label="All accountable persons"></section>
+    <nav class="pagination" aria-label="Accountable person pages">
+      <button id="previousPage" type="button">Previous</button>
+      <span id="pageStatus" aria-live="polite"></span>
+      <button id="nextPage" type="button">Next</button>
+    </nav>
+  </main>
+  <script src="js/accountable-person-report.js"></script>
+</body>
+</html>

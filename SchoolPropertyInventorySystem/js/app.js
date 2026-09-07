@@ -95,6 +95,8 @@ const dom = {
     qrCoverage: document.querySelector("#qrCoverage"),
     recentAssets: document.querySelector("#recentAssets"),
     accountablePersonChart: document.querySelector("#accountablePersonChart"),
+    accountablePersonCardBody: document.querySelector("#accountablePersonCardBody"),
+    accountablePersonTotal: document.querySelector("#accountablePersonTotal"),
     physicalReport: document.querySelector("#physicalReport"),
     allAssetsTable: document.querySelector("#allAssetsTable"),
     assetCount: document.querySelector("#assetCount"),
@@ -1085,6 +1087,7 @@ function renderDashboard() {
     renderMiniDistributionChart(dom.acquisitionYearChart, acquisitionYearEntries);
     renderMiniDistributionChart(dom.dateIssueYearChart, dateIssueYearEntries);
     renderAccountableBarChart(accountableEntries);
+    renderAccountablePersonCard(accountableEntries);
     renderRecentAssets();
 }
 
@@ -1208,6 +1211,32 @@ function renderAccountableBarChart(entries) {
     };
 
     renderPage(1);
+}
+
+function renderAccountablePersonCard(entries) {
+        if (!dom.accountablePersonCardBody) return;
+
+        const visibleEntries = entries.slice(0, 10);
+        const maxValue = Math.max(...visibleEntries.map((entry) => entry.value), 1);
+        const colors = ["#004c87", "#449e38", "#f29913", "#0284c7", "#94a3b8", "#6366f1", "#0d9488", "#ec4899", "#8b5cf6", "#64748b"];
+
+        dom.accountablePersonCardBody.innerHTML = visibleEntries.length
+                ? visibleEntries.map((entry, index) => `
+                        <div class="flex items-center gap-3">
+                            <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">${escapeHtml(entry.label)}</span>
+                            <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                                <div class="h-full rounded-full flex items-center justify-end pr-2" style="width: ${Math.max(8, Math.round((entry.value / maxValue) * 100))}%; background: ${colors[index % colors.length]};">
+                                    <span class="text-[10px] font-black text-white">${entry.value}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join("")
+                : '<p class="text-xs text-slate-400">No accountable persons found in the asset database.</p>';
+
+        if (dom.accountablePersonTotal) {
+            const totalAssigned = entries.reduce((sum, entry) => sum + entry.value, 0);
+                dom.accountablePersonTotal.textContent = `${totalAssigned} item${totalAssigned === 1 ? "" : "s"}`;
+        }
 }
 
 function renderMiniDistributionChart(container, entries) {
@@ -1628,6 +1657,65 @@ async function generateReportPdf() {
         report.style.width = previous.width;
         report.classList.remove("pdf-export");
     }
+}
+
+function openAccountablePersonReport() {
+        const entries = getAccountablePersonEntries();
+        const maxValue = Math.max(...entries.map((entry) => entry.value), 1);
+        const colors = ["#004c87", "#449e38", "#f29913", "#0284c7", "#94a3b8", "#6366f1", "#0d9488", "#ec4899", "#8b5cf6", "#64748b"];
+        const rows = entries.length
+                ? entries.map((entry, index) => `
+                        <div class="bar-row">
+                            <span class="person-label">${escapeHtml(entry.label)}</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width: ${Math.max(1, Math.round((entry.value / maxValue) * 100))}%; background: ${colors[index % colors.length]};">
+                                    <strong>${entry.value}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `).join("")
+                : '<p class="empty-state">No accountable persons found in the asset database.</p>';
+        const totalAssigned = entries.reduce((sum, entry) => sum + entry.value, 0);
+                    const reportHtml = `<!doctype html>
+                        <html lang="en">
+                            <head>
+                                <meta charset="utf-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1">
+                                <title>All Accountable Persons</title>
+                                <style>
+                                    :root { font-family: Arial, sans-serif; color: #17324d; background: #f4f8fb; }
+                                    body { margin: 0; padding: 32px; }
+                                    main { max-width: 1100px; margin: 0 auto; background: #fff; border: 1px solid #d9e4ec; border-radius: 14px; padding: 28px; box-shadow: 0 8px 24px rgba(0, 51, 94, .08); }
+                                    header { display: flex; justify-content: space-between; align-items: end; gap: 20px; border-bottom: 1px solid #e5edf3; padding-bottom: 18px; margin-bottom: 24px; }
+                                    h1 { margin: 0 0 6px; color: #00335e; font-size: 24px; }
+                                    p { margin: 0; color: #64748b; font-size: 13px; }
+                                    .total { color: #00335e; font-size: 14px; font-weight: 700; white-space: nowrap; }
+                                    .chart { display: grid; gap: 10px; }
+                                    .bar-row { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); align-items: center; gap: 14px; }
+                                    .person-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #475569; font-size: 13px; font-weight: 600; }
+                                    .bar-track { height: 26px; overflow: hidden; border-radius: 999px; background: #edf2f6; }
+                                    .bar-fill { display: flex; align-items: center; justify-content: flex-end; min-width: 28px; height: 100%; padding-right: 9px; box-sizing: border-box; border-radius: inherit; color: #fff; font-size: 12px; }
+                                    .empty-state { padding: 24px 0; }
+                                    @media (max-width: 600px) { body { padding: 14px; } main { padding: 18px; } header { align-items: start; flex-direction: column; } .bar-row { grid-template-columns: 110px minmax(0, 1fr); gap: 9px; } }
+                                </style>
+                            </head>
+                            <body>
+                                <main>
+                                    <header>
+                                        <div><h1>All Accountable Persons</h1><p>Asset assignments from the database</p></div>
+                                        <div class="total">Total assigned: ${totalAssigned} item${totalAssigned === 1 ? "" : "s"}</div>
+                                    </header>
+                                    <section class="chart" aria-label="All accountable persons">${rows}</section>
+                                </main>
+                            </body>
+                        </html>`;
+                    const reportUrl = URL.createObjectURL(new Blob([reportHtml], { type: "text/html" }));
+                    const reportWindow = window.open(reportUrl, "_blank");
+
+                    if (!reportWindow) {
+                            URL.revokeObjectURL(reportUrl);
+                            showToast("Please allow popups to view all accountable persons.");
+                    }
 }
 
 function parseMoney(value) {
@@ -2994,6 +3082,7 @@ function wireEvents() {
     const sidebarToggle = document.querySelector("#sidebarToggleBtn, button[aria-label='Toggle Sidebar']");
     const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
     const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+    const accountablePersonViewAll = document.getElementById("accountablePersonViewAll");
 
     function openMobileSidebar() {
         sidebar?.classList.add("mobile-open");
@@ -3029,6 +3118,12 @@ function wireEvents() {
 
     if (sidebarBackdrop) {
         sidebarBackdrop.addEventListener("click", closeMobileSidebar);
+    }
+
+    if (accountablePersonViewAll) {
+        accountablePersonViewAll.addEventListener("click", (event) => {
+            localStorage.setItem("accountablePersonReportEntries", JSON.stringify(getAccountablePersonEntries()));
+        });
     }
 
     // Top Dropdown Menus (Notification & User Profile)
