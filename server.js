@@ -28,6 +28,18 @@ app.get(['/homepage', '/homepage.html', '/dashboard'], (req, res) => {
   res.redirect(302, `/SchoolPropertyInventorySystem/index.html${query}`);
 });
 
+// Dynamic supabase-config.js delivery
+app.get(['/SchoolPropertyInventorySystem/supabase-config.js', '/supabase-config.js'], (req, res) => {
+  res.type('application/javascript');
+  const url = process.env.SUPABASE_URL || 'https://ouqgkytallctnptshefo.supabase.co';
+  const anonKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS';
+  res.send(`window.SUPABASE_CONFIG = {
+    url: ${JSON.stringify(url)},
+    anonKey: ${JSON.stringify(anonKey)},
+    assetUrl: (typeof window !== "undefined" && window.location ? window.location.origin : "") + "/SchoolPropertyInventorySystem/asset.html"
+};`);
+});
+
 // Serve any other root static files (such as images, icons, etc.)
 app.use(express.static(__dirname));
 

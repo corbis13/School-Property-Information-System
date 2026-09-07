@@ -2,7 +2,7 @@ const storageKey = "propertyInventoryItems";
 const classificationStorageKey = "propertyInventoryClassifications";
 const themeKey = "propertyInventoryTheme";
 const supabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
-const supabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "YOUR_SUPABASE_ANON_KEY";
+const supabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
 const supabaseHeaders = {
     apikey: supabaseAnonKey,
     Authorization: `Bearer ${supabaseAnonKey}`
@@ -95,7 +95,6 @@ const dom = {
     qrCoverage: document.querySelector("#qrCoverage"),
     recentAssets: document.querySelector("#recentAssets"),
     accountablePersonChart: document.querySelector("#accountablePersonChart"),
-    qrAssetList: document.querySelector("#qrAssetList"),
     physicalReport: document.querySelector("#physicalReport"),
     allAssetsTable: document.querySelector("#allAssetsTable"),
     assetCount: document.querySelector("#assetCount"),
@@ -137,11 +136,9 @@ let signatoryLoadFailed = false;
 let canOpenClassificationModal = false;
 let canOpenStatusModal = false;
 let inventoryPage = 1;
-let qrPage = 1;
 const inventoryCustodianSlipStorageKey = "propertyInventoryCustodianSlips";
 let inventoryCustodianSlips = [];
 const inventoryRowsPerPage = 12;
-const qrRowsPerPage = 8;
 let isRefreshingStatusOptions = false;
 let isStatusSelectionLocked = false;
 let isRefreshingClassificationOptions = false;
@@ -181,12 +178,18 @@ function fallbackItems() {
         const raw = localStorage.getItem(storageKey);
         const parsed = raw ? JSON.parse(raw) : [];
         if (Array.isArray(parsed) && parsed.length) {
-            return parsed;
+            return parsed.map((item) => ({
+                ...item,
+                total: item.total != null && item.total !== "" ? formatTotalDisplay(item.total) : ""
+            }));
         }
     } catch {
         // ignore parse errors
     }
-    return seedItems.slice();
+    return seedItems.map((item) => ({
+        ...item,
+        total: item.total != null && item.total !== "" ? formatTotalDisplay(item.total) : ""
+    }));
 }
 
 async function loadClassificationOptions() {
@@ -337,13 +340,29 @@ async function loadSignatoryOptions() {
         signatoryLoadFailed = true;
     }
 
+    if (signatoryOptions.length === 0) {
+        const defaultList = [
+            { name: "Dr. Juan Dela Cruz", position: "School Principal IV" },
+            { name: "Maria Santos", position: "School Property Custodian" },
+            { name: "Engr. Roberto Reyes", position: "Division Property Inspector" },
+            { name: "Ana Patricia Cruz", position: "Inventory Committee Chair" },
+            { name: "Mark Anthony Mendoza", position: "Supply Officer II" }
+        ];
+        if (Array.isArray(teacherOptions) && teacherOptions.length) {
+            teacherOptions.forEach((teacher) => {
+                if (teacher.name && !defaultList.some(e => e.name.toLowerCase() === teacher.name.toLowerCase())) {
+                    defaultList.push({ name: teacher.name, position: teacher.position || "Teacher" });
+                }
+            });
+        }
+        signatoryEntries = defaultList;
+        signatoryOptions = [...new Set(defaultList.map(e => e.name))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    }
+
     [dom.certifiedCorrectedBy, dom.approvedBy, dom.verifiedBy].forEach((select) => {
         if (!select) return;
         const currentValue = select.value;
-        const unavailableOption = signatoryLoadFailed
-            ? `<option value="" disabled>Signatories table unavailable</option>`
-            : "";
-        select.innerHTML = `${unavailableOption}<option value="">Select signatory</option>${signatoryOptions
+        select.innerHTML = `<option value="">Select signatory</option>${signatoryOptions
             .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
         if (signatoryOptions.includes(currentValue)) select.value = currentValue;
     });
@@ -667,7 +686,7 @@ async function loadItems() {
             schoolLevel: row.school_level || row.schoolLevel || row.schoollevel || "",
             semiExpandableNo: row.semi_expandable_no || row.semiExpandableNo || "",
             unitValue: row.unit_value ?? row.unitValue ?? "",
-            total: row.total ?? "",
+            total: row.total != null && row.total !== "" ? formatTotalDisplay(row.total) : "",
             unitMeasurement: row.unit_measurement || row.unitMeasurement || "",
             balance: row.balance ?? "",
             onHand: row.on_hand ?? row.onHand ?? "",
@@ -735,7 +754,7 @@ async function syncToSheet(action, item) {
         school_level: item.schoolLevel || "",
         semi_expandable_no: item.semiExpandableNo || "",
         unit_value: item.unitValue === "" ? null : item.unitValue,
-        total: item.total === "" ? null : item.total,
+        total: item.total === "" || item.total === null || item.total === undefined ? null : (Number.isFinite(Number(String(item.total).replace(/[^0-9.-]/g, ""))) ? Number(String(item.total).replace(/[^0-9.-]/g, "")) : null),
         unit_measurement: item.unitMeasurement || "",
         balance: item.balance === "" ? null : item.balance,
         on_hand: item.onHand === "" ? null : item.onHand,
@@ -785,12 +804,19 @@ function setDatabaseStatus(status, message) {
     dom.databaseMessage.textContent = message;
 }
 
+function formatTotalDisplay(val) {
+    if (val === "" || val === null || val === undefined) return "";
+    const num = typeof val === "number" ? val : Number(String(val).replace(/[^0-9.-]/g, ""));
+    if (!Number.isFinite(num)) return "";
+    return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function updateTotal() {
     const unitValue = Number(dom.unitValue.value);
     const onHand = Number(dom.onHand.value);
 
     dom.total.value = dom.unitValue.value !== "" && dom.onHand.value !== "" && Number.isFinite(unitValue) && Number.isFinite(onHand)
-        ? (unitValue * onHand).toFixed(2)
+        ? formatTotalDisplay(unitValue * onHand)
         : "";
 }
 
@@ -914,6 +940,9 @@ function fillForm(item) {
     dom.balance.value = item.balance ?? "";
     dom.onHand.value = item.onHand ?? "";
     updateTotal();
+    if (!dom.total.value && item.total !== undefined && item.total !== null && item.total !== "") {
+        dom.total.value = formatTotalDisplay(item.total);
+    }
     dom.shortageOverageQty.value = item.shortageOverageQty ?? "";
     dom.shortageOverageValue.value = item.shortageOverageValue ?? "";
     dom.location.value = item.location || "";
@@ -940,6 +969,7 @@ function resetForm() {
     dom.assetId.value = createId();
     dom.position.value = "";
     dom.schoolLevel.value = "";
+    dom.total.value = "";
     dom.formTitle.textContent = "Add Property Item";
 }
 
@@ -1376,53 +1406,7 @@ function renderRecentAssets() {
     if (window.lucide) window.lucide.createIcons();
 }
 
-function renderQrAssetList() {
-    if (!dom.qrAssetList) return;
 
-    const totalQrPages = Math.max(1, Math.ceil(items.length / qrRowsPerPage));
-    const startIndex = (qrPage - 1) * qrRowsPerPage;
-    const visibleItems = items.slice(startIndex, startIndex + qrRowsPerPage);
-
-    dom.qrAssetList.innerHTML = items.length
-        ? `
-            <div class="qr-selection-table">
-                <div class="qr-selection-header">
-                    <span>Property No.</span>
-                    <span>Item/Brand/Model</span>
-                    <span>Serial No.</span>
-                    <span>Classification</span>
-                    <span>Accountable</span>
-                    <span>Status</span>
-                    <span>Actions</span>
-                </div>
-                ${visibleItems.map((item) => {
-                    const isSelected = item.assetId === selectedId;
-                    const status = getComputedStatus(item);
-                    return `
-                        <div class="qr-selection-row ${isSelected ? "active" : ""}" data-qr-id="${escapeHtml(item.assetId)}">
-                            <span class="qr-cell qr-property-no">${escapeHtml(item.propertyNo || item.assetId)}</span>
-                            <span class="qr-cell qr-item">${escapeHtml(item.itemBrandModel || "-")}</span>
-                            <span class="qr-cell qr-serial">${escapeHtml(item.serialNo || "-")}</span>
-                            <span class="qr-cell qr-classification">${escapeHtml(item.itemClassification || "-")}</span>
-                            <span class="qr-cell qr-accountable">${escapeHtml(item.accountable || "Unassigned")}</span>
-                            <span class="qr-cell qr-status"><span class="badge" style="${getStatusBadgeStyles(status)}">${escapeHtml(status || "Unspecified")}</span></span>
-                            <span class="qr-cell qr-actions">
-                                <button class="qr-action-btn" type="button" data-qr-id="${escapeHtml(item.assetId)}">${isSelected ? "Selected" : "Select"}</button>
-                            </span>
-                        </div>
-                    `;
-                }).join("")}
-                ${totalQrPages > 1 ? `
-                    <div class="qr-pagination">
-                        <button class="inventory-page-btn" type="button" data-qr-page="prev" data-qr-id="" ${qrPage === 1 ? "disabled" : ""}>Previous</button>
-                        <span class="inventory-page-status">Page ${qrPage} of ${totalQrPages}</span>
-                        <button class="inventory-page-btn" type="button" data-qr-page="next" data-qr-id="" ${qrPage === totalQrPages ? "disabled" : ""}>Next</button>
-                    </div>
-                ` : ""}
-            </div>
-        `
-        : `<div class="report-item"><strong>No assets available</strong><span>Add assets in the Inventory module first.</span></div>`;
-}
 
 function renderReports() {
     renderReportOptions();
@@ -1431,6 +1415,7 @@ function renderReports() {
     }
     renderPhysicalCountReport();
     renderAllAssetsView();
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
 }
 
 function renderAllAssetsView() {
@@ -1444,7 +1429,7 @@ function renderAllAssetsView() {
         "location", "mooeMonth", "mooeYear", "dateIssue", "status", "additionalItem", "remarks"
     ];
 
-    dom.assetCount.textContent = `${filteredItems.length} ${filteredItems.length === 1 ? "asset" : "assets"}`;
+    if (dom.assetCount) dom.assetCount.textContent = `${filteredItems.length} ${filteredItems.length === 1 ? "asset" : "assets"}`;
     dom.allAssetsTable.innerHTML = filteredItems.length
         ? filteredItems.map((item) => `<tr>${fields.map((field) => `<td>${reportCell(item[field], "-")}</td>`).join("")}</tr>`).join("")
         : `<tr><td colspan="26" class="report-empty-row">No matching assets</td></tr>`;
@@ -1486,7 +1471,7 @@ function reportCell(value, fallback = "") {
 function renderPhysicalCountReport() {
     if (!dom.physicalReport) return;
     const reportItems = getReportItems();
-    const inventoryType = dom.reportInventoryType.value || "SCHOOL FURNITURES";
+    const inventoryType = dom.reportInventoryType.value || "ALL INVENTORY ITEMS";
     const fundCluster = dom.reportFundCluster.value || "____________________________";
     const signatories = [
         ["Certified Correct by:", dom.certifiedCorrectedBy?.value || ""],
@@ -1579,10 +1564,10 @@ async function generateReportPdf() {
 
     const report = dom.physicalReport;
     const previous = { overflow: report.style.overflow, maxHeight: report.style.maxHeight, width: report.style.width };
+    report.classList.add("pdf-export");
     report.style.overflow = "visible";
     report.style.maxHeight = "none";
     report.style.width = `${report.scrollWidth}px`;
-    report.classList.add("pdf-export");
 
     try {
         const canvas = await window.html2canvas(report, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
@@ -1818,12 +1803,37 @@ function renderQr() {
 
     new QRCode(dom.qrCode, {
         text: assetLink,
-        width: 300,
-        height: 300,
+        width: 280,
+        height: 280,
         colorDark: "#000000",
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.M
     });
+
+    const canvasEl = dom.qrCode.querySelector("canvas");
+    const imgEl = dom.qrCode.querySelector("img");
+
+    if (canvasEl && imgEl) {
+        try {
+            const dataUrl = canvasEl.toDataURL("image/png");
+            if (dataUrl && dataUrl.startsWith("data:image/png")) {
+                imgEl.src = dataUrl;
+                imgEl.alt = "QR Code for " + (item.propertyNo || item.assetId);
+                imgEl.style.display = "block";
+                canvasEl.style.display = "none";
+            } else {
+                canvasEl.style.display = "block";
+                imgEl.style.display = "none";
+            }
+        } catch (err) {
+            canvasEl.style.display = "block";
+            imgEl.style.display = "none";
+        }
+    } else if (canvasEl) {
+        canvasEl.style.display = "block";
+    } else if (imgEl) {
+        imgEl.style.display = "block";
+    }
 }
 
 function setQrDetails(item) {
@@ -1843,9 +1853,6 @@ function renderApp() {
     renderDashboard();
     renderTable();
     renderQr();
-    if (dom.qrAssetList) {
-        renderQrAssetList();
-    }
     renderReports();
 }
 
@@ -1864,146 +1871,235 @@ function showToast(message) {
     window.setTimeout(() => dom.toast.classList.remove("show"), 2200);
 }
 
-function downloadQr() {
-    const item = items.find((entry) => entry.assetId === selectedId);
-    const canvas = dom.qrCode.querySelector("canvas");
-    const image = dom.qrCode.querySelector("img");
+function generateQrCanvas(text, size = 500) {
+    return new Promise((resolve) => {
+        if (window.QRCode) {
+            const container = document.createElement("div");
+            container.style.position = "fixed";
+            container.style.left = "-9999px";
+            container.style.top = "-9999px";
+            container.style.opacity = "0";
+            container.style.pointerEvents = "none";
+            document.body.appendChild(container);
 
-    if (!item || (!canvas && !image)) {
-        showToast("Select an item with a generated QR code first.");
+            try {
+                new QRCode(container, {
+                    text: text,
+                    width: size,
+                    height: size,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+
+                setTimeout(() => {
+                    let resolvedCanvas = null;
+                    const c = container.querySelector("canvas");
+                    if (c && c.width > 0) {
+                        resolvedCanvas = document.createElement("canvas");
+                        resolvedCanvas.width = size;
+                        resolvedCanvas.height = size;
+                        const rctx = resolvedCanvas.getContext("2d");
+                        rctx.drawImage(c, 0, 0, size, size);
+                    } else {
+                        const img = container.querySelector("img");
+                        if (img && img.src) {
+                            const loadedImg = new Image();
+                            loadedImg.onload = () => {
+                                const imgCanvas = document.createElement("canvas");
+                                imgCanvas.width = size;
+                                imgCanvas.height = size;
+                                const ictx = imgCanvas.getContext("2d");
+                                ictx.drawImage(loadedImg, 0, 0, size, size);
+                                if (container.parentNode) document.body.removeChild(container);
+                                resolve(imgCanvas);
+                            };
+                            loadedImg.onerror = () => {
+                                if (container.parentNode) document.body.removeChild(container);
+                                resolve(null);
+                            };
+                            loadedImg.src = img.src;
+                            return;
+                        }
+                    }
+                    if (container.parentNode) document.body.removeChild(container);
+                    resolve(resolvedCanvas);
+                }, 70);
+                return;
+            } catch (err) {
+                if (container.parentNode) document.body.removeChild(container);
+                resolve(null);
+            }
+        }
+
+        const existingCanvas = dom.qrCode ? dom.qrCode.querySelector("canvas") : null;
+        if (existingCanvas && existingCanvas.width > 0) {
+            const fallbackCanvas = document.createElement("canvas");
+            fallbackCanvas.width = existingCanvas.width;
+            fallbackCanvas.height = existingCanvas.height;
+            fallbackCanvas.getContext("2d").drawImage(existingCanvas, 0, 0);
+            return resolve(fallbackCanvas);
+        }
+
+        const existingImg = dom.qrCode ? dom.qrCode.querySelector("img") : null;
+        if (existingImg && existingImg.src) {
+            const loadedImg = new Image();
+            loadedImg.onload = () => {
+                const fallbackCanvas = document.createElement("canvas");
+                fallbackCanvas.width = loadedImg.naturalWidth || 280;
+                fallbackCanvas.height = loadedImg.naturalHeight || 280;
+                fallbackCanvas.getContext("2d").drawImage(loadedImg, 0, 0);
+                resolve(fallbackCanvas);
+            };
+            loadedImg.onerror = () => resolve(null);
+            loadedImg.src = existingImg.src;
+            return;
+        }
+
+        resolve(null);
+    });
+}
+
+function downloadCanvasAsPng(canvas, fileName) {
+    return new Promise((resolve) => {
+        const fallbackDataUrl = () => {
+            try {
+                const dataUrl = canvas.toDataURL("image/png");
+                const link = document.createElement("a");
+                link.download = fileName;
+                link.href = dataUrl;
+                link.rel = "noopener noreferrer";
+                link.style.display = "none";
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => {
+                    try { document.body.removeChild(link); } catch (e) {}
+                    resolve(true);
+                }, 300);
+            } catch (err) {
+                console.error("DataURL download failed:", err);
+                resolve(false);
+            }
+        };
+
+        if (canvas.toBlob) {
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    fallbackDataUrl();
+                    return;
+                }
+                try {
+                    const blobUrl = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.download = fileName;
+                    link.href = blobUrl;
+                    link.rel = "noopener noreferrer";
+                    link.style.display = "none";
+                    document.body.appendChild(link);
+                    link.click();
+                    setTimeout(() => {
+                        try {
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(blobUrl);
+                        } catch (e) {}
+                        resolve(true);
+                    }, 1500);
+                } catch (err) {
+                    fallbackDataUrl();
+                }
+            }, "image/png");
+        } else {
+            fallbackDataUrl();
+        }
+    });
+}
+
+async function downloadQr() {
+    let item = items.find((entry) => entry.assetId === selectedId);
+
+    if (!item && items.length > 0) {
+        selectedId = items[0].assetId;
+        item = items[0];
+        renderQr();
+    }
+
+    if (!item) {
+        showToast("Select an inventory record first to download its QR code.");
         return;
     }
 
-    // prepare source canvas (either existing canvas or drawn from image)
-    const makeSrcCanvas = () => new Promise((resolve, reject) => {
-        if (canvas) return resolve(canvas);
-        const img = image.cloneNode();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-            try {
-                const tmp = document.createElement("canvas");
-                tmp.width = img.naturalWidth || img.width;
-                tmp.height = img.naturalHeight || img.height;
-                const tctx = tmp.getContext("2d");
-                tctx.drawImage(img, 0, 0);
-                resolve(tmp);
-            } catch (err) {
-                reject(err);
-            }
-        };
-        img.onerror = () => reject(new Error("Image load failed"));
-        img.src = image.src;
-    });
+    const btn = dom.downloadQrBtn;
+    const origHtml = btn ? btn.innerHTML : "";
 
-    makeSrcCanvas()
-        .then((src) => {
-            try {
-                const sctx = src.getContext("2d");
-                const w = src.width;
-                const h = src.height;
-                let moduleSize = 0;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 inline-block mr-1 animate-spin"></i>Downloading...`;
+        if (window.lucide && lucide.createIcons) lucide.createIcons();
+    }
 
-                // attempt to detect first dark pixel to compute module size
-                try {
-                    const data = sctx.getImageData(0, 0, w, h).data;
-                    const isDark = (x, y) => {
-                        const i = (y * w + x) * 4;
-                        const r = data[i], g = data[i + 1], b = data[i + 2];
-                        const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-                        return lum < 128;
-                    };
+    try {
+        const payload = getQrPayload(item);
+        const qrCanvas = await generateQrCanvas(payload, 520);
 
-                    let firstX = -1, firstY = -1;
-                    outer: for (let y = 0; y < h; y++) {
-                        for (let x = 0; x < w; x++) {
-                            if (isDark(x, y)) {
-                                firstX = x;
-                                firstY = y;
-                                break outer;
-                            }
-                        }
-                    }
+        if (!qrCanvas) {
+            showToast("Unable to generate QR code canvas. Please try again.");
+            return;
+        }
 
-                    if (firstX >= 0) {
-                        // measure run length of the first black region horizontally
-                        let x1 = firstX;
-                        while (x1 < w && isDark(x1, firstY)) x1++;
-                        const blackWidth = x1 - firstX;
-                        // Finder outer square is 7 modules wide
-                        moduleSize = Math.max(1, Math.round(blackWidth / 7));
-                    }
-                } catch (err) {
-                    moduleSize = 0;
-                }
+        // Add standard white quiet zone (margin) around the QR code
+        const qrSize = qrCanvas.width || 520;
+        const padding = Math.max(36, Math.round(qrSize * 0.08));
+        const outWidth = qrSize + padding * 2;
+        const outHeight = qrSize + padding * 2;
 
-                let quietAdd = 0;
+        const out = document.createElement("canvas");
+        out.width = outWidth;
+        out.height = outHeight;
+        const ctx = out.getContext("2d");
 
-                if (moduleSize > 0) {
-                    // compute existing quiet (distance from left edge to first dark pixel)
-                    let existingQuiet = 0;
-                    try {
-                        const data = sctx.getImageData(0, 0, w, h).data;
-                        const isDark = (x, y) => {
-                            const i = (y * w + x) * 4;
-                            const r = data[i], g = data[i + 1], b = data[i + 2];
-                            const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-                            return lum < 128;
-                        };
-                        outer2: for (let y = 0; y < h; y++) {
-                            for (let x = 0; x < w; x++) {
-                                if (isDark(x, y)) {
-                                    existingQuiet = x;
-                                    break outer2;
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        existingQuiet = 0;
-                    }
+        // Solid white quiet zone background
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, outWidth, outHeight);
 
-                    const requiredQuiet = moduleSize * 4; // exact 4-module quiet zone
-                    if (existingQuiet < requiredQuiet) {
-                        quietAdd = requiredQuiet - existingQuiet;
-                    }
-                }
+        // Draw centered QR Code
+        ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
 
-                // fallback if detection failed
-                if (!quietAdd && moduleSize === 0) {
-                    const srcSize = Math.max(src.width, src.height);
-                    quietAdd = Math.max(20, Math.round(srcSize * 0.1));
-                }
+        // Sanitize filename
+        const cleanPropertyNo = (item.propertyNo || item.assetId || "asset")
+            .trim()
+            .replace(/[<>:"/\\|?*]+/g, "-")
+            .replace(/[. ]+$/, "");
+        const cleanItemName = (item.itemBrandModel || "qr-code")
+            .trim()
+            .replace(/[<>:"/\\|?*]+/g, "-")
+            .replace(/[. ]+$/, "");
+        const cleanSerial = (item.serialNo || "")
+            .trim()
+            .replace(/[<>:"/\\|?*]+/g, "-")
+            .replace(/[. ]+$/, "");
 
-                const outW = src.width + quietAdd * 2;
-                const outH = src.height + quietAdd * 2;
-                const out = document.createElement("canvas");
-                out.width = outW;
-                out.height = outH;
-                const ctx = out.getContext("2d");
+        let fileName = `${cleanPropertyNo} - ${cleanItemName}`;
+        if (cleanSerial && cleanSerial.toLowerCase() !== "not specified" && cleanSerial.toLowerCase() !== "no serial no") {
+            fileName += ` - ${cleanSerial}`;
+        }
+        fileName += ".png";
 
-                // white background
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(0, 0, outW, outH);
-
-                // draw centered with added quiet (if any)
-                ctx.drawImage(src, quietAdd, quietAdd, src.width, src.height);
-
-                const link = document.createElement("a");
-                const fileName = (item.itemBrandModel || "qr-code")
-                    .trim()
-                    .replace(/[<>:"/\\|?*]+/g, "-")
-                    .replace(/[. ]+$/, "") || "qr-code";
-                const serialNumber = (item.serialNo || "No Serial No.")
-                    .trim()
-                    .replace(/[<>:"/\\|?*]+/g, "-")
-                    .replace(/[. ]+$/, "") || "No Serial No";
-                link.download = `${fileName} - ${serialNumber}.png`;
-                link.href = out.toDataURL("image/png");
-                link.click();
-            } catch (err) {
-                showToast("Unable to prepare QR image for download.");
-            }
-        })
-        .catch(() => showToast("Unable to prepare QR image for download."));
+        const success = await downloadCanvasAsPng(out, fileName);
+        if (success) {
+            showToast(`QR Code PNG downloaded: ${fileName}`);
+        } else {
+            showToast("Unable to prepare QR image for download.");
+        }
+    } catch (err) {
+        console.error("QR download error:", err);
+        showToast("Unable to prepare QR image for download.");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+            if (window.lucide && lucide.createIcons) lucide.createIcons();
+        }
+    }
 }
 
 function copyQrData() {
@@ -2042,9 +2138,6 @@ function selectNextQrItem() {
     const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % items.length : 0;
     selectedId = items[nextIndex].assetId;
     renderQr();
-    if (dom.qrAssetList) {
-        renderQrAssetList();
-    }
     showToast("QR preview advanced to next item.");
 }
 
@@ -2492,9 +2585,6 @@ async function handleTableClick(event) {
     if (button.dataset.action === "qr") {
         selectedId = item.assetId;
         renderQr();
-        if (dom.qrAssetList) {
-            renderQrAssetList();
-        }
         showModule("qr");
         showToast("QR preview updated.");
         return;
@@ -2754,13 +2844,27 @@ function showModule(moduleName) {
         const isActive = btn.dataset.view === moduleName;
         btn.classList.toggle("active", isActive);
         if (isActive) {
-            btn.classList.add("bg-[#00335e]", "text-white", "shadow-xs");
-            btn.classList.remove("text-slate-600", "hover:bg-slate-100");
+            btn.classList.add("bg-[#00335e]", "text-white", "font-bold", "shadow-xs");
+            btn.classList.remove("text-slate-600", "font-semibold", "hover:bg-slate-100", "hover:text-[#00335e]");
         } else {
-            btn.classList.remove("bg-[#00335e]", "text-white", "shadow-xs");
-            btn.classList.add("text-slate-600", "hover:bg-slate-100");
+            btn.classList.remove("bg-[#00335e]", "text-white", "font-bold", "shadow-xs");
+            btn.classList.add("text-slate-600", "font-semibold", "hover:bg-slate-100", "hover:text-[#00335e]");
         }
     });
+
+    // Show school name and ID card ONLY in dashboard module
+    const sidebarSchoolCard = document.getElementById("sidebarSchoolInfoCard");
+    if (sidebarSchoolCard) {
+        sidebarSchoolCard.style.display = (moduleName === "dashboard") ? "" : "none";
+    }
+
+    if (moduleName === "qr") {
+        renderQr();
+    }
+
+    if (moduleName === "reports") {
+        renderReports();
+    }
 
     if (typeof lucide !== "undefined") {
         lucide.createIcons();
@@ -2906,7 +3010,9 @@ function wireEvents() {
     dom.resetFormBtn.addEventListener("click", resetForm);
     dom.accountable.addEventListener("change", applySelectedTeacherDetails);
     dom.unitValue.addEventListener("input", updateTotal);
+    dom.unitValue.addEventListener("change", updateTotal);
     dom.onHand.addEventListener("input", updateTotal);
+    dom.onHand.addEventListener("change", updateTotal);
     dom.addClassificationBtn.addEventListener("click", () => {
         if (!canOpenClassificationModal) return;
         openClassificationModal();
@@ -2956,6 +3062,9 @@ function wireEvents() {
     if (dom.generatePdfBtn) {
         dom.generatePdfBtn.addEventListener("click", generateReportPdf);
     }
+    document.querySelectorAll(".generate-pdf-btn").forEach((btn) => {
+        btn.addEventListener("click", generateReportPdf);
+    });
     [dom.reportInventoryType, dom.reportFundCluster, dom.reportAsOf].forEach((control) => {
         if (control) control.addEventListener("input", renderPhysicalCountReport);
     });
@@ -2964,26 +3073,6 @@ function wireEvents() {
     });
     if (dom.assetDatabaseSearch) {
         dom.assetDatabaseSearch.addEventListener("input", renderAllAssetsView);
-    }
-    if (dom.qrAssetList) {
-        dom.qrAssetList.addEventListener("click", (event) => {
-            const button = event.target.closest("[data-qr-id], [data-qr-page]");
-            if (!button) return;
-
-            if (button.dataset.qrPage) {
-                if (button.dataset.qrPage === "prev" && qrPage > 1) {
-                    qrPage -= 1;
-                } else if (button.dataset.qrPage === "next") {
-                    qrPage += 1;
-                }
-                renderQrAssetList();
-                return;
-            }
-
-            selectedId = button.dataset.qrId;
-            renderQr();
-            renderQrAssetList();
-        });
     }
     const dashboardQrBtn = document.querySelector("[data-dashboard-action='qr']");
     if (dashboardQrBtn) {

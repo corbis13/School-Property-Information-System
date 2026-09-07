@@ -1,7 +1,7 @@
 let assets = [];
 
-const supabaseUrl = window.SUPABASE_CONFIG?.url || '';
-const supabaseAnonKey = window.SUPABASE_CONFIG?.anonKey || '';
+const supabaseUrl = window.SUPABASE_CONFIG?.url || 'https://ouqgkytallctnptshefo.supabase.co';
+const supabaseAnonKey = window.SUPABASE_CONFIG?.anonKey || 'sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS';
 const supabaseHeaders = {
   apikey: supabaseAnonKey,
   Authorization: `Bearer ${supabaseAnonKey}`

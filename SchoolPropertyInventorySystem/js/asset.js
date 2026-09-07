@@ -3,8 +3,8 @@ const assetTitle = document.querySelector("#assetTitle");
 const message = document.querySelector("#message");
 const returnToQrBtn = document.querySelector("#returnToQrBtn");
 
-const supabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "";
-const supabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "";
+const supabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+const supabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
 const supabaseHeaders = {
     apikey: supabaseAnonKey,
     Authorization: `Bearer ${supabaseAnonKey}`
@@ -30,6 +30,13 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
+function formatAmount(value) {
+    if (value === "" || value === null || value === undefined) return "";
+    const num = Number(String(value).replace(/[^0-9.-]/g, ""));
+    if (!Number.isFinite(num)) return String(value);
+    return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function renderAssetDetails(item) {
     const fields = [
         ["Asset ID", item.assetId],
@@ -41,8 +48,8 @@ function renderAssetDetails(item) {
         ["Accountable Person", item.accountable],
         ["School Level", item.schoolLevel],
         ["Semi-Expandable No.", item.semiExpandableNo],
-        ["Unit Value", item.unitValue],
-        ["Total", item.total],
+        ["Unit Value", item.unitValue ? formatAmount(item.unitValue) : ""],
+        ["Total", item.total ? formatAmount(item.total) : ""],
         ["Unit Measurement", item.unitMeasurement],
         ["Balance", item.balance],
         ["On Hand", item.onHand],

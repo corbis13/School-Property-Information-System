@@ -121,7 +121,7 @@
       box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
     }
   </style>
-  <link rel="stylesheet" href="css/spis-modules.css?v=20260903f">
+  <link rel="stylesheet" href="css/spis-modules.css?v=20260904_v6">
 </head>
 <body class="bg-[#f0f4f8] text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-green selection:text-white">
 
@@ -216,7 +216,7 @@
       </div>
 
       <!-- Bottom School Branch Info Bar -->
-      <div class="relative overflow-hidden p-3 bg-[#002444]/95 border-t border-white/10">
+      <div id="sidebarSchoolInfoCard" class="relative overflow-hidden p-3 bg-[#002444]/95 border-t border-white/10">
         <!-- Subtle dot grid pattern -->
         <div class="absolute right-0 bottom-0 opacity-10 pointer-events-none">
           <svg width="80" height="60" viewBox="0 0 80 60">
@@ -343,8 +343,8 @@
         </div>
       </header>
 
-      <!-- RESPONSIVE HORIZONTAL TOP NAVIGATION MENU -->
-      <nav id="topNavMenu" class="bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none sticky top-0 z-15 shadow-2xs" aria-label="Quick Modules Navigation">
+      <!-- RESPONSIVE HORIZONTAL TOP NAVIGATION MENU (Hidden in Windows Desktop view, visible only in mobile view) -->
+      <nav id="topNavMenu" class="bg-white border-b border-slate-200 px-3 sm:px-6 py-2 flex md:hidden items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none sticky top-0 z-15 shadow-2xs" aria-label="Quick Modules Navigation">
         <button type="button" class="top-nav-btn active flex items-center space-x-1.5 sm:space-x-2 px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap bg-[#00335e] text-white shadow-xs" data-view="dashboard">
           <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
           <span>Dashboard</span>
@@ -391,8 +391,6 @@
         <div id="qrCoverage" style="display:none;"></div>
         <div id="statusBars" style="display:none;"></div>
         <div id="statusChartLegend" style="display:none;"></div>
-        <div id="qrAssetList" style="display:none;"></div>
-        <button id="copyQrBtn" style="display:none;"></button>
 
         <!-- MODULE 1: DASHBOARD -->
         <div class="module-view active" data-module="dashboard">
@@ -452,77 +450,6 @@
                   <!-- Green Wave -->
                   <path d="M0,16 Q260,2 520,20 T1000,10 L1000,30 L0,30 Z" fill="#55a83b" opacity="0.9"/>
                 </svg>
-              </div>
-            </div>
-
-            <!-- HOMEPAGE QUICK MODULE NAVIGATION MENU -->
-            <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 card-shadow">
-              <div class="flex items-center justify-between mb-3.5">
-                <div class="flex items-center space-x-2">
-                  <div class="w-6 h-6 rounded-md bg-[#00335e]/10 flex items-center justify-center text-[#00335e]">
-                    <i data-lucide="grid" class="w-4 h-4"></i>
-                  </div>
-                  <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">System Navigation Menu</h2>
-                </div>
-                <span class="text-[11px] text-slate-500 font-semibold hidden sm:inline">Click to open any module</span>
-              </div>
-              
-              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
-                
-                <!-- 1. Inventory -->
-                <button type="button" class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-emerald-50 hover:border-emerald-200 text-slate-700 hover:text-[#55a83b] transition group cursor-pointer text-center" onclick="showModule('inventory')">
-                  <div class="w-10 h-10 rounded-xl bg-white shadow-xs flex items-center justify-center mb-1.5 group-hover:scale-105 group-hover:shadow-sm transition">
-                    <i data-lucide="box" class="w-5 h-5 text-[#55a83b]"></i>
-                  </div>
-                  <span class="text-xs font-bold leading-tight">Inventory</span>
-                  <span class="text-[10px] text-slate-400 group-hover:text-slate-600 mt-0.5">Asset Registry</span>
-                </button>
-
-                <!-- 2. QR Code -->
-                <button type="button" class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-sky-50 hover:border-sky-200 text-slate-700 hover:text-[#0284c7] transition group cursor-pointer text-center" onclick="showModule('qr')">
-                  <div class="w-10 h-10 rounded-xl bg-white shadow-xs flex items-center justify-center mb-1.5 group-hover:scale-105 group-hover:shadow-sm transition">
-                    <i data-lucide="qr-code" class="w-5 h-5 text-[#0284c7]"></i>
-                  </div>
-                  <span class="text-xs font-bold leading-tight">QR Codes</span>
-                  <span class="text-[10px] text-slate-400 group-hover:text-slate-600 mt-0.5">Sticker Labels</span>
-                </button>
-
-                <!-- 3. Document -->
-                <button type="button" class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-indigo-50 hover:border-indigo-200 text-slate-700 hover:text-indigo-600 transition group cursor-pointer text-center" onclick="showModule('document')">
-                  <div class="w-10 h-10 rounded-xl bg-white shadow-xs flex items-center justify-center mb-1.5 group-hover:scale-105 group-hover:shadow-sm transition">
-                    <i data-lucide="file-text" class="w-5 h-5 text-indigo-600"></i>
-                  </div>
-                  <span class="text-xs font-bold leading-tight">Custodian Slip</span>
-                  <span class="text-[10px] text-slate-400 group-hover:text-slate-600 mt-0.5">ICS Forms</span>
-                </button>
-
-                <!-- 4. Reports -->
-                <button type="button" class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-amber-50 hover:border-amber-200 text-slate-700 hover:text-amber-600 transition group cursor-pointer text-center" onclick="showModule('reports')">
-                  <div class="w-10 h-10 rounded-xl bg-white shadow-xs flex items-center justify-center mb-1.5 group-hover:scale-105 group-hover:shadow-sm transition">
-                    <i data-lucide="bar-chart-2" class="w-5 h-5 text-amber-600"></i>
-                  </div>
-                  <span class="text-xs font-bold leading-tight">Reports</span>
-                  <span class="text-[10px] text-slate-400 group-hover:text-slate-600 mt-0.5">Analytics & PDF</span>
-                </button>
-
-                <!-- 5. Settings -->
-                <button type="button" class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-slate-100 hover:border-slate-300 text-slate-700 hover:text-[#00335e] transition group cursor-pointer text-center" onclick="showModule('settings')">
-                  <div class="w-10 h-10 rounded-xl bg-white shadow-xs flex items-center justify-center mb-1.5 group-hover:scale-105 group-hover:shadow-sm transition">
-                    <i data-lucide="settings" class="w-5 h-5 text-[#00335e]"></i>
-                  </div>
-                  <span class="text-xs font-bold leading-tight">Settings</span>
-                  <span class="text-[10px] text-slate-400 group-hover:text-slate-600 mt-0.5">System Config</span>
-                </button>
-
-                <!-- 6. About -->
-                <button type="button" class="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-teal-50 hover:border-teal-200 text-slate-700 hover:text-teal-600 transition group cursor-pointer text-center" onclick="showModule('about')">
-                  <div class="w-10 h-10 rounded-xl bg-white shadow-xs flex items-center justify-center mb-1.5 group-hover:scale-105 group-hover:shadow-sm transition">
-                    <i data-lucide="info" class="w-5 h-5 text-teal-600"></i>
-                  </div>
-                  <span class="text-xs font-bold leading-tight">About</span>
-                  <span class="text-[10px] text-slate-400 group-hover:text-slate-600 mt-0.5">SPIS Specs</span>
-                </button>
-
               </div>
             </div>
 
@@ -624,7 +551,6 @@
                         <option>Last Month</option>
                         <option>This Year</option>
                       </select>
-                      <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
                     </div>
                   </div>
 
@@ -805,7 +731,6 @@
                     <option>Buildings</option>
                     <option>Inventory</option>
                   </select>
-                  <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
                 </div>
               </div>
 
@@ -1189,10 +1114,9 @@
           </div>
 
         </div>
-        </div>
 
-        <!-- MOBILE SCHOOL INFORMATION CARD -->
-        <div class="mobile-school-info-card relative overflow-hidden p-3 bg-[#002444]/95 border-t border-white/10 text-white items-center gap-2.5">
+        <!-- MOBILE SCHOOL INFORMATION CARD (DASHBOARD ONLY) -->
+        <div class="mobile-school-info-card relative overflow-hidden p-3 bg-[#002444]/95 border border-white/10 text-white items-center gap-2.5 rounded-xl mt-4">
           <div class="w-10 h-10 rounded-full border border-white/30 bg-white/10 p-0.5 shrink-0 flex items-center justify-center shadow-sm">
             <img src="images/geras_logo.png" alt="Geras Integrated School" class="w-full h-full object-contain rounded-full" />
           </div>
@@ -1201,6 +1125,8 @@
             <p class="text-[10px] text-sky-200 font-semibold leading-tight mt-0.5">School ID: <strong class="text-white font-bold">500243</strong></p>
             <p class="text-[9px] text-sky-300/80 font-medium leading-tight mt-0.5">Connected to Supabase.</p>
           </div>
+        </div>
+
         </div>
 
         <!-- MODULE 2: INVENTORY -->
@@ -1319,7 +1245,7 @@
                     <div class="two-column">
                         <label>
                             Total
-                            <input id="total" type="number" min="0" step="0.01" readonly>
+                            <input id="total" type="text" placeholder="0.00" readonly>
                         </label>
                         <label>
                             Balance
@@ -1405,7 +1331,7 @@
                             <i data-lucide="rotate-ccw" class="action-icon"></i>
                             <span>Clear</span>
                         </button>
-                        <button class="primary-button form-action-btn" type="submit">
+                        <button class="primary-button form-action-btn" id="saveAssetBtn" type="submit">
                             <i data-lucide="save" class="action-icon"></i>
                             <span>Save</span>
                         </button>
@@ -1416,9 +1342,9 @@
 
                 <section class="inventory-panel">
                 <div class="section-heading inventory-heading">
-                    <div>
-                        <p class="eyebrow">Property List</p>
-                        <h2>Inventory Records</h2>
+                    <div class="text-left self-start">
+                        <p class="eyebrow text-left">Property List</p>
+                        <h2 class="text-left">Inventory Records</h2>
                     </div>
                     <div class="filters">
                         <input id="searchInput" type="search" placeholder="Search property, item, person...">
@@ -1454,47 +1380,62 @@
 
         <!-- MODULE 3: QR CODE -->
         <div class="module-view" data-module="qr" style="display:none;">
-          <section class="qr-module-grid">
-                    <section class="qr-panel" aria-label="QR code preview">
-                        <div class="section-heading">
-                            <div>
-                                <p class="eyebrow">Preview</p>
-                                <h2 id="qrTitle">Select an item</h2>
-                            </div>
-                            <span class="status-pill" id="qrStatus">Waiting</span>
-                        </div>
-                        <div class="qr-stage">
-                            <div id="qrCode" class="qr-code" aria-live="polite"></div>
-                        </div>
-                        <div class="qr-preview-meta">
-                            <span>Scannability:</span>
-                            <strong>EXCELLENT</strong>
-                        </div>
-                        <dl class="qr-details" id="qrDetails">
-                            <div>
-                                <dt>Classification</dt>
-                                <dd>-</dd>
-                            </div>
-                            <div>
-                                <dt>Property No.</dt>
-                                <dd>-</dd>
-                            </div>
-                            <div>
-                                <dt>Accountable</dt>
-                                <dd>-</dd>
-                            </div>
-                            <div>
-                                <dt>Serial No.</dt>
-                                <dd>-</dd>
-                            </div>
-                        </dl>
-                        <div class="button-row qr-preview-actions">
-                            <button class="secondary-button" id="downloadQrBtn" type="button">Download QR</button>
-                            <button class="secondary-button qr-link-button" id="openQrLinkBtn" type="button" hidden>Open Asset Link</button>
-                        </div>
-                        <button class="primary-button qr-next-button" type="button">Next</button>
-                    </section>
-                </section>
+          <div class="qr-module-grid">
+            <!-- CARD 1: QR CODE LIVE PREVIEW & CONTROLS -->
+            <section class="qr-panel spis-card" aria-label="QR code preview">
+                <div class="section-heading">
+                    <div>
+                        <p class="eyebrow">QR Generator</p>
+                        <h2 id="qrTitle">Select an item</h2>
+                    </div>
+                    <span class="status-pill" id="qrStatus">Waiting</span>
+                </div>
+
+                <div class="qr-stage">
+                    <div id="qrCode" class="qr-code" aria-live="polite"></div>
+                </div>
+
+                <div class="qr-preview-meta">
+                    <span>Scannability:</span>
+                    <strong>EXCELLENT</strong>
+                </div>
+
+                <dl class="qr-details" id="qrDetails">
+                    <div>
+                        <dt>Classification</dt>
+                        <dd>-</dd>
+                    </div>
+                    <div>
+                        <dt>Property No.</dt>
+                        <dd>-</dd>
+                    </div>
+                    <div>
+                        <dt>Accountable</dt>
+                        <dd>-</dd>
+                    </div>
+                    <div>
+                        <dt>Serial No.</dt>
+                        <dd>-</dd>
+                    </div>
+                </dl>
+
+                <div class="qr-preview-actions">
+                    <button class="secondary-button" id="downloadQrBtn" type="button">
+                        <i data-lucide="download" class="w-4 h-4 inline-block mr-1"></i>Download PNG
+                    </button>
+                    <button class="secondary-button" id="copyQrBtn" type="button">
+                        <i data-lucide="copy" class="w-4 h-4 inline-block mr-1"></i>Copy Link
+                    </button>
+                    <button class="secondary-button qr-link-button" id="openQrLinkBtn" type="button" hidden>
+                        <i data-lucide="external-link" class="w-4 h-4 inline-block mr-1"></i>Open Asset
+                    </button>
+                    <button class="primary-button qr-next-button" type="button">
+                        <span>Next Asset</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 inline-block ml-1"></i>
+                    </button>
+                </div>
+            </section>
+          </div>
         </div>
 
         <!-- MODULE 4: DOCUMENT -->
@@ -1552,8 +1493,14 @@
                             <label>Date Received By<input id="icsReceivedByDate" type="date"></label>
                         </div>
                         <div class="form-actions-row">
-                            <button class="secondary-button" id="icsClearBtn" type="button">Clear</button>
-                            <button class="primary-button" type="submit">Save Slip</button>
+                            <button class="primary-button form-action-btn" id="icsClearBtn" type="button">
+                                <i data-lucide="rotate-ccw" class="action-icon"></i>
+                                <span>Clear</span>
+                            </button>
+                            <button class="primary-button form-action-btn" id="saveIcsBtn" type="submit">
+                                <i data-lucide="save" class="action-icon"></i>
+                                <span>Save Slip</span>
+                            </button>
                         </div>
                     </form>
 
@@ -1614,82 +1561,42 @@
                         <div class="physical-report" id="physicalReport" aria-live="polite"></div>
                     </article>
                     <article class="module-card signatory-card">
-                        <div class="section-heading">
+                        <div class="section-heading" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
                             <div>
                                 <p class="eyebrow">Signatories</p>
                                 <h2>Report Signatories</h2>
                             </div>
+                            <span class="text-xs text-slate-500 font-medium hidden sm:inline-block">Official DepEd RPCSP Signatories</span>
                         </div>
                         <div class="signatory-fields">
                             <label>
-                                Certified corrected by:
+                                <span class="field-label-text">Certified Correct by:</span>
+                                <span class="field-hint-text">Property Custodian / Supply Officer</span>
                                 <select id="certifiedCorrectedBy">
                                     <option value="">Select signatory</option>
                                 </select>
                             </label>
                             <label>
-                                Approved by:
+                                <span class="field-label-text">Approved by:</span>
+                                <span class="field-hint-text">School Principal / Head</span>
                                 <select id="approvedBy">
                                     <option value="">Select signatory</option>
                                 </select>
                             </label>
                             <label>
-                                Verified by:
+                                <span class="field-label-text">Verified by:</span>
+                                <span class="field-hint-text">Division Inspector / Committee</span>
                                 <select id="verifiedBy">
                                     <option value="">Select signatory</option>
                                 </select>
                             </label>
                         </div>
-                        <div class="report-actions">
-                            <button class="secondary-button" type="button" id="generatePdfBtn">Generate PDF</button>
-                        </div>
-                    </article>
-                    <article class="module-card all-assets-card">
-                        <div class="section-heading">
-                            <div>
-                                <p class="eyebrow">Database View</p>
-                                <h2>All Assets</h2>
-                            </div>
-                            <span class="asset-count" id="assetCount">0 assets</span>
-                        </div>
-                        <label class="asset-search">
-                            Search all asset data
-                            <input id="assetDatabaseSearch" type="search" placeholder="Search property number, person, status...">
-                        </label>
-                        <div class="all-assets-table-wrap">
-                            <table class="all-assets-table">
-                                <thead>
-                                    <tr>
-                                        <th>Asset ID</th>
-                                        <th>Education Level</th>
-                                        <th>Fund Cluster</th>
-                                        <th>Inventory Type</th>
-                                        <th>Property No.</th>
-                                        <th>Classification</th>
-                                        <th>Item/Brand/Model</th>
-                                        <th>Serial No.</th>
-                                        <th>Acquisition Date</th>
-                                        <th>Accountable Person</th>
-                                        <th>School Level</th>
-                                        <th>Semi-Expandable No.</th>
-                                        <th>Unit Value</th>
-                                        <th>Total</th>
-                                        <th>Unit Measurement</th>
-                                        <th>Balance</th>
-                                        <th>On Hand</th>
-                                        <th>Shortage/Overage Qty</th>
-                                        <th>Shortage/Overage Value</th>
-                                        <th>Location</th>
-                                        <th>MOOE Month</th>
-                                        <th>MOOE Year</th>
-                                        <th>Date Issued</th>
-                                        <th>Status</th>
-                                        <th>Additional Item</th>
-                                        <th>Remarks</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="allAssetsTable"></tbody>
-                            </table>
+                        <div class="report-actions" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f1f5f9;">
+                            <p class="text-xs text-slate-500 m-0">Selected signatories are automatically embedded in the report's certification block.</p>
+                            <button class="primary-button generate-pdf-btn" type="button" id="generatePdfBtn" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; padding: 0.625rem 1.5rem; background: linear-gradient(135deg, #00335e 0%, #004c87 100%); color: #ffffff; border-radius: 0.5rem; box-shadow: 0 2px 6px rgba(0, 51, 94, 0.2); cursor: pointer;">
+                                <i data-lucide="download" class="w-4 h-4 inline-block"></i>
+                                Generate PDF
+                            </button>
                         </div>
                     </article>
                 </section>
@@ -1823,8 +1730,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="supabase-config.js?v=20260901"></script>
-  <script src="js/app.js?v=20260903_v12"></script>
+  <script src="supabase-config.js?v=20260904"></script>
+  <script src="js/app.js?v=20260904_v4"></script>
   <script>
     if (typeof lucide !== "undefined") { lucide.createIcons(); }
   </script>
