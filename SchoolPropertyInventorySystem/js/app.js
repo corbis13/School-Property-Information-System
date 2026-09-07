@@ -111,7 +111,8 @@ const dom = {
     downloadQrBtn: document.querySelector("#downloadQrBtn"),
     openQrLinkBtn: document.querySelector("#openQrLinkBtn"),
     qrNextBtn: document.querySelector(".qr-next-button"),
-    copyQrBtn: document.querySelector("#copyQrBtn"),
+    qrHistoryTable: document.querySelector("#qrHistoryTable"),
+    qrHistoryEmptyState: document.querySelector("#qrHistoryEmptyState"),
     themeButtons: document.querySelectorAll("[data-theme-choice]"),
     toast: document.querySelector("#toast"),
     databaseStatus: document.querySelector("#databaseStatus"),
@@ -137,7 +138,10 @@ let canOpenClassificationModal = false;
 let canOpenStatusModal = false;
 let inventoryPage = 1;
 const inventoryCustodianSlipStorageKey = "propertyInventoryCustodianSlips";
+const qrDownloadHistoryStorageKey = "propertyInventoryQrDownloadHistory";
+const qrDownloadedFileNamesStorageKey = "propertyInventoryQrDownloadedFileNames";
 let inventoryCustodianSlips = [];
+let qrDownloadHistory = [];
 const inventoryRowsPerPage = 12;
 let isRefreshingStatusOptions = false;
 let isStatusSelectionLocked = false;
@@ -982,15 +986,7 @@ function getAssetDetailUrl(assetId) {
         return `${configuredUrl.replace(/\/+$|\?+$/g, "")}${query}`;
     }
 
-    try {
-        const url = new URL(window.location.href);
-        url.pathname = url.pathname.replace(/[^/]*$/, "asset.html");
-        url.search = query;
-        url.hash = "";
-        return url.toString();
-    } catch {
-        return `asset.html${query}`;
-    }
+    return `https://corbis13.github.io/School-Property-Information-System/SchoolPropertyInventorySystem/asset.html${query}`;
 }
 
 function getQrPayload(item) {
@@ -1790,7 +1786,7 @@ function renderQr() {
     const item = items.find((entry) => entry.assetId === selectedId);
     dom.qrCode.innerHTML = "";
     dom.openQrLinkBtn.hidden = true;
-    dom.openQrLinkBtn.removeAttribute("data-asset-url");
+    dom.openQrLinkBtn.href = "#";
 
     if (!item) {
         dom.qrTitle.textContent = "Select an item";
@@ -1803,7 +1799,7 @@ function renderQr() {
     dom.qrTitle.textContent = item.itemBrandModel || item.propertyNo || item.assetId;
     dom.qrStatus.textContent = item.status || "Unspecified";
     const assetLink = getQrPayload(item);
-    dom.openQrLinkBtn.dataset.assetUrl = assetLink;
+    dom.openQrLinkBtn.href = assetLink;
     dom.openQrLinkBtn.hidden = false;
     setQrDetails(item);
 
@@ -1845,6 +1841,70 @@ function renderQr() {
     } else if (imgEl) {
         imgEl.style.display = "block";
     }
+
+}
+
+function loadQrDownloadHistory() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(qrDownloadHistoryStorageKey) || "[]");
+        return Array.isArray(stored) ? stored : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveQrDownloadHistory() {
+    try {
+        localStorage.setItem(qrDownloadHistoryStorageKey, JSON.stringify(qrDownloadHistory));
+    } catch (error) {
+        console.error("Unable to save QR download history locally.", error);
+    }
+}
+
+function recordQrDownload(item) {
+    const existing = qrDownloadHistory.find((entry) => entry.assetId === item.assetId);
+    const downloadedAt = new Date().toISOString();
+
+    if (existing) {
+        existing.propertyNo = item.propertyNo || item.assetId;
+        existing.itemBrandModel = item.itemBrandModel || item.propertyNo || item.assetId;
+        existing.downloadedAt = downloadedAt;
+        existing.count = Number(existing.count || 0) + 1;
+    } else {
+        qrDownloadHistory.push({
+            assetId: item.assetId,
+            propertyNo: item.propertyNo || item.assetId,
+            itemBrandModel: item.itemBrandModel || item.propertyNo || item.assetId,
+            downloadedAt,
+            count: 1
+        });
+    }
+
+    saveQrDownloadHistory();
+    renderQrDownloadHistory();
+}
+
+function renderQrDownloadHistory() {
+    if (!dom.qrHistoryTable || !dom.qrHistoryEmptyState) return;
+
+    const entries = [...qrDownloadHistory].sort((first, second) =>
+        new Date(second.downloadedAt).getTime() - new Date(first.downloadedAt).getTime()
+    );
+    dom.qrHistoryTable.innerHTML = entries.map((entry) => `
+        <tr>
+            <td>${escapeHtml(entry.propertyNo || entry.assetId)}</td>
+            <td>${escapeHtml(entry.itemBrandModel || "Unspecified")}</td>
+            <td>${escapeHtml(formatQrDownloadDate(entry.downloadedAt))}</td>
+            <td><strong>${Number(entry.count || 0)}</strong></td>
+        </tr>
+    `).join("");
+    dom.qrHistoryEmptyState.style.display = entries.length ? "none" : "flex";
+}
+
+function formatQrDownloadDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Unknown";
+    return date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
 function setQrDetails(item) {
@@ -2025,6 +2085,49 @@ function downloadCanvasAsPng(canvas, fileName) {
     });
 }
 
+function loadQrDownloadedFileNames() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(qrDownloadedFileNamesStorageKey) || "[]");
+        return Array.isArray(stored) ? stored : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveQrDownloadedFileNames(fileNames) {
+    try {
+        localStorage.setItem(qrDownloadedFileNamesStorageKey, JSON.stringify(fileNames));
+    } catch (error) {
+        console.error("Unable to save QR download filenames locally.", error);
+    }
+}
+
+function getNextQrDownloadFileName(fileName) {
+    const downloadedFileNames = loadQrDownloadedFileNames();
+    if (!downloadedFileNames.includes(fileName)) return fileName;
+
+    const extensionIndex = fileName.lastIndexOf(".");
+    const baseName = extensionIndex > 0 ? fileName.slice(0, extensionIndex) : fileName;
+    const extension = extensionIndex > 0 ? fileName.slice(extensionIndex) : "";
+    let suffix = 1;
+    let candidate = `${baseName} (${suffix})${extension}`;
+
+    while (downloadedFileNames.includes(candidate)) {
+        suffix += 1;
+        candidate = `${baseName} (${suffix})${extension}`;
+    }
+
+    return candidate;
+}
+
+function rememberQrDownloadedFileName(fileName) {
+    const downloadedFileNames = loadQrDownloadedFileNames();
+    if (!downloadedFileNames.includes(fileName)) {
+        downloadedFileNames.push(fileName);
+        saveQrDownloadedFileNames(downloadedFileNames);
+    }
+}
+
 async function downloadQr() {
     let item = items.find((entry) => entry.assetId === selectedId);
 
@@ -2094,9 +2197,12 @@ async function downloadQr() {
             fileName += ` - ${cleanSerial}`;
         }
         fileName += ".png";
+        fileName = getNextQrDownloadFileName(fileName);
 
         const success = await downloadCanvasAsPng(out, fileName);
         if (success) {
+            rememberQrDownloadedFileName(fileName);
+            recordQrDownload(item);
             showToast(`QR Code PNG downloaded: ${fileName}`);
         } else {
             showToast("Unable to prepare QR image for download.");
@@ -2110,33 +2216,6 @@ async function downloadQr() {
             btn.innerHTML = origHtml;
             if (window.lucide && lucide.createIcons) lucide.createIcons();
         }
-    }
-}
-
-function copyQrData() {
-    const item = items.find((entry) => entry.assetId === selectedId);
-
-    if (!item) {
-        showToast("Select an item first.");
-        return;
-    }
-
-    navigator.clipboard
-        .writeText(getQrPayload(item))
-        .then(() => showToast("QR data copied."))
-        .catch(() => showToast("Unable to copy QR data."));
-}
-
-function openSelectedAssetLink() {
-    const item = items.find((entry) => entry.assetId === selectedId);
-    if (!item) {
-        showToast("Select an item first.");
-        return;
-    }
-
-    const popup = window.open(getQrPayload(item), "_blank", "noopener,noreferrer");
-    if (!popup) {
-        showToast("Please allow popups for this site.");
     }
 }
 
@@ -3061,14 +3140,8 @@ function wireEvents() {
     if (dom.downloadQrBtn) {
         dom.downloadQrBtn.addEventListener("click", downloadQr);
     }
-    if (dom.openQrLinkBtn) {
-        dom.openQrLinkBtn.addEventListener("click", openSelectedAssetLink);
-    }
     if (dom.qrNextBtn) {
         dom.qrNextBtn.addEventListener("click", selectNextQrItem);
-    }
-    if (dom.copyQrBtn) {
-        dom.copyQrBtn.addEventListener("click", copyQrData);
     }
     if (dom.generatePdfBtn) {
         dom.generatePdfBtn.addEventListener("click", generateReportPdf);
@@ -3128,6 +3201,8 @@ async function init() {
     canOpenClassificationModal = true;
     canOpenStatusModal = true;
     resetForm();
+    qrDownloadHistory = loadQrDownloadHistory();
+    renderQrDownloadHistory();
     renderApp();
 
     if (params.get("module") === "qr") {

@@ -1,7 +1,6 @@
 const assetDetailList = document.querySelector("#assetDetailList");
 const assetTitle = document.querySelector("#assetTitle");
 const message = document.querySelector("#message");
-const returnToQrBtn = document.querySelector("#returnToQrBtn");
 
 const supabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
 const supabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
@@ -84,10 +83,6 @@ async function loadAsset() {
     if (!assetId) {
         renderError("No assetId query parameter was provided. Make sure the QR code points to a valid asset detail URL.");
         return;
-    }
-
-    if (returnToQrBtn) {
-        returnToQrBtn.href = `index.html?module=qr&assetId=${encodeURIComponent(assetId)}`;
     }
 
     if (!supabaseUrl || !supabaseAnonKey) {

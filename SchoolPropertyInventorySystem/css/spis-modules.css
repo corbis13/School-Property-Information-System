@@ -207,6 +207,7 @@
 
 .qr-module-grid {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: flex-start;
   width: 100%;
@@ -218,6 +219,17 @@
   max-width: 580px;
   width: 100%;
   margin: 0 auto;
+}
+
+.qr-module-grid .qr-history-panel {
+  max-width: 580px;
+  width: 100%;
+  margin: 1.5rem auto 0;
+}
+
+.qr-history-panel table th:last-child,
+.qr-history-panel table td:last-child {
+  text-align: center;
 }
 
 .reports-grid {

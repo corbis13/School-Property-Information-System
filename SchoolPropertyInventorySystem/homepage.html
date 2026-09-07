@@ -1423,20 +1423,42 @@
                     <button class="secondary-button" id="downloadQrBtn" type="button">
                         <i data-lucide="download" class="w-4 h-4 inline-block mr-1"></i>Download PNG
                     </button>
-                    <button class="secondary-button" id="copyQrBtn" type="button">
-                        <i data-lucide="copy" class="w-4 h-4 inline-block mr-1"></i>Copy Link
-                    </button>
-                    <button class="secondary-button qr-link-button" id="openQrLinkBtn" type="button" hidden>
+                    <a class="secondary-button qr-link-button" id="openQrLinkBtn" href="#" target="_blank" rel="noopener noreferrer" hidden>
                         <i data-lucide="external-link" class="w-4 h-4 inline-block mr-1"></i>Open Asset
-                    </button>
+                    </a>
                     <button class="primary-button qr-next-button" type="button">
                         <span>Next Asset</span>
                         <i data-lucide="chevron-right" class="w-4 h-4 inline-block ml-1"></i>
                     </button>
                 </div>
             </section>
+            <section class="module-card qr-history-panel" aria-labelledby="qrHistoryTitle">
+              <div class="section-heading">
+                <div>
+                        <p class="eyebrow">Download History</p>
+                        <h2 id="qrHistoryTitle">Downloaded QR Codes</h2>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Property No.</th>
+                      <th>Item</th>
+                                <th>Last Downloaded</th>
+                                <th>Times Downloaded</th>
+                    </tr>
+                  </thead>
+                  <tbody id="qrHistoryTable"></tbody>
+                </table>
+              </div>
+              <div class="empty-state" id="qrHistoryEmptyState">
+                    <strong>No QR codes downloaded yet</strong>
+                    <span>Download a QR code to add it to this history.</span>
+              </div>
+            </section>
+            </div>
           </div>
-        </div>
 
         <!-- MODULE 4: DOCUMENT -->
         <div class="module-view" data-module="document" style="display:none;">
