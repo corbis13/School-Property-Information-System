@@ -19,6 +19,22 @@
   flex: 1;
 }
 
+.ics-tall-field {
+  height: 84px !important;
+  min-height: 84px !important;
+}
+
+.ics-slip-table-wrap {
+  max-height: 360px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ics-slip-pagination {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .category-legend {
   width: 100%;
   max-width: 260px;
@@ -230,6 +246,17 @@
 .qr-history-panel table th:last-child,
 .qr-history-panel table td:last-child {
   text-align: center;
+}
+
+.qr-history-table-wrap {
+  max-height: 360px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.qr-history-pagination {
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .reports-grid {

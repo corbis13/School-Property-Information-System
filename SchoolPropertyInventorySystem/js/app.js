@@ -1,12 +1,24 @@
-const storageKey = "propertyInventoryItems";
-const classificationStorageKey = "propertyInventoryClassifications";
-const themeKey = "propertyInventoryTheme";
 const supabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
 const supabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
 const supabaseHeaders = {
     apikey: supabaseAnonKey,
     Authorization: `Bearer ${supabaseAnonKey}`
 };
+
+// Replace all direct Supabase interactions with server-side API calls
+// Example: Fetch data from server-side endpoint
+async function fetchDataFromServer() {
+    try {
+        const response = await fetch('http://localhost:3000/api/supabase/data');
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching data from server:', error);
+        return [];
+    }
+}
+
+// Update other functions to use server-side API instead of direct Supabase calls
 
 const seedItems = [
     {
@@ -114,7 +126,9 @@ const dom = {
     openQrLinkBtn: document.querySelector("#openQrLinkBtn"),
     qrNextBtn: document.querySelector(".qr-next-button"),
     qrHistoryTable: document.querySelector("#qrHistoryTable"),
+    qrHistoryPagination: document.querySelector("#qrHistoryPagination"),
     qrHistoryEmptyState: document.querySelector("#qrHistoryEmptyState"),
+    icsSlipPagination: document.querySelector("#icsSlipPagination"),
     themeButtons: document.querySelectorAll("[data-theme-choice]"),
     toast: document.querySelector("#toast"),
     databaseStatus: document.querySelector("#databaseStatus"),
@@ -127,6 +141,10 @@ const dom = {
     deleteClassificationBtn: document.querySelector("#deleteClassificationBtn"),
     deleteStatusBtn: document.querySelector("#deleteStatusBtn")
 };
+
+const themeStorageKey = "spis-theme";
+const storageKey = "propertyInventoryItems";
+const classificationStorageKey = "propertyInventoryClassifications";
 
 let items = [];
 let selectedId = null;
@@ -144,6 +162,10 @@ const qrDownloadHistoryStorageKey = "propertyInventoryQrDownloadHistory";
 const qrDownloadedFileNamesStorageKey = "propertyInventoryQrDownloadedFileNames";
 let inventoryCustodianSlips = [];
 let qrDownloadHistory = [];
+let icsSlipPage = 1;
+const icsSlipPageSize = 10;
+let qrHistoryPage = 1;
+const qrHistoryPageSize = 10;
 const inventoryRowsPerPage = 12;
 let isRefreshingStatusOptions = false;
 let isStatusSelectionLocked = false;
@@ -546,6 +568,49 @@ async function loadStatusOptions() {
     populateStatusFilterOptions(statusOptions);
 
     return statusOptions;
+}
+
+async function loadSchoolNameOptions() {
+    const entitySelect = document.querySelector("#icsEntityName");
+    if (!entitySelect) return [];
+
+    const currentValue = entitySelect.value.trim();
+    let schoolNames = [];
+
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/school_details?select=school_name&order=school_name.asc`, {
+            headers: supabaseHeaders
+        });
+
+        if (!response.ok) {
+            throw new Error(`Unable to load school names: HTTP ${response.status}`);
+        }
+
+        const rows = await response.json();
+        schoolNames = [...new Set((rows || [])
+            .map((row) => String(row.school_name || "").trim())
+            .filter(Boolean))];
+    } catch (error) {
+        console.error("Unable to load school names from Supabase:", error);
+    }
+
+    entitySelect.innerHTML = '<option value="">Select school</option>';
+    schoolNames.forEach((schoolName) => {
+        const option = document.createElement("option");
+        option.value = schoolName;
+        option.textContent = schoolName;
+        entitySelect.appendChild(option);
+    });
+
+    if (currentValue && !schoolNames.includes(currentValue)) {
+        const legacyOption = document.createElement("option");
+        legacyOption.value = currentValue;
+        legacyOption.textContent = currentValue;
+        entitySelect.appendChild(legacyOption);
+    }
+
+    entitySelect.value = currentValue;
+    return schoolNames;
 }
 
 async function deleteClassificationFromSheet(name) {
@@ -1053,8 +1118,16 @@ function renderStats() {
 
     dom.totalItems.textContent = items.length;
     renderIcsGeneratedCount();
-    dom.repairItems.textContent = classifications.size;
-    dom.qrItems.textContent = items.length;
+    dom.repairItems.textContent = getRepairItemsCount();
+    dom.qrItems.textContent = getQrDownloadCount();
+}
+
+function getRepairItemsCount() {
+    return items.filter((item) => isRepairStatus(getComputedStatus(item))).length;
+}
+
+function getQrDownloadCount() {
+    return qrDownloadHistory.reduce((total, entry) => total + Math.max(0, Number(entry.count) || 0), 0);
 }
 
 function renderIcsGeneratedCount() {
@@ -1978,7 +2051,12 @@ function renderQrDownloadHistory() {
     const entries = [...qrDownloadHistory].sort((first, second) =>
         new Date(second.downloadedAt).getTime() - new Date(first.downloadedAt).getTime()
     );
-    dom.qrHistoryTable.innerHTML = entries.map((entry) => `
+    const totalPages = Math.max(1, Math.ceil(entries.length / qrHistoryPageSize));
+    qrHistoryPage = Math.min(Math.max(1, qrHistoryPage), totalPages);
+    const startIndex = (qrHistoryPage - 1) * qrHistoryPageSize;
+    const pageEntries = entries.slice(startIndex, startIndex + qrHistoryPageSize);
+
+    dom.qrHistoryTable.innerHTML = pageEntries.map((entry) => `
         <tr>
             <td>${escapeHtml(entry.propertyNo || entry.assetId)}</td>
             <td>${escapeHtml(entry.itemBrandModel || "Unspecified")}</td>
@@ -1987,6 +2065,14 @@ function renderQrDownloadHistory() {
         </tr>
     `).join("");
     dom.qrHistoryEmptyState.style.display = entries.length ? "none" : "flex";
+
+    if (dom.qrHistoryPagination) {
+        dom.qrHistoryPagination.innerHTML = entries.length > qrHistoryPageSize ? `
+            <button class="inventory-page-btn" type="button" data-qr-history-page="${Math.max(1, qrHistoryPage - 1)}" ${qrHistoryPage === 1 ? "disabled" : ""}>Previous</button>
+            <span class="inventory-page-status">Page ${qrHistoryPage} of ${totalPages}</span>
+            <button class="inventory-page-btn" type="button" data-qr-history-page="${Math.min(totalPages, qrHistoryPage + 1)}" ${qrHistoryPage === totalPages ? "disabled" : ""}>Next</button>
+        ` : "";
+    }
 }
 
 function formatQrDownloadDate(value) {
@@ -2008,6 +2094,8 @@ function setQrDetails(item) {
 function renderApp() {
     items = sortItemsByNewest(items);
     selectedId = selectedId || (items[0] && items[0].assetId) || null;
+    populateIcsDescriptionDropdown(document.querySelector("#icsDescription")?.value || "");
+    renderInventoryCustodianSlipTable();
     renderStats();
     renderDashboard();
     renderTable();
@@ -2978,7 +3066,7 @@ async function syncStatusToSheet(name) {
     throw lastError || new Error("Unable to save status to Supabase.");
 }
 
-function showModule(moduleName) {
+function showModule(moduleName, targetId = "") {
     if (!moduleName) return;
 
     document.querySelector(".app-sidebar")?.classList.remove("mobile-open");
@@ -3017,6 +3105,15 @@ function showModule(moduleName) {
         }
     });
 
+    const documentSubmenu = document.getElementById("documentSubmenu");
+    const documentToggle = document.querySelector("[data-document-toggle]");
+    const isDocumentModule = moduleName === "document";
+    if (documentSubmenu) documentSubmenu.classList.toggle("hidden", !isDocumentModule);
+    if (documentToggle) {
+        documentToggle.setAttribute("aria-expanded", String(isDocumentModule));
+        documentToggle.querySelector(".document-nav-chevron")?.classList.toggle("rotate-180", isDocumentModule);
+    }
+
     // Synchronize Top Horizontal Navigation Bar Buttons
     document.querySelectorAll(".top-nav-btn").forEach((btn) => {
         const isActive = btn.dataset.view === moduleName;
@@ -3048,6 +3145,13 @@ function showModule(moduleName) {
         lucide.createIcons();
     }
 
+    if (targetId) {
+        window.requestAnimationFrame(() => {
+            document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        return;
+    }
+
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -3057,7 +3161,7 @@ window.showModule = showModule;
 function applyTheme(theme) {
     const selectedTheme = theme === "light" ? "light" : "dark";
     document.body.dataset.theme = selectedTheme;
-    localStorage.setItem(themeKey, selectedTheme);
+    localStorage.setItem(themeStorageKey, selectedTheme);
 
     document.querySelectorAll(".nav-icon, .action-icon").forEach((icon) => {
         const lightSrc = icon.dataset.themeIconLight;
@@ -3074,7 +3178,7 @@ function applyTheme(theme) {
 }
 
 function loadTheme() {
-    applyTheme(localStorage.getItem(themeKey) || "dark");
+    applyTheme(localStorage.getItem(themeStorageKey) || "dark");
 }
 
 function wireEvents() {
@@ -3238,6 +3342,24 @@ function wireEvents() {
     if (dom.qrNextBtn) {
         dom.qrNextBtn.addEventListener("click", selectNextQrItem);
     }
+    if (dom.qrHistoryPagination) {
+        dom.qrHistoryPagination.addEventListener("click", (event) => {
+            const button = event.target.closest("[data-qr-history-page]");
+            if (!button || button.disabled) return;
+
+            qrHistoryPage = Number(button.dataset.qrHistoryPage) || 1;
+            renderQrDownloadHistory();
+        });
+    }
+    if (dom.icsSlipPagination) {
+        dom.icsSlipPagination.addEventListener("click", (event) => {
+            const button = event.target.closest("[data-ics-slip-page]");
+            if (!button || button.disabled) return;
+
+            icsSlipPage = Number(button.dataset.icsSlipPage) || 1;
+            renderInventoryCustodianSlipTable();
+        });
+    }
     if (dom.generatePdfBtn) {
         dom.generatePdfBtn.addEventListener("click", generateReportPdf);
     }
@@ -3276,6 +3398,17 @@ function wireEvents() {
             }
         });
     });
+
+    const documentToggle = document.querySelector("[data-document-toggle]");
+    const documentSubmenu = document.getElementById("documentSubmenu");
+    if (documentToggle && documentSubmenu) {
+        documentToggle.addEventListener("click", () => {
+            const isExpanded = documentToggle.getAttribute("aria-expanded") === "true";
+            documentToggle.setAttribute("aria-expanded", String(!isExpanded));
+            documentSubmenu.classList.toggle("hidden", isExpanded);
+            documentToggle.querySelector(".document-nav-chevron")?.classList.toggle("rotate-180", !isExpanded);
+        });
+    }
 }
 
 async function init() {
@@ -3288,6 +3421,7 @@ async function init() {
     await loadEducationLevelOptions();
     await loadClassificationOptions();
     await loadStatusOptions();
+    await loadSchoolNameOptions();
     const params = new URLSearchParams(window.location.search);
     const requestedAssetId = params.get("assetId");
     if (requestedAssetId && items.some((item) => item.assetId === requestedAssetId)) {
@@ -3376,6 +3510,9 @@ function mapInventoryCustodianSlipRows(rows) {
                 icsNo: header.ics_no || "",
                 inventoryItemNo: item.inventory_item_no || "",
                 description: item.description_snapshot || "",
+                additionalItem: items.find((asset) => {
+                    return getIcsAssetDescription(asset) === (item.description_snapshot || "");
+                })?.additionalItem || "",
                 quantity: item.quantity ?? "",
                 unit: item.unit || "",
                 unitCost: item.unit_cost ?? "",
@@ -3496,6 +3633,50 @@ function resetInventoryCustodianSlipForm() {
     document.querySelector("#icsFormTitle").textContent = "Inventory Custodian Slip";
 }
 
+function getIcsAssetDescription(item) {
+    const itemBrandModel = String(item.itemBrandModel || "").trim();
+    const serialNo = String(item.serialNo || "").trim();
+    return serialNo ? `${itemBrandModel} - SN: ${serialNo}` : itemBrandModel;
+}
+
+function populateIcsDescriptionDropdown(selectedValue = "") {
+    const descriptionSelect = document.querySelector("#icsDescription");
+    if (!descriptionSelect) return;
+
+    const options = items
+        .map((item) => {
+            const description = getIcsAssetDescription(item);
+            return { description, assetId: item.assetId };
+        })
+        .filter((entry) => entry.description)
+        .filter((entry, index, entries) => entries.findIndex((candidate) => candidate.description === entry.description) === index)
+        .sort((first, second) => first.description.localeCompare(second.description, undefined, { sensitivity: "base" }));
+
+    descriptionSelect.innerHTML = '<option value="">Select an inventory item</option>';
+    descriptionSelect.insertAdjacentHTML("beforeend", options.map((entry) => `
+        <option value="${escapeHtml(entry.description)}" data-asset-id="${escapeHtml(entry.assetId)}">${escapeHtml(entry.description)}</option>
+    `).join(""));
+
+    if (selectedValue && options.some((entry) => entry.description === selectedValue)) {
+        descriptionSelect.value = selectedValue;
+    }
+
+}
+
+function populateIcsFieldsFromDescription() {
+    const descriptionSelect = document.querySelector("#icsDescription");
+    const selectedAssetId = descriptionSelect?.selectedOptions[0]?.dataset.assetId;
+    const selectedAsset = items.find((item) => item.assetId === selectedAssetId);
+    if (!selectedAsset) return;
+
+    document.querySelector("#icsFundCluster").value = selectedAsset.fundCluster || "";
+    document.querySelector("#icsInventoryItemNo").value = selectedAsset.semiExpandableNo || "";
+    document.querySelector("#icsAdditionalItem").value = selectedAsset.additionalItem || "";
+    document.querySelector("#icsUnit").value = selectedAsset.unitMeasurement || "";
+    document.querySelector("#icsUnitCost").value = selectedAsset.unitValue ?? "";
+    updateInventoryCustodianSlipTotal();
+}
+
 function getInventoryCustodianSlipFormData() {
     const value = (selector) => document.querySelector(selector).value.trim();
 
@@ -3506,6 +3687,7 @@ function getInventoryCustodianSlipFormData() {
         icsNo: value("#icsNo"),
         inventoryItemNo: value("#icsInventoryItemNo"),
         description: value("#icsDescription"),
+        additionalItem: value("#icsAdditionalItem"),
         quantity: value("#icsQuantity"),
         unit: value("#icsUnit"),
         unitCost: value("#icsUnitCost"),
@@ -3525,16 +3707,24 @@ function renderInventoryCustodianSlipTable() {
     const table = document.querySelector("#icsSlipTable");
     if (!table) return;
 
-    table.innerHTML = inventoryCustodianSlips.length
-        ? inventoryCustodianSlips.map((slip) => `
+    const totalPages = Math.max(1, Math.ceil(inventoryCustodianSlips.length / icsSlipPageSize));
+    icsSlipPage = Math.min(Math.max(1, icsSlipPage), totalPages);
+    const startIndex = (icsSlipPage - 1) * icsSlipPageSize;
+    const visibleSlips = inventoryCustodianSlips.slice(startIndex, startIndex + icsSlipPageSize);
+
+    table.innerHTML = visibleSlips.length
+        ? visibleSlips.map((slip) => `
             <tr>
-                <td>${escapeHtml(slip.icsNo)}</td>
-                <td>${escapeHtml(slip.entityName)}</td>
                 <td>${escapeHtml(slip.description)}</td>
+                <td>${escapeHtml(slip.icsNo)}</td>
+                <td>${escapeHtml(slip.inventoryItemNo || "-")}</td>
+                <td>${escapeHtml(slip.quantity ?? "-")}</td>
+                <td>${escapeHtml(slip.unit || "-")}</td>
                 <td>${escapeHtml(slip.receivedBy || "-")}</td>
                 <td>${escapeHtml(formatPeso(Number(slip.totalCost) || 0))}</td>
                 <td>
                     <div class="row-actions">
+                        ${findAssetForInventoryCustodianSlip(slip) ? `<button type="button" data-ics-action="qr" data-ics-id="${escapeHtml(slip.id)}">QR</button>` : ""}
                         <button type="button" data-ics-action="open" data-ics-id="${escapeHtml(slip.id)}">Open</button>
                         <button type="button" data-ics-action="edit" data-ics-id="${escapeHtml(slip.id)}">Edit</button>
                         <button type="button" data-ics-action="delete" data-ics-id="${escapeHtml(slip.id)}">Delete</button>
@@ -3542,7 +3732,22 @@ function renderInventoryCustodianSlipTable() {
                 </td>
             </tr>
         `).join("")
-        : '<tr><td colspan="6">No Inventory Custodian Slip records yet.</td></tr>';
+        : '<tr><td colspan="8">No Inventory Custodian Slip records yet.</td></tr>';
+
+    if (dom.icsSlipPagination) {
+        dom.icsSlipPagination.innerHTML = inventoryCustodianSlips.length > icsSlipPageSize ? `
+            <button class="inventory-page-btn" type="button" data-ics-slip-page="${Math.max(1, icsSlipPage - 1)}" ${icsSlipPage === 1 ? "disabled" : ""}>Previous</button>
+            <span class="inventory-page-status">Page ${icsSlipPage} of ${totalPages}</span>
+            <button class="inventory-page-btn" type="button" data-ics-slip-page="${Math.min(totalPages, icsSlipPage + 1)}" ${icsSlipPage === totalPages ? "disabled" : ""}>Next</button>
+        ` : "";
+    }
+}
+
+function findAssetForInventoryCustodianSlip(slip) {
+    const legacyDescription = String(slip.description || "").replace(/\s+-\s+SN:\s*/i, " - ").trim();
+    return items.find((asset) => getIcsAssetDescription(asset) === slip.description)
+        || items.find((asset) => `${String(asset.itemBrandModel || "").trim()} - ${String(asset.serialNo || "").trim()}` === legacyDescription)
+        || items.find((asset) => asset.semiExpandableNo && asset.semiExpandableNo === slip.inventoryItemNo);
 }
 
 function editInventoryCustodianSlip(id) {
@@ -3556,6 +3761,7 @@ function editInventoryCustodianSlip(id) {
         icsNo: "icsNo",
         icsInventoryItemNo: "inventoryItemNo",
         icsDescription: "description",
+        icsAdditionalItem: "additionalItem",
         icsQuantity: "quantity",
         icsUnit: "unit",
         icsUnitCost: "unitCost",
@@ -3573,6 +3779,12 @@ function editInventoryCustodianSlip(id) {
         const el = document.querySelector(`#${elementId}`);
         if (!el) return;
         const val = slip[property] || "";
+        if (elementId === "icsDescription" && val && !Array.from(el.options).some((opt) => opt.value === val)) {
+            const opt = document.createElement("option");
+            opt.value = val;
+            opt.textContent = val;
+            el.appendChild(opt);
+        }
         if ((elementId === "icsReceivedFrom" || elementId === "icsReceivedBy") && val) {
             const hasOption = Array.from(el.options).some((opt) => opt.value === val);
             if (!hasOption) {
@@ -3593,6 +3805,11 @@ async function initInventoryCustodianSlipCrud() {
     const table = document.querySelector("#icsSlipTable");
     if (!form || !table) return;
 
+    populateIcsDescriptionDropdown();
+    const descriptionSelect = document.querySelector("#icsDescription");
+    if (descriptionSelect) {
+        descriptionSelect.addEventListener("change", populateIcsFieldsFromDescription);
+    }
     populateIcsReceivedFromDropdown();
     populateIcsReceivedByDropdown();
     inventoryCustodianSlips = loadInventoryCustodianSlips();
@@ -3688,6 +3905,20 @@ async function initInventoryCustodianSlipCrud() {
 
         if (button.dataset.icsAction === "open") {
             openInventoryCustodianSlipPdf(slip);
+            return;
+        }
+
+        if (button.dataset.icsAction === "qr") {
+            const asset = findAssetForInventoryCustodianSlip(slip);
+            if (!asset) {
+                showToast("The asset for this ICS item could not be found.");
+                return;
+            }
+
+            selectedId = asset.assetId;
+            renderQr();
+            showModule("qr");
+            showToast("QR preview updated.");
             return;
         }
 

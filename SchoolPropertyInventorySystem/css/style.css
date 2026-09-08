@@ -2307,6 +2307,11 @@ textarea {
     outline: none;
 }
 
+.ics-tall-field {
+    height: 84px;
+    min-height: 84px;
+}
+
 select option[value=""] {
     color: #7f8aa3;
 }

@@ -177,18 +177,29 @@
             <span>Inventory</span>
           </a>
 
+          <!-- Document and submodules -->
+          <div class="document-nav-group">
+            <button type="button" class="nav-item document-nav-parent flex items-center justify-between w-full px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-document-toggle aria-expanded="false" aria-controls="documentSubmenu">
+              <span class="ml-3 flex items-center space-x-3">
+                <i data-lucide="file-text" class="w-5 h-5 text-slate-200"></i>
+                <span>Document</span>
+              </span>
+              <i data-lucide="chevron-down" class="document-nav-chevron w-4 h-4 text-slate-300 transition-transform"></i>
+            </button>
+            <div id="documentSubmenu" class="document-submenu hidden pl-4 pt-1 space-y-1" aria-label="Document submenu">
+              <button type="button" class="nav-item nav-sub-item flex items-center space-x-3 w-full px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-view="document">
+                <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+                <i data-lucide="file-check-2" class="w-5 h-5 text-slate-200"></i>
+                <span>ICS</span>
+              </button>
+            </div>
+          </div>
+
           <!-- QR Code -->
           <a href="#" class="nav-item flex items-center space-x-3 px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-view="qr">
             <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
             <i data-lucide="qr-code" class="w-5 h-5 text-slate-200"></i>
             <span>QR Code</span>
-          </a>
-
-          <!-- Document -->
-          <a href="#" class="nav-item flex items-center space-x-3 px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-view="document">
-            <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
-            <i data-lucide="file-text" class="w-5 h-5 text-slate-200"></i>
-            <span>Document</span>
           </a>
 
           <!-- Report -->
@@ -468,7 +479,7 @@
                   </div>
                 </div>
                 <div class="mt-3 pt-2 text-right">
-                  <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#004c87] inline-flex items-center transition" onclick="showModule('inventory'); return false;">
+                  <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#004c87] inline-flex items-center transition" onclick="showModule('inventory', 'propertyListPanel'); return false;">
                     <span>View all properties</span>
                     <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
                   </a>
@@ -487,14 +498,33 @@
                   </div>
                 </div>
                 <div class="mt-3 pt-2 text-right">
-                  <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#449e38] inline-flex items-center transition" onclick="showModule('document'); return false;">
+                  <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#449e38] inline-flex items-center transition" onclick="showModule('document', 'savedDocumentsPanel'); return false;">
                     <span>View all ICS</span>
                     <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
                   </a>
                 </div>
               </div>
 
-              <!-- Stat 3: Maintenance Requests -->
+              <!-- Stat 3: Total QR Code Downloaded -->
+              <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow card-shadow-hover flex flex-col justify-between">
+                <div class="flex items-center space-x-4">
+                  <div class="w-13 h-13 rounded-full bg-[#0284c7] text-white flex items-center justify-center shrink-0 p-3 shadow-sm">
+                    <i data-lucide="qr-code" class="w-6 h-6 text-white"></i>
+                  </div>
+                  <div>
+                    <p class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">TOTAL QR CODE DOWNLOADED</p>
+                    <p class="text-3xl font-black text-slate-800 leading-tight"><span id="qrItems">0</span></p>
+                  </div>
+                </div>
+                <div class="mt-3 pt-2 text-right">
+                  <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#0284c7] inline-flex items-center transition" onclick="showModule('qr', 'qrDownloadHistoryPanel'); return false;">
+                    <span>View all downloads</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Stat 4: Maintenance Requests -->
               <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow card-shadow-hover flex flex-col justify-between">
                 <div class="flex items-center space-x-4">
                   <div class="w-13 h-13 rounded-full bg-[#f29913] text-white flex items-center justify-center shrink-0 p-3 shadow-sm">
@@ -508,25 +538,6 @@
                 <div class="mt-3 pt-2 text-right">
                   <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#f29913] inline-flex items-center transition" onclick="showModule('inventory'); return false;">
                     <span>View all requests</span>
-                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
-                  </a>
-                </div>
-              </div>
-
-              <!-- Stat 4: Completed This Month -->
-              <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow card-shadow-hover flex flex-col justify-between">
-                <div class="flex items-center space-x-4">
-                  <div class="w-13 h-13 rounded-full bg-[#0284c7] text-white flex items-center justify-center shrink-0 p-3 shadow-sm">
-                    <i data-lucide="clipboard-check" class="w-6 h-6 text-white"></i>
-                  </div>
-                  <div>
-                    <p class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">COMPLETED THIS MONTH</p>
-                    <p class="text-3xl font-black text-slate-800 leading-tight"><span id="qrItems">15</span></p>
-                  </div>
-                </div>
-                <div class="mt-3 pt-2 text-right">
-                  <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#0284c7] inline-flex items-center transition" onclick="showModule('reports'); return false;">
-                    <span>View all completed</span>
                     <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
                   </a>
                 </div>
@@ -1340,7 +1351,7 @@
                 </form>
                 </section>
 
-                <section class="inventory-panel">
+                <section class="inventory-panel" id="propertyListPanel">
                 <div class="section-heading inventory-heading">
                     <div class="text-left self-start">
                         <p class="eyebrow text-left">Property List</p>
@@ -1432,14 +1443,14 @@
                     </button>
                 </div>
             </section>
-            <section class="module-card qr-history-panel" aria-labelledby="qrHistoryTitle">
+            <section class="module-card qr-history-panel" id="qrDownloadHistoryPanel" aria-labelledby="qrHistoryTitle">
               <div class="section-heading">
                 <div>
                         <p class="eyebrow">Download History</p>
                         <h2 id="qrHistoryTitle">Downloaded QR Codes</h2>
                 </div>
               </div>
-              <div class="table-wrap">
+              <div class="table-wrap qr-history-table-wrap">
                 <table>
                   <thead>
                     <tr>
@@ -1452,6 +1463,7 @@
                   <tbody id="qrHistoryTable"></tbody>
                 </table>
               </div>
+              <div class="inventory-pagination qr-history-pagination" id="qrHistoryPagination" aria-label="Download history pagination"></div>
               <div class="empty-state" id="qrHistoryEmptyState">
                     <strong>No QR codes downloaded yet</strong>
                     <span>Download a QR code to add it to this history.</span>
@@ -1474,25 +1486,35 @@
                         <input id="icsEditingId" type="hidden">
 
                         <div class="two-column">
-                            <label>Entity Name<input id="icsEntityName" type="text" required></label>
-                            <label>Fund Cluster<input id="icsFundCluster" type="text" required></label>
+                            <label>Entity Name
+                              <select id="icsEntityName" required>
+                                <option value="">Select school</option>
+                              </select>
+                            </label>
+                            <label>Fund Cluster<input id="icsFundCluster" type="text" required readonly></label>
                         </div>
                         <div class="two-column">
                             <label>ICS No.<input id="icsNo" type="text" required></label>
-                            <label>Inventory Item No.<input id="icsInventoryItemNo" type="text" required></label>
+                            <label>Inventory Item No.<input id="icsInventoryItemNo" type="text" required readonly></label>
                         </div>
-                        <label class="full-width">Description<textarea id="icsDescription" rows="3" required></textarea></label>
+                        <label class="full-width">Description
+                          <select id="icsDescription" required>
+                            <option value="">Select an inventory item</option>
+                          </select>
+                        </label>
                         <div class="two-column">
-                            <label>Quantity<input id="icsQuantity" type="number" min="0" step="1" required></label>
-                            <label>Unit<input id="icsUnit" type="text" placeholder="e.g. pcs" required></label>
+                          <label>Additional Item
+                              <textarea id="icsAdditionalItem" class="ics-tall-field" rows="4" placeholder="No additional item" readonly></textarea>
+                          </label>
+                            <label>Unit<input id="icsUnit" type="text" placeholder="e.g. pcs" required readonly></label>
                         </div>
                         <div class="two-column">
-                            <label>Unit Cost<input id="icsUnitCost" type="number" min="0" step="0.01" required></label>
-                            <label>Total Cost<input id="icsTotalCost" type="number" min="0" step="0.01" readonly></label>
+                          <label>Quantity<input id="icsQuantity" type="number" min="0" step="1" required></label>
+                          <label>Unit Cost<input id="icsUnitCost" type="number" min="0" step="0.01" required readonly></label>
                         </div>
                         <div class="two-column">
-                            <label>Estimated Useful Life<input id="icsEstimatedUsefulLife" type="text" placeholder="e.g. 5 years"></label>
-                            <div aria-hidden="true"></div>
+                          <label>Total Cost<input id="icsTotalCost" type="number" min="0" step="0.01" readonly></label>
+                          <label>Estimated Useful Life<input id="icsEstimatedUsefulLife" type="text" placeholder="e.g. 5 years"></label>
                         </div>
                         <div class="two-column">
                             <label>Received From
@@ -1521,25 +1543,27 @@
                             </button>
                             <button class="primary-button form-action-btn" id="saveIcsBtn" type="submit">
                                 <i data-lucide="save" class="action-icon"></i>
-                                <span>Save Slip</span>
+                                <span>Save</span>
                             </button>
                         </div>
                     </form>
 
-                    <article class="module-card">
+                    <article class="module-card" id="savedDocumentsPanel">
                         <div class="section-heading">
                             <div>
                                 <p class="eyebrow">Saved Documents</p>
                                 <h2>Inventory Custodian Slips</h2>
                             </div>
                         </div>
-                        <div class="table-wrap">
+                        <div class="table-wrap ics-slip-table-wrap">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>ICS No.</th>
-                                        <th>Entity</th>
                                         <th>Description</th>
+                                        <th>ICS No.</th>
+                                        <th>Inventory Item No.</th>
+                                        <th>Quantity</th>
+                                        <th>Unit</th>
                                         <th>Recipient</th>
                                         <th>Total Cost</th>
                                         <th>Actions</th>
@@ -1548,6 +1572,7 @@
                                 <tbody id="icsSlipTable"></tbody>
                             </table>
                         </div>
+                          <div class="inventory-pagination ics-slip-pagination" id="icsSlipPagination" aria-label="Inventory Custodian Slips pagination"></div>
                     </article>
                 </section>
         </div>
