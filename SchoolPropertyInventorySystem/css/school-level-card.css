@@ -1,0 +1,24 @@
+.school-level-card {
+    background-color: var(--panel-2);
+    border-radius: 8px;
+    padding: 24px;
+    margin: 24px 0;
+    box-shadow: var(--shadow);
+}
+
+.school-level-card h2 {
+    margin: 0 0 16px;
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+.school-level-card p {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1rem;
+}
+
+.school-level-card .error {
+    color: var(--danger);
+    font-weight: 500;
+}
