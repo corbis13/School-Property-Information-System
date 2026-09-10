@@ -1,0 +1,51 @@
+[33m564dd79[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m organized cards
+[33m9aca266[m add school level
+[33mfb9871b[m add sub menu ICS
+[33meebd73c[m add accountable person
+[33m68cc740[m feat: enhance asset detail page and add QR download history functionality
+[33me3aaf78[m Add ICS in quick access
+[33m1126582[m agent-instruction.md
+[33mc2cbd5f[m style: refactor UI layout and enhance responsiveness
+[33ma749e55[m feat(ui): enhance sidebar navigation and layout
+[33m61121e1[m new UI
+[33mb41bdfb[m new dashboard
+[33m7e39977[m Change Label "Documents"
+[33m32259d7[m add dropdown
+[33m1364996[m ICON MOVED
+[33m63267c8[m Merge branch
+[33m8d63b14[m Resolve merge conflicts and apply code review fixes
+[33m4329a26[m fresh modification
+[33m2143694[m arranged the ICS report
+[33mf7115b7[m adding a proper .gitignore and cleaning up scratch files
+[33mdd8d56e[m adding a proper .gitignore and cleaning up scratch files
+[33m0b5f618[m adding ics form
+[33m0488d5a[m create ics form
+[33ma4ab78a[m Add files via upload
+[33mad1d9b2[m added Document module
+[33mc762a23[m add additional item
+[33m98da49e[m Adjust layout and functionality of report actions and asset tables
+[33meea0ed9[m Refactor physical report styling and improve PDF generation logic
+[33m0d693a0[m Add signatories management and PDF generation functionality in report section
+[33m3d179e7[m Enhance report generation features and add signatory management in the asset inventory system
+[33mc4a8eec[m Add QR code navigation and update asset ID handling in asset detail page
+[33m99404c2[m Fix QR asset link command
+[33m465cf7e[m Implement QR link button functionality and update asset link handling
+[33m30b9afb[m Enhance asset detail page layout for better responsiveness and update message text for clarity
+[33m4e85e8b[m Refactor asset detail page header for improved layout and accessibility
+[33m34634fa[m Update QR asset detail URL and enhance asset detail page styling for better user experience
+[33me8009fe[m Redirect QR asset links to GitHub Pages
+[33mac5a485[m Update label styles for improved visibility in light theme
+[33m76cf005[m Add education level support and update database policies for public access
+[33mf033434[m Enhance classification controls by updating button titles and select options for better accessibility and user experience
+[33m0c077c8[m Implement user authentication and authorization features, enhance inventory management with new tables, and improve data validation in SQL setup
+[33mc4010af[m Enhance asset management features by adding inventory item type, updating asset details, and refining database structure
+[33mb4c1597[m Update dashboard card minimum height and normalize item classification casing
+[33m28f1e08[m Merge branch 'main' of https://github.com/corbis13/School-Property-Information-System
+[33m3bc214d[m Refactor code structure for improved readability and maintainability
+[33m4dbb1e3[m Rename SPIS icon.svg to SPIS_icon.svg
+[33mbad6511[m Add files via upload
+[33m9c10baa[m update SPIS
+[33m84ff35a[m Updated
+[33mf645005[m Update index title
+[33mead44dc[m Add root index.html to redirect to SchoolPropertyInventorySystem/ for GitHub Pages (fix 404)
+[33ma94991f[m Add files via upload
