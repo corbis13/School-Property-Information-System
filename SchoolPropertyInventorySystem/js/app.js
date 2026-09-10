@@ -136,6 +136,8 @@ const dom = {
     schoolLevelChart: document.querySelector("#schoolLevelChart"),
     acquisitionYearChart: document.querySelector("#acquisitionYearChart"),
     dateIssueYearChart: document.querySelector("#dateIssueYearChart"),
+    acquisitionYearMini: document.querySelector("#acquisitionYearMini"),
+    dateIssueYearMini: document.querySelector("#dateIssueYearMini"),
     addClassificationBtn: document.querySelector("#addClassificationBtn"),
     addStatusBtn: document.querySelector("#addStatusBtn"),
     deleteClassificationBtn: document.querySelector("#deleteClassificationBtn"),
@@ -1147,6 +1149,24 @@ function renderDashboard() {
     const schoolLevelEntries = getSchoolLevelEntries();
     const acquisitionYearEntries = getYearDistribution("acquisitionDate");
     const dateIssueYearEntries = getYearDistribution("dateIssue");
+    // Update total count displays for acquisition and issuance years
+    // Update header range labels for acquisition and issuance years
+    // Update acquisition year header with per‑year counts (e.g., "2021: 12, 2022: 8")
+    const acquisitionRangeElem = document.getElementById("acquisitionYearRange");
+    if (acquisitionRangeElem && acquisitionYearEntries.length) {
+        const acquisitionCountStr = acquisitionYearEntries
+            .map(e => `${e.label}: ${e.value}`)
+            .join(', ');
+        acquisitionRangeElem.textContent = acquisitionCountStr;
+    }
+    // Update issuance year header with per‑year counts
+    const issuanceRangeElem = document.getElementById("dateIssueYearRange");
+    if (issuanceRangeElem && dateIssueYearEntries.length) {
+        const issuanceCountStr = dateIssueYearEntries
+            .map(e => `${e.label}: ${e.value}`)
+            .join(', ');
+        issuanceRangeElem.textContent = issuanceCountStr;
+    }
     const accountableEntries = getAccountablePersonEntries();
 
     if (dom.portfolioChart && dom.portfolioLegend) {
@@ -1157,15 +1177,25 @@ function renderDashboard() {
     }
     renderStatusPie(statusCounts);
     renderMiniDistributionChart(dom.schoolLevelChart, schoolLevelEntries);
+    // Update the static count cards for each school level
+    try {
+        const elementaryElem = document.getElementById("schoolLevelElementaryCount");
+        const juniorElem = document.getElementById("schoolLevelJuniorCount");
+        const seniorElem = document.getElementById("schoolLevelSeniorCount");
+        const map = {};
+        schoolLevelEntries.forEach(entry => {
+            map[entry.label] = entry.value;
+        });
+        if (elementaryElem) elementaryElem.textContent = map["Elementary"] || 0;
+        if (juniorElem) juniorElem.textContent = map["Junior High"] || map["Junior HS"] || 0;
+        if (seniorElem) seniorElem.textContent = map["Senior High"] || map["Senior HS"] || 0;
+        const adminElem = document.getElementById("schoolLevelAdminCount");
+        if (adminElem) adminElem.textContent = map["Admin"] || 0;
+    } catch (e) {
+        console.error("Failed to update school level count cards", e);
+    }
     renderMiniDistributionChart(dom.acquisitionYearChart, acquisitionYearEntries);
     renderMiniDistributionChart(dom.dateIssueYearChart, dateIssueYearEntries);
-    // Render dynamic school level cards in the PROPERTY BREAKDOWN card
-    renderSchoolLevelCards(document.querySelector('#schoolLevelContainer'), schoolLevelEntries);
-    // Update total count badge next to School Level header
-    const totalSpan = document.getElementById('schoolLevelTotal');
-    if (totalSpan) {
-        totalSpan.textContent = `${items.length} items`;
-    }
     renderAccountableBarChart(accountableEntries);
     renderAccountablePersonCard(accountableEntries);
     renderRecentAssets();
@@ -1337,49 +1367,6 @@ function renderMiniDistributionChart(container, entries) {
         : '<div class="mini-chart-empty">No available data</div>';
 
     container.innerHTML = rows;
-}
-
-/**
- * Render school level summary cards inside the PROPERTY BREAKDOWN card.
- * Expects a container element (grid) and an array of entry objects {label, value, color}.
- */
-function renderSchoolLevelCards(container, entries) {
-    if (!container) return;
-    // Clear any existing content
-    container.innerHTML = '';
-
-    // Define the categories we always want to display, in the desired order
-    const requiredLabels = ['Elementary', 'Junior High', 'Senior High', 'Admin'];
-
-    // Build a quick lookup map of label -> value from the provided entries
-    const entryMap = {};
-    entries.forEach(e => {
-        // Use the exact label from entries as key (case‑sensitive as supplied by getSchoolLevelEntries)
-        entryMap[e.label] = e.value;
-    });
-
-    // Map specific labels to border color classes to match original static UI
-    const borderMap = {
-        'Elementary': 'border-[#bfdbfe] text-[#004c87]',
-        'Junior High': 'border-[#bbf7d0] text-[#449e38]',
-        'Senior High': 'border-[#fde68a] text-[#d97706]',
-        // Admin gets a distinct gray style
-        'Admin': 'border-[#e5e7eb] text-[#6b7280]'
-    };
-
-    // Render each required card, falling back to a count of 0 if the label is missing
-    requiredLabels.forEach(label => {
-        const value = entryMap[label] ?? 0;
-        const borderClass = borderMap[label] || 'border-gray-200 text-slate-800';
-        const textColor = borderMap[label] ? borderMap[label].split(' ')[1] : 'text-slate-800';
-        // Add a small margin (m-1) and an outer gray ring to visually separate each card
-        const cardHtml = `
-            <div class="bg-white ${borderClass.split(' ')[0]} rounded-lg p-2 text-center shadow-2xs m-1 ring-1 ring-gray-300">
-                <p class="text-[10px] font-semibold ${textColor} truncate">${escapeHtml(label)}</p>
-                <p class="text-xs font-black text-slate-800 mt-0.5">${value}</p>
-            </div>`;
-        container.insertAdjacentHTML('beforeend', cardHtml);
-    });
 }
 
 function renderPortfolioChart(levels) {
