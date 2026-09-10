@@ -969,124 +969,43 @@
                   </div>
                   <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">356 items</span>
                 </div>
-                <div class="grid grid-cols-3 gap-2">
-                  <div class="bg-white border border-[#bfdbfe] rounded-lg p-2 text-center shadow-2xs">
-                    <p class="text-[10px] font-semibold text-[#004c87] truncate">Elementary</p>
-                    <p class="text-xs font-black text-slate-800 mt-0.5">142</p>
-                  </div>
-                  <div class="bg-white border border-[#bbf7d0] rounded-lg p-2 text-center shadow-2xs">
-                    <p class="text-[10px] font-semibold text-[#449e38] truncate">Junior HS</p>
-                    <p class="text-xs font-black text-slate-800 mt-0.5">98</p>
-                  </div>
-                  <div class="bg-white border border-[#fde68a] rounded-lg p-2 text-center shadow-2xs">
-                    <p class="text-[10px] font-semibold text-[#d97706] truncate">Senior HS</p>
-                    <p class="text-xs font-black text-slate-800 mt-0.5">116</p>
-                  </div>
-                </div>
-              </div>
+                 <div class="grid grid-cols-4 gap-2">
+                   <div class="bg-white border border-[#bfdbfe] rounded-lg p-2 text-center shadow-2xs">
+                     <p class="text-[10px] font-semibold text-[#004c87] truncate">Elementary</p>
+                     <p id="schoolLevelElementaryCount" class="text-xs font-black text-slate-800 mt-0.5">0</p>
+                   </div>
+                   <div class="bg-white border border-[#bbf7d0] rounded-lg p-2 text-center shadow-2xs">
+                     <p class="text-[10px] font-semibold text-[#449e38] truncate">Junior HS</p>
+                     <p id="schoolLevelJuniorCount" class="text-xs font-black text-slate-800 mt-0.5">0</p>
+                   </div>
+                   <div class="bg-white border border-[#fde68a] rounded-lg p-2 text-center shadow-2xs">
+                     <p class="text-[10px] font-semibold text-[#d97706] truncate">Senior HS</p>
+                     <p id="schoolLevelSeniorCount" class="text-xs font-black text-slate-800 mt-0.5">0</p>
+                   </div>
+                   <div class="bg-white border border-[#fca5a5] rounded-lg p-2 text-center shadow-2xs">
+                     <p class="text-[10px] font-semibold text-[#b91c1c] truncate">Admin</p>
+                     <p id="schoolLevelAdminCount" class="text-xs font-black text-slate-800 mt-0.5">0</p>
+                   </div>
+                 </div>
+               </div>
 
-              <!-- SUB-CARD 2: ACQUISITION YEAR -->
-              <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2.5">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-2">
-                    <div class="w-6 h-6 rounded-md bg-[#0284c7]/10 text-[#0284c7] flex items-center justify-center">
-                      <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Acquisition Year</span>
-                  </div>
-                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">2021–2024</span>
+                <!-- Issuance Year Sub-Card removed intentionally -->
+                <!-- Footer link -->
+                <div class="mt-auto pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <a href="#" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
+                    <span>View All Breakdowns</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                  </a>
                 </div>
-                <div class="space-y-1.5">
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2024</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#004c87] rounded-full" style="width:75%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">75</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2023</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#0284c7] rounded-full" style="width:58%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">58</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2022</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#38bdf8] rounded-full" style="width:42%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">42</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2021</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#94a3b8] rounded-full" style="width:25%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">25</span>
-                  </div>
-                </div>
-              </div>
 
-              <!-- SUB-CARD 3: ISSUANCE YEAR -->
-              <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2.5">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-2">
-                    <div class="w-6 h-6 rounded-md bg-[#55a83b]/10 text-[#55a83b] flex items-center justify-center">
-                      <i data-lucide="file-check-2" class="w-3.5 h-3.5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Issuance Year</span>
-                  </div>
-                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">2022–2025</span>
-                </div>
-                <div class="space-y-1.5">
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2025</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#449e38] rounded-full" style="width:82%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">82</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2024</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#55a83b] rounded-full" style="width:64%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">64</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2023</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#86efac] rounded-full" style="width:38%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">38</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2022</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#bbf7d0] rounded-full" style="width:20%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">20</span>
-                  </div>
-                </div>
               </div>
-
-              <!-- Footer link -->
-              <div class="mt-auto pt-2 border-t border-slate-100 flex items-center justify-between">
-                <a href="#" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
-                  <span>View All Breakdowns</span>
-                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                </a>
-              </div>
-
-            </div>
 
           </div>
 
         </div>
 
         <!-- MISSION & VALUES CARD -->
-        <div class="bg-[#ebf5fc] border border-[#d2e6f5] rounded-2xl px-6 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 w-full relative overflow-hidden card-shadow">
+        <div class="bg-[#ebf5fc] border border-[#d2e6f5] rounded-2xl px-6 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 w-full relative overflow-hidden card-shadow full-width-card">
 
           <!-- Left: Shield Badge + Mission Text -->
           <div class="flex items-center space-x-3.5 shrink-0 min-w-0">

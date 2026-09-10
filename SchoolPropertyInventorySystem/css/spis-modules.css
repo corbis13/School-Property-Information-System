@@ -1,6 +1,6 @@
 /* SPIS Functional Modules Stylesheet 
    Theme: Matching homepage.html (#00335e, #55a83b, #f0f4f8, Plus Jakarta Sans)
-*/
+ */
 
 /* Module View visibility */
 .module-view {
@@ -1549,6 +1549,10 @@ td button.btn-danger:hover {
   border-radius: 0.5rem;
   font-size: 0.8125rem;
   color: #0f172a;
+}
+
+.full-width-card {
+    grid-column: 1 / -1;
 }
 
 /* Settings & About lists */
