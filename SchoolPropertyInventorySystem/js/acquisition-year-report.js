@@ -1,11 +1,11 @@
-const colors = ["#004c87", "#449e38", "#f29913", "#0284c7", "#94a3b8", "#6366f1", "#0d9488", "#ec4899", "#8b5cf6", "#64748b"];
+const colors = ["#004c87", "#0284c7", "#38bdf8", "#449e38", "#d97706", "#94a3b8", "#6366f1", "#0d9488", "#ec4899", "#8b5cf6"];
 let allRawAssets = [];
 let allEntries = [];
 let filteredEntries = [];
 const pageSize = 20;
 let currentPage = 1;
 
-const chart = document.getElementById("accountablePersonChart");
+const chart = document.getElementById("acquisitionYearChart");
 const previousPage = document.getElementById("previousPage");
 const nextPage = document.getElementById("nextPage");
 const pageStatus = document.getElementById("pageStatus");
@@ -30,12 +30,25 @@ function getSupabaseConfig() {
   };
 }
 
+function extractYear(rawValue) {
+  if (!rawValue) return null;
+  const str = String(rawValue).trim();
+  if (!str) return null;
+  const parsed = new Date(str);
+  if (!Number.isNaN(parsed.getTime())) {
+    const year = parsed.getFullYear();
+    if (year >= 1900 && year <= 2100) return String(year);
+  }
+  const match = str.match(/\b(19\d{2}|20\d{2})\b/);
+  if (match) {
+    return match[1];
+  }
+  return null;
+}
+
 function computeEntriesFromAssets(assets, filterType = "all") {
   const counts = {};
   for (const item of assets) {
-    const person = String(item.accountable_person || item.accountable || item.accountablePerson || item.person_accountable || "").trim();
-    if (!person) continue;
-
     if (filterType === "buildings") {
       const type = String(item.inventory_type || item.inventoryType || "").toLowerCase();
       const cls = String(item.item_classification || item.itemClassification || "").toLowerCase();
@@ -46,11 +59,15 @@ function computeEntriesFromAssets(assets, filterType = "all") {
       if (type.includes("building") || cls.includes("building")) continue;
     }
 
-    counts[person] = (counts[person] || 0) + 1;
+    const rawDate = item.acquisition_date || item.acquisitionDate || "";
+    const year = extractYear(rawDate);
+    if (!year) continue;
+
+    counts[year] = (counts[year] || 0) + 1;
   }
 
   return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .sort((a, b) => Number(b[0]) - Number(a[0]))
     .map(([label, value]) => ({ label, value }));
 }
 
@@ -70,7 +87,7 @@ function applyFilters() {
 
   const totalCount = filteredEntries.reduce((sum, entry) => sum + Number(entry.value || 0), 0);
   if (totalAssignedElem) {
-    totalAssignedElem.textContent = `Total assigned: ${totalCount} item${totalCount === 1 ? "" : "s"} (${filteredEntries.length} person${filteredEntries.length === 1 ? "" : "s"})`;
+    totalAssignedElem.textContent = `Total items: ${totalCount} (${filteredEntries.length} year${filteredEntries.length === 1 ? "" : "s"})`;
   }
 
   renderPage(1);
@@ -84,7 +101,7 @@ function renderPage(page) {
   const maxValue = Math.max(...filteredEntries.map(e => Number(e.value || 0)), 1);
 
   if (!filteredEntries.length) {
-    chart.innerHTML = '<p class="empty-state" style="text-align: center; color: #64748b; padding: 36px 0;">No accountable persons found in the asset database.</p>';
+    chart.innerHTML = '<p class="empty-state" style="text-align: center; color: #64748b; padding: 36px 0;">No acquisition years found in the asset database.</p>';
   } else {
     chart.innerHTML = pageEntries.map((entry, index) => `
       <div class="bar-row">
@@ -110,7 +127,7 @@ async function fetchFromSupabase() {
     return null;
   }
 
-  const response = await fetch(`${url}/rest/v1/assets?select=asset_id,accountable_person,inventory_type,item_classification,property_no`, {
+  const response = await fetch(`${url}/rest/v1/assets?select=asset_id,acquisition_date,inventory_type,item_classification,property_no`, {
     headers: {
       apikey: anonKey,
       Authorization: `Bearer ${anonKey}`
@@ -125,7 +142,7 @@ async function fetchFromSupabase() {
 }
 
 async function init() {
-  // 1. First check localStorage for cached entries or raw items for instantaneous display
+  // 1. Check localStorage for cached entries or raw items for instant rendering
   try {
     const cachedRaw = JSON.parse(localStorage.getItem("spis_inventory_items") || "[]");
     if (Array.isArray(cachedRaw) && cachedRaw.length > 0) {
@@ -133,7 +150,7 @@ async function init() {
       allEntries = computeEntriesFromAssets(allRawAssets, "all");
       applyFilters();
     } else {
-      const cachedEntries = JSON.parse(localStorage.getItem("accountablePersonReportEntries") || "[]");
+      const cachedEntries = JSON.parse(localStorage.getItem("acquisitionYearReportEntries") || "[]");
       if (Array.isArray(cachedEntries) && cachedEntries.length > 0) {
         allEntries = cachedEntries;
         filteredEntries = allEntries;
@@ -141,24 +158,23 @@ async function init() {
       }
     }
   } catch (err) {
-    console.warn("Error reading cached accountable persons:", err);
+    console.warn("Error reading cached acquisition years:", err);
   }
 
-  // 2. Fetch fresh data directly from Supabase to ensure accurate real-time data
+  // 2. Fetch live data from Supabase
   try {
     if (!allEntries.length) {
-      chart.innerHTML = '<p class="loading-state" style="text-align: center; color: #64748b; padding: 36px 0;">Connecting to database and pulling accountable persons...</p>';
+      chart.innerHTML = '<p class="loading-state" style="text-align: center; color: #64748b; padding: 36px 0;">Connecting to database and pulling acquisition records...</p>';
     }
     const assets = await fetchFromSupabase();
     if (Array.isArray(assets)) {
       allRawAssets = assets;
       allEntries = computeEntriesFromAssets(assets, "all");
-      // Cache both the aggregated entries and update report
-      localStorage.setItem("accountablePersonReportEntries", JSON.stringify(allEntries));
+      localStorage.setItem("acquisitionYearReportEntries", JSON.stringify(allEntries));
       applyFilters();
     }
   } catch (error) {
-    console.error("Failed to pull accountable persons from Supabase:", error);
+    console.error("Failed to pull acquisition years from Supabase:", error);
     if (!allEntries.length) {
       chart.innerHTML = `<p class="empty-state" style="text-align: center; color: #dc2626; padding: 36px 0;">Failed to pull data from database: ${escapeHtml(error.message)}</p>`;
       if (totalAssignedElem) totalAssignedElem.textContent = "Error loading data";

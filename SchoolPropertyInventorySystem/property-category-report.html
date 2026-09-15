@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>All Property Categories</title>
+  <link rel="stylesheet" href="css/accountable-person-report.css">
+</head>
+<body>
+  <main>
+    <div class="top-nav">
+      <a href="index.html" class="back-link">&larr; Back to Dashboard</a>
+    </div>
+    <header>
+      <div>
+        <h1>All Property Categories</h1>
+        <p>Asset distribution and inventory records organized by classification and category</p>
+      </div>
+      <div id="totalCategories" class="total">Loading...</div>
+    </header>
+
+    <!-- Category Filter Controls -->
+    <div class="controls-bar category-controls-bar">
+      <div class="filter-box">
+        <label for="categoryFilter" class="filter-label">Filter Category:</label>
+        <select id="categoryFilter" aria-label="Filter by property category" title="Filter by Property Category">
+          <option value="all">All Categories</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Category Cards Grid -->
+    <section id="categoryCardsGrid" class="category-cards-grid" aria-label="Property categories">
+      <p class="loading-state">Connecting to database and pulling category records...</p>
+    </section>
+
+    <nav class="pagination" aria-label="Property category pages">
+      <button id="previousPage" type="button">Previous</button>
+      <span id="pageStatus" aria-live="polite"></span>
+      <button id="nextPage" type="button">Next</button>
+    </nav>
+  </main>
+  <script src="supabase-config.js?v=20260904"></script>
+  <script src="js/property-category-report.js?v=20260914"></script>
+</body>
+</html>

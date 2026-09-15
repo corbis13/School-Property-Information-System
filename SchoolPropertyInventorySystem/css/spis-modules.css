@@ -1614,6 +1614,28 @@ td button.btn-danger:hover {
   border-color: #00335e;
 }
 
+/* School Details Card in About Module */
+.school-details-card {
+  border-top: 3px solid #004c87;
+  grid-column: 1 / -1;
+  max-width: 680px;
+}
+
+.school-details-form input:focus {
+  outline: none;
+  border-color: #004c87 !important;
+  box-shadow: 0 0 0 3px rgba(0, 76, 135, 0.14) !important;
+}
+
+.school-details-form button:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.school-details-form button:active {
+  transform: translateY(0);
+}
+
 /* Toast */
 .toast {
   position: fixed;

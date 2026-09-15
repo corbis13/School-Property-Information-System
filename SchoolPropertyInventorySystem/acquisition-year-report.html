@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>All Accountable Persons</title>
+  <title>All Acquisition Years</title>
   <link rel="stylesheet" href="css/accountable-person-report.css">
 </head>
 <body>
@@ -13,14 +13,14 @@
     </div>
     <header>
       <div>
-        <h1>All Accountable Persons</h1>
-        <p>Asset assignments pulled from the database</p>
+        <h1>All Acquisition Years</h1>
+        <p>Asset acquisition records pulled from the database</p>
       </div>
       <div id="totalAssigned" class="total">Loading...</div>
     </header>
     <div class="controls-bar">
       <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Search accountable person..." autocomplete="off">
+        <input type="text" id="searchInput" placeholder="Search acquisition year (e.g. 2024)..." autocomplete="off">
       </div>
       <div class="filter-box">
         <select id="typeFilter">
@@ -30,16 +30,16 @@
         </select>
       </div>
     </div>
-    <section id="accountablePersonChart" class="chart" aria-label="All accountable persons">
-      <p class="loading-state">Connecting to database and pulling accountable persons...</p>
+    <section id="acquisitionYearChart" class="chart" aria-label="All acquisition years">
+      <p class="loading-state">Connecting to database and pulling acquisition records...</p>
     </section>
-    <nav class="pagination" aria-label="Accountable person pages">
+    <nav class="pagination" aria-label="Acquisition year pages">
       <button id="previousPage" type="button">Previous</button>
       <span id="pageStatus" aria-live="polite"></span>
       <button id="nextPage" type="button">Next</button>
     </nav>
   </main>
   <script src="supabase-config.js?v=20260904"></script>
-  <script src="js/accountable-person-report.js?v=20260914"></script>
+  <script src="js/acquisition-year-report.js?v=20260914"></script>
 </body>
 </html>

@@ -243,10 +243,10 @@
             <img src="images/geras_logo.png" alt="Geras Integrated School" class="w-full h-full object-contain rounded-full" />
           </div>
           <div class="min-w-0 flex-1">
-            <p class="text-[12px] font-extrabold text-white leading-tight truncate" title="Geras Integrated School">Geras Integrated School</p>
+            <p class="text-[12px] font-extrabold text-white leading-tight truncate" title="Geras Integrated School" id="sidebarSchoolName">Geras Integrated School</p>
             <p class="text-[10px] text-sky-200 font-semibold leading-tight mt-0.5 flex items-center space-x-1">
               <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#55a83b]"></span>
-              <span>School ID: <strong class="text-white font-bold">500243</strong></span>
+              <span>School ID: <strong class="text-white font-bold" id="sidebarSchoolId">500243</strong></span>
             </p>
             <p class="text-[9px] text-sky-300/80 font-medium truncate mt-0.5" id="databaseStatus">Connecting to Supabase...</p>
           </div>
@@ -536,7 +536,7 @@
                   </div>
                 </div>
                 <div class="mt-3 pt-2 text-right">
-                  <a href="#" class="text-xs font-bold text-slate-500 hover:text-[#f29913] inline-flex items-center transition" onclick="showModule('inventory'); return false;">
+                  <a href="maintenance-requests-report.html" target="_blank" rel="noopener" class="text-xs font-bold text-slate-500 hover:text-[#f29913] inline-flex items-center transition">
                     <span>View all requests</span>
                     <i data-lucide="chevron-right" class="w-3.5 h-3.5 ml-1 text-slate-400"></i>
                   </a>
@@ -552,16 +552,22 @@
               <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow flex flex-col justify-between">
                 <div>
                   <!-- Header with Dropdown -->
-                  <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">
-                      PROPERTY BY CATEGORY
-                    </h2>
-                    <div class="relative">
-                      <select class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-4 pr-9 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
-                        <option>This Month</option>
-                        <option>Last Month</option>
-                        <option>This Year</option>
+                  <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div class="flex items-center space-x-2">
+                      <span class="w-1.5 h-4 bg-[#004c87] rounded-full"></span>
+                      <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">
+                        PROPERTY BY CATEGORY
+                      </h2>
+                    </div>
+                    <div class="relative shrink-0">
+                      <select id="propertyCategoryFilter" class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-3 pr-8 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
+                        <option value="all">All Items</option>
+                        <option value="buildings">Buildings</option>
+                        <option value="inventory">Inventory</option>
                       </select>
+                      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                      </div>
                     </div>
                   </div>
 
@@ -570,7 +576,7 @@
                     
                     <!-- SVG Donut Chart with Center Total -->
                     <div class="relative w-36 h-36 flex items-center justify-center shrink-0">
-                      <svg viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
+                      <svg id="propertyCategorySvg" viewBox="0 0 100 100" class="w-full h-full transform -rotate-90">
                         <!-- Background ring -->
                         <circle cx="50" cy="50" r="38" fill="transparent" stroke="#f1f5f9" stroke-width="15" />
                         
@@ -597,13 +603,13 @@
                       
                       <!-- Center Text -->
                       <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <span class="text-2xl font-black text-slate-800 leading-none">24</span>
+                        <span id="propertyCategoryTotal" class="text-2xl font-black text-slate-800 leading-none">24</span>
                         <span class="text-[11px] font-bold text-slate-400 uppercase mt-0.5">Total</span>
                       </div>
                     </div>
 
                     <!-- Legend Items -->
-                    <div class="category-legend space-y-2 text-xs">
+                    <div id="propertyCategoryLegend" class="category-legend space-y-2 text-xs flex-1 min-w-0">
                       <div class="flex items-center space-x-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-[#004c87] shrink-0"></span>
                         <span class="text-slate-600 font-medium">Buildings:</span>
@@ -636,91 +642,48 @@
 
                 <!-- Footer Button -->
                 <div class="mt-4 pt-2">
-                  <button class="w-full py-2 px-4 rounded-lg border border-[#004c87] text-[#004c87] hover:bg-[#004c87] hover:text-white font-bold text-xs transition text-center">
-                    View Full Report
-                  </button>
+                  <a id="propertyCategoryViewAll" href="property-category-report.html" target="_blank" rel="noopener" class="w-full py-2 px-4 rounded-lg border border-[#004c87] text-[#004c87] hover:bg-[#004c87] hover:text-white font-bold text-xs transition text-center flex items-center justify-center gap-1.5 shadow-xs">
+                    <span>View Full Report</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                  </a>
                 </div>
               </div>
 
               <!-- CARD 2: MAINTENANCE REQUESTS -->
               <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow flex flex-col justify-between">
                 <div>
-                  <!-- Header with View All -->
+                  <!-- Header with View All and Filter -->
                   <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">
-                      MAINTENANCE REQUESTS
-                    </h2>
-                    <a href="#" onclick="event.preventDefault();showModule('inventory')" class="text-xs font-bold text-[#004c87] hover:underline">View All</a>
+                    <div class="flex items-center space-x-2">
+                      <span class="w-1.5 h-4 bg-[#f29913] rounded-full"></span>
+                      <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">
+                        MAINTENANCE REQUESTS
+                      </h2>
+                    </div>
+                    <div class="relative">
+                      <select id="maintenanceRequestsFilter" class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-3 pr-8 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
+                        <option value="all">All Items</option>
+                        <option value="buildings">Buildings</option>
+                        <option value="inventory">Inventory</option>
+                      </select>
+                      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                      </div>
+                    </div>
                   </div>
 
                   <!-- Requests List -->
-                  <div class="space-y-3">
-                    
-                    <!-- Item 1: Repair Classroom Door -->
-                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/80 hover:bg-slate-100 transition border border-slate-100">
-                      <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-full bg-[#f29913] text-white flex items-center justify-center shrink-0">
-                          <i data-lucide="wrench" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                          <p class="text-xs font-extrabold text-slate-800">Repair Classroom Door</p>
-                          <p class="text-[11px] text-slate-500 font-medium">Building A - Room 101</p>
-                        </div>
-                      </div>
-                      <div class="text-right">
-                        <span class="px-2 py-0.5 text-[9px] font-black rounded-full bg-[#fef3c7] text-[#b45309] uppercase tracking-wider">
-                          PENDING
-                        </span>
-                        <p class="text-[10px] text-slate-400 font-semibold mt-0.5">May 20, 2026</p>
-                      </div>
-                    </div>
-
-                    <!-- Item 2: AC Unit Not Cooling -->
-                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/80 hover:bg-slate-100 transition border border-slate-100">
-                      <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-full bg-[#449e38] text-white flex items-center justify-center shrink-0">
-                          <i data-lucide="wrench" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                          <p class="text-xs font-extrabold text-slate-800">AC Unit Not Cooling</p>
-                          <p class="text-[11px] text-slate-500 font-medium">Building B - Faculty Room</p>
-                        </div>
-                      </div>
-                      <div class="text-right">
-                        <span class="px-2 py-0.5 text-[9px] font-black rounded-full bg-[#dcfce7] text-[#15803d] uppercase tracking-wider">
-                          IN PROGRESS
-                        </span>
-                        <p class="text-[10px] text-slate-400 font-semibold mt-0.5">May 18, 2026</p>
-                      </div>
-                    </div>
-
-                    <!-- Item 3: Replace Chair Leg -->
-                    <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/80 hover:bg-slate-100 transition border border-slate-100">
-                      <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-full bg-[#0284c7] text-white flex items-center justify-center shrink-0">
-                          <i data-lucide="wrench" class="w-4 h-4"></i>
-                        </div>
-                        <div>
-                          <p class="text-xs font-extrabold text-slate-800">Replace Chair Leg</p>
-                          <p class="text-[11px] text-slate-500 font-medium">Building C - Room 203</p>
-                        </div>
-                      </div>
-                      <div class="text-right">
-                        <span class="px-2 py-0.5 text-[9px] font-black rounded-full bg-[#fef3c7] text-[#b45309] uppercase tracking-wider">
-                          PENDING
-                        </span>
-                        <p class="text-[10px] text-slate-400 font-semibold mt-0.5">May 15, 2026</p>
-                      </div>
-                    </div>
-
+                  <div id="maintenanceRequestsContainer" class="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+                    <p class="text-xs text-slate-400 py-6 text-center">Loading maintenance requests...</p>
                   </div>
                 </div>
 
-                <!-- Footer Link -->
-                <div class="mt-4 pt-2">
-                  <a href="#" class="text-xs font-bold text-[#004c87] hover:underline flex items-center justify-between">
+                <!-- Footer Link matching View all breakdowns logic -->
+                <div class="mt-4 pt-2 border-t border-slate-200/60 flex items-center justify-between">
+                  <p class="text-[11px] text-slate-400 font-medium">Total requests: <strong id="maintenanceRequestsTotal" class="text-slate-700">0 items</strong></p>
+                  <a id="maintenanceRequestsViewAll" href="maintenance-requests-report.html" target="_blank" rel="noopener" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
                     <span>View All Requests</span>
-                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                   </a>
                 </div>
               </div>
@@ -737,122 +700,22 @@
                   <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">ACCOUNTABLE PERSON</h2>
                 </div>
                 <div class="relative">
-                  <select class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-4 pr-9 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
-                    <option>All Items</option>
-                    <option>Buildings</option>
-                    <option>Inventory</option>
+                  <select id="accountablePersonFilter" class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-4 pr-9 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
+                    <option value="all">All Items</option>
+                    <option value="buildings">Buildings</option>
+                    <option value="inventory">Inventory</option>
                   </select>
                 </div>
               </div>
 
               <!-- Bar Chart (10 Persons) -->
               <div id="accountablePersonCardBody" class="space-y-2.5" aria-live="polite">
-
-                <!-- Person 1 -->
-                <div class="flex items-center gap-3">
-                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">J. Tuwahan</span>
-                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
-                    <div class="h-full bg-[#004c87] rounded-full flex items-center justify-end pr-2" style="width: 85%">
-                      <span class="text-[10px] font-black text-white">85</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Person 2 -->
-                <div class="flex items-center gap-3">
-                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">R. Dela Cruz</span>
-                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
-                    <div class="h-full bg-[#449e38] rounded-full flex items-center justify-end pr-2" style="width: 68%">
-                      <span class="text-[10px] font-black text-white">68</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Person 3 -->
-                <div class="flex items-center gap-3">
-                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">M. Santos</span>
-                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
-                    <div class="h-full bg-[#f29913] rounded-full flex items-center justify-end pr-2" style="width: 54%">
-                      <span class="text-[10px] font-black text-white">54</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Person 4 -->
-                <div class="flex items-center gap-3">
-                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">L. Reyes</span>
-                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
-                    <div class="h-full bg-[#0284c7] rounded-full flex items-center justify-end pr-2" style="width: 40%">
-                      <span class="text-[10px] font-black text-white">40</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Person 5 -->
-                <div class="flex items-center gap-3">
-                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">A. Garcia</span>
-                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
-                    <div class="h-full bg-[#94a3b8] rounded-full flex items-center justify-end pr-2" style="width: 28%">
-                      <span class="text-[10px] font-black text-white">28</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Person 6 -->
-                <div class="flex items-center gap-3">
-                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">E. Bautista</span>
-                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
-                    <div class="h-full bg-[#6366f1] rounded-full flex items-center justify-end pr-2" style="width: 24%">
-                      <span class="text-[10px] font-black text-white">24</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Person 7 -->
-                <div class="flex items-center gap-3">
-                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">C. Mendoza</span>
-                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
-                    <div class="h-full bg-[#0d9488] rounded-full flex items-center justify-end pr-2" style="width: 19%">
-                      <span class="text-[10px] font-black text-white">19</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Person 8 -->
-                <div class="flex items-center gap-3">
-                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">K. Ramos</span>
-                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
-                    <div class="h-full bg-[#ec4899] rounded-full flex items-center justify-end pr-2" style="width: 15%">
-                      <span class="text-[10px] font-black text-white">15</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Person 9 -->
-                <div class="flex items-center gap-3">
-                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">N. Gonzales</span>
-                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
-                    <div class="h-full bg-[#8b5cf6] rounded-full flex items-center justify-end pr-2" style="width: 12%">
-                      <span class="text-[10px] font-black text-white">12</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Person 10 -->
-                <div class="flex items-center gap-3">
-                  <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">V. Fernandez</span>
-                  <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
-                    <div class="h-full bg-[#64748b] rounded-full flex items-center justify-end pr-2" style="width: 8%">
-                      <span class="text-[10px] font-black text-white">8</span>
-                    </div>
-                  </div>
-                </div>
-
+                <p class="text-xs text-slate-400 py-6 text-center">Loading accountable persons...</p>
               </div>
 
               <!-- Footer -->
               <div class="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
-                <p class="text-[11px] text-slate-400 font-medium">Total assigned: <strong id="accountablePersonTotal" class="text-slate-700">Loading...</strong></p>
+                <p class="text-[11px] text-slate-400 font-medium">Total assigned: <strong id="accountablePersonTotal" class="text-slate-700">0 items</strong></p>
                 <a id="accountablePersonViewAll" href="accountable-person-report.html" target="_blank" rel="noopener" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
                   <span>View All</span>
                   <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
@@ -965,28 +828,32 @@
                     <div class="w-6 h-6 rounded-md bg-[#004c87]/10 text-[#004c87] flex items-center justify-center">
                       <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
                     </div>
-                     <span class="text-sm font-bold text-slate-800">School Level</span>
+                    <span class="text-sm font-bold text-slate-800">School Level</span>
                   </div>
-                   <span id="schoolLevelTotal" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider"></span>
+                  <span id="schoolLevelTotal" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">0 items</span>
                 </div>
-                <div class="grid grid-cols-3 gap-2">
+                <div id="schoolLevelContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <div class="bg-white border border-[#bfdbfe] rounded-lg p-2 text-center shadow-2xs">
                     <p class="text-[10px] font-semibold text-[#004c87] truncate">Elementary</p>
-                    <p class="text-xs font-black text-slate-800 mt-0.5">142</p>
+                    <p id="schoolLevelElementaryCount" class="text-xs font-black text-slate-800 mt-0.5">0</p>
                   </div>
                   <div class="bg-white border border-[#bbf7d0] rounded-lg p-2 text-center shadow-2xs">
                     <p class="text-[10px] font-semibold text-[#449e38] truncate">Junior HS</p>
-                    <p class="text-xs font-black text-slate-800 mt-0.5">98</p>
+                    <p id="schoolLevelJuniorCount" class="text-xs font-black text-slate-800 mt-0.5">0</p>
                   </div>
                   <div class="bg-white border border-[#fde68a] rounded-lg p-2 text-center shadow-2xs">
                     <p class="text-[10px] font-semibold text-[#d97706] truncate">Senior HS</p>
-                    <p class="text-xs font-black text-slate-800 mt-0.5">116</p>
+                    <p id="schoolLevelSeniorCount" class="text-xs font-black text-slate-800 mt-0.5">0</p>
+                  </div>
+                  <div class="bg-white border border-slate-200 rounded-lg p-2 text-center shadow-2xs">
+                    <p class="text-[10px] font-semibold text-slate-600 truncate">Admin</p>
+                    <p id="schoolLevelAdminCount" class="text-xs font-black text-slate-800 mt-0.5">0</p>
                   </div>
                 </div>
               </div>
 
               <!-- SUB-CARD 2: ACQUISITION YEAR -->
-              <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2.5">
+              <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2.5 flex flex-col">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-2">
                     <div class="w-6 h-6 rounded-md bg-[#0284c7]/10 text-[#0284c7] flex items-center justify-center">
@@ -994,48 +861,56 @@
                     </div>
                     <span class="text-xs font-bold text-slate-800">Acquisition Year</span>
                   </div>
-                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">2021–2024</span>
-                </div>
-                <div class="space-y-1.5">
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2024</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#004c87] rounded-full" style="width:75%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">75</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2023</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#0284c7] rounded-full" style="width:58%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">58</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2022</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#38bdf8] rounded-full" style="width:42%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">42</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-[11px] text-slate-500 font-semibold w-10 shrink-0">2021</span>
-                    <div class="flex-1 bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
-                      <div class="h-full bg-[#94a3b8] rounded-full" style="width:25%"></div>
-                    </div>
-                    <span class="text-[11px] font-black text-slate-700 w-6 text-right">25</span>
+                  <div class="relative">
+                    <select id="acquisitionYearFilter" class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-3 pr-8 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
+                      <option value="all">All Items</option>
+                      <option value="buildings">Buildings</option>
+                      <option value="inventory">Inventory</option>
+                    </select>
                   </div>
                 </div>
-              </div>
-
-                <!-- Issuance Year Sub-Card removed intentionally -->
-                <!-- Footer link -->
-                <div class="mt-auto pt-2 border-t border-slate-100 flex items-center justify-between">
-                  <a href="#" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
+                <div id="acquisitionYearContainer" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                  <p class="text-xs text-slate-400 py-2 text-center">Loading acquisition years...</p>
+                </div>
+                <!-- Footer link for Acquisition Year -->
+                <div class="mt-auto pt-2 border-t border-slate-200/60 flex items-center justify-between">
+                  <p class="text-[11px] text-slate-400 font-medium">Total assigned: <strong id="acquisitionYearTotal" class="text-slate-700">0 items</strong></p>
+                  <a id="acquisitionYearViewAll" href="acquisition-year-report.html" target="_blank" rel="noopener" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
                     <span>View All Breakdowns</span>
                     <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                   </a>
                 </div>
+              </div>
+
+              <!-- SUB-CARD 3: ISSUANCE YEAR -->
+              <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2.5 flex flex-col">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <div class="w-6 h-6 rounded-md bg-[#449e38]/10 text-[#449e38] flex items-center justify-center">
+                      <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <span class="text-xs font-bold text-slate-800">Issuance Year</span>
+                  </div>
+                  <div class="relative">
+                    <select id="issuanceYearFilter" class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-3 pr-8 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
+                      <option value="all">All Items</option>
+                      <option value="buildings">Buildings</option>
+                      <option value="inventory">Inventory</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="issuanceYearContainer" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                  <p class="text-xs text-slate-400 py-2 text-center">Loading issuance years...</p>
+                </div>
+                <!-- Footer link for Issuance Year -->
+                <div class="mt-auto pt-2 border-t border-slate-200/60 flex items-center justify-between">
+                  <p class="text-[11px] text-slate-400 font-medium">Total assigned: <strong id="issuanceYearTotal" class="text-slate-700">0 items</strong></p>
+                  <a id="issuanceYearViewAll" href="issuance-year-report.html" target="_blank" rel="noopener" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
+                    <span>View All Breakdowns</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                  </a>
+                </div>
+              </div>
 
               </div>
 
@@ -1090,8 +965,8 @@
             <img src="images/geras_logo.png" alt="Geras Integrated School" class="w-full h-full object-contain rounded-full" />
           </div>
           <div class="min-w-0">
-            <p class="text-[12px] font-extrabold text-white leading-tight">Geras Integrated School</p>
-            <p class="text-[10px] text-sky-200 font-semibold leading-tight mt-0.5">School ID: <strong class="text-white font-bold">500243</strong></p>
+            <p class="text-[12px] font-extrabold text-white leading-tight" id="mobileSchoolName">Geras Integrated School</p>
+            <p class="text-[10px] text-sky-200 font-semibold leading-tight mt-0.5">School ID: <strong class="text-white font-bold" id="mobileSchoolId">500243</strong></p>
             <p class="text-[9px] text-sky-300/80 font-medium leading-tight mt-0.5">Connected to Supabase.</p>
           </div>
         </div>
@@ -1637,6 +1512,72 @@
         <!-- MODULE 7: ABOUT -->
         <div class="module-view" data-module="about" style="display:none;">
           <section class="about-grid">
+                    <!-- School Details Card -->
+                    <article class="module-card school-details-card" id="schoolDetailsCard">
+                        <div class="school-details-card-header" id="schoolDetailsCardHeader" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.75rem;">
+                            <div>
+                                <p class="eyebrow" id="schoolDetailsEyebrow">Institutional Profile</p>
+                                <h2 id="schoolDetailsHeading" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #00335e;">School Details</h2>
+                            </div>
+                            <span id="activeSchoolBadge" class="badge" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.72rem; padding: 0.25rem 0.625rem; border-radius: 9999px; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                                Active in Sidebar
+                            </span>
+                        </div>
+                        <p class="module-copy" id="schoolDetailsDescription" style="margin-bottom: 1.25rem; font-size: 0.8125rem; color: #64748b; line-height: 1.5;">
+                            Manage institutional school records and choose which school is active in the sidebar menu.
+                        </p>
+
+                        <form id="schoolDetailsForm" class="school-details-form" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 1rem;">
+                            <!-- School Dropdown Selector -->
+                            <div class="form-field-group" id="schoolSelectFieldGroup" style="display: flex; flex-direction: column; gap: 0.375rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <label for="schoolSelectDropdown" id="schoolSelectDropdownLabel" style="font-size: 0.75rem; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.025em;">
+                                        Select School
+                                    </label>
+                                    <button type="button" id="addNewSchoolBtn" style="background: none; border: none; font-size: 0.75rem; font-weight: 700; color: #004c87; cursor: pointer; padding: 0; text-decoration: underline;">
+                                        + Add New School
+                                    </button>
+                                </div>
+                                <select id="schoolSelectDropdown" name="school_selector"
+                                        style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem; color: #1e293b; background: #ffffff; box-sizing: border-box; cursor: pointer;">
+                                    <option value="">-- Choose a School --</option>
+                                </select>
+                            </div>
+
+                            <div class="form-field-group" id="schoolNameFieldGroup" style="display: flex; flex-direction: column; gap: 0.375rem;">
+                                <label for="aboutSchoolName" id="aboutSchoolNameLabel" style="font-size: 0.75rem; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.025em;">
+                                    School Name <span style="color: #ef4444;">*</span>
+                                </label>
+                                <input type="text" id="aboutSchoolName" name="school_name" placeholder="e.g., Geras Integrated School" required autocomplete="off"
+                                       style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem; color: #1e293b; background: #ffffff; box-sizing: border-box;" />
+                            </div>
+
+                            <div class="form-field-group" id="schoolIdFieldGroup" style="display: flex; flex-direction: column; gap: 0.375rem;">
+                                <label for="aboutSchoolId" id="aboutSchoolIdLabel" style="font-size: 0.75rem; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.025em;">
+                                    School ID <span style="color: #ef4444;">*</span>
+                                </label>
+                                <input type="text" id="aboutSchoolId" name="school_id" placeholder="e.g., 500243" required autocomplete="off"
+                                       style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem; color: #1e293b; background: #ffffff; box-sizing: border-box;" />
+                            </div>
+
+                            <div class="school-details-actions" id="schoolDetailsActions" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px solid #f1f5f9;">
+                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                    <button type="button" id="selectActiveSchoolBtn" class="primary-button" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.55rem 1.25rem; font-weight: 700; font-size: 0.8125rem; border-radius: 0.5rem; background: #004c87; color: #ffffff; border: none; cursor: pointer;" title="Display this school in sidebar menu">
+                                        <span>✓ Select for Sidebar</span>
+                                    </button>
+                                    <button type="submit" id="saveSchoolDetailsBtn" class="secondary-button" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.55rem 1.1rem; font-weight: 700; font-size: 0.8125rem; border-radius: 0.5rem; background: #002240; color: #ffffff; border: none; cursor: pointer;" title="Save school details">
+                                        <span>💾 Save</span>
+                                    </button>
+                                    <button type="button" id="refreshSchoolDetailsBtn" class="secondary-button" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.55rem 0.75rem; font-size: 0.8125rem; font-weight: 600; border-radius: 0.5rem; background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; cursor: pointer;" title="Refresh list">
+                                        <span>🔄 Refresh</span>
+                                    </button>
+                                </div>
+                                <span id="schoolDetailsStatus" style="font-size: 0.75rem; font-weight: 600; color: #64748b;">Ready</span>
+                            </div>
+                        </form>
+                    </article>
+
                     <article class="module-card about-card">
                         <p class="eyebrow">About</p>
                         <h2>School Property Information System</h2>

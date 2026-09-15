@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>All Maintenance Requests</title>
+  <link rel="stylesheet" href="css/accountable-person-report.css">
+</head>
+<body>
+  <main>
+    <div class="top-nav">
+      <a href="index.html" class="back-link">&larr; Back to Dashboard</a>
+    </div>
+    <header>
+      <div>
+        <h1>All Maintenance Requests</h1>
+        <p>Asset maintenance, repair, and service records pulled from the database</p>
+      </div>
+      <div id="totalRequests" class="total">Loading...</div>
+    </header>
+    <!-- Maintenance Filter Controls -->
+    <div class="controls-bar category-controls-bar">
+      <div class="filter-box">
+        <label for="statusFilter" class="filter-label">Filter Status:</label>
+        <select id="statusFilter" aria-label="Filter by maintenance status" title="Filter by Maintenance Status">
+          <option value="all">All Statuses</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Maintenance Cards Grid -->
+    <section id="maintenanceCardsGrid" class="category-cards-grid" aria-label="Maintenance requests">
+      <p class="loading-state">Connecting to database and pulling maintenance records...</p>
+    </section>
+
+    <nav class="pagination" aria-label="Maintenance request pages">
+      <button id="previousPage" type="button">Previous</button>
+      <span id="pageStatus" aria-live="polite"></span>
+      <button id="nextPage" type="button">Next</button>
+    </nav>
+  </main>
+  <script src="supabase-config.js?v=20260904"></script>
+  <script src="js/maintenance-requests-report.js?v=20260914"></script>
+</body>
+</html>

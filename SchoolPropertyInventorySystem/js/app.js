@@ -107,6 +107,7 @@ const dom = {
     qrCoverage: document.querySelector("#qrCoverage"),
     recentAssets: document.querySelector("#recentAssets"),
     accountablePersonChart: document.querySelector("#accountablePersonChart"),
+    accountablePersonFilter: document.querySelector("#accountablePersonFilter"),
     accountablePersonCardBody: document.querySelector("#accountablePersonCardBody"),
     accountablePersonTotal: document.querySelector("#accountablePersonTotal"),
     physicalReport: document.querySelector("#physicalReport"),
@@ -135,6 +136,23 @@ const dom = {
     databaseMessage: document.querySelector("#databaseMessage"),
     schoolLevelChart: document.querySelector("#schoolLevelChart"),
     acquisitionYearChart: document.querySelector("#acquisitionYearChart"),
+    acquisitionYearFilter: document.querySelector("#acquisitionYearFilter"),
+    acquisitionYearContainer: document.querySelector("#acquisitionYearContainer"),
+    acquisitionYearTotal: document.querySelector("#acquisitionYearTotal"),
+    acquisitionYearViewAll: document.querySelector("#acquisitionYearViewAll"),
+    issuanceYearFilter: document.querySelector("#issuanceYearFilter"),
+    issuanceYearContainer: document.querySelector("#issuanceYearContainer"),
+    issuanceYearTotal: document.querySelector("#issuanceYearTotal"),
+    issuanceYearViewAll: document.querySelector("#issuanceYearViewAll"),
+    maintenanceRequestsFilter: document.querySelector("#maintenanceRequestsFilter"),
+    maintenanceRequestsContainer: document.querySelector("#maintenanceRequestsContainer"),
+    maintenanceRequestsTotal: document.querySelector("#maintenanceRequestsTotal"),
+    maintenanceRequestsViewAll: document.querySelector("#maintenanceRequestsViewAll"),
+    propertyCategoryFilter: document.querySelector("#propertyCategoryFilter"),
+    propertyCategorySvg: document.querySelector("#propertyCategorySvg"),
+    propertyCategoryTotal: document.querySelector("#propertyCategoryTotal"),
+    propertyCategoryLegend: document.querySelector("#propertyCategoryLegend"),
+    propertyCategoryViewAll: document.querySelector("#propertyCategoryViewAll"),
     dateIssueYearChart: document.querySelector("#dateIssueYearChart"),
     acquisitionYearMini: document.querySelector("#acquisitionYearMini"),
     dateIssueYearMini: document.querySelector("#dateIssueYearMini"),
@@ -615,6 +633,451 @@ async function loadSchoolNameOptions() {
     return schoolNames;
 }
 
+let allSchoolsList = [];
+let currentSchoolId = null;
+let activeSchoolRecord = null;
+
+function updateSchoolDisplayBadges(name, id) {
+    if (name) {
+        document.querySelectorAll("#sidebarSchoolName, #mobileSchoolName, .school-name-display").forEach((el) => {
+            el.textContent = name;
+            el.title = name;
+        });
+    }
+    if (id !== undefined && id !== null && id !== "") {
+        document.querySelectorAll("#sidebarSchoolId, #mobileSchoolId, .school-id-display").forEach((el) => {
+            el.textContent = String(id);
+        });
+    }
+}
+
+function updateActiveBadgeState(school) {
+    const badge = document.getElementById("activeSchoolBadge");
+    if (!badge) return;
+
+    const isActive = Boolean(
+        activeSchoolRecord && school &&
+        (activeSchoolRecord.id && school.id ? String(activeSchoolRecord.id) === String(school.id) : activeSchoolRecord.school_name === school.school_name)
+    );
+
+    if (isActive) {
+        badge.style.display = "inline-flex";
+        badge.style.background = "#ecfdf5";
+        badge.style.color = "#047857";
+        badge.style.border = "1px solid #a7f3d0";
+        badge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block;"></span> Active in Sidebar';
+    } else {
+        badge.style.display = "inline-flex";
+        badge.style.background = "#f1f5f9";
+        badge.style.color = "#64748b";
+        badge.style.border = "1px solid #cbd5e1";
+        badge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: #94a3b8; display: inline-block;"></span> Not Active in Sidebar';
+    }
+}
+
+function populateSchoolDropdown() {
+    const selector = document.getElementById("schoolSelectDropdown");
+    if (!selector) return;
+
+    selector.innerHTML = "";
+
+    if (allSchoolsList.length === 0) {
+        const defaultOpt = document.createElement("option");
+        defaultOpt.value = "";
+        defaultOpt.textContent = "-- No saved schools found --";
+        selector.appendChild(defaultOpt);
+        return;
+    }
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "-- Choose a School --";
+    selector.appendChild(placeholder);
+
+    allSchoolsList.forEach((school) => {
+        const opt = document.createElement("option");
+        opt.value = String(school.id);
+        const isActive = activeSchoolRecord && (
+            (activeSchoolRecord.id && String(activeSchoolRecord.id) === String(school.id)) ||
+            (activeSchoolRecord.school_name === school.school_name)
+        );
+        opt.textContent = `${school.school_name} (ID: ${school.school_id})${isActive ? " ★ [Active in Sidebar]" : ""}`;
+        selector.appendChild(opt);
+    });
+
+    if (currentSchoolId) {
+        selector.value = String(currentSchoolId);
+    } else if (activeSchoolRecord && activeSchoolRecord.id) {
+        selector.value = String(activeSchoolRecord.id);
+    }
+}
+
+function handleSchoolDropdownChange(e) {
+    const selectedId = e.target.value;
+    const nameInput = document.getElementById("aboutSchoolName");
+    const idInput = document.getElementById("aboutSchoolId");
+    const statusElem = document.getElementById("schoolDetailsStatus");
+
+    if (!selectedId) {
+        handleAddNewSchool();
+        return;
+    }
+
+    const school = allSchoolsList.find((s) => String(s.id) === String(selectedId));
+    if (school) {
+        currentSchoolId = school.id;
+        if (nameInput) nameInput.value = school.school_name || "";
+        if (idInput) idInput.value = school.school_id ?? "";
+        updateActiveBadgeState(school);
+
+        const isActive = activeSchoolRecord && (
+            (activeSchoolRecord.id && String(activeSchoolRecord.id) === String(school.id)) ||
+            (activeSchoolRecord.school_name === school.school_name)
+        );
+
+        if (statusElem) {
+            statusElem.textContent = isActive
+                ? "✓ Currently displayed in sidebar"
+                : "School loaded. Click 'Select for Sidebar' to display this school.";
+            statusElem.style.color = isActive ? "#16a34a" : "#475569";
+        }
+    }
+}
+
+function handleAddNewSchool() {
+    const selector = document.getElementById("schoolSelectDropdown");
+    const nameInput = document.getElementById("aboutSchoolName");
+    const idInput = document.getElementById("aboutSchoolId");
+    const statusElem = document.getElementById("schoolDetailsStatus");
+    const badge = document.getElementById("activeSchoolBadge");
+
+    currentSchoolId = null;
+    if (selector) selector.value = "";
+    if (nameInput) {
+        nameInput.value = "";
+        nameInput.focus();
+    }
+    if (idInput) idInput.value = "";
+
+    if (badge) {
+        badge.style.display = "inline-flex";
+        badge.style.background = "#f1f5f9";
+        badge.style.color = "#64748b";
+        badge.style.border = "1px solid #cbd5e1";
+        badge.innerHTML = '<span style="width: 6px; height: 6px; border-radius: 50%; background: #94a3b8; display: inline-block;"></span> New School Entry';
+    }
+
+    if (statusElem) {
+        statusElem.textContent = "Enter new school name & ID, then click Save.";
+        statusElem.style.color = "#004c87";
+    }
+}
+
+function handleSelectActiveSchool() {
+    const nameInput = document.getElementById("aboutSchoolName");
+    const idInput = document.getElementById("aboutSchoolId");
+    const statusElem = document.getElementById("schoolDetailsStatus");
+    const sidebarSchoolCard = document.getElementById("sidebarSchoolInfoCard");
+
+    const schoolName = (nameInput?.value || "").trim();
+    const rawSchoolId = (idInput?.value || "").trim();
+
+    if (!schoolName) {
+        if (statusElem) {
+            statusElem.textContent = "⚠ Please enter or select a School Name";
+            statusElem.style.color = "#dc2626";
+        }
+        nameInput?.focus();
+        return;
+    }
+
+    if (!rawSchoolId) {
+        if (statusElem) {
+            statusElem.textContent = "⚠ Please enter or select a School ID";
+            statusElem.style.color = "#dc2626";
+        }
+        idInput?.focus();
+        return;
+    }
+
+    const parsedId = Number.parseInt(rawSchoolId, 10);
+    const schoolId = Number.isNaN(parsedId) ? rawSchoolId : parsedId;
+
+    const matchedSchool = allSchoolsList.find((s) =>
+        (currentSchoolId && s.id === currentSchoolId) ||
+        (s.school_name.toLowerCase() === schoolName.toLowerCase())
+    );
+
+    activeSchoolRecord = {
+        id: matchedSchool ? matchedSchool.id : (currentSchoolId || 1),
+        school_name: schoolName,
+        school_id: schoolId
+    };
+
+    try {
+        localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
+    } catch (e) {
+        console.warn("Error caching active school:", e);
+    }
+
+    // Update sidebar and mobile header info immediately
+    updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
+    if (sidebarSchoolCard) {
+        sidebarSchoolCard.style.display = "";
+    }
+
+    // Update dropdown item labels and active badge
+    populateSchoolDropdown();
+    updateActiveBadgeState(activeSchoolRecord);
+
+    if (statusElem) {
+        statusElem.textContent = "✓ Displaying in sidebar menu";
+        statusElem.style.color = "#16a34a";
+    }
+
+    showToast(`${schoolName} is now displayed in the sidebar!`);
+}
+
+async function loadSchoolDetails(forceRefresh = false) {
+    const schoolNameInput = document.getElementById("aboutSchoolName");
+    const schoolIdInput = document.getElementById("aboutSchoolId");
+    const statusElem = document.getElementById("schoolDetailsStatus");
+    const sidebarSchoolCard = document.getElementById("sidebarSchoolInfoCard");
+
+    // 1. Check local cache for active school first
+    try {
+        const cachedActive = JSON.parse(localStorage.getItem("spis_active_school") || "null");
+        if (cachedActive) {
+            activeSchoolRecord = cachedActive;
+            updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
+            if (sidebarSchoolCard) sidebarSchoolCard.style.display = "";
+        }
+    } catch (e) {
+        console.warn("Could not read cached active school:", e);
+    }
+
+    if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
+        if (statusElem) {
+            statusElem.textContent = "Ready (Offline mode)";
+            statusElem.style.color = "#64748b";
+        }
+        return activeSchoolRecord;
+    }
+
+    // 2. Pull all schools from Supabase
+    try {
+        if (statusElem) {
+            statusElem.textContent = "Loading schools...";
+            statusElem.style.color = "#00335e";
+        }
+
+        const response = await fetch(`${supabaseUrl}/rest/v1/school_details?select=*&order=school_name.asc`, {
+            headers: supabaseHeaders
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const rows = await response.json();
+        allSchoolsList = Array.isArray(rows) ? rows : [];
+
+        // If no active school record exists yet, default to first school in database
+        if (!activeSchoolRecord && allSchoolsList.length > 0) {
+            activeSchoolRecord = allSchoolsList[0];
+            try {
+                localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
+            } catch (e) {}
+            updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
+        } else if (activeSchoolRecord && allSchoolsList.length > 0) {
+            // Keep activeSchoolRecord synced if the record changed in database
+            const foundActive = allSchoolsList.find((s) =>
+                (activeSchoolRecord.id && s.id === activeSchoolRecord.id) ||
+                (s.school_name === activeSchoolRecord.school_name)
+            );
+            if (foundActive) {
+                activeSchoolRecord = foundActive;
+                try {
+                    localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
+                } catch (e) {}
+                updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
+            }
+        }
+
+        // Determine which school to display in form: current editing or active school
+        let targetSchool = null;
+        if (currentSchoolId) {
+            targetSchool = allSchoolsList.find((s) => s.id === currentSchoolId);
+        }
+        if (!targetSchool) {
+            targetSchool = allSchoolsList.find((s) => activeSchoolRecord && s.id === activeSchoolRecord.id)
+                || allSchoolsList[0]
+                || activeSchoolRecord;
+        }
+
+        if (targetSchool) {
+            currentSchoolId = targetSchool.id || null;
+            if (schoolNameInput) schoolNameInput.value = targetSchool.school_name || "";
+            if (schoolIdInput) schoolIdInput.value = targetSchool.school_id ?? "";
+            updateActiveBadgeState(targetSchool);
+        }
+
+        populateSchoolDropdown();
+
+        if (statusElem) {
+            statusElem.textContent = "✓ Ready";
+            statusElem.style.color = "#16a34a";
+        }
+    } catch (err) {
+        console.error("Failed to load school details:", err);
+        if (statusElem) {
+            statusElem.textContent = "Loaded from local cache";
+            statusElem.style.color = "#64748b";
+        }
+    }
+
+    return activeSchoolRecord;
+}
+
+async function saveSchoolDetails(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const schoolNameInput = document.getElementById("aboutSchoolName");
+    const schoolIdInput = document.getElementById("aboutSchoolId");
+    const saveBtn = document.getElementById("saveSchoolDetailsBtn");
+    const statusElem = document.getElementById("schoolDetailsStatus");
+
+    const schoolName = (schoolNameInput?.value || "").trim();
+    const rawSchoolId = (schoolIdInput?.value || "").trim();
+
+    if (!schoolName) {
+        if (statusElem) {
+            statusElem.textContent = "⚠ Please enter a School Name";
+            statusElem.style.color = "#dc2626";
+        }
+        schoolNameInput?.focus();
+        return;
+    }
+
+    if (!rawSchoolId) {
+        if (statusElem) {
+            statusElem.textContent = "⚠ Please enter a School ID";
+            statusElem.style.color = "#dc2626";
+        }
+        schoolIdInput?.focus();
+        return;
+    }
+
+    const parsedId = Number.parseInt(rawSchoolId, 10);
+    const schoolId = Number.isNaN(parsedId) ? rawSchoolId : parsedId;
+
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = "<span>⏳ Saving...</span>";
+    }
+    if (statusElem) {
+        statusElem.textContent = "Saving school details...";
+        statusElem.style.color = "#00335e";
+    }
+
+    const payload = {
+        school_name: schoolName,
+        school_id: schoolId
+    };
+
+    if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = "<span>💾 Save</span>";
+        }
+        if (statusElem) {
+            statusElem.textContent = "✓ Saved locally";
+            statusElem.style.color = "#16a34a";
+        }
+        showToast("School details saved locally!");
+        return;
+    }
+
+    try {
+        let response;
+
+        if (currentSchoolId) {
+            response = await fetch(`${supabaseUrl}/rest/v1/school_details?id=eq.${currentSchoolId}`, {
+                method: "PATCH",
+                headers: {
+                    ...supabaseHeaders,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=representation"
+                },
+                body: JSON.stringify(payload)
+            });
+        } else {
+            response = await fetch(`${supabaseUrl}/rest/v1/school_details`, {
+                method: "POST",
+                headers: {
+                    ...supabaseHeaders,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=representation"
+                },
+                body: JSON.stringify(payload)
+            });
+        }
+
+        if (!response.ok) {
+            const errBody = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errBody}`);
+        }
+
+        const savedRows = await response.json();
+        const savedRecord = Array.isArray(savedRows) && savedRows.length > 0 ? savedRows[0] : null;
+
+        if (savedRecord) {
+            currentSchoolId = savedRecord.id;
+
+            const existingIdx = allSchoolsList.findIndex((s) => s.id === savedRecord.id);
+            if (existingIdx >= 0) {
+                allSchoolsList[existingIdx] = savedRecord;
+            } else {
+                allSchoolsList.push(savedRecord);
+            }
+
+            // If the updated school was the active school, update active record and sidebar
+            if (activeSchoolRecord && activeSchoolRecord.id === savedRecord.id) {
+                activeSchoolRecord = savedRecord;
+                try {
+                    localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
+                } catch (e) {}
+                updateSchoolDisplayBadges(savedRecord.school_name, savedRecord.school_id);
+            }
+        }
+
+        populateSchoolDropdown();
+        if (currentSchoolId) {
+            const selector = document.getElementById("schoolSelectDropdown");
+            if (selector) selector.value = String(currentSchoolId);
+        }
+        updateActiveBadgeState(savedRecord || { school_name: schoolName, school_id: schoolId });
+
+        if (statusElem) {
+            statusElem.textContent = "✓ School details saved successfully";
+            statusElem.style.color = "#16a34a";
+        }
+        showToast("School details saved!");
+        await loadSchoolNameOptions();
+    } catch (err) {
+        console.error("Error saving school details:", err);
+        if (statusElem) {
+            statusElem.textContent = "⚠ Failed to save: " + err.message;
+            statusElem.style.color = "#dc2626";
+        }
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = "<span>💾 Save</span>";
+        }
+    }
+}
+
 async function deleteClassificationFromSheet(name) {
     if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
         throw new Error("Supabase config is incomplete.");
@@ -778,6 +1241,15 @@ async function loadItems() {
 
         usingRemoteBackend = true;
         localStorage.setItem(storageKey, JSON.stringify(items));
+        try {
+            localStorage.setItem("accountablePersonReportEntries", JSON.stringify(getAccountablePersonEntries("all")));
+            localStorage.setItem("acquisitionYearReportEntries", JSON.stringify(getYearDistribution("acquisitionDate", "all")));
+            localStorage.setItem("issuanceYearReportEntries", JSON.stringify(getYearDistribution("dateIssue", "all")));
+            localStorage.setItem("maintenanceRequestsReportEntries", JSON.stringify(getMaintenanceItems("all")));
+            localStorage.setItem("propertyCategoryReportEntries", JSON.stringify(getPropertyCategoryEntries("all")));
+        } catch (e) {
+            console.warn("Could not cache report entries:", e);
+        }
         setDatabaseStatus("Connected to Supabase.", `${items.length} records loaded from the backend.`);
     } catch (error) {
         console.error(error);
@@ -1080,7 +1552,7 @@ function normalizeStatusValue(status) {
 
 function isRepairStatus(status) {
     const normalized = normalizeStatusValue(status).toLowerCase();
-    return normalized === "for repair" || normalized.includes("repair") || normalized.includes("maintenance");
+    return normalized === "for repair" || normalized.includes("repair") || normalized.includes("maintenance") || normalized === "unserviceable";
 }
 
 function getVisibleStatusNames() {
@@ -1147,8 +1619,25 @@ function renderIcsGeneratedCount() {
 function renderDashboard() {
     const statusCounts = getStatusCounts();
     const schoolLevelEntries = getSchoolLevelEntries();
-    const acquisitionYearEntries = getYearDistribution("acquisitionDate");
-    const dateIssueYearEntries = getYearDistribution("dateIssue");
+    const acqFilterElem = document.getElementById("acquisitionYearFilter") || dom.acquisitionYearFilter;
+    const acqActiveFilter = acqFilterElem ? acqFilterElem.value : "all";
+    const acquisitionYearEntries = getYearDistribution("acquisitionDate", acqActiveFilter);
+    const issFilterElem = document.getElementById("issuanceYearFilter") || dom.issuanceYearFilter;
+    const issActiveFilter = issFilterElem ? issFilterElem.value : "all";
+    const dateIssueYearEntries = getYearDistribution("dateIssue", issActiveFilter);
+    try {
+        const allAcqEntries = acqActiveFilter === "all" ? acquisitionYearEntries : getYearDistribution("acquisitionDate", "all");
+        localStorage.setItem("acquisitionYearReportEntries", JSON.stringify(allAcqEntries));
+        const allIssEntries = issActiveFilter === "all" ? dateIssueYearEntries : getYearDistribution("dateIssue", "all");
+        localStorage.setItem("issuanceYearReportEntries", JSON.stringify(allIssEntries));
+        localStorage.setItem("maintenanceRequestsReportEntries", JSON.stringify(getMaintenanceItems("all")));
+        const catFilterElem = document.getElementById("propertyCategoryFilter") || dom.propertyCategoryFilter;
+        const catActiveFilter = catFilterElem ? catFilterElem.value : "all";
+        const allCatEntries = catActiveFilter === "all" ? getPropertyCategoryEntries(catActiveFilter) : getPropertyCategoryEntries("all");
+        localStorage.setItem("propertyCategoryReportEntries", JSON.stringify(allCatEntries));
+    } catch (e) {
+        console.warn("Could not sync year report entries:", e);
+    }
     // Update total count displays for acquisition and issuance years
     // Update header range labels for acquisition and issuance years
     // Update acquisition year header with per‑year counts (e.g., "2021: 12, 2022: 8")
@@ -1167,7 +1656,15 @@ function renderDashboard() {
             .join(', ');
         issuanceRangeElem.textContent = issuanceCountStr;
     }
-    const accountableEntries = getAccountablePersonEntries();
+    const filterElem = document.getElementById("accountablePersonFilter") || dom.accountablePersonFilter;
+    const activeFilter = filterElem ? filterElem.value : "all";
+    const accountableEntries = getAccountablePersonEntries(activeFilter);
+    try {
+        const allAccountableEntries = activeFilter === "all" ? accountableEntries : getAccountablePersonEntries("all");
+        localStorage.setItem("accountablePersonReportEntries", JSON.stringify(allAccountableEntries));
+    } catch (e) {
+        console.warn("Could not sync accountable person report entries:", e);
+    }
 
     if (dom.portfolioChart && dom.portfolioLegend) {
         renderPortfolioChart(schoolLevelEntries);
@@ -1177,28 +1674,370 @@ function renderDashboard() {
     }
     renderStatusPie(statusCounts);
     renderMiniDistributionChart(dom.schoolLevelChart, schoolLevelEntries);
-    // Update the static count cards for each school level
+    // Update the count cards and total for School Level in PROPERTY BREAKDOWN
     try {
         const elementaryElem = document.getElementById("schoolLevelElementaryCount");
         const juniorElem = document.getElementById("schoolLevelJuniorCount");
         const seniorElem = document.getElementById("schoolLevelSeniorCount");
+        const adminElem = document.getElementById("schoolLevelAdminCount");
+        const totalSpan = document.getElementById("schoolLevelTotal");
+        const container = document.getElementById("schoolLevelContainer");
+
         const map = {};
+        let totalCount = 0;
         schoolLevelEntries.forEach(entry => {
             map[entry.label] = entry.value;
+            totalCount += (Number(entry.value) || 0);
         });
+
         if (elementaryElem) elementaryElem.textContent = map["Elementary"] || 0;
         if (juniorElem) juniorElem.textContent = map["Junior High"] || map["Junior HS"] || 0;
         if (seniorElem) seniorElem.textContent = map["Senior High"] || map["Senior HS"] || 0;
-        const adminElem = document.getElementById("schoolLevelAdminCount");
         if (adminElem) adminElem.textContent = map["Admin"] || 0;
+
+        if (totalSpan) {
+            totalSpan.textContent = `${totalCount} item${totalCount === 1 ? "" : "s"}`;
+        }
+
+        // Handle any additional non-standard school levels dynamically
+        if (container) {
+            const standardKeys = ["Elementary", "Junior High", "Junior HS", "Senior High", "Senior HS", "Admin"];
+            container.querySelectorAll(".school-level-extra").forEach(el => el.remove());
+            schoolLevelEntries.forEach(entry => {
+                if (!standardKeys.includes(entry.label) && entry.value > 0) {
+                    const extraDiv = document.createElement("div");
+                    extraDiv.className = "school-level-extra bg-white border border-slate-200 rounded-lg p-2 text-center shadow-2xs";
+                    extraDiv.innerHTML = `
+                        <p class="text-[10px] font-semibold text-slate-600 truncate">${escapeHtml(entry.label)}</p>
+                        <p class="text-xs font-black text-slate-800 mt-0.5">${entry.value}</p>
+                    `;
+                    container.appendChild(extraDiv);
+                }
+            });
+        }
     } catch (e) {
         console.error("Failed to update school level count cards", e);
     }
+    renderAcquisitionYearCard(acquisitionYearEntries);
+    renderIssuanceYearCard(dateIssueYearEntries);
+    const maintFilterElem = document.getElementById("maintenanceRequestsFilter") || dom.maintenanceRequestsFilter;
+    const maintActiveFilter = maintFilterElem ? maintFilterElem.value : "all";
+    renderMaintenanceRequestsCard(getMaintenanceItems(maintActiveFilter));
+    const catFilterElem = document.getElementById("propertyCategoryFilter") || dom.propertyCategoryFilter;
+    const catActiveFilter = catFilterElem ? catFilterElem.value : "all";
+    renderPropertyCategoryCard(getPropertyCategoryEntries(catActiveFilter));
     renderMiniDistributionChart(dom.acquisitionYearChart, acquisitionYearEntries);
     renderMiniDistributionChart(dom.dateIssueYearChart, dateIssueYearEntries);
     renderAccountableBarChart(accountableEntries);
     renderAccountablePersonCard(accountableEntries);
     renderRecentAssets();
+}
+
+function renderAcquisitionYearCard(entries) {
+    try {
+        const container = document.getElementById("acquisitionYearContainer") || dom.acquisitionYearContainer;
+        const totalSpan = document.getElementById("acquisitionYearTotal") || dom.acquisitionYearTotal;
+        const rangeElem = document.getElementById("acquisitionYearRange");
+
+        const totalCount = (entries || []).reduce((sum, e) => sum + (Number(e.value) || 0), 0);
+        const years = (entries || [])
+            .map(e => Number(e.label))
+            .filter(y => !isNaN(y))
+            .sort((a, b) => a - b);
+        const minYear = years.length ? years[0] : "";
+        const maxYear = years.length ? years[years.length - 1] : "";
+        const rangeText = years.length > 1 ? `${minYear}–${maxYear}` : (years.length === 1 ? `${minYear}` : "");
+
+        if (totalSpan) {
+            totalSpan.textContent = `${totalCount} item${totalCount === 1 ? "" : "s"}`;
+            totalSpan.title = `Total Assets: ${totalCount} (${rangeText || "No recorded acquisition year"})`;
+        }
+        if (rangeElem) {
+            rangeElem.textContent = rangeText || `${totalCount} items`;
+        }
+
+        if (!container) return;
+
+        if (!entries || !entries.length) {
+            container.innerHTML = '<p class="text-xs text-slate-400 py-2 text-center">No acquisition dates recorded.</p>';
+            return;
+        }
+
+        const maxValue = Math.max(...entries.map(e => Number(e.value) || 0), 1);
+        const colors = ["#004c87", "#0284c7", "#38bdf8", "#449e38", "#d97706", "#94a3b8", "#6366f1", "#0d9488", "#ec4899", "#8b5cf6"];
+
+        container.innerHTML = entries.map((entry, index) => {
+            const pct = Math.max(8, Math.round(((Number(entry.value) || 0) / maxValue) * 100));
+            const color = colors[index % colors.length];
+            return `
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] text-slate-600 font-semibold w-12 shrink-0">${escapeHtml(entry.label)}</span>
+                    <div class="flex-1 bg-slate-200/70 rounded-full h-3 overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-300" style="width:${pct}%; background:${color};"></div>
+                    </div>
+                    <span class="text-[11px] font-black text-slate-700 w-8 text-right">${entry.value}</span>
+                </div>
+            `;
+        }).join("");
+    } catch (e) {
+        console.error("Failed to update acquisition year card", e);
+    }
+}
+
+function renderIssuanceYearCard(entries) {
+    try {
+        const container = document.getElementById("issuanceYearContainer") || dom.issuanceYearContainer;
+        const totalSpan = document.getElementById("issuanceYearTotal") || dom.issuanceYearTotal;
+        const rangeElem = document.getElementById("dateIssueYearRange");
+
+        const totalCount = (entries || []).reduce((sum, e) => sum + (Number(e.value) || 0), 0);
+        const years = (entries || [])
+            .map(e => Number(e.label))
+            .filter(y => !isNaN(y))
+            .sort((a, b) => a - b);
+        const minYear = years.length ? years[0] : "";
+        const maxYear = years.length ? years[years.length - 1] : "";
+        const rangeText = years.length > 1 ? `${minYear}–${maxYear}` : (years.length === 1 ? `${minYear}` : "");
+
+        if (totalSpan) {
+            totalSpan.textContent = `${totalCount} item${totalCount === 1 ? "" : "s"}`;
+            totalSpan.title = `Total Assets: ${totalCount} (${rangeText || "No recorded issuance year"})`;
+        }
+        if (rangeElem) {
+            rangeElem.textContent = rangeText || `${totalCount} items`;
+        }
+
+        if (!container) return;
+
+        if (!entries || !entries.length) {
+            container.innerHTML = '<p class="text-xs text-slate-400 py-2 text-center">No issuance dates recorded.</p>';
+            return;
+        }
+
+        const maxValue = Math.max(...entries.map(e => Number(e.value) || 0), 1);
+        const colors = ["#449e38", "#22c55e", "#10b981", "#0284c7", "#004c87", "#38bdf8", "#d97706", "#6366f1", "#ec4899", "#8b5cf6"];
+
+        container.innerHTML = entries.map((entry, index) => {
+            const pct = Math.max(8, Math.round(((Number(entry.value) || 0) / maxValue) * 100));
+            const color = colors[index % colors.length];
+            return `
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] text-slate-600 font-semibold w-12 shrink-0">${escapeHtml(entry.label)}</span>
+                    <div class="flex-1 bg-slate-200/70 rounded-full h-3 overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-300" style="width:${pct}%; background:${color};"></div>
+                    </div>
+                    <span class="text-[11px] font-black text-slate-700 w-8 text-right">${entry.value}</span>
+                </div>
+            `;
+        }).join("");
+    } catch (e) {
+        console.error("Failed to update issuance year card", e);
+    }
+}
+
+function isMaintenanceOrRepairItem(item) {
+    if (!item) return false;
+    const rawStatus = String(item.status || item.Status || "").trim();
+    const normalized = normalizeStatusValue(rawStatus).toLowerCase();
+    return normalized === "for repair" ||
+           normalized === "under repair" ||
+           normalized === "repair" ||
+           normalized === "maintenance" ||
+           normalized === "under maintenance" ||
+           normalized === "unserviceable" ||
+           normalized.includes("repair") ||
+           normalized.includes("maintenance");
+}
+
+function getMaintenanceItems(filter = "all") {
+    return items.filter(item => {
+        if (!isMaintenanceOrRepairItem(item)) return false;
+
+        if (filter === "buildings") {
+            const type = String(item.inventoryType || item.inventory_type || "").toLowerCase();
+            const cls = String(item.itemClassification || item.item_classification || "").toLowerCase();
+            if (!type.includes("building") && !cls.includes("building")) return false;
+        } else if (filter === "inventory") {
+            const type = String(item.inventoryType || item.inventory_type || "").toLowerCase();
+            const cls = String(item.itemClassification || item.item_classification || "").toLowerCase();
+            if (type.includes("building") || cls.includes("building")) return false;
+        }
+
+        return true;
+    });
+}
+
+function renderMaintenanceRequestsCard(requests) {
+    try {
+        const container = document.getElementById("maintenanceRequestsContainer") || dom.maintenanceRequestsContainer;
+        const totalSpan = document.getElementById("maintenanceRequestsTotal") || dom.maintenanceRequestsTotal;
+        const filterElem = document.getElementById("maintenanceRequestsFilter") || dom.maintenanceRequestsFilter;
+        const activeFilter = filterElem ? filterElem.value : "all";
+        const reqList = requests || getMaintenanceItems(activeFilter);
+
+        if (totalSpan) {
+            totalSpan.textContent = `${reqList.length} request${reqList.length === 1 ? "" : "s"}`;
+        }
+
+        if (!container) return;
+
+        if (!reqList || !reqList.length) {
+            container.innerHTML = '<p class="text-xs text-slate-400 py-6 text-center">No maintenance requests found.</p>';
+            return;
+        }
+
+        const badgeClasses = {
+            "Under Repair": "bg-[#e0f2fe] text-[#0284c7]",
+            "For Repair": "bg-[#ffedd5] text-[#c2410c]",
+            "Maintenance": "bg-[#fef3c7] text-[#b45309]",
+            "Unserviceable": "bg-[#fee2e2] text-[#b91c1c]"
+        };
+
+        const iconBgClasses = {
+            "Under Repair": "bg-[#0284c7]",
+            "For Repair": "bg-[#f29913]",
+            "Maintenance": "bg-[#449e38]",
+            "Unserviceable": "bg-[#ef4444]"
+        };
+
+        container.innerHTML = reqList.slice(0, 6).map(item => {
+            const rawStatus = String(item.status || item.Status || "").trim();
+            const normStatus = normalizeStatusValue(rawStatus) || rawStatus || "Pending";
+            const title = item.itemBrandModel || item.item_brand_model || item.itemClassification || item.item_classification || "Property Asset";
+            const propNo = item.propertyNo || item.property_no || "";
+            const location = item.location ? item.location : (item.remarks || "No location");
+            const dateVal = item.updatedAt || item.updated_at || item.createdAt || item.created_at;
+            let dateText = "";
+            if (dateVal) {
+                const d = new Date(dateVal);
+                if (!Number.isNaN(d.getTime())) {
+                    dateText = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                }
+            }
+
+            const badgeClass = badgeClasses[normStatus] || "bg-[#f1f5f9] text-[#475569]";
+            const iconBgClass = iconBgClasses[normStatus] || "bg-[#64748b]";
+
+            return `
+                <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/80 hover:bg-slate-100 transition border border-slate-100">
+                    <div class="flex items-center space-x-3 min-w-0">
+                        <div class="w-8 h-8 rounded-full ${iconBgClass} text-white flex items-center justify-center shrink-0">
+                            <i data-lucide="wrench" class="w-4 h-4"></i>
+                        </div>
+                        <div class="min-w-0 pr-2">
+                            <p class="text-xs font-extrabold text-slate-800 truncate" title="${escapeHtml(title)}">${escapeHtml(title)}</p>
+                            <p class="text-[11px] text-slate-500 font-medium truncate">${escapeHtml(propNo ? `${propNo} • ${location}` : location)}</p>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <span class="px-2 py-0.5 text-[9px] font-black rounded-full ${badgeClass} uppercase tracking-wider">
+                            ${escapeHtml(normStatus)}
+                        </span>
+                        ${dateText ? `<p class="text-[10px] text-slate-400 font-semibold mt-0.5">${escapeHtml(dateText)}</p>` : ""}
+                    </div>
+                </div>
+            `;
+        }).join("");
+
+        if (typeof lucide !== "undefined" && lucide.createIcons) {
+            lucide.createIcons({ root: container });
+        }
+    } catch (err) {
+        console.error("Failed to render maintenance requests card:", err);
+    }
+}
+
+function getPropertyCategoryEntries(filter = "all") {
+    const counts = items.reduce((bucket, item) => {
+        if (filter === "buildings") {
+            const type = String(item.inventoryType || item.inventory_type || "").toLowerCase();
+            const cls = String(item.itemClassification || item.item_classification || "").toLowerCase();
+            if (!type.includes("building") && !cls.includes("building")) return bucket;
+        } else if (filter === "inventory") {
+            const type = String(item.inventoryType || item.inventory_type || "").toLowerCase();
+            const cls = String(item.itemClassification || item.item_classification || "").toLowerCase();
+            if (type.includes("building") || cls.includes("building")) return bucket;
+        }
+
+        const category = String(item.itemClassification || item.item_classification || "").trim() || "Unclassified";
+        bucket[category] = (bucket[category] || 0) + 1;
+        return bucket;
+    }, {});
+
+    const categoryColors = ["#004c87", "#449e38", "#f29913", "#0284c7", "#94a3b8", "#6366f1", "#0d9488", "#ec4899", "#8b5cf6", "#64748b"];
+    return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([label, value], index) => ({
+            label,
+            value,
+            color: categoryColors[index % categoryColors.length]
+        }));
+}
+
+function renderPropertyCategoryCard(entries) {
+    try {
+        const svgElem = document.getElementById("propertyCategorySvg") || dom.propertyCategorySvg;
+        const totalElem = document.getElementById("propertyCategoryTotal") || dom.propertyCategoryTotal;
+        const legendElem = document.getElementById("propertyCategoryLegend") || dom.propertyCategoryLegend;
+        const filterElem = document.getElementById("propertyCategoryFilter") || dom.propertyCategoryFilter;
+        const activeFilter = filterElem ? filterElem.value : "all";
+        const catList = entries || getPropertyCategoryEntries(activeFilter);
+
+        const totalCount = catList.reduce((sum, e) => sum + Number(e.value || 0), 0);
+
+        if (totalElem) {
+            totalElem.textContent = String(totalCount);
+        }
+
+        if (!svgElem || !legendElem) return;
+
+        if (!catList.length || totalCount === 0) {
+            svgElem.innerHTML = '<circle cx="50" cy="50" r="38" fill="transparent" stroke="#f1f5f9" stroke-width="15" />';
+            legendElem.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">No categories found.</p>';
+            return;
+        }
+
+        let displayEntries = [];
+        if (catList.length <= 5) {
+            displayEntries = [...catList];
+        } else {
+            displayEntries = catList.slice(0, 4);
+            const otherCount = catList.slice(4).reduce((sum, e) => sum + Number(e.value || 0), 0);
+            if (otherCount > 0) {
+                displayEntries.push({
+                    label: "Others",
+                    value: otherCount,
+                    color: "#94a3b8"
+                });
+            }
+        }
+
+        const circumference = 2 * Math.PI * 38;
+        let currentOffset = 0;
+
+        let circlesHtml = '<circle cx="50" cy="50" r="38" fill="transparent" stroke="#f1f5f9" stroke-width="15" />';
+        displayEntries.forEach(entry => {
+            const segLength = (entry.value / totalCount) * circumference;
+            circlesHtml += `<circle cx="50" cy="50" r="38" fill="transparent" stroke="${entry.color}" stroke-width="15" stroke-dasharray="${segLength.toFixed(2)} ${circumference.toFixed(2)}" stroke-dashoffset="${(-currentOffset).toFixed(2)}" />`;
+            currentOffset += segLength;
+        });
+        svgElem.innerHTML = circlesHtml;
+
+        legendElem.innerHTML = displayEntries.map(entry => {
+            const pct = Math.round((entry.value / totalCount) * 100);
+            return `
+                <div class="flex items-center justify-between space-x-2">
+                    <div class="flex items-center space-x-2 min-w-0">
+                        <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${entry.color}"></span>
+                        <span class="text-slate-600 font-medium truncate" title="${escapeHtml(entry.label)}">${escapeHtml(entry.label)}:</span>
+                    </div>
+                    <span class="font-extrabold text-slate-800 shrink-0">${entry.value} (${pct}%)</span>
+                </div>
+            `;
+        }).join("");
+    } catch (err) {
+        console.error("Failed to render property category card:", err);
+    }
 }
 
 function getSchoolLevelEntries() {
@@ -1209,8 +2048,9 @@ function getSchoolLevelEntries() {
         const normalized = schoolLevel.toLowerCase();
         let label = schoolLevel;
         if (normalized.includes("elementary")) label = "Elementary";
-        else if (normalized.includes("junior") || normalized.includes("high school") || normalized.includes("junior high")) label = "Junior High";
-        else if (normalized.includes("senior") || normalized.includes("senior high")) label = "Senior High";
+        else if (normalized.includes("senior")) label = "Senior High";
+        else if (normalized.includes("junior") || normalized.includes("jhs") || normalized.includes("high school") || normalized.includes("junior high")) label = "Junior High";
+        else if (normalized.includes("admin")) label = "Admin";
 
         bucket[label] = (bucket[label] || 0) + 1;
         return bucket;
@@ -1225,20 +2065,39 @@ function getSchoolLevelEntries() {
         }));
 }
 
-function getYearDistribution(field) {
+function getYearDistribution(field, filter = "all") {
     const counts = items.reduce((bucket, item) => {
-        const rawValue = String(item[field] || "").trim();
+        if (filter === "buildings") {
+            const type = String(item.inventoryType || item.inventory_type || "").toLowerCase();
+            const cls = String(item.itemClassification || item.item_classification || "").toLowerCase();
+            if (!type.includes("building") && !cls.includes("building")) return bucket;
+        } else if (filter === "inventory") {
+            const type = String(item.inventoryType || item.inventory_type || "").toLowerCase();
+            const cls = String(item.itemClassification || item.item_classification || "").toLowerCase();
+            if (type.includes("building") || cls.includes("building")) return bucket;
+        }
+
+        const rawValue = String(item[field] || (field === "acquisitionDate" ? item.acquisition_date : item.date_issue) || "").trim();
         if (!rawValue) return bucket;
 
-        const year = new Date(rawValue);
-        if (Number.isNaN(year.getTime())) return bucket;
+        let yearNum = null;
+        const parsed = new Date(rawValue);
+        if (!Number.isNaN(parsed.getTime())) {
+            yearNum = parsed.getFullYear();
+        } else {
+            const match = rawValue.match(/\b(19\d{2}|20\d{2})\b/);
+            if (match) {
+                yearNum = parseInt(match[1], 10);
+            }
+        }
+        if (!yearNum || isNaN(yearNum)) return bucket;
 
-        const label = String(year.getFullYear());
+        const label = String(yearNum);
         bucket[label] = (bucket[label] || 0) + 1;
         return bucket;
     }, {});
 
-    const colorPalette = ["#669900", "#99cc33", "#ccee66", "#006699", "#3399cc", "#990066", "#cc3399", "#ff6600", "#ff9900", "#ffcc00"];
+    const colorPalette = ["#004c87", "#0284c7", "#38bdf8", "#449e38", "#d97706", "#94a3b8", "#6366f1", "#0d9488", "#ec4899", "#8b5cf6"];
 
     return Object.entries(counts)
         .sort((a, b) => Number(b[0]) - Number(a[0]))
@@ -1249,29 +2108,41 @@ function getYearDistribution(field) {
         }));
 }
 
-function getAccountablePersonEntries() {
+function getAccountablePersonEntries(filter = "all") {
     const counts = items.reduce((bucket, item) => {
-        const person = String(item.accountable || "").trim();
+        if (filter === "buildings") {
+            const type = String(item.inventoryType || item.inventory_type || "").toLowerCase();
+            const cls = String(item.itemClassification || item.item_classification || "").toLowerCase();
+            if (!type.includes("building") && !cls.includes("building")) return bucket;
+        } else if (filter === "inventory") {
+            const type = String(item.inventoryType || item.inventory_type || "").toLowerCase();
+            const cls = String(item.itemClassification || item.item_classification || "").toLowerCase();
+            if (type.includes("building") || cls.includes("building")) return bucket;
+        }
+
+        const person = String(item.accountable || item.accountable_person || item.accountablePerson || item.person_accountable || "").trim();
         if (!person) return bucket;
 
         bucket[person] = (bucket[person] || 0) + 1;
         return bucket;
     }, {});
 
+    const colors = ["#004c87", "#449e38", "#f29913", "#0284c7", "#94a3b8", "#6366f1", "#0d9488", "#ec4899", "#8b5cf6", "#64748b"];
     return Object.entries(counts)
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
         .map(([label, value], index) => ({
             label,
             value,
-            color: ["#27e6a6", "#b79cff", "#f7b955", "#4dd0ff", "#ff7a59", "#6ef7ff", "#ff5f7a", "#9be15d"][index % 8]
+            color: colors[index % colors.length]
         }));
 }
 
 function renderAccountableBarChart(entries) {
-    if (!dom.accountablePersonChart) return;
+    const chartElem = document.getElementById("accountablePersonChart") || dom.accountablePersonChart;
+    if (!chartElem) return;
 
-    if (!entries.length) {
-        dom.accountablePersonChart.innerHTML = '<div class="mini-chart-empty">No accountable persons yet.</div>';
+    if (!entries || !entries.length) {
+        chartElem.innerHTML = '<div class="mini-chart-empty">No accountable persons yet.</div>';
         return;
     }
 
@@ -1286,14 +2157,14 @@ function renderAccountableBarChart(entries) {
 
         const pageButtons = [];
         if (totalPages > 1) {
-            pageButtons.push(`<button class="accountable-page-btn accountably-nav-btn" type="button" data-page="${Math.max(1, safePage - 1)}" ${safePage === 1 ? "disabled" : ""}>â€¹</button>`);
+            pageButtons.push(`<button class="accountable-page-btn accountably-nav-btn" type="button" data-page="${Math.max(1, safePage - 1)}" ${safePage === 1 ? "disabled" : ""}>‹</button>`);
             for (let index = 1; index <= totalPages; index += 1) {
                 pageButtons.push(`<button class="accountable-page-btn ${index === safePage ? "active" : ""}" type="button" data-page="${index}">${index}</button>`);
             }
-            pageButtons.push(`<button class="accountable-page-btn accountably-nav-btn" type="button" data-page="${Math.min(totalPages, safePage + 1)}" ${safePage === totalPages ? "disabled" : ""}>â€º</button>`);
+            pageButtons.push(`<button class="accountable-page-btn accountably-nav-btn" type="button" data-page="${Math.min(totalPages, safePage + 1)}" ${safePage === totalPages ? "disabled" : ""}>›</button>`);
         }
 
-        dom.accountablePersonChart.innerHTML = `
+        chartElem.innerHTML = `
             <div class="accountable-chart-grid">
                 ${pageEntries.map((entry) => `
                     <div class="accountable-bar-row">
@@ -1304,7 +2175,7 @@ function renderAccountableBarChart(entries) {
                             <strong class="accountable-bar-count">${entry.value}</strong>
                         </div>
                         <div class="accountable-bar-label">
-                            <span>${escapeHtml(entry.label)}</span>
+                            <span title="${escapeHtml(entry.label)}">${escapeHtml(entry.label)}</span>
                         </div>
                     </div>
                 `).join("")}
@@ -1313,7 +2184,7 @@ function renderAccountableBarChart(entries) {
         `;
     };
 
-    dom.accountablePersonChart.onclick = (event) => {
+    chartElem.onclick = (event) => {
         const button = event.target.closest(".accountable-page-btn");
         if (!button) return;
         const page = Number(button.dataset.page || 1);
@@ -1324,29 +2195,31 @@ function renderAccountableBarChart(entries) {
 }
 
 function renderAccountablePersonCard(entries) {
-        if (!dom.accountablePersonCardBody) return;
+    const cardBody = document.getElementById("accountablePersonCardBody") || dom.accountablePersonCardBody;
+    const totalElem = document.getElementById("accountablePersonTotal") || dom.accountablePersonTotal;
+    if (!cardBody) return;
 
-        const visibleEntries = entries.slice(0, 10);
-        const maxValue = Math.max(...visibleEntries.map((entry) => entry.value), 1);
-        const colors = ["#004c87", "#449e38", "#f29913", "#0284c7", "#94a3b8", "#6366f1", "#0d9488", "#ec4899", "#8b5cf6", "#64748b"];
+    const visibleEntries = (entries || []).slice(0, 10);
+    const maxValue = Math.max(...visibleEntries.map((entry) => entry.value), 1);
+    const colors = ["#004c87", "#449e38", "#f29913", "#0284c7", "#94a3b8", "#6366f1", "#0d9488", "#ec4899", "#8b5cf6", "#64748b"];
 
-        dom.accountablePersonCardBody.innerHTML = visibleEntries.length
-                ? visibleEntries.map((entry, index) => `
-                        <div class="flex items-center gap-3">
-                            <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate">${escapeHtml(entry.label)}</span>
-                            <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
-                                <div class="h-full rounded-full flex items-center justify-end pr-2" style="width: ${Math.max(8, Math.round((entry.value / maxValue) * 100))}%; background: ${colors[index % colors.length]};">
-                                    <span class="text-[10px] font-black text-white">${entry.value}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `).join("")
-                : '<p class="text-xs text-slate-400">No accountable persons found in the asset database.</p>';
+    cardBody.innerHTML = visibleEntries.length
+        ? visibleEntries.map((entry, index) => `
+            <div class="flex items-center gap-3">
+                <span class="text-[11px] font-semibold text-slate-600 w-32 shrink-0 truncate" title="${escapeHtml(entry.label)}">${escapeHtml(entry.label)}</span>
+                <div class="flex-1 bg-slate-100 rounded-full h-4.5 relative overflow-hidden">
+                    <div class="h-full rounded-full flex items-center justify-end pr-2 transition-all duration-300" style="width: ${Math.max(8, Math.round((entry.value / maxValue) * 100))}%; background: ${colors[index % colors.length]};">
+                        <span class="text-[10px] font-black text-white">${entry.value}</span>
+                    </div>
+                </div>
+            </div>
+        `).join("")
+        : '<p class="text-xs text-slate-400 py-6 text-center">No accountable persons found in the asset database.</p>';
 
-        if (dom.accountablePersonTotal) {
-            const totalAssigned = entries.reduce((sum, entry) => sum + entry.value, 0);
-                dom.accountablePersonTotal.textContent = `${totalAssigned} item${totalAssigned === 1 ? "" : "s"}`;
-        }
+    if (totalElem) {
+        const totalAssigned = (entries || []).reduce((sum, entry) => sum + (Number(entry.value) || 0), 0);
+        totalElem.textContent = `${totalAssigned} item${totalAssigned === 1 ? "" : "s"}`;
+    }
 }
 
 function renderMiniDistributionChart(container, entries) {
@@ -3164,10 +4037,10 @@ function showModule(moduleName, targetId = "") {
         }
     });
 
-    // Show school name and ID card ONLY in dashboard module
+    // Show school name and ID card in sidebar (visible in dashboard and about)
     const sidebarSchoolCard = document.getElementById("sidebarSchoolInfoCard");
     if (sidebarSchoolCard) {
-        sidebarSchoolCard.style.display = (moduleName === "dashboard") ? "" : "none";
+        sidebarSchoolCard.style.display = (moduleName === "dashboard" || moduleName === "about") ? "" : "none";
     }
 
     if (moduleName === "qr") {
@@ -3176,6 +4049,10 @@ function showModule(moduleName, targetId = "") {
 
     if (moduleName === "reports") {
         renderReports();
+    }
+
+    if (moduleName === "about") {
+        loadSchoolDetails();
     }
 
     if (typeof lucide !== "undefined") {
@@ -3261,9 +4138,103 @@ function wireEvents() {
         sidebarBackdrop.addEventListener("click", closeMobileSidebar);
     }
 
+    const accountablePersonFilter = document.getElementById("accountablePersonFilter") || dom.accountablePersonFilter;
+    if (accountablePersonFilter) {
+        accountablePersonFilter.addEventListener("change", (e) => {
+            const filterValue = e.target.value;
+            const filteredEntries = getAccountablePersonEntries(filterValue);
+            renderAccountablePersonCard(filteredEntries);
+            renderAccountableBarChart(filteredEntries);
+        });
+    }
+
     if (accountablePersonViewAll) {
-        accountablePersonViewAll.addEventListener("click", (event) => {
-            localStorage.setItem("accountablePersonReportEntries", JSON.stringify(getAccountablePersonEntries()));
+        accountablePersonViewAll.addEventListener("click", () => {
+            try {
+                localStorage.setItem("accountablePersonReportEntries", JSON.stringify(getAccountablePersonEntries("all")));
+            } catch (err) {
+                console.warn("Could not save to localStorage:", err);
+            }
+        });
+    }
+
+    const acquisitionYearFilter = document.getElementById("acquisitionYearFilter") || dom.acquisitionYearFilter;
+    if (acquisitionYearFilter) {
+        acquisitionYearFilter.addEventListener("change", (e) => {
+            const filterValue = e.target.value;
+            const filteredEntries = getYearDistribution("acquisitionDate", filterValue);
+            renderAcquisitionYearCard(filteredEntries);
+            renderMiniDistributionChart(dom.acquisitionYearChart, filteredEntries);
+        });
+    }
+
+    const acquisitionYearViewAll = document.getElementById("acquisitionYearViewAll") || dom.acquisitionYearViewAll;
+    if (acquisitionYearViewAll) {
+        acquisitionYearViewAll.addEventListener("click", () => {
+            try {
+                localStorage.setItem("acquisitionYearReportEntries", JSON.stringify(getYearDistribution("acquisitionDate", "all")));
+            } catch (err) {
+                console.warn("Could not save acquisitionYearReportEntries to localStorage:", err);
+            }
+        });
+    }
+
+    const issuanceYearFilter = document.getElementById("issuanceYearFilter") || dom.issuanceYearFilter;
+    if (issuanceYearFilter) {
+        issuanceYearFilter.addEventListener("change", (e) => {
+            const filterValue = e.target.value;
+            const filteredEntries = getYearDistribution("dateIssue", filterValue);
+            renderIssuanceYearCard(filteredEntries);
+            renderMiniDistributionChart(dom.dateIssueYearChart, filteredEntries);
+        });
+    }
+
+    const issuanceYearViewAll = document.getElementById("issuanceYearViewAll") || dom.issuanceYearViewAll;
+    if (issuanceYearViewAll) {
+        issuanceYearViewAll.addEventListener("click", () => {
+            try {
+                localStorage.setItem("issuanceYearReportEntries", JSON.stringify(getYearDistribution("dateIssue", "all")));
+            } catch (err) {
+                console.warn("Could not save issuanceYearReportEntries to localStorage:", err);
+            }
+        });
+    }
+
+    const maintenanceRequestsFilter = document.getElementById("maintenanceRequestsFilter") || dom.maintenanceRequestsFilter;
+    if (maintenanceRequestsFilter) {
+        maintenanceRequestsFilter.addEventListener("change", (e) => {
+            const filterValue = e.target.value;
+            renderMaintenanceRequestsCard(getMaintenanceItems(filterValue));
+        });
+    }
+
+    const maintenanceRequestsViewAll = document.getElementById("maintenanceRequestsViewAll") || dom.maintenanceRequestsViewAll;
+    if (maintenanceRequestsViewAll) {
+        maintenanceRequestsViewAll.addEventListener("click", () => {
+            try {
+                localStorage.setItem("maintenanceRequestsReportEntries", JSON.stringify(getMaintenanceItems("all")));
+            } catch (err) {
+                console.warn("Could not save maintenanceRequestsReportEntries to localStorage:", err);
+            }
+        });
+    }
+
+    const propertyCategoryFilter = document.getElementById("propertyCategoryFilter") || dom.propertyCategoryFilter;
+    if (propertyCategoryFilter) {
+        propertyCategoryFilter.addEventListener("change", (e) => {
+            const filterValue = e.target.value;
+            renderPropertyCategoryCard(getPropertyCategoryEntries(filterValue));
+        });
+    }
+
+    const propertyCategoryViewAll = document.getElementById("propertyCategoryViewAll") || dom.propertyCategoryViewAll;
+    if (propertyCategoryViewAll) {
+        propertyCategoryViewAll.addEventListener("click", () => {
+            try {
+                localStorage.setItem("propertyCategoryReportEntries", JSON.stringify(getPropertyCategoryEntries("all")));
+            } catch (err) {
+                console.warn("Could not save propertyCategoryReportEntries to localStorage:", err);
+            }
         });
     }
 
@@ -3446,6 +4417,42 @@ function wireEvents() {
             documentToggle.querySelector(".document-nav-chevron")?.classList.toggle("rotate-180", !isExpanded);
         });
     }
+
+    // School Details Card in About Module
+    const schoolDetailsForm = document.getElementById("schoolDetailsForm");
+    const saveSchoolDetailsBtn = document.getElementById("saveSchoolDetailsBtn");
+    const refreshSchoolDetailsBtn = document.getElementById("refreshSchoolDetailsBtn");
+    const schoolSelectDropdown = document.getElementById("schoolSelectDropdown");
+    const addNewSchoolBtn = document.getElementById("addNewSchoolBtn");
+    const selectActiveSchoolBtn = document.getElementById("selectActiveSchoolBtn");
+
+    if (schoolDetailsForm) {
+        schoolDetailsForm.addEventListener("submit", saveSchoolDetails);
+    }
+    if (saveSchoolDetailsBtn) {
+        saveSchoolDetailsBtn.addEventListener("click", saveSchoolDetails);
+    }
+    if (refreshSchoolDetailsBtn) {
+        refreshSchoolDetailsBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            loadSchoolDetails(true);
+        });
+    }
+    if (schoolSelectDropdown) {
+        schoolSelectDropdown.addEventListener("change", handleSchoolDropdownChange);
+    }
+    if (addNewSchoolBtn) {
+        addNewSchoolBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            handleAddNewSchool();
+        });
+    }
+    if (selectActiveSchoolBtn) {
+        selectActiveSchoolBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            handleSelectActiveSchool();
+        });
+    }
 }
 
 async function init() {
@@ -3459,6 +4466,7 @@ async function init() {
     await loadClassificationOptions();
     await loadStatusOptions();
     await loadSchoolNameOptions();
+    await loadSchoolDetails();
     const params = new URLSearchParams(window.location.search);
     const requestedAssetId = params.get("assetId");
     if (requestedAssetId && items.some((item) => item.assetId === requestedAssetId)) {

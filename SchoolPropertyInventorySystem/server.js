@@ -14,6 +14,31 @@ app.get('/', (req, res) => {
   res.redirect(302, '/SchoolPropertyInventorySystem/');
 });
 
+app.get(['/property-category-report', '/property-category-report.html', '/category-report', '/category-report.html'], (req, res) => {
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect(302, `/SchoolPropertyInventorySystem/property-category-report.html${query}`);
+});
+
+app.get(['/maintenance-requests-report', '/maintenance-requests-report.html', '/maintenance-report', '/maintenance-report.html'], (req, res) => {
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect(302, `/SchoolPropertyInventorySystem/maintenance-requests-report.html${query}`);
+});
+
+app.get(['/issuance-year-report', '/issuance-year-report.html'], (req, res) => {
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect(302, `/SchoolPropertyInventorySystem/issuance-year-report.html${query}`);
+});
+
+app.get(['/acquisition-year-report', '/acquisition-year-report.html'], (req, res) => {
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect(302, `/SchoolPropertyInventorySystem/acquisition-year-report.html${query}`);
+});
+
+app.get(['/accountable-person-report', '/accountable-person-report.html'], (req, res) => {
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect(302, `/SchoolPropertyInventorySystem/accountable-person-report.html${query}`);
+});
+
 app.get('/asset.html', (req, res) => {
   const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
   res.redirect(302, `/SchoolPropertyInventorySystem/asset.html${query}`);

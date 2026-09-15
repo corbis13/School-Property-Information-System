@@ -1,6 +1,6 @@
 {
-  "name": "SPIS - School Property Information System",
-  "description": "School Property Information System (SPIS) with asset management, QR code tracking, custodian slips, and inventory reporting.",
+  "name": "School-Property-Information-System",
+  "description": "Imported from GitHub: corbis13/School-Property-Information-System",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

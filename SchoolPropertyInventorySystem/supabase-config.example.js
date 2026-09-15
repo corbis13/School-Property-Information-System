@@ -1,4 +1,4 @@
-﻿// Copy this file to supabase-config.js and fill in your project's values.
+// Copy this file to supabase-config.js and fill in your project's values.
 // supabase-config.js is listed in .gitignore and will NOT be committed to the repo.
 //
 // How to find these values:
