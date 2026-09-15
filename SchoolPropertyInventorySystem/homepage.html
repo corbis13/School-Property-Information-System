@@ -179,7 +179,8 @@
 
           <!-- Document and submodules -->
           <div class="document-nav-group">
-            <button type="button" class="nav-item document-nav-parent flex items-center justify-between w-full px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-document-toggle aria-expanded="false" aria-controls="documentSubmenu">
+            <button type="button" class="nav-item document-nav-parent flex items-center justify-between w-full px-3.5 py-2.5 text-slate-100 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-view="document" data-document-toggle aria-expanded="false" aria-controls="documentSubmenu">
+              <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
               <span class="ml-3 flex items-center space-x-3">
                 <i data-lucide="file-text" class="w-5 h-5 text-slate-200"></i>
                 <span>Document</span>
@@ -238,19 +239,20 @@
           </svg>
         </div>
 
-        <div class="flex items-center space-x-2.5 relative z-10">
-          <div class="w-10 h-10 rounded-full border border-white/30 bg-white/10 p-0.5 shrink-0 flex items-center justify-center shadow-sm">
-            <img src="images/geras_logo.png" alt="Geras Integrated School" class="w-full h-full object-contain rounded-full" />
+          <div class="flex items-center space-x-2.5 relative z-10">
+            <!-- Logo (desktop) -->
+            <div class="w-14 h-14 rounded-full border border-white/30 bg-white/10 p-0.5 shrink-0 flex items-center justify-center shadow-sm overflow-visible">
+              <img id="sidebarSchoolLogo" alt="School Logo" class="w-full h-full object-contain rounded-full" data-default-src="" style="display:block;" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-[12px] font-extrabold text-white leading-tight truncate" title="Geras Integrated School" id="sidebarSchoolName">Geras Integrated School</p>
+              <p class="text-[10px] text-sky-200 font-semibold leading-tight mt-0.5 flex items-center space-x-1">
+                <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#55a83b]"></span>
+                <span>School ID: <strong class="text-white font-bold" id="sidebarSchoolId">500243</strong></span>
+              </p>
+              <p class="text-[9px] text-sky-300/80 font-medium truncate mt-0.5" id="databaseStatus">Connecting to Supabase...</p>
+            </div>
           </div>
-          <div class="min-w-0 flex-1">
-            <p class="text-[12px] font-extrabold text-white leading-tight truncate" title="Geras Integrated School" id="sidebarSchoolName">Geras Integrated School</p>
-            <p class="text-[10px] text-sky-200 font-semibold leading-tight mt-0.5 flex items-center space-x-1">
-              <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#55a83b]"></span>
-              <span>School ID: <strong class="text-white font-bold" id="sidebarSchoolId">500243</strong></span>
-            </p>
-            <p class="text-[9px] text-sky-300/80 font-medium truncate mt-0.5" id="databaseStatus">Connecting to Supabase...</p>
-          </div>
-        </div>
       </div>
     </aside>
 
@@ -828,7 +830,7 @@
                     <div class="w-6 h-6 rounded-md bg-[#004c87]/10 text-[#004c87] flex items-center justify-center">
                       <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
                     </div>
-                    <span class="text-xs font-bold text-slate-800">School Level</span>
+                    <span class="text-sm font-bold text-slate-800">School Level</span>
                   </div>
                   <span id="schoolLevelTotal" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">0 items</span>
                 </div>
@@ -912,7 +914,7 @@
                 </div>
               </div>
 
-            </div>
+              </div>
 
           </div>
 
@@ -961,8 +963,9 @@
 
         <!-- MOBILE SCHOOL INFORMATION CARD (DASHBOARD ONLY) -->
         <div class="mobile-school-info-card relative overflow-hidden p-3 bg-[#002444]/95 border border-white/10 text-white items-center gap-2.5 rounded-xl mt-4">
-          <div class="w-10 h-10 rounded-full border border-white/30 bg-white/10 p-0.5 shrink-0 flex items-center justify-center shadow-sm">
-            <img src="images/geras_logo.png" alt="Geras Integrated School" class="w-full h-full object-contain rounded-full" />
+          <!-- Increased container size to ensure full logo visibility -->
+          <div class="w-14 h-14 rounded-full border border-white/30 bg-white/10 p-0.5 shrink-0 flex items-center justify-center shadow-sm overflow-visible">
+           <img id="mobileSidebarSchoolLogo" alt="School Logo" class="w-full h-full object-contain rounded-full" data-default-src="" />
           </div>
           <div class="min-w-0">
             <p class="text-[12px] font-extrabold text-white leading-tight" id="mobileSchoolName">Geras Integrated School</p>
@@ -1514,66 +1517,83 @@
           <section class="about-grid">
                     <!-- School Details Card -->
                     <article class="module-card school-details-card" id="schoolDetailsCard">
-                        <div class="school-details-card-header" id="schoolDetailsCardHeader" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.75rem;">
+                        <div class="school-details-card-header" id="schoolDetailsCardHeader">
                             <div>
                                 <p class="eyebrow" id="schoolDetailsEyebrow">Institutional Profile</p>
-                                <h2 id="schoolDetailsHeading" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #00335e;">School Details</h2>
+                                <h2 id="schoolDetailsHeading">School Details</h2>
                             </div>
-                            <span id="activeSchoolBadge" class="badge" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.72rem; padding: 0.25rem 0.625rem; border-radius: 9999px; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem;">
-                                <span style="width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                            <span id="activeSchoolBadge" class="active-school-badge">
+                                <span class="active-badge-dot"></span>
                                 Active in Sidebar
                             </span>
                         </div>
-                        <p class="module-copy" id="schoolDetailsDescription" style="margin-bottom: 1.25rem; font-size: 0.8125rem; color: #64748b; line-height: 1.5;">
+                        <p class="module-copy" id="schoolDetailsDescription">
                             Manage institutional school records and choose which school is active in the sidebar menu.
                         </p>
 
-                        <form id="schoolDetailsForm" class="school-details-form" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <form id="schoolDetailsForm" class="school-details-form space-y-4" onsubmit="return false;">
                             <!-- School Dropdown Selector -->
-                            <div class="form-field-group" id="schoolSelectFieldGroup" style="display: flex; flex-direction: column; gap: 0.375rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <label for="schoolSelectDropdown" id="schoolSelectDropdownLabel" style="font-size: 0.75rem; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.025em;">
+                            <div class="form-field-group" id="schoolSelectFieldGroup">
+                                <div class="field-label-row flex justify-between items-center mb-1">
+                                    <label for="schoolSelectDropdown" id="schoolSelectDropdownLabel" class="text-xs font-bold text-slate-700">
                                         Select School
                                     </label>
-                                    <button type="button" id="addNewSchoolBtn" style="background: none; border: none; font-size: 0.75rem; font-weight: 700; color: #004c87; cursor: pointer; padding: 0; text-decoration: underline;">
+                                    <button type="button" id="addNewSchoolBtn" class="link-btn text-xs font-bold text-[#004c87] hover:underline cursor-pointer">
                                         + Add New School
                                     </button>
                                 </div>
-                                <select id="schoolSelectDropdown" name="school_selector"
-                                        style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem; color: #1e293b; background: #ffffff; box-sizing: border-box; cursor: pointer;">
+                                <select id="schoolSelectDropdown" name="school_selector" class="w-full">
                                     <option value="">-- Choose a School --</option>
                                 </select>
                             </div>
 
-                            <div class="form-field-group" id="schoolNameFieldGroup" style="display: flex; flex-direction: column; gap: 0.375rem;">
-                                <label for="aboutSchoolName" id="aboutSchoolNameLabel" style="font-size: 0.75rem; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.025em;">
-                                    School Name <span style="color: #ef4444;">*</span>
-                                </label>
-                                <input type="text" id="aboutSchoolName" name="school_name" placeholder="e.g., Geras Integrated School" required autocomplete="off"
-                                       style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem; color: #1e293b; background: #ffffff; box-sizing: border-box;" />
+                            <!-- 2-Column Grid for School Name & School ID -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-field-group" id="schoolNameFieldGroup">
+                                    <label for="aboutSchoolName" id="aboutSchoolNameLabel" class="text-xs font-bold text-slate-700 mb-1 block">
+                                        School Name <span class="required-star text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="aboutSchoolName" name="school_name" placeholder="e.g., Geras Integrated School" required autocomplete="off" class="w-full" />
+                                </div>
+
+                                <div class="form-field-group" id="schoolIdFieldGroup">
+                                    <label for="aboutSchoolId" id="aboutSchoolIdLabel" class="text-xs font-bold text-slate-700 mb-1 block">
+                                        School ID <span class="required-star text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="aboutSchoolId" name="school_id" placeholder="e.g., 500243" required autocomplete="off" class="w-full" />
+                                </div>
                             </div>
 
-                            <div class="form-field-group" id="schoolIdFieldGroup" style="display: flex; flex-direction: column; gap: 0.375rem;">
-                                <label for="aboutSchoolId" id="aboutSchoolIdLabel" style="font-size: 0.75rem; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.025em;">
-                                    School ID <span style="color: #ef4444;">*</span>
+                            <!-- School Logo Upload & Live Preview -->
+                            <div class="form-field-group" id="schoolLogoFieldGroup">
+                                <label for="schoolLogoInput" id="schoolLogoLabel" class="text-xs font-bold text-slate-700 mb-1 block">
+                                    School Logo (optional)
                                 </label>
-                                <input type="text" id="aboutSchoolId" name="school_id" placeholder="e.g., 500243" required autocomplete="off"
-                                       style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.875rem; color: #1e293b; background: #ffffff; box-sizing: border-box;" />
+                                <div class="school-logo-input-row flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                    <div class="school-logo-preview-box w-12 h-12 rounded-lg border border-slate-300 overflow-hidden shrink-0 bg-white flex items-center justify-center p-1" title="Current or uploaded logo preview">
+                                        <img id="schoolLogoPreview" src="images/geras_logo.png" alt="School Logo Preview" class="w-full h-full object-contain" />
+                                    </div>
+                                    <input type="file" id="schoolLogoInput" name="school_logo" accept="image/*" class="file-input-custom text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#00335e] file:text-white hover:file:bg-[#002244] file:cursor-pointer cursor-pointer" />
+                                </div>
                             </div>
 
-                            <div class="school-details-actions" id="schoolDetailsActions" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px solid #f1f5f9;">
-                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                                    <button type="button" id="selectActiveSchoolBtn" class="primary-button" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.55rem 1.25rem; font-weight: 700; font-size: 0.8125rem; border-radius: 0.5rem; background: #004c87; color: #ffffff; border: none; cursor: pointer;" title="Display this school in sidebar menu">
-                                        <span>✓ Select for Sidebar</span>
+                            <!-- Action Buttons Row -->
+                            <div class="school-details-actions pt-2" id="schoolDetailsActions">
+                                <div class="action-buttons-group flex flex-wrap items-center gap-2.5">
+                                    <button type="button" id="selectActiveSchoolBtn" class="primary-button form-action-btn">
+                                        <i data-lucide="check" class="w-4 h-4 action-icon"></i>
+                                        <span>Select for Sidebar</span>
                                     </button>
-                                    <button type="submit" id="saveSchoolDetailsBtn" class="secondary-button" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.55rem 1.1rem; font-weight: 700; font-size: 0.8125rem; border-radius: 0.5rem; background: #002240; color: #ffffff; border: none; cursor: pointer;" title="Save school details">
-                                        <span>💾 Save</span>
+                                    <button type="submit" id="saveSchoolDetailsBtn" class="primary-button form-action-btn">
+                                        <i data-lucide="save" class="w-4 h-4 action-icon"></i>
+                                        <span>Save Profile</span>
                                     </button>
-                                    <button type="button" id="refreshSchoolDetailsBtn" class="secondary-button" style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.55rem 0.75rem; font-size: 0.8125rem; font-weight: 600; border-radius: 0.5rem; background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; cursor: pointer;" title="Refresh list">
-                                        <span>🔄 Refresh</span>
+                                    <button type="button" id="refreshSchoolDetailsBtn" class="primary-button form-action-btn">
+                                        <i data-lucide="rotate-ccw" class="w-4 h-4 action-icon"></i>
+                                        <span>Refresh</span>
                                     </button>
                                 </div>
-                                <span id="schoolDetailsStatus" style="font-size: 0.75rem; font-weight: 600; color: #64748b;">Ready</span>
+                                <span id="schoolDetailsStatus" class="school-status-text text-xs font-semibold text-slate-500 mt-2 block">Ready</span>
                             </div>
                         </form>
                     </article>

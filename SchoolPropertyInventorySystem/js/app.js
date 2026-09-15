@@ -636,6 +636,41 @@ async function loadSchoolNameOptions() {
 let allSchoolsList = [];
 let currentSchoolId = null;
 let activeSchoolRecord = null;
+// Holds the current logo URL for the school being edited (used when no new file is uploaded)
+let currentSchoolLogoUrl = "";
+// Utility: compress an image file to stay under a size limit (default 500 KB)
+async function compressImage(file, maxSizeKB = 500) {
+    if (!file.type.startsWith('image/')) return file;
+    const img = document.createElement('img');
+    const url = URL.createObjectURL(file);
+    img.src = url;
+    await new Promise((res) => (img.onload = res));
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    // Preserve aspect ratio, limit dimensions to 1024px max for either side
+    const maxDim = 1024;
+    let { width, height } = img;
+    if (width > height && width > maxDim) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+    } else if (height > maxDim) {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+    }
+    canvas.width = width;
+    canvas.height = height;
+    ctx.drawImage(img, 0, 0, width, height);
+    let quality = 0.9;
+    let blob = await new Promise((res) => canvas.toBlob(res, file.type, quality));
+    // Reduce quality iteratively until under limit or quality too low
+    while (blob && blob.size / 1024 > maxSizeKB && quality > 0.2) {
+        quality -= 0.1;
+        blob = await new Promise((res) => canvas.toBlob(res, file.type, quality));
+    }
+    URL.revokeObjectURL(url);
+    // If still too large, return original file (will be rejected later)
+    return blob || file;
+}
 
 function updateSchoolDisplayBadges(name, id) {
     if (name) {
@@ -654,12 +689,24 @@ function updateSchoolDisplayBadges(name, id) {
 function updateActiveBadgeState(school) {
     const badge = document.getElementById("activeSchoolBadge");
     if (!badge) return;
-
     const isActive = Boolean(
         activeSchoolRecord && school &&
         (activeSchoolRecord.id && school.id ? String(activeSchoolRecord.id) === String(school.id) : activeSchoolRecord.school_name === school.school_name)
     );
+    badge.textContent = isActive ? "Active in Sidebar" : "";
+    badge.style.display = isActive ? "" : "none";
 
+    // Update sidebar logo if the school is active (or when initializing)
+    const logoImg = document.getElementById("sidebarSchoolLogo");
+    const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
+    if (logoImg) {
+        const logoUrl = (school && school.school_logo_url) ? school.school_logo_url : logoImg.getAttribute("data-default-src") || "";
+        logoImg.src = logoUrl;
+    }
+    if (mobileLogoImg) {
+        const logoUrl = (school && school.school_logo_url) ? school.school_logo_url : mobileLogoImg.getAttribute("data-default-src") || "";
+        mobileLogoImg.src = logoUrl;
+    }
     if (isActive) {
         badge.style.display = "inline-flex";
         badge.style.background = "#ecfdf5";
@@ -723,41 +770,91 @@ function handleSchoolDropdownChange(e) {
         return;
     }
 
-    const school = allSchoolsList.find((s) => String(s.id) === String(selectedId));
-    if (school) {
-        currentSchoolId = school.id;
-        if (nameInput) nameInput.value = school.school_name || "";
-        if (idInput) idInput.value = school.school_id ?? "";
-        updateActiveBadgeState(school);
+        const school = allSchoolsList.find((s) => String(s.id) === String(selectedId));
+        if (school) {
+            currentSchoolId = school.id;
+            if (nameInput) nameInput.value = school.school_name || "";
+            if (idInput) idInput.value = school.school_id ?? "";
+            updateActiveBadgeState(school);
 
-        const isActive = activeSchoolRecord && (
-            (activeSchoolRecord.id && String(activeSchoolRecord.id) === String(school.id)) ||
-            (activeSchoolRecord.school_name === school.school_name)
-        );
+            // Update logo previews for the selected school
+            const logoImg = document.getElementById("sidebarSchoolLogo");
+            const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
+            const previewImg = document.getElementById("schoolLogoPreview");
+            
+            const logoToDisplay = school.school_logo_url || "images/geras_logo.png";
 
-        if (statusElem) {
-            statusElem.textContent = isActive
-                ? "✓ Currently displayed in sidebar"
-                : "School loaded. Click 'Select for Sidebar' to display this school.";
-            statusElem.style.color = isActive ? "#16a34a" : "#475569";
+            if (previewImg) previewImg.src = logoToDisplay;
+
+            // Populate the selected school's name, ID, and logo image in sidebar
+            updateSchoolDisplayBadges(school.school_name, school.school_id);
+            if (logoImg) logoImg.src = logoToDisplay;
+            if (mobileLogoImg) mobileLogoImg.src = logoToDisplay;
+
+            // Keep the URL for later save operations
+            currentSchoolLogoUrl = school.school_logo_url || "";
+
+            const isActive = activeSchoolRecord && (
+                (activeSchoolRecord.id && String(activeSchoolRecord.id) === String(school.id)) ||
+                (activeSchoolRecord.school_name === school.school_name)
+            );
+
+            if (statusElem) {
+                statusElem.textContent = isActive
+                    ? "✓ Currently displayed in sidebar"
+                    : `Loaded ${school.school_name}. Click 'Select for Sidebar' to activate.`;
+                statusElem.style.color = isActive ? "#16a34a" : "#475569";
+            }
         }
+}
+
+function handleSchoolLogoFileChange(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        showToast("Please select a valid image file.");
+        return;
     }
+
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+        const dataUrl = evt.target.result;
+        currentSchoolLogoUrl = dataUrl;
+
+        const previewImg = document.getElementById("schoolLogoPreview");
+        const logoImg = document.getElementById("sidebarSchoolLogo");
+        const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
+
+        if (previewImg) previewImg.src = dataUrl;
+        if (logoImg) logoImg.src = dataUrl;
+        if (mobileLogoImg) mobileLogoImg.src = dataUrl;
+
+        showToast("Logo preview updated!");
+    };
+    reader.readAsDataURL(file);
 }
 
 function handleAddNewSchool() {
     const selector = document.getElementById("schoolSelectDropdown");
     const nameInput = document.getElementById("aboutSchoolName");
     const idInput = document.getElementById("aboutSchoolId");
+    const logoInput = document.getElementById("schoolLogoInput");
+    const previewImg = document.getElementById("schoolLogoPreview");
     const statusElem = document.getElementById("schoolDetailsStatus");
     const badge = document.getElementById("activeSchoolBadge");
 
     currentSchoolId = null;
+    currentSchoolLogoUrl = "";
+
     if (selector) selector.value = "";
     if (nameInput) {
         nameInput.value = "";
         nameInput.focus();
     }
     if (idInput) idInput.value = "";
+    if (logoInput) logoInput.value = "";
+    if (previewImg) previewImg.src = "images/geras_logo.png";
 
     if (badge) {
         badge.style.display = "inline-flex";
@@ -768,7 +865,7 @@ function handleAddNewSchool() {
     }
 
     if (statusElem) {
-        statusElem.textContent = "Enter new school name & ID, then click Save.";
+        statusElem.textContent = "Enter new school name & ID, select a logo (optional), then click Save Profile.";
         statusElem.style.color = "#004c87";
     }
 }
@@ -811,7 +908,8 @@ function handleSelectActiveSchool() {
     activeSchoolRecord = {
         id: matchedSchool ? matchedSchool.id : (currentSchoolId || 1),
         school_name: schoolName,
-        school_id: schoolId
+        school_id: schoolId,
+        school_logo_url: matchedSchool ? matchedSchool.school_logo_url : ""
     };
 
     try {
@@ -851,6 +949,17 @@ async function loadSchoolDetails(forceRefresh = false) {
             activeSchoolRecord = cachedActive;
             updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
             if (sidebarSchoolCard) sidebarSchoolCard.style.display = "";
+            // Update sidebar logo from cached active school
+            const logoImg = document.getElementById("sidebarSchoolLogo");
+            const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
+            if (logoImg) {
+                const logoUrl = activeSchoolRecord.school_logo_url || logoImg.getAttribute("data-default-src");
+                logoImg.src = logoUrl;
+            }
+            if (mobileLogoImg) {
+                const logoUrl = activeSchoolRecord.school_logo_url || mobileLogoImg.getAttribute("data-default-src");
+                mobileLogoImg.src = logoUrl;
+            }
         }
     } catch (e) {
         console.warn("Could not read cached active school:", e);
@@ -889,6 +998,17 @@ async function loadSchoolDetails(forceRefresh = false) {
                 localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
             } catch (e) {}
             updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
+            // Set sidebar logo for the newly selected active school
+            const logoImg = document.getElementById("sidebarSchoolLogo");
+            const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
+            if (logoImg) {
+                const logoUrl = activeSchoolRecord.school_logo_url || logoImg.getAttribute("data-default-src");
+                logoImg.src = logoUrl;
+            }
+            if (mobileLogoImg) {
+                const logoUrl = activeSchoolRecord.school_logo_url || mobileLogoImg.getAttribute("data-default-src");
+                mobileLogoImg.src = logoUrl;
+            }
         } else if (activeSchoolRecord && allSchoolsList.length > 0) {
             // Keep activeSchoolRecord synced if the record changed in database
             const foundActive = allSchoolsList.find((s) =>
@@ -904,21 +1024,29 @@ async function loadSchoolDetails(forceRefresh = false) {
             }
         }
 
-        // Determine which school to display in form: current editing or active school
+        // Determine which school to display in the form: either the currently edited school or the active school
         let targetSchool = null;
         if (currentSchoolId) {
             targetSchool = allSchoolsList.find((s) => s.id === currentSchoolId);
         }
         if (!targetSchool) {
-            targetSchool = allSchoolsList.find((s) => activeSchoolRecord && s.id === activeSchoolRecord.id)
-                || allSchoolsList[0]
-                || activeSchoolRecord;
+            targetSchool = allSchoolsList.find((s) => activeSchoolRecord && s.id === activeSchoolRecord.id) || allSchoolsList[0];
         }
-
         if (targetSchool) {
             currentSchoolId = targetSchool.id || null;
             if (schoolNameInput) schoolNameInput.value = targetSchool.school_name || "";
             if (schoolIdInput) schoolIdInput.value = targetSchool.school_id ?? "";
+            // Save logo URL for later use; if none, keep empty string
+            currentSchoolLogoUrl = targetSchool.school_logo_url || "";
+            // Update both desktop and mobile sidebar logos for the target school
+            const logoImg = document.getElementById("sidebarSchoolLogo");
+            const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
+            if (logoImg) {
+                logoImg.src = currentSchoolLogoUrl || logoImg.getAttribute("data-default-src");
+            }
+            if (mobileLogoImg) {
+                mobileLogoImg.src = currentSchoolLogoUrl || mobileLogoImg.getAttribute("data-default-src");
+            }
             updateActiveBadgeState(targetSchool);
         }
 
@@ -927,6 +1055,21 @@ async function loadSchoolDetails(forceRefresh = false) {
         if (statusElem) {
             statusElem.textContent = "✓ Ready";
             statusElem.style.color = "#16a34a";
+        }
+        // Ensure the sidebar logo reflects the (possibly cached) active school
+        const logoImg = document.getElementById("sidebarSchoolLogo");
+        const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
+        if (logoImg) {
+            const logoUrl = (activeSchoolRecord && activeSchoolRecord.school_logo_url)
+                ? activeSchoolRecord.school_logo_url
+                : logoImg.getAttribute("data-default-src");
+            logoImg.src = logoUrl;
+        }
+        if (mobileLogoImg) {
+            const logoUrl = (activeSchoolRecord && activeSchoolRecord.school_logo_url)
+                ? activeSchoolRecord.school_logo_url
+                : mobileLogoImg.getAttribute("data-default-src");
+            mobileLogoImg.src = logoUrl;
         }
     } catch (err) {
         console.error("Failed to load school details:", err);
@@ -980,12 +1123,110 @@ async function saveSchoolDetails(e) {
         statusElem.style.color = "#00335e";
     }
 
+    // Prepare payload; include logo URL if available
     const payload = {
         school_name: schoolName,
-        school_id: schoolId
+        school_id: schoolId,
+        school_logo_url: null // will be set after possible upload
     };
 
+    // Handle logo file upload if a new file was selected
+    const logoFileInput = document.getElementById("schoolLogoInput");
+    if (logoFileInput && logoFileInput.files && logoFileInput.files.length > 0) {
+        let file = logoFileInput.files[0];
+        const ext = file.name.split('.').pop();
+        // Compress the image to stay under 500 KB before upload
+        file = await compressImage(file, 500);
+        if (file.size > 500 * 1024) {
+            if (statusElem) {
+                statusElem.textContent = "⚠ Logo exceeds 500 KB after compression";
+                statusElem.style.color = "#dc2626";
+            }
+            // Abort the save operation; re‑enable button & exit
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = "<span>💾 Save</span>";
+            }
+            return;
+        }
+        // Rename uploaded file to the school's ID (as stored in `schoolId`).
+        // If the ID is numeric, keep it as is; otherwise fallback to a timestamp.
+        const baseName = schoolId ? String(schoolId) : `${Date.now()}`;
+        const fileName = `${baseName}.${ext}`;
+        let dataUrl = "";
+        try {
+            // Convert the (compressed) image file to a Base64-encoded data URL
+            dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsDataURL(file);
+            });
+
+            // Send to server to store the image file locally if custom server is running
+            const uploadEndpoint = (window.location.pathname && window.location.pathname.startsWith('/SchoolPropertyInventorySystem'))
+                ? '/SchoolPropertyInventorySystem/upload-logo'
+                : '/upload-logo';
+            const uploadResp = await fetch(uploadEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ fileName, dataUrl })
+            });
+            if (!uploadResp.ok) {
+                throw new Error(`Logo upload endpoint returned ${uploadResp.status}`);
+            }
+            const respJson = await uploadResp.json();
+            console.log('🚀 Logo upload response:', respJson);
+            const { url } = respJson;
+            payload.school_logo_url = url; // relative path to saved image
+            currentSchoolLogoUrl = url;
+        } catch (err) {
+            console.warn("Server logo upload unavailable or failed, using Base64 embedded image:", err);
+            // Fallback: Store the Base64 data URL directly so image persists cleanly!
+            if (dataUrl) {
+                payload.school_logo_url = dataUrl;
+                currentSchoolLogoUrl = dataUrl;
+            } else if (currentSchoolLogoUrl) {
+                payload.school_logo_url = currentSchoolLogoUrl;
+            }
+        }
+    } else {
+        // No new file – preserve existing logo URL if we have it
+        if (currentSchoolLogoUrl) {
+            payload.school_logo_url = currentSchoolLogoUrl;
+        }
+    }
+
     if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
+        const localRecord = {
+            id: currentSchoolId || Date.now(),
+            school_name: schoolName,
+            school_id: schoolId,
+            school_logo_url: payload.school_logo_url || currentSchoolLogoUrl || ""
+        };
+        currentSchoolId = localRecord.id;
+        currentSchoolLogoUrl = localRecord.school_logo_url;
+        activeSchoolRecord = localRecord;
+
+        const existingIdx = allSchoolsList.findIndex((s) => s.id === localRecord.id || s.school_name === localRecord.school_name);
+        if (existingIdx >= 0) {
+            allSchoolsList[existingIdx] = localRecord;
+        } else {
+            allSchoolsList.push(localRecord);
+        }
+
+        try {
+            localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
+        } catch (e) {}
+
+        updateSchoolDisplayBadges(localRecord.school_name, localRecord.school_id);
+        const logoImg = document.getElementById("sidebarSchoolLogo");
+        const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
+        if (logoImg && localRecord.school_logo_url) logoImg.src = localRecord.school_logo_url;
+        if (mobileLogoImg && localRecord.school_logo_url) mobileLogoImg.src = localRecord.school_logo_url;
+
         if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.innerHTML = "<span>💾 Save</span>";
@@ -1033,6 +1274,8 @@ async function saveSchoolDetails(e) {
 
         if (savedRecord) {
             currentSchoolId = savedRecord.id;
+            // Keep the logo URL in the global variable for future edits
+            currentSchoolLogoUrl = savedRecord.school_logo_url || "";
 
             const existingIdx = allSchoolsList.findIndex((s) => s.id === savedRecord.id);
             if (existingIdx >= 0) {
@@ -1048,6 +1291,17 @@ async function saveSchoolDetails(e) {
                     localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
                 } catch (e) {}
                 updateSchoolDisplayBadges(savedRecord.school_name, savedRecord.school_id);
+                // Ensure logo reflects any change
+                const logoImg = document.getElementById("sidebarSchoolLogo");
+                const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
+                if (logoImg) {
+                    const logoUrl = savedRecord.school_logo_url || logoImg.getAttribute("data-default-src");
+                    logoImg.src = logoUrl;
+                }
+                if (mobileLogoImg) {
+                    const logoUrl = savedRecord.school_logo_url || mobileLogoImg.getAttribute("data-default-src");
+                    mobileLogoImg.src = logoUrl;
+                }
             }
         }
 
@@ -4399,6 +4653,7 @@ function wireEvents() {
 
     document.querySelectorAll(".nav-item, .top-nav-btn, [data-module-target]").forEach((button) => {
         button.addEventListener("click", (e) => {
+            if (button.hasAttribute("data-document-toggle")) return;
             const view = button.dataset.view || button.dataset.moduleTarget;
             if (view) {
                 e.preventDefault();
@@ -4410,11 +4665,17 @@ function wireEvents() {
     const documentToggle = document.querySelector("[data-document-toggle]");
     const documentSubmenu = document.getElementById("documentSubmenu");
     if (documentToggle && documentSubmenu) {
-        documentToggle.addEventListener("click", () => {
-            const isExpanded = documentToggle.getAttribute("aria-expanded") === "true";
-            documentToggle.setAttribute("aria-expanded", String(!isExpanded));
-            documentSubmenu.classList.toggle("hidden", isExpanded);
-            documentToggle.querySelector(".document-nav-chevron")?.classList.toggle("rotate-180", !isExpanded);
+        documentToggle.addEventListener("click", (e) => {
+            e.preventDefault();
+            const activeModule = document.querySelector(".module-view.active")?.dataset.module;
+            if (activeModule !== "document") {
+                showModule("document");
+            } else {
+                const isExpanded = documentToggle.getAttribute("aria-expanded") === "true";
+                documentToggle.setAttribute("aria-expanded", String(!isExpanded));
+                documentSubmenu.classList.toggle("hidden", isExpanded);
+                documentToggle.querySelector(".document-nav-chevron")?.classList.toggle("rotate-180", !isExpanded);
+            }
         });
     }
 
@@ -4425,6 +4686,7 @@ function wireEvents() {
     const schoolSelectDropdown = document.getElementById("schoolSelectDropdown");
     const addNewSchoolBtn = document.getElementById("addNewSchoolBtn");
     const selectActiveSchoolBtn = document.getElementById("selectActiveSchoolBtn");
+    const schoolLogoInput = document.getElementById("schoolLogoInput");
 
     if (schoolDetailsForm) {
         schoolDetailsForm.addEventListener("submit", saveSchoolDetails);
@@ -4452,6 +4714,9 @@ function wireEvents() {
             e.preventDefault();
             handleSelectActiveSchool();
         });
+    }
+    if (schoolLogoInput) {
+        schoolLogoInput.addEventListener("change", handleSchoolLogoFileChange);
     }
 }
 

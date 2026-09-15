@@ -555,6 +555,9 @@ body[data-theme="light"] .ghost-button {
 #saveAssetBtn,
 #icsClearBtn,
 #saveIcsBtn,
+#selectActiveSchoolBtn,
+#saveSchoolDetailsBtn,
+#refreshSchoolDetailsBtn,
 .inventory-actions-row button,
 .inventory-actions-row .form-action-btn,
 body[data-theme="light"] .primary-button,
@@ -564,6 +567,9 @@ body[data-theme="light"] #resetFormBtn,
 body[data-theme="light"] #saveAssetBtn,
 body[data-theme="light"] #icsClearBtn,
 body[data-theme="light"] #saveIcsBtn,
+body[data-theme="light"] #selectActiveSchoolBtn,
+body[data-theme="light"] #saveSchoolDetailsBtn,
+body[data-theme="light"] #refreshSchoolDetailsBtn,
 body[data-theme="light"] .inventory-actions-row button,
 body[data-theme="light"] .inventory-actions-row .form-action-btn,
 body[data-theme="dark"] .primary-button,
@@ -573,6 +579,9 @@ body[data-theme="dark"] #resetFormBtn,
 body[data-theme="dark"] #saveAssetBtn,
 body[data-theme="dark"] #icsClearBtn,
 body[data-theme="dark"] #saveIcsBtn,
+body[data-theme="dark"] #selectActiveSchoolBtn,
+body[data-theme="dark"] #saveSchoolDetailsBtn,
+body[data-theme="dark"] #refreshSchoolDetailsBtn,
 body[data-theme="dark"] .inventory-actions-row button,
 body[data-theme="dark"] .inventory-actions-row .form-action-btn {
   background-color: #00335e !important;
@@ -592,12 +601,18 @@ body[data-theme="dark"] .inventory-actions-row .form-action-btn {
 #saveAssetBtn span,
 #icsClearBtn span,
 #saveIcsBtn span,
+#selectActiveSchoolBtn span,
+#saveSchoolDetailsBtn span,
+#refreshSchoolDetailsBtn span,
 .inventory-actions-row button span,
 body[data-theme="light"] #newItemBtnInline span,
 body[data-theme="light"] #resetFormBtn span,
 body[data-theme="light"] #saveAssetBtn span,
 body[data-theme="light"] #icsClearBtn span,
-body[data-theme="light"] #saveIcsBtn span {
+body[data-theme="light"] #saveIcsBtn span,
+body[data-theme="light"] #selectActiveSchoolBtn span,
+body[data-theme="light"] #saveSchoolDetailsBtn span,
+body[data-theme="light"] #refreshSchoolDetailsBtn span {
   color: #ffffff !important;
 }
 
@@ -608,17 +623,26 @@ body[data-theme="light"] #saveIcsBtn span {
 #saveAssetBtn .action-icon,
 #icsClearBtn .action-icon,
 #saveIcsBtn .action-icon,
+#selectActiveSchoolBtn .action-icon,
+#saveSchoolDetailsBtn .action-icon,
+#refreshSchoolDetailsBtn .action-icon,
 .inventory-actions-row button .action-icon,
 #newItemBtnInline svg,
 #resetFormBtn svg,
 #saveAssetBtn svg,
 #icsClearBtn svg,
 #saveIcsBtn svg,
+#selectActiveSchoolBtn svg,
+#saveSchoolDetailsBtn svg,
+#refreshSchoolDetailsBtn svg,
 #newItemBtnInline i,
 #resetFormBtn i,
 #saveAssetBtn i,
 #icsClearBtn i,
-#saveIcsBtn i {
+#saveIcsBtn i,
+#selectActiveSchoolBtn i,
+#saveSchoolDetailsBtn i,
+#refreshSchoolDetailsBtn i {
   color: #ffffff !important;
   stroke: #ffffff !important;
   fill: none !important;
@@ -631,6 +655,9 @@ body[data-theme="light"] #saveIcsBtn span {
 #saveAssetBtn:hover,
 #icsClearBtn:hover,
 #saveIcsBtn:hover,
+#selectActiveSchoolBtn:hover,
+#saveSchoolDetailsBtn:hover,
+#refreshSchoolDetailsBtn:hover,
 .inventory-actions-row button:hover,
 body[data-theme="light"] .primary-button:hover,
 body[data-theme="light"] .form-action-btn:hover,
@@ -639,13 +666,19 @@ body[data-theme="light"] #resetFormBtn:hover,
 body[data-theme="light"] #saveAssetBtn:hover,
 body[data-theme="light"] #icsClearBtn:hover,
 body[data-theme="light"] #saveIcsBtn:hover,
+body[data-theme="light"] #selectActiveSchoolBtn:hover,
+body[data-theme="light"] #saveSchoolDetailsBtn:hover,
+body[data-theme="light"] #refreshSchoolDetailsBtn:hover,
 body[data-theme="dark"] .primary-button:hover,
 body[data-theme="dark"] .form-action-btn:hover,
 body[data-theme="dark"] #newItemBtnInline:hover,
 body[data-theme="dark"] #resetFormBtn:hover,
 body[data-theme="dark"] #saveAssetBtn:hover,
 body[data-theme="dark"] #icsClearBtn:hover,
-body[data-theme="dark"] #saveIcsBtn:hover {
+body[data-theme="dark"] #saveIcsBtn:hover,
+body[data-theme="dark"] #selectActiveSchoolBtn:hover,
+body[data-theme="dark"] #saveSchoolDetailsBtn:hover,
+body[data-theme="dark"] #refreshSchoolDetailsBtn:hover {
   background-color: #002244 !important;
   background-image: none !important;
   border-color: #002244 !important;
@@ -672,6 +705,149 @@ body[data-theme="dark"] #saveIcsBtn:hover {
   background: rgba(148, 163, 184, 0.12);
   color: #00335e;
   border-color: rgba(51, 65, 85, 0.7);
+}
+
+/* School Details Card (About Module) */
+.school-details-card {
+  width: 100%;
+}
+
+.school-details-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.school-details-card-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #00335e;
+}
+
+.active-school-badge {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.active-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  display: inline-block;
+}
+
+.school-details-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.form-field-group label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #004c87;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.link-btn:hover {
+  color: #002544;
+}
+
+.required-star {
+  color: #ef4444;
+}
+
+.school-logo-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.school-logo-preview-box {
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border-radius: 50%;
+  border: 1.5px solid #cbd5e1;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+  flex-shrink: 0;
+}
+
+.school-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.file-input-custom {
+  flex: 1;
+}
+
+.school-details-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.action-buttons-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.school-status-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
 }
 
 .form-actions-row,
