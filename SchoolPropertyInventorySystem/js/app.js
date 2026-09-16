@@ -4233,11 +4233,13 @@ async function syncStatusToSheet(name) {
 function showModule(moduleName, targetId = "") {
     if (!moduleName) return;
 
+    const targetModuleView = (moduleName === "ics" || moduleName === "document-ics") ? "document" : moduleName;
+
     document.querySelector(".app-sidebar")?.classList.remove("mobile-open");
     document.getElementById("sidebarBackdrop")?.classList.add("hidden");
 
     document.querySelectorAll(".module-view").forEach((module) => {
-        const isActive = module.dataset.module === moduleName;
+        const isActive = module.dataset.module === targetModuleView;
         module.classList.toggle("active", isActive);
         module.style.display = isActive ? "block" : "none";
     });
@@ -4271,7 +4273,7 @@ function showModule(moduleName, targetId = "") {
 
     const documentSubmenu = document.getElementById("documentSubmenu");
     const documentToggle = document.querySelector("[data-document-toggle]");
-    const isDocumentModule = moduleName === "document";
+    const isDocumentModule = targetModuleView === "document";
     if (documentSubmenu) documentSubmenu.classList.toggle("hidden", !isDocumentModule);
     if (documentToggle) {
         documentToggle.setAttribute("aria-expanded", String(isDocumentModule));
@@ -4280,7 +4282,7 @@ function showModule(moduleName, targetId = "") {
 
     // Synchronize Top Horizontal Navigation Bar Buttons
     document.querySelectorAll(".top-nav-btn").forEach((btn) => {
-        const isActive = btn.dataset.view === moduleName;
+        const isActive = btn.dataset.view === targetModuleView || btn.dataset.view === moduleName;
         btn.classList.toggle("active", isActive);
         if (isActive) {
             btn.classList.add("bg-[#00335e]", "text-white", "font-bold", "shadow-xs");

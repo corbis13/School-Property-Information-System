@@ -1944,3 +1944,51 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   }
 }
 
+/* Sidebar Nav Item Text & Hover Rules: retain original text color on hover and when active */
+.nav-item {
+  color: #f1f5f9;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-item.active,
+.nav-item.active:hover,
+.nav-item.active:focus {
+  background-color: #ffffff !important;
+  color: #00335e !important;
+}
+
+.nav-item.active span,
+.nav-item.active:hover span {
+  color: #00335e !important;
+}
+
+.nav-item.active i,
+.nav-item.active svg,
+.nav-item.active:hover i,
+.nav-item.active:hover svg {
+  color: #00335e !important;
+  stroke: #00335e !important;
+}
+
+.nav-item:not(.active) {
+  color: #f1f5f9 !important;
+}
+
+.nav-item:not(.active):hover {
+  color: #f1f5f9 !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.nav-item:not(.active) span,
+.nav-item:not(.active):hover span {
+  color: #f1f5f9 !important;
+}
+
+.nav-item:not(.active) i,
+.nav-item:not(.active) svg,
+.nav-item:not(.active):hover i,
+.nav-item:not(.active):hover svg {
+  color: #e2e8f0 !important;
+  stroke: #e2e8f0 !important;
+}
+
