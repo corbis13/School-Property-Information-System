@@ -114,7 +114,7 @@ const dom = {
     allAssetsTable: document.querySelector("#allAssetsTable"),
     assetCount: document.querySelector("#assetCount"),
     assetDatabaseSearch: document.querySelector("#assetDatabaseSearch"),
-    reportInventoryType: document.querySelector("#reportInventoryType"),
+    reportInventoryType: document.querySelector("#reportInventoryType, #reportType"),
     reportFundCluster: document.querySelector("#reportFundCluster"),
     reportAsOf: document.querySelector("#reportAsOf"),
     generatePdfBtn: document.querySelector("#generatePdfBtn"),
@@ -125,8 +125,10 @@ const dom = {
     resetFormBtn: document.querySelector("#resetFormBtn"),
     downloadQrBtn: document.querySelector("#downloadQrBtn"),
     openQrLinkBtn: document.querySelector("#openQrLinkBtn"),
+    qrPrevBtn: document.querySelector(".qr-prev-button"),
     qrNextBtn: document.querySelector(".qr-next-button"),
     qrHistoryTable: document.querySelector("#qrHistoryTable"),
+    qrHistorySearchInput: document.querySelector("#qrHistorySearchInput"),
     qrHistoryPagination: document.querySelector("#qrHistoryPagination"),
     qrHistoryEmptyState: document.querySelector("#qrHistoryEmptyState"),
     icsSlipPagination: document.querySelector("#icsSlipPagination"),
@@ -417,6 +419,9 @@ async function loadSignatoryOptions() {
 
     populateIcsReceivedFromDropdown();
     populateIcsReceivedByDropdown();
+    if (typeof updateReportLiveMeta === "function") {
+        updateReportLiveMeta();
+    }
 }
 
 function populateIcsReceivedFromDropdown() {
@@ -500,6 +505,10 @@ async function loadInventoryTypeOptions() {
     });
 
     dom.inventoryType.value = currentValue;
+
+    if (typeof loadReportInventoryTypeDropdown === "function") {
+        try { loadReportInventoryTypeDropdown(); } catch (e) {}
+    }
 }
 
 async function loadEducationLevelOptions() {
@@ -1494,6 +1503,7 @@ async function loadItems() {
         }));
 
         usingRemoteBackend = true;
+        window.inventoryData = items;
         localStorage.setItem(storageKey, JSON.stringify(items));
         try {
             localStorage.setItem("accountablePersonReportEntries", JSON.stringify(getAccountablePersonEntries("all")));
@@ -1505,11 +1515,22 @@ async function loadItems() {
             console.warn("Could not cache report entries:", e);
         }
         setDatabaseStatus("Connected to Supabase.", `${items.length} records loaded from the backend.`);
+        if (typeof loadReportInventoryTypeDropdown === "function") {
+            try { loadReportInventoryTypeDropdown(); } catch(e) {}
+        } else if (typeof renderPhysicalCountReport === "function") {
+            try { renderPhysicalCountReport(items); } catch(e) {}
+        }
     } catch (error) {
         console.error(error);
         items = fallbackItems();
         usingRemoteBackend = false;
+        window.inventoryData = items;
         setDatabaseStatus("Local fallback is active.", "Supabase is unavailable right now. Your latest local data is still available.");
+        if (typeof loadReportInventoryTypeDropdown === "function") {
+            try { loadReportInventoryTypeDropdown(); } catch(e) {}
+        } else if (typeof renderPhysicalCountReport === "function") {
+            try { renderPhysicalCountReport(items); } catch(e) {}
+        }
     }
 }
 
@@ -2785,7 +2806,7 @@ function renderPhysicalCountReport() {
                         <th rowspan="2">Semi-Expandable<br>Property Number</th>
                         <th rowspan="2">Unit of<br>Measure</th>
                         <th colspan="2">Amount</th>
-                        <th rowspan="2">Date<br>Acquired</th>
+                        <th rowspan="2">Date<br>Acquired<br><small>(YYYY-MM-DD)</small></th>
                         <th rowspan="2">Balance Per<br>Card<br><small>(Quantity)</small></th>
                         <th rowspan="2">On Hand<br>Per Count<br><small>(Quantity)</small></th>
                         <th colspan="2">Shortage/Overage</th>
@@ -2804,7 +2825,7 @@ function renderPhysicalCountReport() {
                 <tbody>
                     ${reportItems.length ? reportItems.map((item) => `
                         <tr>
-                            <td>${reportCell(item.inventoryType || item.itemClassification)}</td>
+                            <td>${reportCell(item.itemClassification || item.item_classification || item.article || "-")}</td>
                             <td>${reportCell(item.itemBrandModel)}</td>
                             <td>${reportCell(item.semiExpandableNo || item.propertyNo)}</td>
                             <td>${reportCell(item.unitMeasurement)}</td>
@@ -2833,6 +2854,10 @@ async function generateReportPdf() {
     if (!window.html2canvas || !window.jspdf?.jsPDF) {
         showToast("PDF tools are still loading. Check your internet connection and try again.");
         return;
+    }
+
+    if (typeof updateReportLiveMeta === "function") {
+        updateReportLiveMeta();
     }
 
     const report = dom.physicalReport;
@@ -3178,6 +3203,56 @@ function loadQrDownloadHistory() {
     }
 }
 
+async function loadRemoteQrDownloadHistory() {
+    if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") return;
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/qr_download_history?select=*&order=downloaded_at.desc`, {
+            headers: supabaseHeaders
+        });
+        if (response.ok) {
+            const rows = await response.json();
+            if (Array.isArray(rows)) {
+                const remoteHistoryMap = new Map();
+                rows.forEach((r) => {
+                    remoteHistoryMap.set(r.asset_id, {
+                        assetId: r.asset_id,
+                        propertyNo: r.property_no || r.asset_id,
+                        itemBrandModel: r.item_brand_model || "",
+                        downloadedAt: r.downloaded_at || r.created_at,
+                        count: Number(r.download_count) || 1
+                    });
+                });
+
+                // Merge local entries into remote map if local is newer or has higher count
+                qrDownloadHistory.forEach((local) => {
+                    const remote = remoteHistoryMap.get(local.assetId);
+                    if (!remote) {
+                        remoteHistoryMap.set(local.assetId, local);
+                    } else {
+                        const higherCount = Math.max(Number(local.count || 1), Number(remote.count || 1));
+                        const newerDate = new Date(local.downloadedAt) > new Date(remote.downloadedAt) ? local.downloadedAt : remote.downloadedAt;
+                        remoteHistoryMap.set(local.assetId, {
+                            ...remote,
+                            count: higherCount,
+                            downloadedAt: newerDate,
+                            propertyNo: local.propertyNo || remote.propertyNo,
+                            itemBrandModel: local.itemBrandModel || remote.itemBrandModel
+                        });
+                    }
+                });
+
+                qrDownloadHistory = Array.from(remoteHistoryMap.values());
+                saveQrDownloadHistory();
+                renderQrDownloadHistory();
+            }
+        } else {
+            console.warn(`Unable to fetch remote QR download history (HTTP ${response.status}). If table 'qr_download_history' does not exist in Supabase, run 'supabase-setup.sql' in Supabase SQL Editor.`);
+        }
+    } catch (e) {
+        console.warn("Unable to load remote QR download history:", e);
+    }
+}
+
 function saveQrDownloadHistory() {
     try {
         localStorage.setItem(qrDownloadHistoryStorageKey, JSON.stringify(qrDownloadHistory));
@@ -3186,7 +3261,8 @@ function saveQrDownloadHistory() {
     }
 }
 
-function recordQrDownload(item) {
+async function recordQrDownload(item) {
+    if (!item || !item.assetId) return;
     const existing = qrDownloadHistory.find((entry) => entry.assetId === item.assetId);
     const downloadedAt = new Date().toISOString();
 
@@ -3207,21 +3283,85 @@ function recordQrDownload(item) {
 
     saveQrDownloadHistory();
     renderQrDownloadHistory();
+
+    if (supabaseUrl && supabaseAnonKey !== "YOUR_SUPABASE_ANON_KEY") {
+        try {
+            const payload = {
+                asset_id: item.assetId,
+                property_no: item.propertyNo || item.assetId,
+                item_brand_model: item.itemBrandModel || item.propertyNo || item.assetId,
+                download_count: existing ? existing.count : 1,
+                downloaded_at: downloadedAt,
+                updated_at: downloadedAt
+            };
+
+            const checkResp = await fetch(`${supabaseUrl}/rest/v1/qr_download_history?asset_id=eq.${encodeURIComponent(item.assetId)}`, {
+                headers: supabaseHeaders
+            });
+
+            if (!checkResp.ok) {
+                const errText = await checkResp.text();
+                console.warn(`Supabase qr_download_history check failed (HTTP ${checkResp.status}):`, errText);
+                console.warn("Please run 'supabase-setup.sql' in your Supabase SQL Editor to create the public.qr_download_history table.");
+                return;
+            }
+
+            const existingRows = await checkResp.json();
+            let saveResp;
+
+            if (Array.isArray(existingRows) && existingRows.length > 0) {
+                saveResp = await fetch(`${supabaseUrl}/rest/v1/qr_download_history?asset_id=eq.${encodeURIComponent(item.assetId)}`, {
+                    method: "PATCH",
+                    headers: {
+                        ...supabaseHeaders,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                saveResp = await fetch(`${supabaseUrl}/rest/v1/qr_download_history`, {
+                    method: "POST",
+                    headers: {
+                        ...supabaseHeaders,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            if (!saveResp.ok) {
+                const errText = await saveResp.text();
+                console.warn(`Supabase qr_download_history save failed (HTTP ${saveResp.status}):`, errText);
+            }
+        } catch (e) {
+            console.warn("Unable to sync QR download history to database:", e);
+        }
+    }
 }
 
 function renderQrDownloadHistory() {
     if (!dom.qrHistoryTable || !dom.qrHistoryEmptyState) return;
 
-    const entries = [...qrDownloadHistory].sort((first, second) =>
+    const query = dom.qrHistorySearchInput ? dom.qrHistorySearchInput.value.trim().toLowerCase() : "";
+    let entries = [...qrDownloadHistory].sort((first, second) =>
         new Date(second.downloadedAt).getTime() - new Date(first.downloadedAt).getTime()
     );
+
+    if (query) {
+        entries = entries.filter((entry) => {
+            const propertyNo = String(entry.propertyNo || entry.assetId || "").toLowerCase();
+            const item = String(entry.itemBrandModel || "").toLowerCase();
+            return propertyNo.includes(query) || item.includes(query);
+        });
+    }
+
     const totalPages = Math.max(1, Math.ceil(entries.length / qrHistoryPageSize));
     qrHistoryPage = Math.min(Math.max(1, qrHistoryPage), totalPages);
     const startIndex = (qrHistoryPage - 1) * qrHistoryPageSize;
     const pageEntries = entries.slice(startIndex, startIndex + qrHistoryPageSize);
 
     dom.qrHistoryTable.innerHTML = pageEntries.map((entry) => `
-        <tr>
+        <tr class="qr-history-row clickable-row" data-asset-id="${escapeHtml(entry.assetId)}" data-property-no="${escapeHtml(entry.propertyNo || entry.assetId)}" data-item-brand-model="${escapeHtml(entry.itemBrandModel || "")}" title="Click to open QR preview">
             <td>${escapeHtml(entry.propertyNo || entry.assetId)}</td>
             <td>${escapeHtml(entry.itemBrandModel || "Unspecified")}</td>
             <td>${escapeHtml(formatQrDownloadDate(entry.downloadedAt))}</td>
@@ -3557,6 +3697,18 @@ async function downloadQr() {
             if (window.lucide && lucide.createIcons) lucide.createIcons();
         }
     }
+}
+
+function selectPreviousQrItem() {
+    if (!items.length) {
+        showToast("No assets available.");
+        return;
+    }
+    const currentIndex = items.findIndex((item) => item.assetId === selectedId);
+    const prevIndex = currentIndex > 0 ? currentIndex - 1 : (currentIndex === 0 ? items.length - 1 : 0);
+    selectedId = items[prevIndex].assetId;
+    renderQr();
+    showToast("QR preview moved to previous item.");
 }
 
 function selectNextQrItem() {
@@ -4246,7 +4398,7 @@ function showModule(moduleName, targetId = "") {
 
     // Synchronize Sidebar Nav Items
     document.querySelectorAll(".nav-item").forEach((item) => {
-        const isActive = item.dataset.view === moduleName;
+        const isActive = item.dataset.view === moduleName || (targetModuleView === "document" && item.dataset.view === "ics");
         item.classList.toggle("active", isActive);
 
         const indicator = item.querySelector(".nav-indicator");
@@ -4301,6 +4453,7 @@ function showModule(moduleName, targetId = "") {
 
     if (moduleName === "qr") {
         renderQr();
+        loadRemoteQrDownloadHistory();
     }
 
     if (moduleName === "reports") {
@@ -4603,8 +4756,17 @@ function wireEvents() {
     if (dom.downloadQrBtn) {
         dom.downloadQrBtn.addEventListener("click", downloadQr);
     }
+    if (dom.qrPrevBtn) {
+        dom.qrPrevBtn.addEventListener("click", selectPreviousQrItem);
+    }
     if (dom.qrNextBtn) {
         dom.qrNextBtn.addEventListener("click", selectNextQrItem);
+    }
+    if (dom.qrHistorySearchInput) {
+        dom.qrHistorySearchInput.addEventListener("input", () => {
+            qrHistoryPage = 1;
+            renderQrDownloadHistory();
+        });
     }
     if (dom.qrHistoryPagination) {
         dom.qrHistoryPagination.addEventListener("click", (event) => {
@@ -4613,6 +4775,35 @@ function wireEvents() {
 
             qrHistoryPage = Number(button.dataset.qrHistoryPage) || 1;
             renderQrDownloadHistory();
+        });
+    }
+    if (dom.qrHistoryTable) {
+        dom.qrHistoryTable.addEventListener("click", (event) => {
+            const row = event.target.closest("tr[data-asset-id]");
+            if (!row) return;
+
+            const assetId = row.dataset.assetId;
+            const propertyNo = row.dataset.propertyNo || assetId;
+            const itemBrandModel = row.dataset.itemBrandModel || "";
+            const displayName = itemBrandModel ? `${propertyNo} (${itemBrandModel})` : propertyNo;
+
+            const confirmOpen = window.confirm("Do you want to open?");
+            if (confirmOpen) {
+                const asset = items.find((a) => a.assetId === assetId || a.propertyNo === propertyNo);
+                if (asset) {
+                    selectedId = asset.assetId;
+                    renderQr();
+                    const qrSection = document.querySelector("#qrPreviewCard") || document.querySelector(".qr-preview-panel");
+                    if (qrSection) {
+                        qrSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                    } else {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }
+                    showToast(`Opened QR code preview for ${propertyNo}.`);
+                } else {
+                    showToast("Asset details not found in inventory.");
+                }
+            }
         });
     }
     if (dom.icsSlipPagination) {
@@ -4630,11 +4821,23 @@ function wireEvents() {
     document.querySelectorAll(".generate-pdf-btn").forEach((btn) => {
         btn.addEventListener("click", generateReportPdf);
     });
-    [dom.reportInventoryType, dom.reportFundCluster, dom.reportAsOf].forEach((control) => {
-        if (control) control.addEventListener("input", renderPhysicalCountReport);
-    });
-    [dom.certifiedCorrectedBy, dom.approvedBy, dom.verifiedBy].forEach((control) => {
-        if (control) control.addEventListener("change", renderPhysicalCountReport);
+    [dom.reportInventoryType, dom.reportFundCluster, dom.reportAsOf, dom.certifiedCorrectedBy, dom.approvedBy, dom.verifiedBy].forEach((control) => {
+        if (control) {
+            control.addEventListener("input", () => {
+                if (control === dom.reportInventoryType && typeof filterReportByInventoryType === "function") {
+                    filterReportByInventoryType(control.value);
+                } else if (typeof updateReportLiveMeta === "function") {
+                    updateReportLiveMeta();
+                }
+            });
+            control.addEventListener("change", () => {
+                if (control === dom.reportInventoryType && typeof filterReportByInventoryType === "function") {
+                    filterReportByInventoryType(control.value);
+                } else if (typeof updateReportLiveMeta === "function") {
+                    updateReportLiveMeta();
+                }
+            });
+        }
     });
     if (dom.assetDatabaseSearch) {
         dom.assetDatabaseSearch.addEventListener("input", renderAllAssetsView);
@@ -4653,33 +4856,32 @@ function wireEvents() {
         });
     });
 
-    document.querySelectorAll(".nav-item, .top-nav-btn, [data-module-target]").forEach((button) => {
-        button.addEventListener("click", (e) => {
-            if (button.hasAttribute("data-document-toggle")) return;
-            const view = button.dataset.view || button.dataset.moduleTarget;
-            if (view) {
-                e.preventDefault();
-                showModule(view);
-            }
-        });
-    });
+    document.addEventListener("click", (e) => {
+        const navBtn = e.target.closest(".nav-item, .top-nav-btn, [data-module-target]");
+        if (!navBtn) return;
 
-    const documentToggle = document.querySelector("[data-document-toggle]");
-    const documentSubmenu = document.getElementById("documentSubmenu");
-    if (documentToggle && documentSubmenu) {
-        documentToggle.addEventListener("click", (e) => {
+        if (navBtn.hasAttribute("data-document-toggle")) {
             e.preventDefault();
-            const activeModule = document.querySelector(".module-view.active")?.dataset.module;
-            if (activeModule !== "document") {
-                showModule("document");
+            const documentSubmenu = document.getElementById("documentSubmenu");
+            const isCurrentlyHidden = documentSubmenu ? documentSubmenu.classList.contains("hidden") : true;
+            if (isCurrentlyHidden) {
+                if (documentSubmenu) documentSubmenu.classList.remove("hidden");
+                navBtn.setAttribute("aria-expanded", "true");
+                navBtn.querySelector(".document-nav-chevron")?.classList.add("rotate-180");
             } else {
-                const isExpanded = documentToggle.getAttribute("aria-expanded") === "true";
-                documentToggle.setAttribute("aria-expanded", String(!isExpanded));
-                documentSubmenu.classList.toggle("hidden", isExpanded);
-                documentToggle.querySelector(".document-nav-chevron")?.classList.toggle("rotate-180", !isExpanded);
+                if (documentSubmenu) documentSubmenu.classList.add("hidden");
+                navBtn.setAttribute("aria-expanded", "false");
+                navBtn.querySelector(".document-nav-chevron")?.classList.remove("rotate-180");
             }
-        });
-    }
+            return;
+        }
+
+        const view = navBtn.dataset.view || navBtn.dataset.moduleTarget;
+        if (view) {
+            e.preventDefault();
+            showModule(view);
+        }
+    });
 
     // School Details Card in About Module
     const schoolDetailsForm = document.getElementById("schoolDetailsForm");
@@ -4744,6 +4946,7 @@ async function init() {
     resetForm();
     qrDownloadHistory = loadQrDownloadHistory();
     renderQrDownloadHistory();
+    await loadRemoteQrDownloadHistory();
     renderApp();
 
     if (params.get("module") === "qr") {

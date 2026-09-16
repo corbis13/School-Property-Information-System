@@ -1598,20 +1598,45 @@ body[data-theme="light"] .qr-summary-card p {
     justify-items: center;
     gap: 4px;
     text-align: center;
-    font-size: 15px;
+    color: #111111;
+    line-height: 1.35;
+    margin-bottom: 20px;
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.physical-report-header strong {
+    color: #111111;
+    font-weight: 700;
+    font-size: 14px;
 }
 
 .physical-report-header .report-title-underline {
     text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
-.physical-report-header span:last-child {
-    margin-top: 14px;
+.physical-report-header span {
+    font-size: 12px;
+    color: #111111;
+}
+
+.physical-report-header span:first-of-type {
+    font-style: italic;
+    font-size: 11px;
+    color: #333333;
+}
+
+.physical-report-header span:last-of-type {
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 500;
 }
 
 .report-fund-cluster {
-    margin: 30px 0 16px;
-    font-size: 13px;
+    margin: 16px 0 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
 }
 
 .physical-report-table-wrap {
@@ -1720,11 +1745,21 @@ body[data-theme="light"] .qr-summary-card p {
 }
 
 .physical-report.pdf-export .physical-report-header {
+    gap: 3px;
+    margin-bottom: 12px;
+}
+
+.physical-report.pdf-export .physical-report-header strong {
     font-size: 12px;
 }
 
-.physical-report.pdf-export .physical-report-header span:last-child {
-    margin-top: 8px;
+.physical-report.pdf-export .physical-report-header span:first-of-type {
+    font-size: 10px;
+}
+
+.physical-report.pdf-export .physical-report-header span:last-of-type {
+    margin-top: 6px;
+    font-size: 11px;
 }
 
 .physical-report.pdf-export .report-fund-cluster {
@@ -1778,11 +1813,13 @@ body[data-theme="light"] .qr-summary-card p {
 }
 
 .report-signatures {
-    display: none;
+    display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 38px;
     margin-top: 30px;
-    font-size: 12px;
+    font-size: 11px;
+    color: #111111;
+    font-family: Georgia, "Times New Roman", serif;
 }
 
 .report-signatures > div {
@@ -1792,9 +1829,14 @@ body[data-theme="light"] .qr-summary-card p {
     text-align: center;
 }
 
-.report-signatures span {
+.report-signatures > div > span {
     order: 1;
     text-align: left;
+    font-size: 11px;
+    color: #111111;
+    font-style: normal;
+    font-weight: normal;
+    margin-top: 0;
 }
 
 .report-signatory-name {

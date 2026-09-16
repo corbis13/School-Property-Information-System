@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report on the Physical Count of Semi-Expendable Property</title>
+  <style>
+    @media print {
+      body { margin: 0; }
+      .no-print { display: none; }
+      @page { size: A4 landscape; margin: 10mm; }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 7.5pt;
+      color: #000;
+      background: #fff;
+      padding: 20px;
+    }
+
+    .page-wrapper {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .report-header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .report-header .title-main {
+      font-size: 14pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .report-header .title-sub {
+      font-size: 11pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      text-decoration: underline;
+      letter-spacing: 0.5px;
+    }
+    .report-header .type-label {
+      font-size: 8pt;
+      margin-top: 2px;
+    }
+    .report-header .as-of {
+      font-size: 11pt;
+      margin-top: 6px;
+    }
+    .report-header .as-of u {
+      font-weight: bold;
+    }
+
+    /* ── Fund Cluster ── */
+    .fund-cluster {
+      font-size: 11pt;
+      margin: 8px 0 4px 0;
+    }
+    .fund-cluster span {
+      border-bottom: 1px solid #000;
+      display: inline-block;
+      min-width: 180px;
+      margin-left: 4px;
+      padding: 2px 8px 6px 8px;
+      line-height: 1.4;
+      vertical-align: bottom;
+    }
+
+    /* ── Main Table ── */
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      font-size: 7pt;
+    }
+
+    .report-table th,
+    .report-table td {
+      border: 1px solid #000;
+      padding: 2px 4px;
+      vertical-align: middle;
+      text-align: center;
+    }
+
+    .report-table td.left {
+      text-align: left;
+    }
+
+    /* Header rows */
+    .report-table thead tr th {
+      background-color: #d9d9d9;
+      font-weight: bold;
+      font-size: 7pt;
+    }
+
+    .report-table thead tr.sub-header th {
+      background-color: #d9d9d9;
+      font-size: 7pt;
+    }
+
+    /* Data rows */
+    .report-table tbody tr:nth-child(even) {
+      background-color: #f5f5f5;
+    }
+    .report-table tbody tr:hover {
+      background-color: #e8f0fe;
+    }
+
+    /* Status badge colours */
+    .status-issued       { color: #1a5c1a; font-weight: bold; }
+    .status-available    { color: #0d4d8c; font-weight: bold; }
+    .status-stolen       { color: #8b0000; font-weight: bold; }
+    .status-unserviceable{ color: #6b0000; font-weight: bold; }
+    .status-maintenance  { color: #7a4f00; font-weight: bold; }
+    .status-under-repair { color: #5a3000; font-weight: bold; }
+    .status-inuse        { color: #1a5c1a; font-weight: bold; }
+
+    /* ── Signature Section ── */
+    .signature-section {
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .sig-block {
+      flex: 1;
+      text-align: center;
+    }
+    .sig-block .label {
+      font-size: 7.5pt;
+      margin-bottom: 28px;
+    }
+    .sig-block .line {
+      border-top: 1px solid #000;
+      padding-top: 3px;
+      font-size: 7pt;
+    }
+
+    /* ── Print button ── */
+    .no-print {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .no-print button {
+      padding: 8px 24px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: #004c87;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+    }
+    .no-print button:hover {
+      background: #00335e;
+    }
+  </style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+</div>
+
+<div class="page-wrapper">
+
+  <!-- ════════════════ HEADER ════════════════ -->
+  <div class="report-header">
+    <div class="title-main">Report on the Physical Count of Semi-Expendable Property</div>
+    <div class="title-sub">School Furnitures</div>
+    <div class="type-label">(Type of Inventory Item)</div>
+    <div class="as-of">As of <u>September 1, 2026</u></div>
+  </div>
+
+  <div class="fund-cluster">Fund Cluster : <span>&nbsp;</span></div>
+
+  <!-- ════════════════ TABLE ════════════════ -->
+  <table class="report-table">
+    <thead>
+      <!-- Row 1 – main column headers -->
+      <tr>
+        <th rowspan="3" style="width:9%;">Article</th>
+        <th rowspan="3" style="width:11%;">Description</th>
+        <th rowspan="3" style="width:9%;">Semi-Expandable<br>Property Number</th>
+        <th rowspan="3" style="width:5%;">Unit of<br>Measure</th>
+        <th colspan="2" style="width:8%;">Amount</th>
+        <th rowspan="3" style="width:6%;">Date<br>Acquired<br><small>(YYYY-MM-DD)</small></th>
+        <th rowspan="3" style="width:5%;">Balance Per<br>Card<br>(Quantity)</th>
+        <th rowspan="3" style="width:5%;">On Hand<br>Per Count<br>(Quantity)</th>
+        <th colspan="2" style="width:8%;">Shortage/Overage</th>
+        <th colspan="3" style="width:14%;">Remarks</th>
+      </tr>
+      <!-- Row 2 – sub-headers -->
+      <tr>
+        <th rowspan="2" style="width:4%;">Unit<br>Value</th>
+        <th rowspan="2" style="width:4%;">Total</th>
+        <th rowspan="2" style="width:4%;">Quantity</th>
+        <th rowspan="2" style="width:4%;">Value</th>
+        <th rowspan="2" style="width:8%;">Current Accountable<br>Personnel</th>
+        <th rowspan="2" style="width:4%;">Location</th>
+        <th rowspan="2" style="width:5%;">Status</th>
+      </tr>
+      <!-- Row 3 – empty filler (already covered by rowspan) -->
+      <tr></tr>
+    </thead>
+    <tbody>
+
+      <!-- ─── Row 1 ─── -->
+      <tr>
+        <td class="left">School MOOE Fund</td>
+        <td class="left">Asus Laptop</td>
+        <td>2026-003</td>
+        <td></td><td></td><td></td>
+        <td>2026-06-29</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Dianah Jean D. Segayo</td>
+        <td></td>
+        <td class="status-unserviceable">Unserviceable</td>
+      </tr>
+
+      <!-- ─── Row 2 ─── -->
+      <tr>
+        <td class="left">Donation</td>
+        <td class="left">MegaBox 4 Drawer</td>
+        <td>DEPED-2026-0007</td>
+        <td></td><td></td><td></td>
+        <td>2026-02-03</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Roberto Cruz</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 3 ─── -->
+      <tr>
+        <td class="left">School MOOE Fund</td>
+        <td class="left">Mandaue Foam Sofa</td>
+        <td>2026-222</td>
+        <td></td><td></td><td></td>
+        <td>2021-03-01</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Dianah Jean D. Segayo</td>
+        <td></td>
+        <td class="status-stolen">Stolen</td>
+      </tr>
+
+      <!-- ─── Row 4 ─── -->
+      <tr>
+        <td class="left">School MOOE Fund</td>
+        <td class="left">Dell Latitude 5450</td>
+        <td>DEPED-2026-0001</td>
+        <td></td><td></td><td></td>
+        <td>2026-01-15</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Juan Dela Cruz</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 5 ─── -->
+      <tr>
+        <td class="left">School MOOE Fund</td>
+        <td class="left">Epson EcoTank L5290</td>
+        <td>DEPED-2026-0002</td>
+        <td></td><td></td><td></td>
+        <td>2026-01-18</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Maria Santos</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 6 ─── -->
+      <tr>
+        <td class="left">Donation</td>
+        <td class="left">HP ProDesk 400 G9</td>
+        <td>DEPED-2026-0003</td>
+        <td></td><td></td><td></td>
+        <td>2026-01-22</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Pedro Reyes</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 7 ─── -->
+      <tr>
+        <td class="left">Donation</td>
+        <td class="left">BenQ MX560</td>
+        <td>DEPED-2026-0004</td>
+        <td></td><td></td><td></td>
+        <td>2026-01-25</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Ana Lopez</td>
+        <td></td>
+        <td class="status-available">Available</td>
+      </tr>
+
+      <!-- ─── Row 8 ─── -->
+      <tr>
+        <td class="left">Donation</td>
+        <td class="left">Ergo Mesh Chair</td>
+        <td>2026-21221</td>
+        <td>Unit</td>
+        <td>1500</td>
+        <td></td>
+        <td>2026-01-28</td>
+        <td></td>
+        <td>1</td>
+        <td></td><td></td>
+        <td class="left">Carlos Mendoza</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 9 ─── -->
+      <tr>
+        <td class="left">Donation</td>
+        <td class="left">Office Desk</td>
+        <td>DEPED-2026-0006</td>
+        <td></td><td></td><td></td>
+        <td>2026-02-01</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Grace Villanueva</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 10 ─── -->
+      <tr>
+        <td class="left">School Furnitures</td>
+        <td class="left">LG Dual Inverter 2HP</td>
+        <td>DEPED-2026-0008</td>
+        <td></td><td></td><td></td>
+        <td>2026-02-05</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Helen Ramos</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 11 ─── -->
+      <tr>
+        <td class="left">School Furnitures</td>
+        <td class="left">Hanabishi Stand Fan</td>
+        <td>DEPED-2026-0009</td>
+        <td></td><td></td><td></td>
+        <td>2026-02-08</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Joseph Garcia</td>
+        <td></td>
+        <td class="status-available">Available</td>
+      </tr>
+
+      <!-- ─── Row 12 ─── -->
+      <tr>
+        <td class="left">School Furnitures</td>
+        <td class="left">Samsung 55 UHD</td>
+        <td>DEPED-2026-0010</td>
+        <td></td><td></td><td></td>
+        <td>2026-02-10</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Michelle Flores</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 13 ─── -->
+      <tr>
+        <td class="left">School Furnitures</td>
+        <td class="left">Canon LiDE 400</td>
+        <td>DEPED-2026-0011</td>
+        <td></td><td></td><td></td>
+        <td>2026-02-12</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Ryan Torres</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 14 ─── -->
+      <tr>
+        <td class="left">Science &amp; Math Equipment</td>
+        <td class="left">Canon IR 2630</td>
+        <td>DEPED-2026-0012</td>
+        <td></td><td></td><td></td>
+        <td>2026-02-15</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Evelyn Perez</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 15 ─── -->
+      <tr>
+        <td class="left">Science &amp; Math Equipment</td>
+        <td class="left">Wooden Bookshelf</td>
+        <td>DEPED-2026-0014</td>
+        <td></td><td></td><td></td>
+        <td>2026-02-20</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Liza Mendoza</td>
+        <td></td>
+        <td class="status-available">Available</td>
+      </tr>
+
+      <!-- ─── Row 16 ─── -->
+      <tr>
+        <td class="left">Science &amp; Math Equipment</td>
+        <td class="left">APC Easy UPS 1200VA</td>
+        <td>DEPED-2026-0015</td>
+        <td></td><td></td><td></td>
+        <td>2026-02-23</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Dennis Lim</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 17 ─── -->
+      <tr>
+        <td class="left">Science &amp; Math Equipment</td>
+        <td class="left">TP-Link Archer AX55</td>
+        <td>DEPED-2026-0016</td>
+        <td></td><td></td><td></td>
+        <td>2026-03-01</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Marco Diaz</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 18 ─── -->
+      <tr>
+        <td class="left">DepEd Computerization Program</td>
+        <td class="left">TP-Link TL-SG1016D</td>
+        <td>DEPED-2026-0017</td>
+        <td></td><td></td><td></td>
+        <td>2026-03-03</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Marco Diaz</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 19 ─── -->
+      <tr>
+        <td class="left">DepEd Computerization Program</td>
+        <td class="left">Hikvision 4MP</td>
+        <td>DEPED-2026-0018</td>
+        <td></td><td></td><td></td>
+        <td>2026-03-05</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Edgar Ramos</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 20 ─── -->
+      <tr>
+        <td class="left">DepEd Computerization Program</td>
+        <td class="left">JBL PartyBox 110</td>
+        <td>DEPED-2026-0019</td>
+        <td></td><td></td><td></td>
+        <td>2026-03-08</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Karen Castro</td>
+        <td></td>
+        <td class="status-available">Available</td>
+      </tr>
+
+      <!-- ─── Row 21 ─── -->
+      <tr>
+        <td class="left">DepEd Computerization Program</td>
+        <td class="left">Shure SM58</td>
+        <td>DEPED-2026-0020</td>
+        <td></td><td></td><td></td>
+        <td>2026-03-10</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Karen Castro</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 22 ─── -->
+      <tr>
+        <td class="left">Central Office Fund</td>
+        <td class="left">Honda 5kVA</td>
+        <td>DEPED-2026-0021</td>
+        <td></td><td></td><td></td>
+        <td>2026-03-12</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Victor Gomez</td>
+        <td></td>
+        <td class="status-maintenance">Maintenance</td>
+      </tr>
+
+      <!-- ─── Row 23 ─── -->
+      <tr>
+        <td class="left">Central Office Fund</td>
+        <td class="left">Hanabishi WD-100</td>
+        <td>DEPED-2026-0022</td>
+        <td></td><td></td><td></td>
+        <td>2026-03-15</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Sheila Ramos</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 24 ─── -->
+      <tr>
+        <td class="left">Central Office Fund</td>
+        <td class="left">Steel Lab Table</td>
+        <td>DEPED-2026-0024</td>
+        <td></td><td></td><td></td>
+        <td>2026-03-20</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">John Salazar</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 25 ─── -->
+      <tr>
+        <td class="left">Central Office Fund</td>
+        <td class="left">Plastic Armchair</td>
+        <td>DEPED-2026-0025</td>
+        <td></td><td></td><td></td>
+        <td>2018-07-10</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Rose Aquino</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 26 ─── -->
+      <tr>
+        <td class="left">Central Office Fund</td>
+        <td class="left">Wooden Desk</td>
+        <td>DEPED-2026-0026</td>
+        <td></td><td></td><td></td>
+        <td>2017-03-22</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Dianah Jean D. Segayo</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 27 ─── -->
+      <tr>
+        <td class="left">Division Office Fund</td>
+        <td class="left">Lenovo ThinkPad E16</td>
+        <td>DEPED-2026-0027</td>
+        <td></td><td></td><td></td>
+        <td>2016-03-25</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Eric Villanueva</td>
+        <td></td>
+        <td class="status-under-repair">Under Repair</td>
+      </tr>
+
+      <!-- ─── Row 28 ─── -->
+      <tr>
+        <td class="left">Division Office Fund</td>
+        <td class="left">Brother DCP-T720DW</td>
+        <td>DEPED-2026-0028</td>
+        <td></td><td></td><td></td>
+        <td>2015-03-27</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Ivy Fernandez</td>
+        <td></td>
+        <td class="status-available">Available</td>
+      </tr>
+
+      <!-- ─── Row 29 ─── -->
+      <tr>
+        <td class="left">Division Office Fund</td>
+        <td class="left">Samsung Galaxy Tab A9</td>
+        <td>DEPED-2026-0029</td>
+        <td></td><td></td><td></td>
+        <td>2015-03-28</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Michael Tan</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 30 ─── -->
+      <tr>
+        <td class="left">Division Office Fund</td>
+        <td class="left">Dell PowerEdge T150</td>
+        <td>DEPED-2026-0030</td>
+        <td></td><td></td><td></td>
+        <td>2013-03-30</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">ICT Administrator</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 31 ─── -->
+      <tr>
+        <td class="left">Division Office Fund</td>
+        <td class="left">aadfsadf</td>
+        <td>DEPED-2026-0031</td>
+        <td></td><td></td><td></td>
+        <td>2026-07-14</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Dianah Jean D. Segayo</td>
+        <td></td>
+        <td class="status-unserviceable">Unserviceable</td>
+      </tr>
+
+      <!-- ─── Row 32 ─── -->
+      <tr>
+        <td class="left">School MOOE Fund</td>
+        <td class="left">Epson L3210</td>
+        <td>2026-002</td>
+        <td></td><td></td><td></td>
+        <td>2026-07-24</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Almajid T. Sahijuan</td>
+        <td></td>
+        <td class="status-inuse">In Use</td>
+      </tr>
+
+      <!-- ─── Row 33 ─── -->
+      <tr>
+        <td class="left">School MOOE Fund</td>
+        <td class="left">dell</td>
+        <td>32132</td>
+        <td>unit</td>
+        <td>1000</td>
+        <td>5000</td>
+        <td>2026-08-20</td>
+        <td>1</td>
+        <td>5</td>
+        <td>2</td>
+        <td>1</td>
+        <td class="left">Donalyn C. Sanson</td>
+        <td>lab room</td>
+        <td class="status-unserviceable">Unserviceable</td>
+      </tr>
+
+      <!-- ─── Row 34 ─── -->
+      <tr>
+        <td class="left">School MOOE Fund</td>
+        <td class="left">Dell OptiPlex 7020</td>
+        <td>2026-1112</td>
+        <td>pcs</td>
+        <td>1000</td>
+        <td>2000</td>
+        <td>2026-07-10</td>
+        <td>1.01</td>
+        <td>2</td>
+        <td>1</td>
+        <td>1</td>
+        <td class="left">Danilo I. Dulap</td>
+        <td>Lab Room</td>
+        <td class="status-under-repair">For Repair</td>
+      </tr>
+
+      <!-- ─── Row 35 ─── -->
+      <tr>
+        <td class="left">Science &amp; Math Equipment</td>
+        <td class="left">Magnetic Whiteboard 6x4</td>
+        <td>DEPED-2026-0013</td>
+        <td></td><td></td><td></td>
+        <td>2026-02-18</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">Allan Bautista</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+      <!-- ─── Row 36 ─── -->
+      <tr>
+        <td class="left">Central Office Fund</td>
+        <td class="left">Olympus CX23</td>
+        <td>DEPED-2026-0023</td>
+        <td></td><td></td><td></td>
+        <td>2026-03-18</td>
+        <td></td><td></td><td></td><td></td>
+        <td class="left">John Salazar</td>
+        <td></td>
+        <td class="status-issued">Issued</td>
+      </tr>
+
+    </tbody>
+  </table>
+
+  <!-- ════════════════ SIGNATURE SECTION ════════════════ -->
+  <div class="signature-section">
+    <div class="sig-block">
+      <div class="label">Certified Correct by:</div>
+      <div class="line">Signature over Printed Name of Inventory<br>Committee Chair and Members</div>
+    </div>
+    <div class="sig-block">
+      <div class="label">Approved by:</div>
+      <div class="line">Signature over Printed Name of Head of<br>Agency/Entity or Authorized</div>
+    </div>
+    <div class="sig-block">
+      <div class="label">Verified by:</div>
+      <div class="line">Signature over Printed Name of COA Representative</div>
+    </div>
+  </div>
+
+</div><!-- /page-wrapper -->
+</body>
+</html>
+

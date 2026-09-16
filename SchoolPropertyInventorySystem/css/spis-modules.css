@@ -873,12 +873,14 @@ body[data-theme="dark"] #refreshSchoolDetailsBtn:hover {
 }
 
 .inventory-heading .filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-left: 0;
-  max-width: 100%;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  width: auto !important;
+  max-width: 100% !important;
+  grid-template-columns: none !important;
 }
 
 @media (min-width: 768px) {
@@ -887,11 +889,12 @@ body[data-theme="dark"] #refreshSchoolDetailsBtn:hover {
   }
 }
 
-.filters input[type="search"] {
-  min-width: 180px;
-  width: auto;
-  flex: 1 1 200px;
-  max-width: 320px;
+.inventory-heading .filters input[type="search"],
+.inventory-heading .filters #searchInput {
+  min-width: 0 !important;
+  width: 100% !important;
+  flex: 1 1 auto !important;
+  max-width: 320px !important;
   min-height: 2.75rem;
   font-size: 0.875rem;
   border-radius: 0.625rem;
@@ -900,38 +903,47 @@ body[data-theme="dark"] #refreshSchoolDetailsBtn:hover {
   box-sizing: border-box;
 }
 
-.filters select,
 .inventory-heading .filters select,
-#statusFilter {
-  min-width: 160px !important;
+.inventory-heading .filters #statusFilter {
+  min-width: 120px !important;
   width: auto !important;
   flex: 0 0 auto !important;
-  max-width: 100%;
+  max-width: 160px !important;
   min-height: 2.75rem;
   font-size: 0.875rem;
   font-weight: 600;
   border-radius: 0.625rem;
   padding-left: 1.125rem !important;
-  padding-right: 2.75rem !important;
+  padding-right: 2.25rem !important;
   box-sizing: border-box !important;
-  background-position: right 0.85rem center !important;
-  white-space: nowrap;
+  background-position: right 0.65rem center !important;
+  white-space: nowrap !important;
 }
 
 @media (max-width: 640px) {
   .inventory-heading .filters {
-    width: 100%;
+    width: 100% !important;
     margin-left: 0;
-    gap: 0.5rem;
+    gap: 0.5rem !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
   }
 
-  .filters input[type="search"],
-  .filters select,
-  #statusFilter {
-    width: 100% !important;
+  .inventory-heading .filters input[type="search"],
+  .inventory-heading .filters #searchInput {
+    flex: 1 1 auto !important;
     min-width: 0 !important;
+    width: 100% !important;
     max-width: 100% !important;
-    flex: 1 1 100% !important;
+  }
+
+  .inventory-heading .filters select,
+  .inventory-heading .filters #statusFilter {
+    flex: 0 0 auto !important;
+    min-width: 110px !important;
+    width: auto !important;
+    max-width: 140px !important;
   }
 }
 
@@ -1215,36 +1227,56 @@ td button.btn-danger:hover {
 
 .qr-preview-actions {
   display: flex !important;
-  flex-wrap: wrap !important;
+  flex-direction: column !important;
   gap: 0.5rem !important;
   width: 100% !important;
   margin-top: 0.875rem !important;
   box-sizing: border-box !important;
 }
 
-.qr-preview-actions button {
-  flex: 1 1 calc(50% - 0.25rem);
-  min-width: 115px;
+.qr-preview-actions > button,
+.qr-preview-actions > a {
+  width: 100% !important;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 0.55rem 0.625rem;
-  font-size: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   border-radius: 0.5rem;
-  white-space: nowrap;
   box-sizing: border-box;
 }
 
-.qr-preview-actions .qr-next-button {
-  flex: 1 1 100% !important;
+.qr-nav-row {
   display: flex !important;
+  flex-direction: row !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.qr-nav-row button {
+  flex: 1 1 50% !important;
+  width: 50% !important;
+  min-width: 0 !important;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  padding: 0.65rem 0.75rem;
+  text-align: center;
+  padding: 0.65rem 0.5rem;
   font-size: 0.8125rem;
   font-weight: 700;
+  border-radius: 0.5rem;
+  white-space: nowrap;
+  box-sizing: border-box;
+.qr-history-table-wrap tbody tr.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.qr-history-table-wrap tbody tr.clickable-row:hover {
+  background-color: #f1f5f9;
 }
 
 .badge {
@@ -1262,13 +1294,72 @@ td button.btn-danger:hover {
 }
 
 /* ==========================================================================
-   REPORT MODULE - Physical Count Report Generator (Authentic Previous Design)
+   REPORT MODULE - Physical Count Report Generator (RPCSP)
    ========================================================================== */
 
+/* ── Reports grid: stacked layout (controls on top, full-width report content card below) ── */
+.module-view[data-module="reports"] .reports-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* ── RPCSP generator card – prominent accent ── */
 .report-generator-card {
-  order: 1;
   min-width: 0;
   width: 100%;
+  border-top: 4px solid #00335e !important;
+  border-radius: 0.875rem !important;
+  box-shadow: 0 4px 16px -4px rgba(0, 51, 94, 0.12), 0 1px 4px -1px rgba(0, 51, 94, 0.06) !important;
+}
+
+/* ── Form inputs inside the RPCSP card ── */
+.report-generator-card .form-input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  -webkit-appearance: auto;
+  appearance: auto;
+}
+
+.report-generator-card .form-input:focus {
+  outline: none;
+  border-color: #00335e;
+  box-shadow: 0 0 0 3px rgba(0, 51, 94, 0.12);
+}
+
+/* ── Report Content Card (Dedicated card for the RPCSP Document Contents) ── */
+.report-content-card {
+  width: 100%;
+  border-top: 4px solid #55a83b !important;
+  border-radius: 0.875rem !important;
+  box-shadow: 0 4px 16px -4px rgba(0, 51, 94, 0.10), 0 1px 4px -1px rgba(0, 51, 94, 0.05) !important;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+/* ── Physical report rendered output container ── */
+#physicalReport {
+  width: 100%;
+  overflow-x: auto;
+}
+
+#physicalReport:not(:empty) {
+  border: 1px solid #000000;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  background: #ffffff;
+  margin-top: 0.5rem;
+  overflow-x: auto;
 }
 
 .signatory-card {
@@ -1433,14 +1524,16 @@ td button.btn-danger:hover {
   justify-items: center;
   gap: 4px;
   text-align: center;
-  font-size: 15px;
   color: #111111;
   line-height: 1.35;
+  margin-bottom: 20px;
+  font-family: Georgia, "Times New Roman", serif;
 }
 
 .physical-report-header strong {
   color: #111111;
   font-weight: 700;
+  font-size: 14pt;
 }
 
 .physical-report-header .report-title-underline {
@@ -1448,14 +1541,41 @@ td button.btn-danger:hover {
   text-underline-offset: 2px;
 }
 
-.physical-report-header span:last-child {
-  margin-top: 14px;
+/* Italic "(Type of Inventory Item)" */
+.physical-report-header span:first-of-type {
+  font-style: italic;
+  font-size: 11px;
+  color: #333333;
 }
 
-.report-fund-cluster {
-  margin: 24px 0 16px;
-  font-size: 13px;
+/* "As of {date}" — extra top gap matching template */
+.physical-report-header span:last-of-type {
+  margin-top: 10px;
+  font-size: 11pt;
+  font-weight: 500;
   color: #111111;
+}
+
+
+.report-fund-cluster {
+  margin: 16px 0 12px 0 !important;
+  font-size: 11pt !important;
+  font-weight: 600 !important;
+  color: #111111 !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  text-align: left !important;
+}
+
+#paperFundCluster,
+.report-fund-cluster span,
+.fund-cluster span {
+  display: inline-block !important;
+  border-bottom: 1px solid #000000 !important;
+  min-width: 180px !important;
+  padding: 2px 8px 6px 8px !important;
+  line-height: 1.4 !important;
+  vertical-align: bottom !important;
+  color: #000000 !important;
 }
 
 .physical-report-table-wrap {
@@ -1483,20 +1603,21 @@ td button.btn-danger:hover {
   background: #ffffff !important;
 }
 
-.physical-report-table .report-col-article { width: 10% !important; }
-.physical-report-table .report-col-description { width: 11% !important; }
+.physical-report-table .report-col-article         { width: 9% !important; }
+.physical-report-table .report-col-description     { width: 12% !important; }
 .physical-report-table .report-col-property-number { width: 10% !important; }
-.physical-report-table .report-col-unit-measure { width: 4% !important; }
-.physical-report-table .report-col-unit-value { width: 4% !important; }
-.physical-report-table .report-col-total { width: 6% !important; }
-.physical-report-table .report-col-date-acquired { width: 6% !important; }
+.physical-report-table .report-col-unit-measure    { width: 4% !important; }
+.physical-report-table .report-col-unit-value      { width: 5% !important; }
+.physical-report-table .report-col-total           { width: 5% !important; }
+.physical-report-table .report-col-date-acquired   { width: 7% !important; }
 .physical-report-table .report-col-balance,
-.physical-report-table .report-col-on-hand { width: 5% !important; }
-.physical-report-table .report-col-shortage-quantity { width: 4% !important; }
-.physical-report-table .report-col-shortage-value { width: 5% !important; }
-.physical-report-table .report-col-accountable { width: 11% !important; }
-.physical-report-table .report-col-location,
-.physical-report-table .report-col-status { width: 6% !important; }
+.physical-report-table .report-col-on-hand         { width: 5% !important; }
+.physical-report-table .report-col-shortage-quantity { width: 5% !important; }
+.physical-report-table .report-col-shortage-value   { width: 5% !important; }
+.physical-report-table .report-col-accountable     { width: 13% !important; }
+.physical-report-table .report-col-location        { width: 7% !important; }
+.physical-report-table .report-col-status          { width: 8% !important; }
+
 
 .physical-report-table th,
 .physical-report-table td {
@@ -1540,11 +1661,11 @@ td button.btn-danger:hover {
 
 /* Report Signatures (Hidden in preview card, displayed when generated/exported) */
 .report-signatures {
-  display: none !important;
+  display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 38px !important;
+  gap: 32px !important;
   margin-top: 30px !important;
-  font-size: 12px !important;
+  font-size: 11px !important;
   color: #111111 !important;
   font-family: Georgia, "Times New Roman", serif !important;
 }
@@ -1556,11 +1677,14 @@ td button.btn-danger:hover {
   text-align: center !important;
 }
 
-.report-signatures span {
+.report-signatures > div > span {
   order: 1 !important;
   text-align: left !important;
   font-size: 11px !important;
   color: #111111 !important;
+  font-style: normal !important;
+  font-weight: normal !important;
+  margin-top: 0 !important;
 }
 
 .report-signatory-name {
@@ -1598,15 +1722,25 @@ td button.btn-danger:hover {
 }
 
 .physical-report.pdf-export .physical-report-header {
+  gap: 3px !important;
+  margin-bottom: 12px !important;
+}
+
+.physical-report.pdf-export .physical-report-header strong {
   font-size: 12px !important;
 }
 
-.physical-report.pdf-export .physical-report-header span:last-child {
-  margin-top: 8px !important;
+.physical-report.pdf-export .physical-report-header span:first-of-type {
+  font-size: 10px !important;
+}
+
+.physical-report.pdf-export .physical-report-header span:last-of-type {
+  margin-top: 6px !important;
+  font-size: 11px !important;
 }
 
 .physical-report.pdf-export .report-fund-cluster {
-  margin: 16px 0 10px !important;
+  margin: 12px 0 8px !important;
   font-size: 11px !important;
 }
 
@@ -1640,12 +1774,12 @@ td button.btn-danger:hover {
   font-size: 9px !important;
 }
 
-.physical-report.pdf-export .report-signatures,
 @media print {
   .physical-report .report-signatures {
     display: grid !important;
   }
 }
+
 .physical-report.pdf-export .report-signatures {
   display: grid !important;
   gap: 24px !important;
@@ -1661,6 +1795,12 @@ td button.btn-danger:hover {
 .physical-report.pdf-export .report-signatures small {
   font-size: 8px !important;
 }
+
+.physical-report.pdf-export #paperFundCluster {
+  padding-bottom: 7px !important;
+  line-height: 1.45 !important;
+}
+
 
 /* All Assets Database View in Report Module */
 .all-assets-table-wrap {
@@ -1992,3 +2132,57 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   stroke: #e2e8f0 !important;
 }
 
+
+
+/* ── Physical report table and PDF export spacing ── */
+.physical-report-paper table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 7pt;
+  line-height: 1.4;
+}
+
+.physical-report-paper table th {
+  border: 1px solid #000000;
+  padding: 5px 4px 6px 4px !important;
+  vertical-align: middle !important;
+  line-height: 1.35 !important;
+  box-sizing: border-box;
+}
+
+.physical-report-paper table td {
+  border: 1px solid #000000;
+  padding: 5px 4px 8px 4px !important;
+  vertical-align: middle !important;
+  line-height: 1.4 !important;
+  box-sizing: border-box;
+}
+
+/* Specific styling when rendering PDF via html2canvas */
+.pdf-export {
+  background: #ffffff !important;
+  max-width: none !important;
+}
+
+.pdf-export .physical-report-paper {
+  padding: 15px 10px 25px 10px !important;
+}
+
+.pdf-export .physical-report-paper table td {
+  padding-top: 5px !important;
+  padding-bottom: 9px !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+  line-height: 1.45 !important;
+  vertical-align: middle !important;
+}
+
+.pdf-export .physical-report-paper table th {
+  padding-top: 5px !important;
+  padding-bottom: 7px !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+  line-height: 1.35 !important;
+  vertical-align: middle !important;
+}
