@@ -1270,6 +1270,8 @@ td button.btn-danger:hover {
   border-radius: 0.5rem;
   white-space: nowrap;
   box-sizing: border-box;
+}
+
 .qr-history-table-wrap tbody tr.clickable-row {
   cursor: pointer;
   transition: background-color 0.15s ease;
@@ -1778,6 +1780,10 @@ td button.btn-danger:hover {
   .physical-report .report-signatures {
     display: grid !important;
   }
+  tr, .physical-report-paper tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 }
 
 .physical-report.pdf-export .report-signatures {
@@ -2166,7 +2172,7 @@ body[data-theme="dark"] .top-nav-btn.active svg {
 }
 
 .pdf-export .physical-report-paper {
-  padding: 15px 10px 25px 10px !important;
+  padding: 15px 10px 45px 10px !important;
 }
 
 .pdf-export .physical-report-paper table td {

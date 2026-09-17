@@ -2829,8 +2829,8 @@ function renderPhysicalCountReport() {
                             <td>${reportCell(item.itemBrandModel)}</td>
                             <td>${reportCell(item.semiExpandableNo || item.propertyNo)}</td>
                             <td>${reportCell(item.unitMeasurement)}</td>
-                            <td>${reportCell(item.unitValue)}</td>
-                            <td>${reportCell(item.total)}</td>
+                            <td>${reportCell(item.unitValue ? Number(item.unitValue).toLocaleString("en-US", {minimumFractionDigits:2,maximumFractionDigits:2}) : "")}</td>
+                            <td>${reportCell(item.total != null && item.total !== "" ? formatTotalDisplay(item.total) : "")}</td>
                             <td>${reportCell(item.acquisitionDate)}</td>
                             <td>${reportCell(item.balance)}</td>
                             <td>${reportCell(item.onHand)}</td>
@@ -2873,7 +2873,7 @@ async function generateReportPdf() {
         const pageWidth = 13;
         const pageHeight = 8.5;
         const pageMargin = 0.2;
-        const bottomMargin = 0.5;
+        const bottomMargin = 0.8;
         const contentWidth = pageWidth - (pageMargin * 2);
         const contentHeight = pageHeight - pageMargin - bottomMargin;
         const pdf = new jsPDF({ orientation: "landscape", unit: "in", format: [pageWidth, pageHeight] });
@@ -2882,10 +2882,33 @@ async function generateReportPdf() {
         const sourcePageHeight = Math.floor((contentHeight * canvas.width) / imageWidth);
         let sourceOffset = 0;
 
+        // Collect bounding boxes of all table rows and signature blocks in canvas coordinates to avoid slicing any row in half
+        const reportRect = report.getBoundingClientRect();
+        const rHeight = reportRect.height || 1;
+        const avoidElements = Array.from(report.querySelectorAll("tr, .report-signatures, [style*='SIGNATURES']"));
+        const elementBoxes = avoidElements.map((el) => {
+            const r = el.getBoundingClientRect();
+            return {
+                top: Math.round(((r.top - reportRect.top) / rHeight) * canvas.height),
+                bottom: Math.round(((r.bottom - reportRect.top) / rHeight) * canvas.height)
+            };
+        });
+
         while (sourceOffset < canvas.height) {
             if (sourceOffset > 0) pdf.addPage([pageWidth, pageHeight], "landscape");
 
-            const sliceHeight = Math.min(sourcePageHeight, canvas.height - sourceOffset);
+            let targetSliceHeight = Math.min(sourcePageHeight, canvas.height - sourceOffset);
+            const cutoffPoint = sourceOffset + targetSliceHeight;
+
+            // If cutoffPoint falls within content, ensure it does not split through any row or signatory element
+            if (cutoffPoint < canvas.height) {
+                const splitItem = elementBoxes.find((b) => b.top < cutoffPoint && b.bottom > cutoffPoint);
+                if (splitItem && splitItem.top > sourceOffset) {
+                    targetSliceHeight = splitItem.top - sourceOffset;
+                }
+            }
+
+            const sliceHeight = targetSliceHeight;
             const pageCanvas = document.createElement("canvas");
             pageCanvas.width = canvas.width;
             pageCanvas.height = sliceHeight;

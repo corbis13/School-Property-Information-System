@@ -2871,8 +2871,15 @@ body[data-theme="light"] .toast {
         height: 16px;
     }
 
+    .physical-report-table tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
     .report-signatures {
         margin-top: 24px;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
 }
 
