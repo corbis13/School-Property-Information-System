@@ -1372,10 +1372,13 @@
                     </form>
 
                     <article class="module-card" id="savedDocumentsPanel">
-                        <div class="section-heading">
+                        <div class="section-heading inventory-heading">
                             <div>
                                 <p class="eyebrow">Saved Documents</p>
                                 <h2>Inventory Custodian Slips</h2>
+                            </div>
+                            <div class="filters">
+                                <input id="icsSlipSearchInput" type="search" placeholder="Search description, ICS No., recipient..." aria-label="Search Inventory Custodian Slips">
                             </div>
                         </div>
                         <div class="table-wrap ics-slip-table-wrap">
@@ -1446,14 +1449,6 @@
                 <div>
                   <p class="eyebrow" style="font-size:0.75rem; font-weight:700; color:#55a83b; text-transform:uppercase; margin:0 0 0.25rem 0;">Inventory Document</p>
                   <h2 style="margin:0; font-size:1.15rem; font-weight:700; color:#00335e;">REPORT</h2>
-                </div>
-                <div style="display:flex; gap:0.5rem;">
-                  <button type="button" onclick="printPhysicalCountReport()" style="padding:0.4rem 0.85rem; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:0.375rem; font-size:0.75rem; font-weight:600; color:#334155; cursor:pointer;">
-                    🖨️ Print
-                  </button>
-                  <button type="button" onclick="exportPhysicalReportCsv()" style="padding:0.4rem 0.85rem; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:0.375rem; font-size:0.75rem; font-weight:600; color:#334155; cursor:pointer;">
-                    📥 CSV
-                  </button>
                 </div>
               </div>
 

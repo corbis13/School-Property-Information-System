@@ -132,6 +132,7 @@ const dom = {
     qrHistoryPagination: document.querySelector("#qrHistoryPagination"),
     qrHistoryEmptyState: document.querySelector("#qrHistoryEmptyState"),
     icsSlipPagination: document.querySelector("#icsSlipPagination"),
+    icsSlipSearchInput: document.querySelector("#icsSlipSearchInput"),
     themeButtons: document.querySelectorAll("[data-theme-choice]"),
     toast: document.querySelector("#toast"),
     databaseStatus: document.querySelector("#databaseStatus"),
@@ -4838,6 +4839,12 @@ function wireEvents() {
             renderInventoryCustodianSlipTable();
         });
     }
+    if (dom.icsSlipSearchInput) {
+        dom.icsSlipSearchInput.addEventListener("input", () => {
+            icsSlipPage = 1;
+            renderInventoryCustodianSlipTable();
+        });
+    }
     if (dom.generatePdfBtn) {
         dom.generatePdfBtn.addEventListener("click", generateReportPdf);
     }
@@ -5245,10 +5252,34 @@ function renderInventoryCustodianSlipTable() {
     const table = document.querySelector("#icsSlipTable");
     if (!table) return;
 
-    const totalPages = Math.max(1, Math.ceil(inventoryCustodianSlips.length / icsSlipPageSize));
+    const query = (dom.icsSlipSearchInput ? dom.icsSlipSearchInput.value : "").trim().toLowerCase();
+
+    // Filter across all searchable fields when a query is present
+    const filteredSlips = query
+        ? inventoryCustodianSlips.filter((slip) => {
+            return [
+                slip.description,
+                slip.icsNo,
+                slip.inventoryItemNo,
+                slip.quantity,
+                slip.unit,
+                slip.receivedBy,
+                slip.receivedFrom,
+                slip.receivedByPosition,
+                slip.receivedFromPosition,
+                slip.entityName,
+                slip.fundCluster,
+                slip.additionalItem,
+                slip.estimatedUsefulLife,
+                slip.totalCost
+            ].some((field) => String(field ?? "").toLowerCase().includes(query));
+        })
+        : inventoryCustodianSlips;
+
+    const totalPages = Math.max(1, Math.ceil(filteredSlips.length / icsSlipPageSize));
     icsSlipPage = Math.min(Math.max(1, icsSlipPage), totalPages);
     const startIndex = (icsSlipPage - 1) * icsSlipPageSize;
-    const visibleSlips = inventoryCustodianSlips.slice(startIndex, startIndex + icsSlipPageSize);
+    const visibleSlips = filteredSlips.slice(startIndex, startIndex + icsSlipPageSize);
 
     table.innerHTML = visibleSlips.length
         ? visibleSlips.map((slip) => `
@@ -5270,12 +5301,12 @@ function renderInventoryCustodianSlipTable() {
                 </td>
             </tr>
         `).join("")
-        : '<tr><td colspan="8">No Inventory Custodian Slip records yet.</td></tr>';
+        : `<tr><td colspan="8">${query ? `No records matched "<strong>${escapeHtml(query)}</strong>".` : "No Inventory Custodian Slip records yet."}</td></tr>`;
 
     if (dom.icsSlipPagination) {
-        dom.icsSlipPagination.innerHTML = inventoryCustodianSlips.length > icsSlipPageSize ? `
+        dom.icsSlipPagination.innerHTML = filteredSlips.length > icsSlipPageSize ? `
             <button class="inventory-page-btn" type="button" data-ics-slip-page="${Math.max(1, icsSlipPage - 1)}" ${icsSlipPage === 1 ? "disabled" : ""}>Previous</button>
-            <span class="inventory-page-status">Page ${icsSlipPage} of ${totalPages}</span>
+            <span class="inventory-page-status">Page ${icsSlipPage} of ${totalPages}${query ? ` (${filteredSlips.length} result${filteredSlips.length !== 1 ? "s" : ""})` : ""}</span>
             <button class="inventory-page-btn" type="button" data-ics-slip-page="${Math.min(totalPages, icsSlipPage + 1)}" ${icsSlipPage === totalPages ? "disabled" : ""}>Next</button>
         ` : "";
     }
