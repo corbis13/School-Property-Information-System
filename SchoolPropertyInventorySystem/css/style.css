@@ -2797,6 +2797,147 @@ body[data-theme="light"] .modal-field input {
     margin-top: 8px;
 }
 
+/* ── Success Modal ── */
+.success-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(100, 116, 139, 0.35);
+    animation: smOverlayIn 200ms ease forwards;
+}
+
+.success-modal-overlay[hidden] {
+    display: none;
+}
+
+@keyframes smOverlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.success-modal-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 44px 40px 36px;
+    text-align: center;
+    width: min(400px, calc(100vw - 40px));
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    animation: smCardIn 240ms cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+}
+
+@keyframes smCardIn {
+    from { transform: scale(0.85) translateY(16px); opacity: 0; }
+    to   { transform: scale(1)    translateY(0);    opacity: 1; }
+}
+
+body[data-theme="dark"] .success-modal-card {
+    background: #1e293b;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* Icon circle */
+.success-modal-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    width: 90px;
+    height: 90px;
+}
+
+.success-modal-check {
+    width: 90px;
+    height: 90px;
+}
+
+/* Thin light-green circle border */
+.success-modal-circle {
+    stroke: #bbf7d0;
+    stroke-width: 2;
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    animation: smCircle 450ms ease 150ms forwards;
+}
+
+@keyframes smCircle {
+    to { stroke-dashoffset: 0; }
+}
+
+/* Green checkmark tick */
+.success-modal-tick {
+    stroke: #4ade80;
+    stroke-width: 3.5;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: smTick 320ms ease 550ms forwards;
+}
+
+@keyframes smTick {
+    to { stroke-dashoffset: 0; }
+}
+
+/* "Success" bold title */
+.success-modal-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+}
+
+body[data-theme="dark"] .success-modal-title {
+    color: #f1f5f9;
+}
+
+/* Subtitle message */
+.success-modal-msg {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin: 0 0 32px;
+    line-height: 1.55;
+}
+
+body[data-theme="dark"] .success-modal-msg {
+    color: #94a3b8;
+}
+
+/* Compact purple OK button — not full-width */
+.success-modal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 52px;
+    border-radius: 8px;
+    border: none;
+    background: #7c6ff7;
+    color: #ffffff;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: background 150ms ease, transform 100ms ease, box-shadow 150ms ease;
+    box-shadow: 0 4px 14px rgba(124, 111, 247, 0.40);
+}
+
+.success-modal-btn:hover {
+    background: #6b5ff0;
+    box-shadow: 0 6px 18px rgba(124, 111, 247, 0.50);
+}
+
+.success-modal-btn:active {
+    transform: scale(0.97);
+}
+
+.success-modal-btn:focus-visible {
+    outline: 3px solid #c4b5fd;
+    outline-offset: 2px;
+}
+
+/* ────────────────────────── */
+
 .toast {
     position: fixed;
     right: 22px;

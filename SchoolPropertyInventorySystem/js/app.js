@@ -3440,6 +3440,44 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
+function showSuccessModal(message, title) {
+    const modal = document.getElementById("successModal");
+    const titleEl = modal && modal.querySelector(".success-modal-title");
+    const msgEl   = modal && modal.querySelector(".success-modal-msg");
+    const okBtn   = document.getElementById("successModalOkBtn");
+    if (!modal) return;
+
+    // Set title and message
+    if (title   && titleEl) titleEl.textContent = title;
+    if (message && msgEl)   msgEl.textContent   = message;
+
+    // Re-trigger SVG stroke animations by cloning the SVG
+    const svgOld = modal.querySelector(".success-modal-check");
+    if (svgOld) {
+        const svgNew = svgOld.cloneNode(true);
+        svgOld.parentNode.replaceChild(svgNew, svgOld);
+    }
+
+    modal.hidden = false;
+    if (okBtn) okBtn.focus();
+
+    function closeModal() {
+        modal.hidden = true;
+        // Reset back to defaults
+        if (titleEl) titleEl.textContent = "Success";
+        if (msgEl)   msgEl.textContent   = "Record saved successfully!";
+        document.removeEventListener("keydown", onEsc);
+        modal.removeEventListener("click", onBackdrop);
+    }
+
+    function onEsc(e) { if (e.key === "Escape") closeModal(); }
+    function onBackdrop(e) { if (e.target === modal) closeModal(); }
+
+    if (okBtn) okBtn.onclick = closeModal;
+    document.addEventListener("keydown", onEsc);
+    modal.addEventListener("click", onBackdrop);
+}
+
 function showToast(message) {
     dom.toast.textContent = message;
     dom.toast.classList.add("show");
@@ -4173,12 +4211,14 @@ async function handleSave(event) {
         await syncToSheet(action, data);
         await loadItems();
         renderApp();
-        showToast(action === "update" ? "Asset updated." : "Asset saved and QR generated.");
+        showSuccessModal(action === "update" ? "The asset record has been updated successfully." : "The asset has been saved and its QR code generated.");
     } catch (error) {
         console.error(error);
         showToast("Saved locally. Supabase sync failed.");
         setDatabaseStatus("Local fallback is active.", "The backend could not receive the latest change.");
     }
+
+    showSuccessModal(action === "update" ? "Asset record updated successfully!" : "Asset saved successfully!");
 }
 
 async function handleTableClick(event) {
@@ -4773,7 +4813,6 @@ function wireEvents() {
     }
     if (dom.newItemBtnInline) {
         dom.newItemBtnInline.addEventListener("click", () => {
-            resetForm();
             showModule("inventory");
         });
     }
@@ -5458,11 +5497,15 @@ async function initInventoryCustodianSlipCrud() {
             renderInventoryCustodianSlipTable();
             renderRecentAssets();
             resetInventoryCustodianSlipForm();
-            showToast(action === "update" ? "Inventory Custodian Slip updated." : "Inventory Custodian Slip saved.");
         } catch (error) {
             console.error(error);
-            showToast("Unable to save the Inventory Custodian Slip to Supabase.");
+            setDatabaseStatus("Local fallback is active.", "The backend could not receive the latest change.");
         }
+
+        showSuccessModal(
+            action === "update" ? "ICS record updated successfully!" : "ICS record saved successfully!",
+            "Success"
+        );
     });
 
     table.addEventListener("click", async (event) => {
