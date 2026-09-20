@@ -3478,6 +3478,75 @@ function showSuccessModal(message, title) {
     modal.addEventListener("click", onBackdrop);
 }
 
+function showConfirmDialog({
+    title = "Confirm Delete",
+    message = "Are you sure you want to delete this record? This action cannot be undone.",
+    confirmText = "Delete",
+    cancelText = "Cancel"
+} = {}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("confirmModal");
+        if (!modal) {
+            try {
+                const confirmed = window.confirm(`${title}\n\n${message}`);
+                resolve(Boolean(confirmed));
+            } catch {
+                resolve(true);
+            }
+            return;
+        }
+
+        const titleEl = document.getElementById("confirmModalTitle");
+        const msgEl = document.getElementById("confirmModalMsg");
+        const cancelBtn = document.getElementById("confirmModalCancelBtn");
+        const confirmBtn = document.getElementById("confirmModalConfirmBtn");
+
+        if (titleEl) titleEl.textContent = title;
+        if (msgEl) msgEl.textContent = message;
+        if (cancelBtn) cancelBtn.textContent = cancelText;
+        if (confirmBtn) confirmBtn.textContent = confirmText;
+
+        modal.hidden = false;
+        if (confirmBtn) confirmBtn.focus();
+
+        function cleanup() {
+            modal.hidden = true;
+            document.removeEventListener("keydown", onKey);
+            modal.removeEventListener("click", onBackdrop);
+            if (cancelBtn) cancelBtn.onclick = null;
+            if (confirmBtn) confirmBtn.onclick = null;
+        }
+
+        function onCancel() {
+            cleanup();
+            resolve(false);
+        }
+
+        function onConfirm() {
+            cleanup();
+            resolve(true);
+        }
+
+        function onKey(e) {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                onCancel();
+            }
+        }
+
+        function onBackdrop(e) {
+            if (e.target === modal) {
+                onCancel();
+            }
+        }
+
+        if (cancelBtn) cancelBtn.onclick = onCancel;
+        if (confirmBtn) confirmBtn.onclick = onConfirm;
+        document.addEventListener("keydown", onKey);
+        modal.addEventListener("click", onBackdrop);
+    });
+}
+
 function showToast(message) {
     dom.toast.textContent = message;
     dom.toast.classList.add("show");
@@ -4245,7 +4314,12 @@ async function handleTableClick(event) {
     }
 
     if (button.dataset.action === "delete") {
-        const confirmed = window.confirm(`Delete ${item.propertyNo || item.assetId}?`);
+        const confirmed = await showConfirmDialog({
+            title: "Delete Asset",
+            message: `Are you sure you want to delete asset "${item.propertyNo || item.assetId}"? This action cannot be undone.`,
+            confirmText: "Delete",
+            cancelText: "Cancel"
+        });
         if (!confirmed) return;
 
         items = items.filter((entry) => entry.assetId !== item.assetId);
@@ -5187,14 +5261,24 @@ async function saveInventoryCustodianSlipToDatabase(action, slip) {
 }
 
 async function deleteInventoryCustodianSlipFromDatabase(slip) {
-    const itemCount = inventoryCustodianSlips.filter((entry) => entry.dbSlipId === slip.dbSlipId).length;
-    if (slip.dbSlipId && itemCount <= 1) {
-        await requestInventoryCustodianSlipDatabase(`ics_slips?id=eq.${encodeURIComponent(slip.dbSlipId)}`, { method: "DELETE" });
-        return;
-    }
+    if (!slip) return;
+    const sameSlipRows = inventoryCustodianSlips.filter((entry) => slip.dbSlipId && entry.dbSlipId === slip.dbSlipId);
+    const itemCount = sameSlipRows.length;
 
     if (slip.dbItemId) {
-        await requestInventoryCustodianSlipDatabase(`ics_slip_items?id=eq.${encodeURIComponent(slip.dbItemId)}`, { method: "DELETE" });
+        try {
+            await requestInventoryCustodianSlipDatabase(`ics_slip_items?id=eq.${encodeURIComponent(slip.dbItemId)}`, { method: "DELETE" });
+        } catch (error) {
+            console.warn("Could not delete from ics_slip_items:", error);
+        }
+    }
+
+    if (slip.dbSlipId && itemCount <= 1) {
+        try {
+            await requestInventoryCustodianSlipDatabase(`ics_slips?id=eq.${encodeURIComponent(slip.dbSlipId)}`, { method: "DELETE" });
+        } catch (error) {
+            console.warn("Could not delete from ics_slips:", error);
+        }
     }
 }
 
@@ -5215,6 +5299,13 @@ function resetInventoryCustodianSlipForm() {
     document.querySelector("#icsEditingId").value = "";
     document.querySelector("#icsTotalCost").value = "";
     document.querySelector("#icsFormTitle").textContent = "Inventory Custodian Slip";
+
+    const descSearch = document.querySelector("#icsDescriptionSearch");
+    if (descSearch) descSearch.value = "";
+    const descSelect = document.querySelector("#icsDescription");
+    if (descSelect) descSelect.value = "";
+    closeIcsDropdownMenu();
+    filterIcsDropdownOptions("");
 }
 
 function getIcsAssetDescription(item) {
@@ -5223,46 +5314,226 @@ function getIcsAssetDescription(item) {
     return serialNo ? `${itemBrandModel} - SN: ${serialNo}` : itemBrandModel;
 }
 
+function closeIcsDropdownMenu() {
+    const menu = document.querySelector("#icsOptionsMenu");
+    const container = document.querySelector("#icsSearchableSelect");
+    if (menu) menu.style.display = "none";
+    if (container) container.classList.remove("open");
+}
+
+function openIcsDropdownMenu() {
+    const menu = document.querySelector("#icsOptionsMenu");
+    const container = document.querySelector("#icsSearchableSelect");
+    if (menu) menu.style.display = "block";
+    if (container) container.classList.add("open");
+}
+
+function toggleIcsDropdownMenu() {
+    const menu = document.querySelector("#icsOptionsMenu");
+    if (!menu) return;
+    if (menu.style.display === "none" || !menu.style.display) {
+        const searchInput = document.querySelector("#icsDescriptionSearch");
+        filterIcsDropdownOptions(searchInput ? searchInput.value : "");
+        openIcsDropdownMenu();
+    } else {
+        closeIcsDropdownMenu();
+    }
+}
+
+function filterIcsDropdownOptions(filterText = "") {
+    const list = document.querySelector("#icsOptionsList");
+    if (!list) return;
+
+    const query = String(filterText || "").trim().toLowerCase();
+    const optionItems = list.querySelectorAll(".ics-option-item");
+    let matchCount = 0;
+
+    optionItems.forEach((itemEl) => {
+        const text = (itemEl.dataset.text || itemEl.textContent || "").toLowerCase();
+        if (!query || text.includes(query)) {
+            itemEl.style.display = "flex";
+            matchCount++;
+        } else {
+            itemEl.style.display = "none";
+        }
+    });
+
+    let noResultsEl = list.querySelector(".ics-option-no-results");
+    if (matchCount === 0) {
+        if (!noResultsEl) {
+            noResultsEl = document.createElement("div");
+            noResultsEl.className = "ics-option-no-results";
+            noResultsEl.textContent = "No matching inventory items found";
+            list.appendChild(noResultsEl);
+        }
+        noResultsEl.style.display = "block";
+    } else if (noResultsEl) {
+        noResultsEl.style.display = "none";
+    }
+}
+
+let isSelectingIcsOption = false;
+
+function selectIcsDescriptionItem(description, assetId) {
+    isSelectingIcsOption = true;
+    const searchInput = document.querySelector("#icsDescriptionSearch");
+    const descriptionSelect = document.querySelector("#icsDescription");
+
+    if (searchInput) {
+        searchInput.value = description;
+        searchInput.blur();
+    }
+
+    if (descriptionSelect) {
+        if (description && !Array.from(descriptionSelect.options).some(opt => opt.value === description)) {
+            const opt = document.createElement("option");
+            opt.value = description;
+            opt.textContent = description;
+            if (assetId) opt.dataset.assetId = assetId;
+            descriptionSelect.appendChild(opt);
+        }
+        descriptionSelect.value = description;
+        if (assetId && descriptionSelect.selectedOptions[0]) {
+            descriptionSelect.selectedOptions[0].dataset.assetId = assetId;
+        }
+    }
+
+    closeIcsDropdownMenu();
+    setTimeout(() => {
+        isSelectingIcsOption = false;
+    }, 250);
+
+    let asset = null;
+    if (assetId) {
+        asset = items.find(i => i.assetId === assetId);
+    }
+    if (!asset && description) {
+        asset = findAssetByIcsDescription(description);
+    }
+    populateIcsFieldsFromDescription(asset);
+}
+
 function populateIcsDescriptionDropdown(selectedValue = "") {
     const descriptionSelect = document.querySelector("#icsDescription");
-    if (!descriptionSelect) return;
+    const searchInput = document.querySelector("#icsDescriptionSearch");
+    const optionsList = document.querySelector("#icsOptionsList");
 
     const options = items
         .map((item) => {
             const description = getIcsAssetDescription(item);
-            return { description, assetId: item.assetId };
+            return {
+                description,
+                assetId: item.assetId,
+                semiExpandableNo: item.semiExpandableNo || "",
+                unitValue: item.unitValue ?? ""
+            };
         })
         .filter((entry) => entry.description)
         .filter((entry, index, entries) => entries.findIndex((candidate) => candidate.description === entry.description) === index)
         .sort((first, second) => first.description.localeCompare(second.description, undefined, { sensitivity: "base" }));
 
-    descriptionSelect.innerHTML = '<option value="">Select an inventory item</option>';
-    descriptionSelect.insertAdjacentHTML("beforeend", options.map((entry) => `
-        <option value="${escapeHtml(entry.description)}" data-asset-id="${escapeHtml(entry.assetId)}">${escapeHtml(entry.description)}</option>
-    `).join(""));
+    if (descriptionSelect) {
+        descriptionSelect.innerHTML = '<option value="">Select an inventory item</option>';
+        descriptionSelect.insertAdjacentHTML("beforeend", options.map((entry) => `
+            <option value="${escapeHtml(entry.description)}" data-asset-id="${escapeHtml(entry.assetId)}">${escapeHtml(entry.description)}</option>
+        `).join(""));
 
-    if (selectedValue && options.some((entry) => entry.description === selectedValue)) {
-        descriptionSelect.value = selectedValue;
+        if (selectedValue && options.some((entry) => entry.description === selectedValue)) {
+            descriptionSelect.value = selectedValue;
+        }
     }
 
+    if (optionsList) {
+        optionsList.innerHTML = options.map((entry) => `
+            <div class="ics-option-item" data-value="${escapeHtml(entry.description)}" data-text="${escapeHtml(entry.description)}" data-asset-id="${escapeHtml(entry.assetId)}">
+                <div class="ics-option-main">
+                    <span class="ics-option-title">${escapeHtml(entry.description)}</span>
+                    ${entry.semiExpandableNo ? `<span class="ics-option-subtitle">Item No: ${escapeHtml(entry.semiExpandableNo)}</span>` : ""}
+                </div>
+                ${entry.unitValue ? `<span class="ics-option-cost">${formatCurrency(entry.unitValue)}</span>` : ""}
+            </div>
+        `).join("");
+
+        optionsList.querySelectorAll(".ics-option-item").forEach((itemEl) => {
+            itemEl.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+            });
+            itemEl.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const desc = itemEl.dataset.value;
+                const aid = itemEl.dataset.assetId;
+                selectIcsDescriptionItem(desc, aid);
+            });
+        });
+    }
+
+    if (selectedValue && searchInput) {
+        searchInput.value = selectedValue;
+    }
 }
 
-function populateIcsFieldsFromDescription() {
-    const descriptionSelect = document.querySelector("#icsDescription");
-    const selectedAssetId = descriptionSelect?.selectedOptions[0]?.dataset.assetId;
-    const selectedAsset = items.find((item) => item.assetId === selectedAssetId);
-    if (!selectedAsset) return;
+function findAssetByIcsDescription(desc) {
+    if (!desc) return null;
+    const cleanDesc = String(desc).trim();
+    return items.find((item) => getIcsAssetDescription(item).toLowerCase() === cleanDesc.toLowerCase())
+        || items.find((item) => String(item.itemBrandModel || "").trim().toLowerCase() === cleanDesc.toLowerCase())
+        || items.find((item) => {
+            const withSn = `${String(item.itemBrandModel || "").trim()} - ${String(item.serialNo || "").trim()}`.toLowerCase();
+            return withSn === cleanDesc.toLowerCase();
+        });
+}
 
-    document.querySelector("#icsFundCluster").value = selectedAsset.fundCluster || "";
-    document.querySelector("#icsInventoryItemNo").value = selectedAsset.semiExpandableNo || "";
-    document.querySelector("#icsAdditionalItem").value = selectedAsset.additionalItem || "";
-    document.querySelector("#icsUnit").value = selectedAsset.unitMeasurement || "";
-    document.querySelector("#icsUnitCost").value = selectedAsset.unitValue ?? "";
+function populateIcsFieldsFromDescription(selectedAssetOverride = null) {
+    let selectedAsset = selectedAssetOverride;
+
+    if (!selectedAsset) {
+        const descriptionSelect = document.querySelector("#icsDescription");
+        const selectedAssetId = descriptionSelect?.selectedOptions[0]?.dataset.assetId;
+        if (selectedAssetId) {
+            selectedAsset = items.find((item) => item.assetId === selectedAssetId);
+        }
+    }
+
+    if (!selectedAsset) {
+        const searchInput = document.querySelector("#icsDescriptionSearch");
+        const currentVal = (searchInput?.value || document.querySelector("#icsDescription")?.value || "").trim();
+        selectedAsset = findAssetByIcsDescription(currentVal);
+    }
+
+    const fundClusterEl = document.querySelector("#icsFundCluster");
+    const inventoryItemNoEl = document.querySelector("#icsInventoryItemNo");
+    const additionalItemEl = document.querySelector("#icsAdditionalItem");
+    const unitEl = document.querySelector("#icsUnit");
+    const unitCostEl = document.querySelector("#icsUnitCost");
+
+    if (!selectedAsset) {
+        // If no matching asset is selected/found, clear auto-filled read-only fields
+        if (inventoryItemNoEl) inventoryItemNoEl.value = "";
+        if (additionalItemEl) additionalItemEl.value = "";
+        if (unitEl) unitEl.value = "";
+        if (unitCostEl) unitCostEl.value = "";
+        updateInventoryCustodianSlipTotal();
+        return;
+    }
+
+    if (fundClusterEl && !fundClusterEl.value) fundClusterEl.value = selectedAsset.fundCluster || "";
+    if (inventoryItemNoEl) inventoryItemNoEl.value = selectedAsset.semiExpandableNo || "";
+    if (additionalItemEl) additionalItemEl.value = selectedAsset.additionalItem || "";
+    if (unitEl) unitEl.value = selectedAsset.unitMeasurement || "";
+    if (unitCostEl) unitCostEl.value = selectedAsset.unitValue ?? "";
     updateInventoryCustodianSlipTotal();
 }
 
 function getInventoryCustodianSlipFormData() {
-    const value = (selector) => document.querySelector(selector).value.trim();
+    const value = (selector) => {
+        const el = document.querySelector(selector);
+        return el ? el.value.trim() : "";
+    };
+
+    const descSearch = document.querySelector("#icsDescriptionSearch");
+    const descSelect = document.querySelector("#icsDescription");
+    const descriptionVal = (descSearch?.value || descSelect?.value || "").trim();
 
     return {
         id: document.querySelector("#icsEditingId").value || `ICS-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -5270,7 +5541,7 @@ function getInventoryCustodianSlipFormData() {
         fundCluster: value("#icsFundCluster"),
         icsNo: value("#icsNo"),
         inventoryItemNo: value("#icsInventoryItemNo"),
-        description: value("#icsDescription"),
+        description: descriptionVal,
         additionalItem: value("#icsAdditionalItem"),
         quantity: value("#icsQuantity"),
         unit: value("#icsUnit"),
@@ -5404,6 +5675,13 @@ function editInventoryCustodianSlip(id) {
         }
         el.value = val;
     });
+
+    const searchInput = document.querySelector("#icsDescriptionSearch");
+    if (searchInput) {
+        searchInput.value = slip.description || "";
+        filterIcsDropdownOptions(slip.description || "");
+    }
+
     document.querySelector("#icsFormTitle").textContent = "Edit Inventory Custodian Slip";
     showModule("document");
 }
@@ -5414,10 +5692,65 @@ async function initInventoryCustodianSlipCrud() {
     if (!form || !table) return;
 
     populateIcsDescriptionDropdown();
+
     const descriptionSelect = document.querySelector("#icsDescription");
-    if (descriptionSelect) {
-        descriptionSelect.addEventListener("change", populateIcsFieldsFromDescription);
+    const descriptionSearchInput = document.querySelector("#icsDescriptionSearch");
+    const dropdownToggleBtn = document.querySelector("#icsDropdownToggleBtn");
+    const searchableContainer = document.querySelector("#icsSearchableSelect");
+
+    if (descriptionSearchInput) {
+        descriptionSearchInput.addEventListener("input", () => {
+            const val = descriptionSearchInput.value;
+            filterIcsDropdownOptions(val);
+            openIcsDropdownMenu();
+
+            if (descriptionSelect) {
+                const trimmed = val.trim();
+                if (trimmed && !Array.from(descriptionSelect.options).some(opt => opt.value === trimmed)) {
+                    const opt = document.createElement("option");
+                    opt.value = trimmed;
+                    opt.textContent = trimmed;
+                    descriptionSelect.appendChild(opt);
+                }
+                descriptionSelect.value = trimmed;
+            }
+            populateIcsFieldsFromDescription();
+        });
+
+        descriptionSearchInput.addEventListener("focus", () => {
+            if (isSelectingIcsOption) return;
+            filterIcsDropdownOptions(descriptionSearchInput.value);
+            openIcsDropdownMenu();
+        });
+
+        descriptionSearchInput.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                closeIcsDropdownMenu();
+            } else if (e.key === "ArrowDown") {
+                openIcsDropdownMenu();
+                const firstVisible = document.querySelector(".ics-option-item[style*='display: flex']");
+                if (firstVisible) firstVisible.focus();
+            }
+        });
     }
+
+    if (dropdownToggleBtn) {
+        dropdownToggleBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleIcsDropdownMenu();
+            if (descriptionSearchInput) {
+                descriptionSearchInput.focus();
+            }
+        });
+    }
+
+    document.addEventListener("click", (e) => {
+        if (searchableContainer && !searchableContainer.contains(e.target)) {
+            closeIcsDropdownMenu();
+        }
+    });
+
     populateIcsReceivedFromDropdown();
     populateIcsReceivedByDropdown();
     inventoryCustodianSlips = loadInventoryCustodianSlips();
@@ -5540,26 +5873,45 @@ async function initInventoryCustodianSlipCrud() {
         }
 
         if (button.dataset.icsAction === "delete") {
-            if (!window.confirm(`Delete ICS item from ${slip.icsNo}?`)) return;
+            const confirmed = await showConfirmDialog({
+                title: "Delete Document",
+                message: `Are you sure you want to delete the Inventory Custodian Slip for "${slip.description || slip.icsNo || 'this item'}" (${slip.icsNo})? This action cannot be undone.`,
+                confirmText: "Delete",
+                cancelText: "Cancel"
+            });
+            if (!confirmed) return;
 
-            try {
-                if (hasInventoryCustodianSlipRemoteDatabase()) {
+            const targetId = slip.id;
+
+            // Immediately remove from local state and refresh UI
+            inventoryCustodianSlips = inventoryCustodianSlips.filter((entry) => String(entry.id) !== String(targetId));
+            saveInventoryCustodianSlips();
+            renderIcsGeneratedCount();
+            renderInventoryCustodianSlipTable();
+            renderRecentAssets();
+
+            // Reset the form if the deleted slip was currently active in edit mode
+            const editingIdEl = document.querySelector("#icsEditingId");
+            if (editingIdEl && String(editingIdEl.value) === String(targetId)) {
+                resetInventoryCustodianSlipForm();
+            }
+
+            showToast("Inventory Custodian Slip deleted.");
+
+            // Sync deletion to Supabase asynchronously if remote database is active
+            if (hasInventoryCustodianSlipRemoteDatabase() && (slip.dbSlipId || slip.dbItemId)) {
+                try {
                     await deleteInventoryCustodianSlipFromDatabase(slip);
                     await loadInventoryCustodianSlipsFromDatabase();
-                } else {
-                    inventoryCustodianSlips = inventoryCustodianSlips.filter((entry) => entry.id !== slip.id);
+                    renderIcsGeneratedCount();
+                    renderInventoryCustodianSlipTable();
+                    renderRecentAssets();
+                } catch (error) {
+                    console.error("Remote database deletion error:", error);
+                    // Local deletion is safely preserved
                 }
-
-                saveInventoryCustodianSlips();
-                renderIcsGeneratedCount();
-                renderInventoryCustodianSlipTable();
-                renderRecentAssets();
-                resetInventoryCustodianSlipForm();
-                showToast("Inventory Custodian Slip deleted.");
-            } catch (error) {
-                console.error(error);
-                showToast("Unable to delete the Inventory Custodian Slip from Supabase.");
             }
+            return;
         }
     });
 }

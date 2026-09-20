@@ -3230,9 +3230,7 @@ body[data-theme="light"] .toast {
         padding: 16px;
     }
 
-    .button-row,
-    .inventory-actions-row,
-    .form-actions-row {
+    .button-row {
         grid-template-columns: 1fr;
     }
 

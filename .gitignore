@@ -25,6 +25,7 @@ venv/
 ENV/
 
 # Scratch & Temporary Files
+temp*.html
 tmp_*
 tmp_*.py
 *.tmp
