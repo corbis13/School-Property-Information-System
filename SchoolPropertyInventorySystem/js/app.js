@@ -5005,8 +5005,12 @@ function wireEvents() {
 
         if (navBtn.hasAttribute("data-document-toggle")) {
             e.preventDefault();
+            e.stopPropagation();
             const documentSubmenu = document.getElementById("documentSubmenu");
             const isCurrentlyHidden = documentSubmenu ? documentSubmenu.classList.contains("hidden") : true;
+            // Clean up any leftover flyout state
+            documentSubmenu?.classList.remove("flyout-open");
+            documentSubmenu?.style.removeProperty("top");
             if (isCurrentlyHidden) {
                 if (documentSubmenu) documentSubmenu.classList.remove("hidden");
                 navBtn.setAttribute("aria-expanded", "true");

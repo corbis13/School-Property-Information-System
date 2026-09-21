@@ -69,12 +69,145 @@
 
 @media (min-width: 768px) {
   .app-sidebar {
-    transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 260px;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
+    overflow-x: hidden;
+    flex-shrink: 0;
   }
 
+  /* ── Icon-only collapsed rail ── */
   .app-sidebar.sidebar-collapsed {
-    margin-left: -260px;
+    width: 64px;
+    overflow: visible; /* allow tooltips to render outside the rail */
+  }
+
+  /* Hide brand text block */
+  .app-sidebar.sidebar-collapsed .sidebar-brand-text,
+  .app-sidebar.sidebar-collapsed .sidebar-logo-img {
+    display: none;
+  }
+
+  /* Show mini icon in brand area */
+  .app-sidebar.sidebar-collapsed .sidebar-brand-mini {
+    display: flex !important;
+  }
+
+  /* Shrink brand/logo box padding */
+  .app-sidebar.sidebar-collapsed > div:first-child > div:first-child {
+    padding: 0.6rem 0;
+    justify-content: center;
+  }
+
+  /* Nav: hide text labels only (not icon wrappers) */
+  .app-sidebar.sidebar-collapsed .nav-item .nav-label,
+  .app-sidebar.sidebar-collapsed .nav-item .document-nav-chevron {
+    display: none;
+  }
+
+  /* Nav: center icons, remove left padding indent */
+  .app-sidebar.sidebar-collapsed nav {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    overflow: visible;
+  }
+
+  .app-sidebar.sidebar-collapsed .nav-item {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+    position: relative;
+  }
+
+  /* Document parent: hide chevron & text, center icon */
+  .app-sidebar.sidebar-collapsed .document-nav-parent {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .app-sidebar.sidebar-collapsed .document-nav-parent > span.ml-3 {
+    margin-left: 0;
+  }
+
+  /* Document submenu in collapsed mode: show inline below Document icon */
+  .app-sidebar.sidebar-collapsed .document-submenu {
+    display: none; /* hidden by default; .hidden class controls toggle */
+    padding-left: 0;
+    padding-top: 2px;
+  }
+
+  /* When submenu is open (hidden class removed), make it a block */
+  .app-sidebar.sidebar-collapsed .document-submenu:not(.hidden) {
+    display: block;
+  }
+
+  /* Sub-items in collapsed submenu: center icon, hide label */
+  .app-sidebar.sidebar-collapsed .document-submenu .nav-item {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .app-sidebar.sidebar-collapsed .document-submenu .nav-label {
+    display: none;
+  }
+
+  /* Bottom school info card: show only logo, hide text */
+  .app-sidebar.sidebar-collapsed #sidebarSchoolInfoCard {
+    padding: 0.5rem;
+  }
+
+  .app-sidebar.sidebar-collapsed #sidebarSchoolInfoCard .min-w-0 {
+    display: none;
+  }
+
+  .app-sidebar.sidebar-collapsed #sidebarSchoolInfoCard > div > div.flex {
+    justify-content: center;
+  }
+
+  /* ── Tooltip on hover (collapsed state only) ── */
+  .app-sidebar.sidebar-collapsed .nav-item::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1e293b;
+    color: #f1f5f9;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 200;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+
+  .app-sidebar.sidebar-collapsed .nav-item:hover::after {
+    opacity: 1;
+  }
+
+  /* Tooltip arrow */
+  .app-sidebar.sidebar-collapsed .nav-item::before {
+    content: "";
+    position: absolute;
+    left: calc(100% + 5px);
+    top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-right-color: #1e293b;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 200;
+  }
+
+  .app-sidebar.sidebar-collapsed .nav-item:hover::before {
+    opacity: 1;
   }
 }
 
