@@ -621,7 +621,11 @@ async function loadSchoolNameOptions() {
             .map((row) => String(row.school_name || "").trim())
             .filter(Boolean))];
     } catch (error) {
-        console.error("Unable to load school names from Supabase:", error);
+        console.warn("Unable to load school names from Supabase, using local school list:", error);
+    }
+
+    if (schoolNames.length === 0 && Array.isArray(allSchoolsList) && allSchoolsList.length > 0) {
+        schoolNames = [...new Set(allSchoolsList.map((s) => String(s.school_name || "").trim()).filter(Boolean))];
     }
 
     entitySelect.innerHTML = '<option value="">Select school</option>';
@@ -643,11 +647,18 @@ async function loadSchoolNameOptions() {
     return schoolNames;
 }
 
-let allSchoolsList = [];
-let currentSchoolId = null;
-let activeSchoolRecord = null;
+const defaultSchoolRecord = {
+    id: 1,
+    school_name: "Geras Integrated School",
+    school_id: "500243",
+    school_logo_url: "images/geras_logo.png"
+};
+
+let allSchoolsList = [{ ...defaultSchoolRecord }];
+let currentSchoolId = 1;
+let activeSchoolRecord = { ...defaultSchoolRecord };
 // Holds the current logo URL for the school being edited (used when no new file is uploaded)
-let currentSchoolLogoUrl = "";
+let currentSchoolLogoUrl = "images/geras_logo.png";
 // Utility: compress an image file to stay under a size limit (default 500 KB)
 async function compressImage(file, maxSizeKB = 500) {
     if (!file.type.startsWith('image/')) return file;
@@ -952,28 +963,67 @@ async function loadSchoolDetails(forceRefresh = false) {
     const statusElem = document.getElementById("schoolDetailsStatus");
     const sidebarSchoolCard = document.getElementById("sidebarSchoolInfoCard");
 
-    // 1. Check local cache for active school first
+    // 1. Check local cache for all schools and active school first
+    try {
+        const cachedSchools = JSON.parse(localStorage.getItem("spis_all_schools") || "null");
+        if (Array.isArray(cachedSchools) && cachedSchools.length > 0) {
+            allSchoolsList = cachedSchools;
+        }
+    } catch (e) {
+        console.warn("Could not read cached schools list:", e);
+    }
+
     try {
         const cachedActive = JSON.parse(localStorage.getItem("spis_active_school") || "null");
         if (cachedActive) {
             activeSchoolRecord = cachedActive;
-            updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
-            if (sidebarSchoolCard) sidebarSchoolCard.style.display = "";
-            // Update sidebar logo from cached active school
-            const logoImg = document.getElementById("sidebarSchoolLogo");
-            const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
-            if (logoImg) {
-                const logoUrl = activeSchoolRecord.school_logo_url || logoImg.getAttribute("data-default-src");
-                logoImg.src = logoUrl;
-            }
-            if (mobileLogoImg) {
-                const logoUrl = activeSchoolRecord.school_logo_url || mobileLogoImg.getAttribute("data-default-src");
-                mobileLogoImg.src = logoUrl;
-            }
         }
     } catch (e) {
         console.warn("Could not read cached active school:", e);
     }
+
+    // Ensure we have at least the default school in allSchoolsList
+    if (!allSchoolsList || allSchoolsList.length === 0) {
+        allSchoolsList = [{ ...defaultSchoolRecord }];
+    }
+    if (!activeSchoolRecord) {
+        activeSchoolRecord = allSchoolsList[0];
+        try {
+            localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
+        } catch (e) {}
+    }
+
+    // Update sidebar badges and logos immediately from active school
+    updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
+    if (sidebarSchoolCard) sidebarSchoolCard.style.display = "";
+
+    const logoImg = document.getElementById("sidebarSchoolLogo");
+    const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
+    if (logoImg) {
+        logoImg.src = activeSchoolRecord.school_logo_url || logoImg.getAttribute("data-default-src") || "images/geras_logo.png";
+    }
+    if (mobileLogoImg) {
+        mobileLogoImg.src = activeSchoolRecord.school_logo_url || mobileLogoImg.getAttribute("data-default-src") || "images/geras_logo.png";
+    }
+
+    // Determine target school to display in the form
+    let targetSchool = null;
+    if (currentSchoolId) {
+        targetSchool = allSchoolsList.find((s) => String(s.id) === String(currentSchoolId));
+    }
+    if (!targetSchool) {
+        targetSchool = allSchoolsList.find((s) => activeSchoolRecord && (String(s.id) === String(activeSchoolRecord.id) || s.school_name === activeSchoolRecord.school_name)) || allSchoolsList[0];
+    }
+    if (targetSchool) {
+        currentSchoolId = targetSchool.id;
+        if (schoolNameInput && (!schoolNameInput.value || forceRefresh)) schoolNameInput.value = targetSchool.school_name || "";
+        if (schoolIdInput && (!schoolIdInput.value || forceRefresh)) schoolIdInput.value = targetSchool.school_id ?? "";
+        currentSchoolLogoUrl = targetSchool.school_logo_url || "";
+        updateActiveBadgeState(targetSchool);
+    }
+
+    // Populate dropdown immediately so it is NEVER empty
+    populateSchoolDropdown();
 
     if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
         if (statusElem) {
@@ -999,65 +1049,42 @@ async function loadSchoolDetails(forceRefresh = false) {
         }
 
         const rows = await response.json();
-        allSchoolsList = Array.isArray(rows) ? rows : [];
-
-        // If no active school record exists yet, default to first school in database
-        if (!activeSchoolRecord && allSchoolsList.length > 0) {
-            activeSchoolRecord = allSchoolsList[0];
+        if (Array.isArray(rows) && rows.length > 0) {
+            allSchoolsList = rows;
             try {
-                localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
+                localStorage.setItem("spis_all_schools", JSON.stringify(allSchoolsList));
             } catch (e) {}
-            updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
-            // Set sidebar logo for the newly selected active school
-            const logoImg = document.getElementById("sidebarSchoolLogo");
-            const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
-            if (logoImg) {
-                const logoUrl = activeSchoolRecord.school_logo_url || logoImg.getAttribute("data-default-src");
-                logoImg.src = logoUrl;
-            }
-            if (mobileLogoImg) {
-                const logoUrl = activeSchoolRecord.school_logo_url || mobileLogoImg.getAttribute("data-default-src");
-                mobileLogoImg.src = logoUrl;
-            }
-        } else if (activeSchoolRecord && allSchoolsList.length > 0) {
+
             // Keep activeSchoolRecord synced if the record changed in database
             const foundActive = allSchoolsList.find((s) =>
-                (activeSchoolRecord.id && s.id === activeSchoolRecord.id) ||
+                (activeSchoolRecord.id && String(s.id) === String(activeSchoolRecord.id)) ||
                 (s.school_name === activeSchoolRecord.school_name)
             );
             if (foundActive) {
                 activeSchoolRecord = foundActive;
-                try {
-                    localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
-                } catch (e) {}
-                updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
+            } else {
+                activeSchoolRecord = allSchoolsList[0];
             }
-        }
+            try {
+                localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
+            } catch (e) {}
+            updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
 
-        // Determine which school to display in the form: either the currently edited school or the active school
-        let targetSchool = null;
-        if (currentSchoolId) {
-            targetSchool = allSchoolsList.find((s) => s.id === currentSchoolId);
-        }
-        if (!targetSchool) {
-            targetSchool = allSchoolsList.find((s) => activeSchoolRecord && s.id === activeSchoolRecord.id) || allSchoolsList[0];
-        }
-        if (targetSchool) {
-            currentSchoolId = targetSchool.id || null;
-            if (schoolNameInput) schoolNameInput.value = targetSchool.school_name || "";
-            if (schoolIdInput) schoolIdInput.value = targetSchool.school_id ?? "";
-            // Save logo URL for later use; if none, keep empty string
-            currentSchoolLogoUrl = targetSchool.school_logo_url || "";
-            // Update both desktop and mobile sidebar logos for the target school
-            const logoImg = document.getElementById("sidebarSchoolLogo");
-            const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
-            if (logoImg) {
-                logoImg.src = currentSchoolLogoUrl || logoImg.getAttribute("data-default-src");
+            // Update target school
+            let updatedTarget = null;
+            if (currentSchoolId) {
+                updatedTarget = allSchoolsList.find((s) => String(s.id) === String(currentSchoolId));
             }
-            if (mobileLogoImg) {
-                mobileLogoImg.src = currentSchoolLogoUrl || mobileLogoImg.getAttribute("data-default-src");
+            if (!updatedTarget) {
+                updatedTarget = allSchoolsList.find((s) => activeSchoolRecord && (String(s.id) === String(activeSchoolRecord.id) || s.school_name === activeSchoolRecord.school_name)) || allSchoolsList[0];
             }
-            updateActiveBadgeState(targetSchool);
+            if (updatedTarget) {
+                currentSchoolId = updatedTarget.id;
+                if (schoolNameInput) schoolNameInput.value = updatedTarget.school_name || "";
+                if (schoolIdInput) schoolIdInput.value = updatedTarget.school_id ?? "";
+                currentSchoolLogoUrl = updatedTarget.school_logo_url || "";
+                updateActiveBadgeState(updatedTarget);
+            }
         }
 
         populateSchoolDropdown();
@@ -1066,23 +1093,22 @@ async function loadSchoolDetails(forceRefresh = false) {
             statusElem.textContent = "✓ Ready";
             statusElem.style.color = "#16a34a";
         }
-        // Ensure the sidebar logo reflects the (possibly cached) active school
-        const logoImg = document.getElementById("sidebarSchoolLogo");
-        const mobileLogoImg = document.getElementById("mobileSidebarSchoolLogo");
+
         if (logoImg) {
             const logoUrl = (activeSchoolRecord && activeSchoolRecord.school_logo_url)
                 ? activeSchoolRecord.school_logo_url
                 : logoImg.getAttribute("data-default-src");
-            logoImg.src = logoUrl;
+            if (logoUrl) logoImg.src = logoUrl;
         }
         if (mobileLogoImg) {
             const logoUrl = (activeSchoolRecord && activeSchoolRecord.school_logo_url)
                 ? activeSchoolRecord.school_logo_url
                 : mobileLogoImg.getAttribute("data-default-src");
-            mobileLogoImg.src = logoUrl;
+            if (logoUrl) mobileLogoImg.src = logoUrl;
         }
     } catch (err) {
-        console.error("Failed to load school details:", err);
+        console.warn("Failed to load school details from Supabase (using cached):", err);
+        populateSchoolDropdown();
         if (statusElem) {
             statusElem.textContent = "Loaded from local cache";
             statusElem.style.color = "#64748b";
@@ -1220,7 +1246,7 @@ async function saveSchoolDetails(e) {
         currentSchoolLogoUrl = localRecord.school_logo_url;
         activeSchoolRecord = localRecord;
 
-        const existingIdx = allSchoolsList.findIndex((s) => s.id === localRecord.id || s.school_name === localRecord.school_name);
+        const existingIdx = allSchoolsList.findIndex((s) => String(s.id) === String(localRecord.id) || s.school_name === localRecord.school_name);
         if (existingIdx >= 0) {
             allSchoolsList[existingIdx] = localRecord;
         } else {
@@ -1229,6 +1255,7 @@ async function saveSchoolDetails(e) {
 
         try {
             localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
+            localStorage.setItem("spis_all_schools", JSON.stringify(allSchoolsList));
         } catch (e) {}
 
         updateSchoolDisplayBadges(localRecord.school_name, localRecord.school_id);
@@ -1287,15 +1314,19 @@ async function saveSchoolDetails(e) {
             // Keep the logo URL in the global variable for future edits
             currentSchoolLogoUrl = savedRecord.school_logo_url || "";
 
-            const existingIdx = allSchoolsList.findIndex((s) => s.id === savedRecord.id);
+            const existingIdx = allSchoolsList.findIndex((s) => String(s.id) === String(savedRecord.id));
             if (existingIdx >= 0) {
                 allSchoolsList[existingIdx] = savedRecord;
             } else {
                 allSchoolsList.push(savedRecord);
             }
 
+            try {
+                localStorage.setItem("spis_all_schools", JSON.stringify(allSchoolsList));
+            } catch (e) {}
+
             // If the updated school was the active school, update active record and sidebar
-            if (activeSchoolRecord && activeSchoolRecord.id === savedRecord.id) {
+            if (activeSchoolRecord && String(activeSchoolRecord.id) === String(savedRecord.id)) {
                 activeSchoolRecord = savedRecord;
                 try {
                     localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
@@ -4583,10 +4614,10 @@ function showModule(moduleName, targetId = "") {
         }
     });
 
-    // Show school name and ID card in sidebar (visible in dashboard and about)
+    // Show school name and ID card in sidebar (visible in dashboard, about, and settings)
     const sidebarSchoolCard = document.getElementById("sidebarSchoolInfoCard");
     if (sidebarSchoolCard) {
-        sidebarSchoolCard.style.display = (moduleName === "dashboard" || moduleName === "about") ? "" : "none";
+        sidebarSchoolCard.style.display = (moduleName === "dashboard" || moduleName === "about" || moduleName === "settings") ? "" : "none";
     }
 
     if (moduleName === "qr") {
@@ -4598,7 +4629,7 @@ function showModule(moduleName, targetId = "") {
         renderReports();
     }
 
-    if (moduleName === "about") {
+    if (moduleName === "about" || moduleName === "settings") {
         loadSchoolDetails();
     }
 
