@@ -1,7 +1,4 @@
-const assetDetailList = document.querySelector("#assetDetailList");
-const assetTitle = document.querySelector("#assetTitle");
-const message = document.querySelector("#message");
-
+// School Property Information System - Asset Detail Inspector
 const supabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
 const supabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
 const supabaseHeaders = {
@@ -14,14 +11,8 @@ function parseQueryParam(name) {
     return params.get(name) || "";
 }
 
-function renderError(text) {
-    assetTitle.textContent = "Asset not available";
-    message.textContent = text;
-    assetDetailList.style.display = "none";
-}
-
 function escapeHtml(value) {
-    return String(value)
+    return String(value ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
@@ -29,117 +20,334 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
-function formatAmount(value) {
-    if (value === "" || value === null || value === undefined) return "";
+function formatPeso(value) {
+    if (value === "" || value === null || value === undefined) return "₱0.00";
     const num = Number(String(value).replace(/[^0-9.-]/g, ""));
     if (!Number.isFinite(num)) return String(value);
-    return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return "₱" + num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function renderAssetDetails(item) {
-    const fields = [
-        ["Asset ID", item.assetId],
-        ["Inventory Item Type", item.inventoryType],
-        ["Property Number", item.propertyNo],
-        ["Item/Brand/Model", item.itemBrandModel],
-        ["Serial Number", item.serialNo],
-        ["Classification", item.itemClassification],
-        ["Accountable Person", item.accountable],
-        ["School Level", item.schoolLevel],
-        ["Semi-Expandable No.", item.semiExpandableNo],
-        ["Unit Value", item.unitValue ? formatAmount(item.unitValue) : ""],
-        ["Total", item.total ? formatAmount(item.total) : ""],
-        ["Unit Measurement", item.unitMeasurement],
-        ["Balance", item.balance],
-        ["On Hand", item.onHand],
-        ["Shortage/Overage Quantity", item.shortageOverageQty],
-        ["Shortage/Overage Value", item.shortageOverageValue],
-        ["Location", item.location],
-        ["MOOE Month", item.mooeMonth],
-        ["MOOE Year", item.mooeYear],
-        ["Status", item.status],
-        ["Acquisition Date", item.acquisitionDate],
-        ["Date Issued", item.dateIssue],
-        ["Remarks", item.remarks]
-    ];
+function showToast(text) {
+    const toast = document.getElementById("assetToast");
+    if (!toast) return;
+    toast.textContent = text;
+    toast.style.display = "block";
+    setTimeout(() => {
+        toast.style.display = "none";
+    }, 2400);
+}
 
-    assetTitle.textContent = item.itemBrandModel || item.propertyNo || item.assetId || "Asset Detail";
-    message.textContent = "Here is the current asset detail.";
-    assetDetailList.innerHTML = fields
-        .filter(([, value]) => String(value || "").trim())
-        .map(([label, value]) => `
-            <div class="asset-detail-row">
-                <dt>${escapeHtml(label)}</dt>
-                <dd>${escapeHtml(value)}</dd>
-            </div>
-        `)
-        .join("");
-    assetDetailList.style.display = "grid";
+function getStatusBadgeClass(status) {
+    const s = String(status || "").toLowerCase().trim();
+    if (s === "available" || s === "serviceable") return "status-available";
+    if (s === "assigned" || s === "in use" || s === "issued") return "status-assigned";
+    if (s.includes("repair") || s.includes("maintenance")) return "status-repair";
+    if (s.includes("unserviceable") || s.includes("damaged")) return "status-unserviceable";
+    if (s.includes("disposed") || s.includes("condemned")) return "status-disposed";
+    return "status-unspecified";
+}
+
+function getAssetDetailUrl(assetId) {
+    const configuredUrl = (window.SUPABASE_CONFIG && String(window.SUPABASE_CONFIG.assetUrl || "").trim()) || "";
+    const safeId = encodeURIComponent(String(assetId || "UNKNOWN").trim());
+    const query = `?assetId=${safeId}`;
+
+    if (configuredUrl) {
+        return `${configuredUrl.replace(/\/+$|\?+$/g, "")}${query}`;
+    }
+
+    if (typeof window !== "undefined" && window.location && window.location.origin) {
+        const origin = window.location.origin;
+        const pathname = window.location.pathname;
+        if (pathname.includes("SchoolPropertyInventorySystem")) {
+            return `${origin}/SchoolPropertyInventorySystem/asset.html${query}`;
+        }
+    }
+
+    return `https://corbis13.github.io/School-Property-Information-System/SchoolPropertyInventorySystem/asset.html${query}`;
+}
+
+function renderQrCode(item) {
+    const qrContainer = document.getElementById("assetQrCodeCanvas");
+    if (!qrContainer) return;
+    qrContainer.innerHTML = "";
+
+    const payload = getAssetDetailUrl(item.assetId);
+
+    if (window.QRCode) {
+        new QRCode(qrContainer, {
+            text: payload,
+            width: 130,
+            height: 130,
+            colorDark: "#00284d",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    } else {
+        qrContainer.innerHTML = `<span style="font-size: 11px; color: #64748b;">${escapeHtml(item.propertyNo || item.assetId)}</span>`;
+    }
+}
+
+function renderAsset(item) {
+    document.title = `${item.itemBrandModel || item.propertyNo || item.assetId} | Asset Detail - SPIS`;
+
+    // Hero Section
+    const heroTitle = document.getElementById("heroBrandModel");
+    if (heroTitle) heroTitle.textContent = item.itemBrandModel || item.propertyNo || "Unnamed Property Asset";
+
+    const heroClassification = document.getElementById("heroClassification");
+    if (heroClassification) heroClassification.textContent = item.itemClassification || "Property Item";
+
+    const heroInventoryType = document.getElementById("heroInventoryType");
+    if (heroInventoryType) heroInventoryType.textContent = item.inventoryType || "Inventory Asset";
+
+    const heroPropertyNo = document.getElementById("heroPropertyNo");
+    if (heroPropertyNo) heroPropertyNo.textContent = item.propertyNo || "N/A";
+
+    const heroAssetId = document.getElementById("heroAssetId");
+    if (heroAssetId) heroAssetId.textContent = item.assetId || "N/A";
+
+    const heroSerialNo = document.getElementById("heroSerialNo");
+    if (heroSerialNo) heroSerialNo.textContent = item.serialNo || "N/A";
+
+    const heroAccountable = document.getElementById("heroAccountable");
+    if (heroAccountable) heroAccountable.textContent = item.accountable || item.accountablePerson || "Unassigned";
+
+    const heroLocation = document.getElementById("heroLocation");
+    if (heroLocation) heroLocation.textContent = item.location || "Unspecified Location";
+
+    const heroTotalValue = document.getElementById("heroTotalValue");
+    if (heroTotalValue) heroTotalValue.textContent = formatPeso(item.total || (item.unitValue ? item.unitValue : 0));
+
+    // Status Badge
+    const heroStatusBadge = document.getElementById("heroStatusBadge");
+    const heroStatusText = document.getElementById("heroStatusText");
+    const statusVal = item.status || "Available";
+    if (heroStatusText) heroStatusText.textContent = statusVal;
+    if (heroStatusBadge) {
+        heroStatusBadge.className = `status-badge ${getStatusBadgeClass(statusVal)}`;
+    }
+
+    // Embedded QR Code
+    renderQrCode(item);
+
+    // Section 1: Property Identification
+    const setField = (id, val, fallback = "--") => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = (val !== null && val !== undefined && String(val).trim() !== "") ? String(val) : fallback;
+    };
+
+    setField("fieldAssetId", item.assetId);
+    setField("fieldPropertyNo", item.propertyNo);
+    setField("fieldSemiExpendableNo", item.semiExpandableNo);
+    setField("fieldInventoryType", item.inventoryType);
+    setField("fieldClassification", item.itemClassification);
+    setField("fieldBrandModel", item.itemBrandModel);
+    setField("fieldSerialNo", item.serialNo);
+
+    // Section 2: Custody & Location
+    setField("fieldAccountable", item.accountable || item.accountablePerson, "Unassigned");
+    setField("fieldSchoolLevel", item.schoolLevel || item.schoollevel, "General");
+    setField("fieldLocation", item.location, "Unspecified");
+    setField("fieldDateIssue", item.dateIssue || item.date_issue, "Not Recorded");
+
+    // Section 3: Acquisition & Valuation
+    setField("fieldAcquisitionDate", item.acquisitionDate || item.acquisition_date, "Not Recorded");
+    setField("fieldFundCluster", item.fundCluster || item.fund_cluster, "General Fund (01)");
+    setField("fieldUnitMeasurement", item.unitMeasurement || item.unit_measurement, "Unit / Piece");
+    setField("fieldUnitValue", formatPeso(item.unitValue || item.unit_value));
+    setField("fieldTotal", formatPeso(item.total));
+    const mooeParts = [item.mooeMonth || item.mooe_month, item.mooeYear || item.mooe_year].filter(Boolean);
+    setField("fieldMooePeriod", mooeParts.length ? mooeParts.join(" ") : "N/A");
+
+    // Section 4: Inventory Count & Condition
+    const statusTag = document.getElementById("fieldStatus");
+    if (statusTag) {
+        statusTag.textContent = statusVal;
+        statusTag.className = `status-tag ${getStatusBadgeClass(statusVal)}`;
+    }
+    setField("fieldOnHand", item.onHand ?? item.on_hand);
+    setField("fieldBalance", item.balance);
+    setField("fieldShortageOverageQty", item.shortageOverageQty ?? item.shortage_overage_qty);
+    setField("fieldShortageOverageValue", item.shortageOverageValue ? formatPeso(item.shortageOverageValue) : "--");
+    setField("fieldRemarks", item.remarks, "No remarks provided.");
+
+    // Re-render Lucide icons
+    if (window.lucide && typeof window.lucide.createIcons === "function") {
+        window.lucide.createIcons();
+    }
+}
+
+function renderError(message) {
+    const heroTitle = document.getElementById("heroBrandModel");
+    if (heroTitle) heroTitle.textContent = "Asset Record Not Found";
+
+    const alertEl = document.getElementById("statusAlert");
+    if (alertEl) {
+        alertEl.textContent = message;
+        alertEl.style.display = "block";
+    }
+
+    const grid = document.querySelector(".asset-details-grid");
+    if (grid) grid.style.opacity = "0.4";
+}
+
+function findLocalAsset(assetId) {
+    const needle = String(assetId || "").trim().toLowerCase();
+    if (!needle) return null;
+
+    // Check opener first if available
+    try {
+        if (window.opener && Array.isArray(window.opener.items)) {
+            const found = window.opener.items.find(
+                (i) => String(i.assetId || "").trim().toLowerCase() === needle ||
+                       String(i.propertyNo || "").trim().toLowerCase() === needle
+            );
+            if (found) return found;
+        }
+    } catch {
+        // cross-origin opener access blocked
+    }
+
+    // Check localStorage items keys
+    const storageKeys = ["propertyInventoryItems", "spis_inventory_items"];
+    for (const key of storageKeys) {
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) continue;
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+                const found = list.find(
+                    (i) => String(i.assetId || "").trim().toLowerCase() === needle ||
+                           String(i.propertyNo || "").trim().toLowerCase() === needle
+                );
+                if (found) return found;
+            }
+        } catch {
+            // parse error
+        }
+    }
+
+    return null;
 }
 
 async function loadAsset() {
     const assetId = String(parseQueryParam("assetId") || "").trim();
 
     if (!assetId) {
-        renderError("No assetId query parameter was provided. Make sure the QR code points to a valid asset detail URL.");
+        renderError("No Asset ID was specified in the URL. Please provide ?assetId=ASTXXXXXX to inspect an inventory record.");
         return;
     }
 
+    // Step 1: Check instant local fallback
+    const localItem = findLocalAsset(assetId);
+    if (localItem) {
+        renderAsset(localItem);
+    }
+
+    // Step 2: Fetch latest from Supabase if configured
     if (!supabaseUrl || !supabaseAnonKey) {
-        renderError("Supabase configuration is missing. Update supabase-config.js with your URL and anon key.");
+        if (!localItem) {
+            renderError("Database credentials not configured and item was not found in local cache.");
+        }
         return;
     }
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,remarks,created_at,updated_at&asset_id=eq.${encodeURIComponent(assetId)}` , {
+        const queryUrl = `${supabaseUrl}/rest/v1/assets?select=*&or=(asset_id.eq.${encodeURIComponent(assetId)},property_no.eq.${encodeURIComponent(assetId)})&limit=1`;
+        const response = await fetch(queryUrl, {
             headers: {
                 ...supabaseHeaders,
                 Accept: "application/json"
             }
         });
 
-        if (!response.ok) {
-            throw new Error(`Supabase request failed with ${response.status}`);
+        if (response.ok) {
+            const rows = await response.json();
+            const remoteItem = rows && rows[0];
+            if (remoteItem) {
+                renderAsset({
+                    assetId: remoteItem.asset_id || remoteItem.assetId || assetId,
+                    fundCluster: remoteItem.fund_cluster || remoteItem.fundCluster || "",
+                    inventoryType: remoteItem.inventory_type || remoteItem.inventoryType || "",
+                    propertyNo: remoteItem.property_no || remoteItem.propertyNo || "",
+                    itemClassification: remoteItem.item_classification || remoteItem.itemClassification || "",
+                    itemBrandModel: remoteItem.item_brand_model || remoteItem.itemBrandModel || "",
+                    serialNo: remoteItem.serial_no || remoteItem.serialNo || "",
+                    acquisitionDate: remoteItem.acquisition_date || remoteItem.acquisitionDate || "",
+                    accountable: remoteItem.accountable_person || remoteItem.accountable || "",
+                    schoolLevel: remoteItem.school_level || remoteItem.schoolLevel || "",
+                    semiExpandableNo: remoteItem.semi_expandable_no || remoteItem.semiExpandableNo || "",
+                    unitValue: remoteItem.unit_value ?? remoteItem.unitValue ?? "",
+                    total: remoteItem.total ?? "",
+                    unitMeasurement: remoteItem.unit_measurement || remoteItem.unitMeasurement || "",
+                    balance: remoteItem.balance ?? "",
+                    onHand: remoteItem.on_hand ?? remoteItem.onHand ?? "",
+                    shortageOverageQty: remoteItem.shortage_overage_qty ?? remoteItem.shortageOverageQty ?? "",
+                    shortageOverageValue: remoteItem.shortage_overage_value ?? remoteItem.shortageOverageValue ?? "",
+                    location: remoteItem.location || "",
+                    mooeMonth: remoteItem.mooe_month ?? remoteItem.mooeMonth ?? "",
+                    mooeYear: remoteItem.mooe_year ?? remoteItem.mooeYear ?? "",
+                    dateIssue: remoteItem.date_issue || remoteItem.dateIssue || "",
+                    status: remoteItem.status || "",
+                    remarks: remoteItem.remarks || ""
+                });
+                return;
+            }
         }
 
-        const rows = await response.json();
-        const item = (rows || [])[0];
-
-        if (!item) {
-            renderError(`Asset not found for assetId=${assetId}.`);
-            return;
+        if (!localItem) {
+            renderError(`Asset record "${assetId}" was not found in the inventory database.`);
         }
-
-        renderAssetDetails({
-            assetId: item.asset_id || item.assetId || "",
-            fundCluster: item.fund_cluster || item.fundCluster || "",
-            inventoryType: item.inventory_type || item.inventoryType || "",
-            propertyNo: item.property_no || item.propertyNo || "",
-            itemClassification: item.item_classification || item.itemClassification || "",
-            itemBrandModel: item.item_brand_model || item.itemBrandModel || "",
-            serialNo: item.serial_no || item.serialNo || "",
-            acquisitionDate: item.acquisition_date || item.acquisitionDate || "",
-            accountable: item.accountable_person || item.accountable || "",
-            schoolLevel: item.school_level || item.schoolLevel || item.schoollevel || "",
-            semiExpandableNo: item.semi_expandable_no || item.semiExpandableNo || "",
-            unitValue: item.unit_value ?? item.unitValue ?? "",
-            total: item.total ?? "",
-            unitMeasurement: item.unit_measurement || item.unitMeasurement || "",
-            balance: item.balance ?? "",
-            onHand: item.on_hand ?? item.onHand ?? "",
-            shortageOverageQty: item.shortage_overage_qty ?? item.shortageOverageQty ?? "",
-            shortageOverageValue: item.shortage_overage_value ?? item.shortageOverageValue ?? "",
-            location: item.location || "",
-            mooeMonth: item.mooe_month ?? item.mooeMonth ?? "",
-            mooeYear: item.mooe_year ?? item.mooeYear ?? "",
-            dateIssue: item.date_issue || item.dateIssue || "",
-            status: item.status || "",
-            remarks: item.remarks || ""
-        });
-    } catch (error) {
-        console.error(error);
-        renderError("Unable to load asset details from Supabase. Check your network connection and Supabase settings.");
+    } catch (err) {
+        console.warn("Could not retrieve remote asset:", err);
+        if (!localItem) {
+            renderError(`Unable to reach the property database for Asset ID: ${assetId}. Check your connection and try again.`);
+        }
     }
 }
 
-window.addEventListener("DOMContentLoaded", loadAsset);
+function initEventHandlers() {
+    // Print Record
+    const printBtn = document.getElementById("printAssetBtn");
+    if (printBtn) {
+        printBtn.addEventListener("click", () => {
+            window.print();
+        });
+    }
+
+    // Close Window
+    const closeBtn = document.getElementById("closeWindowBtn");
+    if (closeBtn) {
+        closeBtn.addEventListener("click", () => {
+            if (window.opener) {
+                window.close();
+            } else {
+                window.history.back();
+            }
+        });
+    }
+
+    // Copy Asset ID
+    const copyBtn = document.getElementById("copyAssetIdBtn");
+    if (copyBtn) {
+        copyBtn.addEventListener("click", () => {
+            const assetId = document.getElementById("fieldAssetId")?.textContent || parseQueryParam("assetId");
+            if (assetId && assetId !== "--") {
+                navigator.clipboard.writeText(assetId)
+                    .then(() => showToast(`Copied ${assetId} to clipboard!`))
+                    .catch(() => showToast(`Asset ID: ${assetId}`));
+            }
+        });
+    }
+
+    // Initialize Lucide icons on load
+    if (window.lucide && typeof window.lucide.createIcons === "function") {
+        window.lucide.createIcons();
+    }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    initEventHandlers();
+    loadAsset();
+});

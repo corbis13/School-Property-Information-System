@@ -3,37 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asset Detail | SPIS</title>
+    <title>Asset Detail | School Property Information System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="asset-detail-page">
-    <div class="app-shell">
-        <main class="main-panel">
-            <header class="topbar">
-                <div>
-                    <p class="eyebrow">Asset Detail</p>
-                    <h1 id="assetTitle">Loading asset...</h1>
-                </div>
-            </header>
+    <div class="asset-window-container">
+        <!-- Feedback & Status Notification Banner (if any) -->
+        <div id="statusAlert" class="asset-alert" style="display: none;"></div>
 
-            <section class="module-view active" data-module="assetDetail">
-                <div class="dashboard-card asset-detail-card" style="padding: 24px;">
-                    <div id="message" class="module-copy" aria-live="polite"></div>
-                    <dl id="assetDetailList" class="detail-list" style="margin-top: 24px; display: none;"></dl>
+        <!-- Asset Hero Card -->
+        <section class="asset-hero-card">
+            <!-- Header Bar: Category badges on left, Status condition on right -->
+            <div class="hero-header-bar">
+                <div class="hero-tags-group">
+                    <span class="spis-kicker">SPIS Property Record</span>
+                    <span id="heroClassification" class="classification-pill">Semi-Expendable Property</span>
+                    <span id="heroInventoryType" class="inventory-type-pill">Equipment</span>
                 </div>
+                <div class="hero-status-wrap">
+                    <div id="heroStatusBadge" class="status-badge status-available">
+                        <span class="status-dot"></span>
+                        <span id="heroStatusText">Available</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body Layout: Core Asset Info on left, QR Verification Card on right -->
+            <div class="hero-body-layout">
+                <div class="hero-core-details">
+                    <!-- Prominent Asset Name / Brand & Model -->
+                    <h1 id="heroBrandModel" class="hero-asset-name">Loading Asset...</h1>
+
+                    <!-- Key Identifiers Strip -->
+                    <div class="hero-identifiers-strip">
+                        <div class="id-badge primary-id">
+                            <span class="id-label"><i data-lucide="hash" class="w-3.5 h-3.5 inline mr-1"></i>Property No.</span>
+                            <strong id="heroPropertyNo" class="id-val">--</strong>
+                        </div>
+                        <div class="id-badge">
+                            <span class="id-label">Asset ID</span>
+                            <code id="heroAssetId" class="id-val">--</code>
+                        </div>
+                        <div class="id-badge" id="heroSerialChip">
+                            <span class="id-label">Serial No.</span>
+                            <code id="heroSerialNo" class="id-val">--</code>
+                        </div>
+                    </div>
+
+                    <!-- 3 Metric Highlight Cards -->
+                    <div class="hero-metrics-row">
+                        <div class="metric-card">
+                            <div class="metric-icon-wrap bg-blue-subtle">
+                                <i data-lucide="user-check" class="w-4 h-4 text-blue"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Accountable Custodian</span>
+                                <strong id="heroAccountable" class="metric-value">--</strong>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-icon-wrap bg-amber-subtle">
+                                <i data-lucide="map-pin" class="w-4 h-4 text-amber"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Assigned Location</span>
+                                <strong id="heroLocation" class="metric-value">--</strong>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-icon-wrap bg-emerald-subtle">
+                                <i data-lucide="coins" class="w-4 h-4 text-emerald"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Acquisition Value</span>
+                                <strong id="heroTotalValue" class="metric-value text-emerald">₱0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Dedicated QR Code Verification Card -->
+                <aside class="hero-qr-card">
+                    <div class="qr-frame">
+                        <div id="assetQrCodeCanvas" class="qr-canvas"></div>
+                    </div>
+                    <div class="qr-info">
+                        <span class="qr-scan-badge"><i data-lucide="scan-line" class="w-3.5 h-3.5 inline mr-1"></i>QR Verification</span>
+                        <span class="qr-hint">Scan with camera to inspect record</span>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- 4-Section Structured Grid -->
+        <main class="asset-details-grid">
+            <!-- Section 1: Property Identification -->
+            <section class="detail-card">
+                <div class="card-header">
+                    <i data-lucide="box" class="card-icon text-blue"></i>
+                    <h2>Property Identification</h2>
+                </div>
+                <dl class="card-field-list">
+                    <div class="field-row">
+                        <dt>Asset ID</dt>
+                        <dd><code id="fieldAssetId">--</code></dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Property Number</dt>
+                        <dd><strong id="fieldPropertyNo">--</strong></dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Semi-Expendable No.</dt>
+                        <dd id="fieldSemiExpendableNo">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Inventory Type</dt>
+                        <dd id="fieldInventoryType">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Classification</dt>
+                        <dd id="fieldClassification">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Brand / Model</dt>
+                        <dd id="fieldBrandModel">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Serial Number</dt>
+                        <dd><code id="fieldSerialNo">--</code></dd>
+                    </div>
+                </dl>
+            </section>
+
+            <!-- Section 2: Custody & Location -->
+            <section class="detail-card">
+                <div class="card-header">
+                    <i data-lucide="shield-check" class="card-icon text-emerald"></i>
+                    <h2>Custody & Assignment</h2>
+                </div>
+                <dl class="card-field-list">
+                    <div class="field-row">
+                        <dt>Accountable Person</dt>
+                        <dd><strong id="fieldAccountable">--</strong></dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>School Level / Dept.</dt>
+                        <dd id="fieldSchoolLevel">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Designated Location</dt>
+                        <dd id="fieldLocation">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Date Issued</dt>
+                        <dd id="fieldDateIssue">--</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <!-- Section 3: Acquisition & Valuation -->
+            <section class="detail-card">
+                <div class="card-header">
+                    <i data-lucide="receipt" class="card-icon text-amber"></i>
+                    <h2>Acquisition & Valuation</h2>
+                </div>
+                <dl class="card-field-list">
+                    <div class="field-row">
+                        <dt>Acquisition Date</dt>
+                        <dd id="fieldAcquisitionDate">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Fund Cluster</dt>
+                        <dd id="fieldFundCluster">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Unit Measurement</dt>
+                        <dd id="fieldUnitMeasurement">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Unit Value</dt>
+                        <dd id="fieldUnitValue">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Total Value</dt>
+                        <dd><strong id="fieldTotal" class="text-emerald">--</strong></dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>MOOE Period</dt>
+                        <dd id="fieldMooePeriod">--</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <!-- Section 4: Inventory Count & Condition -->
+            <section class="detail-card">
+                <div class="card-header">
+                    <i data-lucide="clipboard-list" class="card-icon text-purple"></i>
+                    <h2>Inventory Count & Condition</h2>
+                </div>
+                <dl class="card-field-list">
+                    <div class="field-row">
+                        <dt>Physical Status</dt>
+                        <dd><span id="fieldStatus" class="status-tag">--</span></dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Quantity On Hand</dt>
+                        <dd id="fieldOnHand">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Balance per Card</dt>
+                        <dd id="fieldBalance">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Shortage / Overage Qty</dt>
+                        <dd id="fieldShortageOverageQty">--</dd>
+                    </div>
+                    <div class="field-row">
+                        <dt>Shortage / Overage Val</dt>
+                        <dd id="fieldShortageOverageValue">--</dd>
+                    </div>
+                    <div class="field-row full-width">
+                        <dt>Remarks / Description</dt>
+                        <dd id="fieldRemarks" class="remarks-box">None provided.</dd>
+                    </div>
+                </dl>
             </section>
         </main>
-<script src="supabase-config.js?v=20260826"></script>
-<script src="js/asset.js"></script>
-<script src="js/school-level-card.js"></script>
-33 | 
-34 |     <!-- School Level Card – moved inside the body so it is part of the DOM -->
-35 |     <div class="dashboard-card school-level-card" id="schoolLevelCard">
-36 |         <h2 id="schoolLevelTitle">Loading school level...</h2>
-37 |         <p id="schoolLevelMessage"></p>
-38 |     </div>
-39 | </body>
-40 | </html>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="assetToast" class="asset-toast" style="display: none;"></div>
+
+    <script src="supabase-config.js?v=20260922"></script>
+    <script src="js/asset.js?v=20260922"></script>
+</body>
+</html>

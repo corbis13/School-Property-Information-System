@@ -25,6 +25,7 @@ venv/
 ENV/
 
 # Scratch & Temporary Files
+bun.lock
 temp*.html
 tmp_*
 tmp_*.py
