@@ -5052,6 +5052,38 @@ function wireEvents() {
         });
     }
 
+    // Reports Module Tabs (RPCSP / RSPI)
+    document.addEventListener("click", (e) => {
+        const tabBtn = e.target.closest(".report-tab-btn");
+        if (!tabBtn) return;
+        const targetTab = tabBtn.dataset.reportTab;
+        if (!targetTab) return;
+
+        document.querySelectorAll(".report-tab-btn").forEach((b) => b.classList.remove("active"));
+        tabBtn.classList.add("active");
+
+        const rpcspPanel = document.getElementById("reportTabRpcsp");
+        const rspiPanel = document.getElementById("reportTabRspi");
+
+        if (rpcspPanel) {
+            const showRpcsp = targetTab === "rpcsp";
+            rpcspPanel.classList.toggle("hidden", !showRpcsp);
+            rpcspPanel.style.display = showRpcsp ? "" : "none";
+        }
+        if (rspiPanel) {
+            const showRspi = targetTab === "rspi";
+            rspiPanel.classList.toggle("hidden", !showRspi);
+            rspiPanel.style.display = showRspi ? "" : "none";
+            if (showRspi && typeof renderRspiReport === "function") {
+                populateRspiSignatories();
+                populateRspiIcsOptions();
+                renderRspiReport();
+                if (typeof lucide !== "undefined") lucide.createIcons();
+            }
+        }
+
+    });
+
     dom.themeButtons.forEach((button) => {
         button.addEventListener("click", () => {
             applyTheme(button.dataset.themeChoice);
@@ -5155,6 +5187,10 @@ async function init() {
     renderQrDownloadHistory();
     await loadRemoteQrDownloadHistory();
     renderApp();
+    if (typeof initRspiReport === "function") {
+        initRspiReport();
+    }
+
 
     if (params.get("module") === "qr") {
         showModule("qr");
@@ -5827,7 +5863,12 @@ async function initInventoryCustodianSlipCrud() {
             renderIcsGeneratedCount();
             renderInventoryCustodianSlipTable();
             renderRecentAssets();
+            if (typeof renderRspiReport === "function") {
+                populateRspiIcsOptions();
+                renderRspiReport();
+            }
         }
+
     } catch (error) {
         console.error(error);
         showToast("ICS database unavailable. Using local saved slips.");
@@ -6180,4 +6221,399 @@ async function openInventoryCustodianSlipPdf(slip) {
         return;
     }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RSPI REPORT GENERATOR (Report of Semi-Expendable Property Issued)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function formatRspiDate(dateString) {
+    if (!dateString) return "March 25, 2026";
+    const parts = String(dateString).split("-");
+    if (parts.length === 3) {
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        if (!isNaN(d.getTime())) {
+            return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+        }
+    }
+    return dateString;
+}
+
+function formatRspiCurrency(val) {
+    if (val === "" || val === null || val === undefined) return "";
+    const num = Number(String(val).replace(/[^0-9.-]/g, ""));
+    if (!Number.isFinite(num) || isNaN(num)) return String(val);
+    return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function populateRspiSignatories() {
+    const custodianSelect = document.getElementById("rspiCustodianSelect");
+    const accountingSelect = document.getElementById("rspiAccountingStaffSelect");
+    if (!custodianSelect || !accountingSelect) return;
+
+    const currentCustodian = custodianSelect.value;
+    const currentAccounting = accountingSelect.value;
+
+    custodianSelect.innerHTML = '<option value="">Select signatory</option>';
+    accountingSelect.innerHTML = '<option value="">Select signatory</option>';
+
+    const names = new Set();
+    const list = [...(signatoryEntries || [])];
+
+    // Ensure default signatories from template exist
+    if (!list.some(s => (s.name || s.signatory || "").toLowerCase().includes("tuwahan"))) {
+        list.unshift({ name: "Janine Carlyle G. Tuwahan", position: "Administrative Officer II" });
+    }
+    if (!list.some(s => (s.name || s.signatory || "").toLowerCase().includes("avellana"))) {
+        list.push({ name: "Rodrigo A. Avellana, Jr.", position: "Designated Accounting Staff" });
+    }
+
+    list.forEach((entry) => {
+        const name = (entry.name || entry.signatory || "").trim();
+        if (!name || names.has(name.toLowerCase())) return;
+        names.add(name.toLowerCase());
+
+        const opt1 = document.createElement("option");
+        opt1.value = name;
+        opt1.textContent = `${name}${entry.position ? ` (${entry.position})` : ""}`;
+        custodianSelect.appendChild(opt1);
+
+        const opt2 = document.createElement("option");
+        opt2.value = name;
+        opt2.textContent = `${name}${entry.position ? ` (${entry.position})` : ""}`;
+        accountingSelect.appendChild(opt2);
+    });
+
+    if (currentCustodian && Array.from(custodianSelect.options).some(o => o.value === currentCustodian)) {
+        custodianSelect.value = currentCustodian;
+    } else {
+        const defCustodian = Array.from(custodianSelect.options).find(o => o.value.toLowerCase().includes("tuwahan"));
+        if (defCustodian) custodianSelect.value = defCustodian.value;
+        else if (custodianSelect.options.length > 1) custodianSelect.selectedIndex = 1;
+    }
+
+    if (currentAccounting && Array.from(accountingSelect.options).some(o => o.value === currentAccounting)) {
+        accountingSelect.value = currentAccounting;
+    } else {
+        const defAccounting = Array.from(accountingSelect.options).find(o => o.value.toLowerCase().includes("avellana"));
+        if (defAccounting) accountingSelect.value = defAccounting.value;
+        else if (accountingSelect.options.length > 2) accountingSelect.selectedIndex = 2;
+        else if (accountingSelect.options.length > 1) accountingSelect.selectedIndex = 1;
+    }
+
+    updateRspiSignatoryDisplays();
+}
+
+function updateRspiSignatoryDisplays() {
+    const custodianSelect = document.getElementById("rspiCustodianSelect");
+    const accountingSelect = document.getElementById("rspiAccountingStaffSelect");
+    const custodianDisplay = document.getElementById("rspiCustodianDisplay");
+    const accountingDisplay = document.getElementById("rspiAccountingDisplay");
+
+    if (custodianDisplay && custodianSelect) {
+        custodianDisplay.textContent = (custodianSelect.value || "JANINE CARLYLE G. TUWAHAN").toUpperCase();
+    }
+    if (accountingDisplay && accountingSelect) {
+        accountingDisplay.textContent = (accountingSelect.value || "RODRIGO A. AVELLANA, JR.").toUpperCase();
+    }
+}
+
+function populateRspiIcsOptions() {
+    const select = document.getElementById("rspiIcsFilterSelect");
+    if (!select) return;
+
+    const currentVal = select.value;
+    select.innerHTML = '<option value="all">All Issued Semi-Expendable Items</option>';
+
+    const distinctIcs = new Set();
+    (inventoryCustodianSlips || []).forEach(slip => {
+        if (slip.icsNo && slip.icsNo.trim()) {
+            distinctIcs.add(slip.icsNo.trim());
+        }
+    });
+
+    distinctIcs.forEach(icsNo => {
+        const opt = document.createElement("option");
+        opt.value = icsNo;
+        opt.textContent = `ICS No: ${icsNo}`;
+        select.appendChild(opt);
+    });
+
+    if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+        select.value = currentVal;
+    }
+}
+
+function updateRspiLiveMeta() {
+    const entityInput = document.getElementById("rspiEntityNameInput");
+    const fundInput = document.getElementById("rspiFundClusterInput");
+    const serialInput = document.getElementById("rspiSerialNoInput");
+    const dateInput = document.getElementById("rspiDateInput");
+
+    const entityDisplay = document.getElementById("rspiEntityNameDisplay");
+    const fundDisplay = document.getElementById("rspiFundClusterDisplay");
+    const serialDisplay = document.getElementById("rspiSerialNoDisplay");
+    const dateDisplay = document.getElementById("rspiDateDisplay");
+
+    if (entityDisplay && entityInput) entityDisplay.textContent = entityInput.value.trim() || "Department of Education";
+    if (fundDisplay && fundInput) fundDisplay.textContent = fundInput.value.trim() || "School MOOE Fund MARCH 2026";
+    if (serialDisplay && serialInput) serialDisplay.textContent = serialInput.value.trim() || "MOOEES-2026-03-0001";
+    if (dateDisplay && dateInput) dateDisplay.textContent = formatRspiDate(dateInput.value);
+}
+
+function renderRspiReport() {
+    const tbody = document.getElementById("rspiTableBody");
+    if (!tbody) return;
+
+    updateRspiLiveMeta();
+    updateRspiSignatoryDisplays();
+
+    const centerCodeInput = document.getElementById("rspiCenterCodeInput");
+    const defaultCenterCode = (centerCodeInput && centerCodeInput.value.trim()) || activeSchoolRecord?.school_id || "500243";
+
+    const filterSelect = document.getElementById("rspiIcsFilterSelect");
+    const selectedIcs = filterSelect ? filterSelect.value : "all";
+
+    // Gather records from database
+    let records = [];
+
+    if (Array.isArray(inventoryCustodianSlips) && inventoryCustodianSlips.length > 0) {
+        records = inventoryCustodianSlips.filter(slip => {
+            if (selectedIcs !== "all" && slip.icsNo !== selectedIcs) return false;
+            return true;
+        }).map(slip => {
+            const cost = Number(slip.unitCost) || 0;
+            const qty = Number(slip.quantity) || 1;
+            const total = Number(slip.totalCost) || (cost * qty);
+            return {
+                icsNo: slip.icsNo || "MOOEES-2026-03-0001",
+                centerCode: defaultCenterCode,
+                propNo: slip.inventoryItemNo || slip.icsNo || "MOOEES-2026-03-0001",
+                description: slip.description || "SEMI-EXPENDABLE ITEM",
+                unit: slip.unit || "piece",
+                qty: qty,
+                unitCost: cost,
+                amount: total
+            };
+        });
+    }
+
+    if (records.length === 0 && Array.isArray(items) && items.length > 0) {
+        const issuedItems = items.filter(it => it.status === "Issued" || it.status === "In Use" || it.semiExpandableNo);
+        if (issuedItems.length > 0) {
+            records = issuedItems.map(it => {
+                const cost = Number(it.unitValue) || 7500;
+                const qty = Number(it.onHand || it.balance) || 1;
+                const total = Number(it.total) || (cost * qty);
+                return {
+                    icsNo: it.semiExpandableNo || "MOOEES-2026-03-0001",
+                    centerCode: defaultCenterCode,
+                    propNo: it.semiExpandableNo || it.propertyNo || "MOOEES-2026-03-0001",
+                    description: `${it.itemBrandModel || ""}${it.serialNo ? ` - SN: ${it.serialNo}` : ""}`.trim() || "ESPON ECOTANK PRINTER L121",
+                    unit: it.unitMeasurement || "piece",
+                    qty: qty,
+                    unitCost: cost,
+                    amount: total
+                };
+            });
+        }
+    }
+
+    // Default template row matching uploaded image
+    if (records.length === 0) {
+        records = [
+            {
+                icsNo: "MOOEES-2026-03-0001",
+                centerCode: defaultCenterCode,
+                propNo: "MOOEES-2026-03-0001",
+                description: "ESPON ECOTANK PRINTER\nL121",
+                unit: "piece",
+                qty: 1,
+                unitCost: 7500.00,
+                amount: 7500.00
+            }
+        ];
+    }
+
+    let rowsHtml = "";
+    records.forEach(r => {
+        const formattedDesc = escapeHtml(r.description).replace(/\n/g, "<br>");
+        rowsHtml += `
+            <tr>
+              <td style="border:1px solid #000; padding:5px 3px; text-align:center; font-size:7.2pt; font-weight:bold; vertical-align:top; word-break:break-word;">${escapeHtml(r.icsNo)}</td>
+              <td style="border:1px solid #000; padding:5px 3px; text-align:center; font-size:7.2pt; vertical-align:top; word-break:break-word;">${escapeHtml(r.centerCode)}</td>
+              <td style="border:1px solid #000; padding:5px 3px; text-align:center; font-size:7.2pt; font-weight:bold; vertical-align:top; word-break:break-word;">${escapeHtml(r.propNo)}</td>
+              <td style="border:1px solid #000; padding:5px 5px; text-align:left; font-size:7.2pt; font-weight:bold; vertical-align:top; text-transform:uppercase; word-break:break-word;">${formattedDesc}</td>
+              <td style="border:1px solid #000; padding:5px 2px; text-align:center; font-size:7.2pt; vertical-align:top;">${escapeHtml(r.unit)}</td>
+              <td style="border:1px solid #000; padding:5px 2px; text-align:center; font-size:7.2pt; font-weight:bold; vertical-align:top;">${escapeHtml(String(r.qty))}</td>
+              <td style="border:1px solid #000; padding:5px 4px; text-align:right; font-size:7.2pt; vertical-align:top; white-space:nowrap;">${formatRspiCurrency(r.unitCost)}</td>
+              <td style="border:1px solid #000; padding:5px 4px; text-align:right; font-size:7.2pt; font-weight:bold; vertical-align:top; white-space:nowrap;">${formatRspiCurrency(r.amount)}</td>
+            </tr>
+        `;
+    });
+
+    // Add empty rows for padding (at least 4-6 rows to mirror the official template layout)
+    const targetRowCount = Math.max(4, records.length + 2);
+    const emptyRowsCount = Math.max(0, targetRowCount - records.length);
+    for (let i = 0; i < emptyRowsCount; i++) {
+        rowsHtml += `
+            <tr class="empty-row">
+              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
+              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
+              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
+              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
+              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
+              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
+              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
+              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
+            </tr>
+        `;
+    }
+
+    tbody.innerHTML = rowsHtml;
+}
+
+async function generateRspiPdf() {
+    const paper = document.getElementById("rspiReportPaper");
+    if (!paper) return;
+
+    if (!window.html2canvas || !window.jspdf?.jsPDF) {
+        showToast("PDF tools are still loading. Please try again in a moment.");
+        return;
+    }
+
+    showToast("Generating A4 RSPI PDF, please wait...");
+    try {
+        const serialNo = (document.getElementById("rspiSerialNoInput")?.value || "RSPI-REPORT").replace(/[^a-zA-Z0-9_-]/g, "_");
+
+        // Temporarily lock paper element to standard A4 printable width (794px = 210mm at 96dpi)
+        const prevWidth = paper.style.width;
+        const prevMaxWidth = paper.style.maxWidth;
+        const prevBoxShadow = paper.style.boxShadow;
+        const prevBorder = paper.style.border;
+
+        paper.style.width = "794px";
+        paper.style.maxWidth = "794px";
+        paper.style.boxShadow = "none";
+        paper.style.border = "none";
+
+        const canvas = await html2canvas(paper, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: "#ffffff",
+            windowWidth: 1200
+        });
+
+        // Restore styles
+        paper.style.width = prevWidth;
+        paper.style.maxWidth = prevMaxWidth;
+        paper.style.boxShadow = prevBoxShadow;
+        paper.style.border = prevBorder;
+
+        const imgData = canvas.toDataURL("image/png");
+        const { jsPDF } = window.jspdf;
+        // Standard A4: 210mm x 297mm
+        const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4"
+        });
+
+        const pageWidth = 210;
+        const pageHeight = 297;
+        const marginX = 12; // 12mm left & right margins
+        const marginY = 14; // 14mm top & bottom margins
+
+        const availableWidth = pageWidth - (marginX * 2); // 186mm
+        const availableHeight = pageHeight - (marginY * 2); // 269mm
+
+        let renderWidth = availableWidth;
+        let renderHeight = (canvas.height * renderWidth) / canvas.width;
+
+        // Ensure content fits within single A4 page without exceeding bottom margin
+        if (renderHeight > availableHeight) {
+            const ratio = availableHeight / renderHeight;
+            renderHeight = availableHeight;
+            renderWidth = renderWidth * ratio;
+        }
+
+        // Center horizontally on the A4 page so left and right margins are exactly equal
+        const posX = (pageWidth - renderWidth) / 2;
+        const posY = marginY;
+
+        pdf.addImage(imgData, "PNG", posX, posY, renderWidth, renderHeight);
+        pdf.save(`RSPI_${serialNo}.pdf`);
+        showToast("A4 RSPI PDF downloaded successfully!");
+    } catch (err) {
+        console.error("RSPI PDF error:", err);
+        showToast("Failed to generate PDF. Using print dialog instead.");
+        printRspiReport();
+    }
+}
+
+
+function printRspiReport() {
+    document.body.classList.add("printing-rspi");
+    window.print();
+    setTimeout(() => {
+        document.body.classList.remove("printing-rspi");
+    }, 1000);
+}
+
+function initRspiReport() {
+    populateRspiSignatories();
+    populateRspiIcsOptions();
+    renderRspiReport();
+
+    ["rspiEntityNameInput", "rspiFundClusterInput", "rspiSerialNoInput", "rspiDateInput"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("input", updateRspiLiveMeta);
+            el.addEventListener("change", updateRspiLiveMeta);
+        }
+    });
+
+    const centerInput = document.getElementById("rspiCenterCodeInput");
+    if (centerInput) {
+        centerInput.addEventListener("input", renderRspiReport);
+    }
+
+    const icsFilter = document.getElementById("rspiIcsFilterSelect");
+    if (icsFilter) {
+        icsFilter.addEventListener("change", renderRspiReport);
+    }
+
+    const custSelect = document.getElementById("rspiCustodianSelect");
+    if (custSelect) {
+        custSelect.addEventListener("change", updateRspiSignatoryDisplays);
+    }
+
+    const acctSelect = document.getElementById("rspiAccountingStaffSelect");
+    if (acctSelect) {
+        acctSelect.addEventListener("change", updateRspiSignatoryDisplays);
+    }
+
+    const refreshBtn = document.getElementById("refreshRspiBtn");
+    if (refreshBtn) {
+        refreshBtn.addEventListener("click", async () => {
+            showToast("Refreshing RSPI data...");
+            await loadInventoryCustodianSlipsFromDatabase();
+            populateRspiIcsOptions();
+            populateRspiSignatories();
+            renderRspiReport();
+            showToast("RSPI data updated!");
+        });
+    }
+
+    const printBtn = document.getElementById("printRspiBtn");
+    if (printBtn) {
+        printBtn.addEventListener("click", printRspiReport);
+    }
+
+    const pdfBtn = document.getElementById("generateRspiPdfBtn");
+    if (pdfBtn) {
+        pdfBtn.addEventListener("click", generateRspiPdf);
+    }
+}
+
 

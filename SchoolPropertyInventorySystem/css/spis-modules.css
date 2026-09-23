@@ -1749,6 +1749,165 @@ body[data-theme="dark"] .qr-uiverse-btn p {
    REPORT MODULE - Physical Count Report Generator (RPCSP)
    ========================================================================== */
 
+/* ── Reports Module Tabs ── */
+.reports-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.875rem;
+  overflow-x: auto;
+}
+
+.report-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.report-tab-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.report-tab-btn.active {
+  background: #00335e;
+  color: #ffffff;
+  border-color: #00335e;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 51, 94, 0.25);
+}
+
+.report-tab-panel {
+  width: 100%;
+}
+
+.report-tab-panel.hidden {
+  display: none !important;
+}
+
+/* ── RSPI Report Paper Styling ── */
+.rspi-report-container {
+  width: 100%;
+  overflow-x: auto;
+  background: #f8fafc;
+  padding: 1.5rem 0.5rem;
+  display: flex;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  box-sizing: border-box;
+}
+
+.rspi-report-paper {
+  background: #ffffff;
+  color: #000000;
+  font-family: "Times New Roman", Times, Georgia, serif;
+  width: 100%;
+  max-width: 794px; /* Exact standard A4 pixel width at 96 DPI */
+  box-sizing: border-box;
+  padding: 24px 20px 32px 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #cbd5e1;
+  margin: 0 auto;
+}
+
+.rspi-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  border: 2px solid #000000 !important;
+  font-family: "Times New Roman", Times, Georgia, serif !important;
+  font-size: 7.5pt !important;
+  color: #000000 !important;
+  background: #ffffff !important;
+  box-sizing: border-box !important;
+  word-break: break-word !important;
+}
+
+.rspi-table th,
+.rspi-table td {
+  border: 1px solid #000000 !important;
+  padding: 4px 4px !important;
+  color: #000000 !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+.rspi-table thead tr.subheading-row th {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 7pt;
+  text-align: center;
+  padding: 3px 4px;
+}
+
+.rspi-table thead tr.column-header-row th {
+  font-weight: bold;
+  text-align: center;
+  vertical-align: middle;
+  padding: 5px 3px;
+  font-size: 7.2pt;
+  line-height: 1.2;
+}
+
+.rspi-table tbody tr td {
+  font-size: 7.5pt;
+  padding: 5px 4px;
+}
+
+.rspi-table tbody tr.empty-row td {
+  height: 20px;
+}
+
+.rspi-table tfoot td {
+  border: 1px solid #000000 !important;
+  border-top: 2px solid #000000 !important;
+  box-sizing: border-box !important;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  body.printing-rspi * {
+    visibility: hidden;
+  }
+  body.printing-rspi .rspi-report-paper,
+  body.printing-rspi .rspi-report-paper * {
+    visibility: visible;
+  }
+  body.printing-rspi .rspi-report-paper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+
 /* ── Reports grid: stacked layout (controls on top, full-width report content card below) ── */
 .module-view[data-module="reports"] .reports-grid {
   display: flex;
@@ -1756,6 +1915,7 @@ body[data-theme="dark"] .qr-uiverse-btn p {
   gap: 1.5rem;
   width: 100%;
 }
+
 
 /* ── RPCSP generator card – prominent accent ── */
 .report-generator-card {

@@ -121,7 +121,7 @@
       box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
     }
   </style>
-  <link rel="stylesheet" href="css/spis-modules.css?v=20260923_v23">
+  <link rel="stylesheet" href="css/spis-modules.css?v=20260923_v26">
 </head>
 <body class="bg-[#f0f4f8] text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-green selection:text-white">
 
@@ -1540,8 +1540,23 @@
 
                 <!-- MODULE 5: REPORT -->
         <div class="module-view" data-module="reports" style="display:none;">
-          <section class="reports-grid">
-            <!-- CARD 1: REPORT CONFIGURATION -->
+          <!-- REPORT MODULE TABS -->
+          <div class="reports-tabs-nav">
+            <button type="button" class="report-tab-btn active" data-report-tab="rpcsp">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span>RPCSP</span>
+            </button>
+            <button type="button" class="report-tab-btn" data-report-tab="rspi">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+              <span>RSPI</span>
+            </button>
+          </div>
+
+          <!-- TAB 1: RPCSP -->
+          <div id="reportTabRpcsp" class="report-tab-panel">
+            <section class="reports-grid">
+              <!-- CARD 1: REPORT CONFIGURATION -->
+
               <article class="module-card report-generator-card" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:0.75rem; padding:1.25rem; margin-bottom:0;">
                 <div class="section-heading" style="margin-bottom:1rem; border-bottom:1px solid #e2e8f0; padding-bottom:0.75rem;">
                   <div>
@@ -2272,6 +2287,203 @@
           </section>
         </div>
 
+        <!-- TAB 2: RSPI (Report of Semi-Expendable Property Issued) -->
+        <div id="reportTabRspi" class="report-tab-panel hidden" style="display:none;">
+          <section class="reports-grid">
+            <!-- CARD 1: RSPI CONFIGURATION -->
+            <article class="module-card report-generator-card" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:0.75rem; padding:1.25rem; margin-bottom:0;">
+              <div class="section-heading" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1rem; border-bottom:1px solid #e2e8f0; padding-bottom:0.75rem;">
+                <div>
+                  <p class="eyebrow" style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; margin:0 0 0.25rem 0;">RSPI Configuration</p>
+                  <h2 style="margin:0; font-size:1.15rem; font-weight:700; color:#00335e;">Report Parameters & Criteria</h2>
+                </div>
+                <div>
+                  <button type="button" id="refreshRspiBtn" class="secondary-button" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 0.85rem; font-size:0.8125rem; font-weight:600; border-radius:0.375rem; border:1px solid #cbd5e1; background:#f8fafc; color:#334155; cursor:pointer;">
+                    <i data-lucide="refresh-cw" style="width:14px; height:14px;"></i>
+                    <span>Refresh Records</span>
+                  </button>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.875rem;">
+                <!-- Field 1: Entity Name -->
+                <div class="form-field-group">
+                  <label for="rspiEntityNameInput" style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:0.35rem; color:#334155;">Entity Name</label>
+                  <input type="text" id="rspiEntityNameInput" class="form-input" value="Department of Education" style="width:100%; padding:0.55rem 0.75rem; border:1px solid #cbd5e1; border-radius:0.375rem; box-sizing:border-box; background:#fff;">
+                </div>
+
+                <!-- Field 2: Fund Cluster -->
+                <div class="form-field-group">
+                  <label for="rspiFundClusterInput" style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:0.35rem; color:#334155;">Fund Cluster</label>
+                  <input type="text" id="rspiFundClusterInput" class="form-input" value="School MOOE Fund MARCH 2026" placeholder="e.g., School MOOE Fund MARCH 2026" style="width:100%; padding:0.55rem 0.75rem; border:1px solid #cbd5e1; border-radius:0.375rem; box-sizing:border-box; background:#fff;">
+                </div>
+
+                <!-- Field 3: Serial No. -->
+                <div class="form-field-group">
+                  <label for="rspiSerialNoInput" style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:0.35rem; color:#334155;">Serial No.</label>
+                  <input type="text" id="rspiSerialNoInput" class="form-input" value="MOOEES-2026-03-0001" placeholder="e.g., MOOEES-2026-03-0001" style="width:100%; padding:0.55rem 0.75rem; border:1px solid #cbd5e1; border-radius:0.375rem; box-sizing:border-box; background:#fff;">
+                </div>
+
+                <!-- Field 4: Date -->
+                <div class="form-field-group">
+                  <label for="rspiDateInput" style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:0.35rem; color:#334155;">Date</label>
+                  <input type="date" id="rspiDateInput" class="form-input" value="2026-03-25" style="width:100%; padding:0.55rem 0.75rem; border:1px solid #cbd5e1; border-radius:0.375rem; box-sizing:border-box; background:#fff;">
+                </div>
+
+                <!-- Field 5: Responsibility Center Code -->
+                <div class="form-field-group">
+                  <label for="rspiCenterCodeInput" style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:0.35rem; color:#334155;">Responsibility Center Code</label>
+                  <input type="text" id="rspiCenterCodeInput" class="form-input" value="500243" placeholder="e.g., 500243" style="width:100%; padding:0.55rem 0.75rem; border:1px solid #cbd5e1; border-radius:0.375rem; box-sizing:border-box; background:#fff;">
+                </div>
+
+                <!-- Field 6: Source ICS Record Filter -->
+                <div class="form-field-group">
+                  <label for="rspiIcsFilterSelect" style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:0.35rem; color:#334155;">Source ICS Record</label>
+                  <select id="rspiIcsFilterSelect" class="form-input" style="width:100%; padding:0.55rem 0.75rem; border:1px solid #cbd5e1; border-radius:0.375rem; box-sizing:border-box; background:#fff;">
+                    <option value="all">All Issued Semi-Expendable Items</option>
+                  </select>
+                </div>
+              </div>
+            </article>
+
+            <!-- CARD 2: RSPI INVENTORY DOCUMENT (PRINT / FORM VIEW) -->
+            <article class="module-card report-content-card" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:0.75rem; padding:1.25rem; width:100%; box-sizing:border-box;">
+              <div class="section-heading" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid #e2e8f0; padding-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+                <div>
+                  <p class="eyebrow" style="font-size:0.75rem; font-weight:700; color:#55a83b; text-transform:uppercase; margin:0 0 0.25rem 0;">Inventory Document</p>
+                  <h2 style="margin:0; font-size:1.15rem; font-weight:700; color:#00335e;">REPORT OF SEMI-EXPENDABLE PROPERTY ISSUED</h2>
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                  <button type="button" id="printRspiBtn" class="secondary-button" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.55rem 1rem; font-size:0.8125rem; font-weight:600; border-radius:0.375rem; border:1px solid #cbd5e1; background:#ffffff; color:#334155; cursor:pointer;">
+                    <i data-lucide="printer" style="width:15px; height:15px;"></i>
+                    <span>Print</span>
+                  </button>
+                  <button type="button" id="generateRspiPdfBtn" class="primary-button" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.55rem 1.25rem; font-size:0.8125rem; font-weight:700; border-radius:0.375rem; background:linear-gradient(135deg, #00335e 0%, #004c87 100%); color:#ffffff; cursor:pointer; box-shadow:0 2px 6px rgba(0, 51, 94, 0.2);">
+                    <i data-lucide="download" style="width:15px; height:15px;"></i>
+                    <span>Generate PDF</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- RSPI Sheet Preview Container -->
+              <div class="rspi-report-container" id="rspiReportContainer">
+                <div class="rspi-report-paper" id="rspiReportPaper">
+                  <!-- SEAL & TITLE -->
+                  <div style="text-align:center; margin-bottom:18px;">
+                    <img src="images/deped_logo.png" alt="DepEd Seal" style="width:64px; height:64px; margin:0 auto 8px auto; display:block; object-fit:contain;">
+                    <div style="font-size:13.5pt; font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; color:#000; font-family:'Times New Roman',Times,serif;">
+                      REPORT OF SEMI-EXPENDABLE PROPERTY ISSUED
+                    </div>
+                  </div>
+
+                  <!-- METADATA HEADER -->
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; font-size:9.5pt; color:#000; font-family:'Times New Roman',Times,serif;">
+                    <div>
+                      <div style="margin-bottom:4px;">
+                        <span style="display:inline-block; width:95px;">Entity Name:</span>
+                        <strong id="rspiEntityNameDisplay">Department of Education</strong>
+                      </div>
+                      <div>
+                        <span style="display:inline-block; width:95px;">Fund Cluster:</span>
+                        <strong id="rspiFundClusterDisplay">School MOOE Fund MARCH 2026</strong>
+                      </div>
+                    </div>
+                    <div style="text-align:left;">
+                      <div style="margin-bottom:4px;">
+                        <span style="display:inline-block; width:80px;">Serial No.:</span>
+                        <strong id="rspiSerialNoDisplay">MOOEES-2026-03-0001</strong>
+                      </div>
+                      <div>
+                        <span style="display:inline-block; width:80px;">Date :</span>
+                        <strong id="rspiDateDisplay">March 25, 2026</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- MAIN TABLE -->
+                  <div style="width:100%; box-sizing:border-box;">
+                    <table class="rspi-table" id="rspiMainTable">
+                      <thead>
+                        <tr class="subheading-row">
+                          <th colspan="6" style="border:1px solid #000; padding:3px 4px; font-weight:normal; font-style:italic;">To be filled up by the Supply and/or Property Division/Unit</th>
+                          <th colspan="2" style="border:1px solid #000; padding:3px 4px; font-weight:normal; font-style:italic;">To be filled up by the Accounting Division/Unit</th>
+                        </tr>
+                        <tr class="column-header-row">
+                          <th style="border:1px solid #000; padding:5px 3px; width:14%; font-size:7.2pt;">ICS No.</th>
+                          <th style="border:1px solid #000; padding:5px 3px; width:9%; font-size:7.2pt;">Responsibility<br>Center Code</th>
+                          <th style="border:1px solid #000; padding:5px 3px; width:14%; font-size:7.2pt;">Semi-Expendable<br>Property No.</th>
+                          <th style="border:1px solid #000; padding:5px 4px; width:24%; font-size:7.2pt;">Item Description</th>
+                          <th style="border:1px solid #000; padding:5px 2px; width:5%; font-size:7.2pt;">Unit</th>
+                          <th style="border:1px solid #000; padding:5px 2px; width:5%; font-size:7.2pt;">Quantity<br>Issued</th>
+                          <th style="border:1px solid #000; padding:5px 3px; width:14%; font-size:7.2pt;">Unit Cost</th>
+                          <th style="border:1px solid #000; padding:5px 3px; width:15%; font-size:7.2pt;">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody id="rspiTableBody">
+                        <!-- Populated dynamically from database -->
+                      </tbody>
+                      <tfoot>
+                        <!-- CERTIFICATION AND POSTING ROW -->
+                        <tr>
+                          <td colspan="6" style="border:1px solid #000; border-top:2px solid #000; padding:10px 12px 14px 12px; vertical-align:top; width:71%; box-sizing:border-box;">
+                            <div style="font-size:7.5pt; margin-bottom:24px;">I hereby certify to the correctness of the above information.</div>
+                            <div style="text-align:center;">
+                              <div id="rspiCustodianDisplay" style="font-weight:bold; text-decoration:underline; font-size:9pt; text-transform:uppercase;">JANINE CARLYLE G. TUWAHAN</div>
+                              <div style="font-size:7pt; margin-top:2px;">Signature over Printed Name of Property and/or Supply Custodian</div>
+                            </div>
+                          </td>
+                          <td colspan="2" style="border:1px solid #000; border-top:2px solid #000; padding:10px 8px 14px 8px; vertical-align:top; width:29%; box-sizing:border-box;">
+                            <div style="font-size:7.5pt; margin-bottom:24px;">Posted by:</div>
+                            <div style="text-align:center;">
+                              <div id="rspiAccountingDisplay" style="font-weight:bold; text-decoration:underline; font-size:9pt; text-transform:uppercase;">RODRIGO A. AVELLANA, JR.</div>
+                              <div style="display:flex; justify-content:space-between; align-items:flex-end; font-size:6.8pt; margin-top:2px; gap:4px;">
+                                <div style="text-align:left; flex:1; line-height:1.2;">Signature over Printed Name of<br>Designated Accounting Staff</div>
+                                <div style="text-align:center; min-width:42px;">
+                                  <span style="display:inline-block; width:100%; border-bottom:1px solid #000; height:10px;"></span>
+                                  Date
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                </div>
+              </div>
+            </article>
+
+            <!-- CARD 3: RSPI SIGNATORIES -->
+            <article class="module-card signatory-card" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:0.75rem; padding:1.25rem; width:100%; box-sizing:border-box;">
+              <div class="section-heading" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1rem; border-bottom:1px solid #e2e8f0; padding-bottom:0.75rem;">
+                <div>
+                  <p class="eyebrow" style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; margin:0 0 0.25rem 0;">Signatories</p>
+                  <h2 style="margin:0; font-size:1.15rem; font-weight:700; color:#00335e;">RSPI Report Signatories</h2>
+                </div>
+              </div>
+              <div class="signatory-fields" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+                <label style="display:flex; flex-direction:column; gap:0.35rem;">
+                  <span style="font-weight:700; font-size:0.8125rem; color:#0f172a;">Property and/or Supply Custodian:</span>
+                  <span style="font-size:0.725rem; color:#64748b;">Certifies correctness of issued items</span>
+                  <select id="rspiCustodianSelect" class="form-input" style="width:100%; padding:0.5rem 0.75rem; border:1px solid #cbd5e1; border-radius:0.375rem; background:#fff;">
+                    <option value="">Select signatory</option>
+                  </select>
+                </label>
+                <label style="display:flex; flex-direction:column; gap:0.35rem;">
+                  <span style="font-weight:700; font-size:0.8125rem; color:#0f172a;">Designated Accounting Staff:</span>
+                  <span style="font-size:0.725rem; color:#64748b;">Posted by signature</span>
+                  <select id="rspiAccountingStaffSelect" class="form-input" style="width:100%; padding:0.5rem 0.75rem; border:1px solid #cbd5e1; border-radius:0.375rem; background:#fff;">
+                    <option value="">Select signatory</option>
+                  </select>
+                </label>
+              </div>
+            </article>
+          </section>
+        </div>
+      </div>
+
+
         <!-- MODULE 6: SETTINGS -->
         <div class="module-view" data-module="settings" style="display:none;">
           <section class="settings-grid">
@@ -2519,7 +2731,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="supabase-config.js?v=20260904"></script>
-  <script src="js/app.js?v=20260923_v6"></script>
+  <script src="js/app.js?v=20260923_v9"></script>
   <script>
     if (typeof lucide !== "undefined") { lucide.createIcons(); }
   </script>
