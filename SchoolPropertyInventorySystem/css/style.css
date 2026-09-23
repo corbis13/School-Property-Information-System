@@ -2718,8 +2718,11 @@ body[data-theme="light"] .asset-detail-row {
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
+.asset-details-grid > .full-width-card,
 .detail-card.full-width-card {
-    grid-column: 1 / -1;
+    grid-column: 1 / -1 !important;
+    grid-column: span 2 !important;
+    width: 100%;
 }
 
 .detail-card.full-width-card .card-field-list {
