@@ -12,6 +12,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="asset-detail-page">
+    <!-- Top Action Toolbar -->
+    <header class="asset-window-toolbar no-print">
+        <button type="button" id="backBtn" class="action-btn-secondary" title="Back to SPIS" aria-label="Back to SPIS">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Back</span>
+        </button>
+    </header>
+
     <div class="asset-window-container">
         <!-- Feedback & Status Notification Banner (if any) -->
         <div id="statusAlert" class="asset-alert" style="display: none;"></div>
@@ -22,8 +30,6 @@
             <div class="hero-header-bar">
                 <div class="hero-tags-group">
                     <span class="spis-kicker">SPIS Property Record</span>
-                    <span id="heroClassification" class="classification-pill">Semi-Expendable Property</span>
-                    <span id="heroInventoryType" class="inventory-type-pill">Equipment</span>
                 </div>
                 <div class="hero-status-wrap">
                     <div id="heroStatusBadge" class="status-badge status-available">
@@ -36,27 +42,8 @@
             <!-- Body Layout: Core Asset Info on left, QR Verification Card on right -->
             <div class="hero-body-layout">
                 <div class="hero-core-details">
-                    <!-- Prominent Asset Name / Brand & Model -->
-                    <h1 id="heroBrandModel" class="hero-asset-name">Loading Asset...</h1>
-
-                    <!-- Key Identifiers Strip -->
-                    <div class="hero-identifiers-strip">
-                        <div class="id-badge primary-id">
-                            <span class="id-label"><i data-lucide="hash" class="w-3.5 h-3.5 inline mr-1"></i>Property No.</span>
-                            <strong id="heroPropertyNo" class="id-val">--</strong>
-                        </div>
-                        <div class="id-badge">
-                            <span class="id-label">Asset ID</span>
-                            <code id="heroAssetId" class="id-val">--</code>
-                        </div>
-                        <div class="id-badge" id="heroSerialChip">
-                            <span class="id-label">Serial No.</span>
-                            <code id="heroSerialNo" class="id-val">--</code>
-                        </div>
-                    </div>
-
-                    <!-- 3 Metric Highlight Cards -->
-                    <div class="hero-metrics-row">
+                    <!-- Custody & Valuation Grid -->
+                    <div class="hero-metrics-grid">
                         <div class="metric-card">
                             <div class="metric-icon-wrap bg-blue-subtle">
                                 <i data-lucide="user-check" class="w-4 h-4 text-blue"></i>
@@ -64,6 +51,16 @@
                             <div class="metric-info">
                                 <span class="metric-label">Accountable Custodian</span>
                                 <strong id="heroAccountable" class="metric-value">--</strong>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-icon-wrap bg-purple-subtle">
+                                <i data-lucide="building-2" class="w-4 h-4 text-purple"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">School Level / Dept.</span>
+                                <strong id="heroSchoolLevel" class="metric-value">--</strong>
                             </div>
                         </div>
 
@@ -78,6 +75,16 @@
                         </div>
 
                         <div class="metric-card">
+                            <div class="metric-icon-wrap bg-sky-subtle">
+                                <i data-lucide="calendar" class="w-4 h-4 text-sky"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Date Issued</span>
+                                <strong id="heroDateIssue" class="metric-value">--</strong>
+                            </div>
+                        </div>
+
+                        <div class="metric-card metric-card-value">
                             <div class="metric-icon-wrap bg-emerald-subtle">
                                 <i data-lucide="coins" class="w-4 h-4 text-emerald"></i>
                             </div>
@@ -102,7 +109,7 @@
             </div>
         </section>
 
-        <!-- 4-Section Structured Grid -->
+        <!-- Structured Details Grid -->
         <main class="asset-details-grid">
             <!-- Section 1: Property Identification -->
             <section class="detail-card">
@@ -142,33 +149,7 @@
                 </dl>
             </section>
 
-            <!-- Section 2: Custody & Location -->
-            <section class="detail-card">
-                <div class="card-header">
-                    <i data-lucide="shield-check" class="card-icon text-emerald"></i>
-                    <h2>Custody & Assignment</h2>
-                </div>
-                <dl class="card-field-list">
-                    <div class="field-row">
-                        <dt>Accountable Person</dt>
-                        <dd><strong id="fieldAccountable">--</strong></dd>
-                    </div>
-                    <div class="field-row">
-                        <dt>School Level / Dept.</dt>
-                        <dd id="fieldSchoolLevel">--</dd>
-                    </div>
-                    <div class="field-row">
-                        <dt>Designated Location</dt>
-                        <dd id="fieldLocation">--</dd>
-                    </div>
-                    <div class="field-row">
-                        <dt>Date Issued</dt>
-                        <dd id="fieldDateIssue">--</dd>
-                    </div>
-                </dl>
-            </section>
-
-            <!-- Section 3: Acquisition & Valuation -->
+            <!-- Section 2: Acquisition & Valuation -->
             <section class="detail-card">
                 <div class="card-header">
                     <i data-lucide="receipt" class="card-icon text-amber"></i>
@@ -192,27 +173,19 @@
                         <dd id="fieldUnitValue">--</dd>
                     </div>
                     <div class="field-row">
-                        <dt>Total Value</dt>
-                        <dd><strong id="fieldTotal" class="text-emerald">--</strong></dd>
-                    </div>
-                    <div class="field-row">
                         <dt>MOOE Period</dt>
                         <dd id="fieldMooePeriod">--</dd>
                     </div>
                 </dl>
             </section>
 
-            <!-- Section 4: Inventory Count & Condition -->
-            <section class="detail-card">
+            <!-- Section 3: Inventory Count & Condition -->
+            <section class="detail-card full-width-card">
                 <div class="card-header">
                     <i data-lucide="clipboard-list" class="card-icon text-purple"></i>
                     <h2>Inventory Count & Condition</h2>
                 </div>
                 <dl class="card-field-list">
-                    <div class="field-row">
-                        <dt>Physical Status</dt>
-                        <dd><span id="fieldStatus" class="status-tag">--</span></dd>
-                    </div>
                     <div class="field-row">
                         <dt>Quantity On Hand</dt>
                         <dd id="fieldOnHand">--</dd>

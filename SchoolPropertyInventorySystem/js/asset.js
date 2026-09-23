@@ -95,11 +95,11 @@ function renderAsset(item) {
     const heroTitle = document.getElementById("heroBrandModel");
     if (heroTitle) heroTitle.textContent = item.itemBrandModel || item.propertyNo || "Unnamed Property Asset";
 
-    const heroClassification = document.getElementById("heroClassification");
-    if (heroClassification) heroClassification.textContent = item.itemClassification || "Property Item";
-
     const heroInventoryType = document.getElementById("heroInventoryType");
-    if (heroInventoryType) heroInventoryType.textContent = item.inventoryType || "Inventory Asset";
+    if (heroInventoryType) heroInventoryType.textContent = item.inventoryType || item.itemClassification || "Property Item";
+
+    const heroFundCluster = document.getElementById("heroFundCluster");
+    if (heroFundCluster) heroFundCluster.textContent = item.fundCluster || item.fund_cluster || "Central Office Fund";
 
     const heroPropertyNo = document.getElementById("heroPropertyNo");
     if (heroPropertyNo) heroPropertyNo.textContent = item.propertyNo || "N/A";
@@ -113,8 +113,14 @@ function renderAsset(item) {
     const heroAccountable = document.getElementById("heroAccountable");
     if (heroAccountable) heroAccountable.textContent = item.accountable || item.accountablePerson || "Unassigned";
 
+    const heroSchoolLevel = document.getElementById("heroSchoolLevel");
+    if (heroSchoolLevel) heroSchoolLevel.textContent = item.schoolLevel || item.schoollevel || "General";
+
     const heroLocation = document.getElementById("heroLocation");
     if (heroLocation) heroLocation.textContent = item.location || "Unspecified Location";
+
+    const heroDateIssue = document.getElementById("heroDateIssue");
+    if (heroDateIssue) heroDateIssue.textContent = item.dateIssue || item.date_issue || "Not Recorded";
 
     const heroTotalValue = document.getElementById("heroTotalValue");
     if (heroTotalValue) heroTotalValue.textContent = formatPeso(item.total || (item.unitValue ? item.unitValue : 0));
@@ -308,22 +314,16 @@ async function loadAsset() {
 }
 
 function initEventHandlers() {
-    // Print Record
-    const printBtn = document.getElementById("printAssetBtn");
-    if (printBtn) {
-        printBtn.addEventListener("click", () => {
-            window.print();
-        });
-    }
-
-    // Close Window
-    const closeBtn = document.getElementById("closeWindowBtn");
-    if (closeBtn) {
-        closeBtn.addEventListener("click", () => {
+    // Back Button / Close Window
+    const backBtn = document.getElementById("backBtn") || document.getElementById("closeWindowBtn");
+    if (backBtn) {
+        backBtn.addEventListener("click", () => {
             if (window.opener) {
                 window.close();
-            } else {
+            } else if (window.history.length > 1 && document.referrer) {
                 window.history.back();
+            } else {
+                window.location.href = "index.html";
             }
         });
     }

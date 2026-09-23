@@ -2149,7 +2149,7 @@ body[data-theme="light"] .asset-detail-row {
     z-index: 100;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 10px 24px;
     background: #002b4d;
     color: #ffffff;
@@ -2223,6 +2223,16 @@ body[data-theme="light"] .asset-detail-row {
 
 .action-btn-secondary:hover {
     background: rgba(255, 255, 255, 0.22);
+}
+
+.action-btn-primary svg,
+.action-btn-secondary svg,
+.action-btn-primary i,
+.action-btn-secondary i {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    stroke: currentColor;
 }
 
 /* Main Container */
@@ -2391,6 +2401,16 @@ body[data-theme="light"] .asset-detail-row {
     border-radius: 6px;
 }
 
+.fund-cluster-pill {
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #f8fafc;
+    color: #00335e;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+}
+
 .hero-status-wrap {
     flex-shrink: 0;
 }
@@ -2474,7 +2494,7 @@ body[data-theme="light"] .asset-detail-row {
 .hero-core-details {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
     gap: 16px;
     min-width: 0;
 }
@@ -2529,11 +2549,27 @@ body[data-theme="light"] .asset-detail-row {
     color: #00335e;
 }
 
-/* Metrics Row (Accountable, Location, Valuation) */
+/* Metrics Row & Grid (Accountable, School Level, Location, Date Issued, Valuation) */
 .hero-metrics-row {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
+}
+
+.hero-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.metric-card-value {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+    border-color: #bbf7d0;
+}
+
+.metric-card-value .metric-value {
+    font-size: 1rem;
 }
 
 .metric-card {
@@ -2560,8 +2596,14 @@ body[data-theme="light"] .asset-detail-row {
 .bg-blue-subtle {
     background: #eff6ff;
 }
+.bg-purple-subtle {
+    background: #f5f3ff;
+}
 .bg-amber-subtle {
     background: #fffbeb;
+}
+.bg-sky-subtle {
+    background: #f0f9ff;
 }
 .bg-emerald-subtle {
     background: #ecfdf5;
@@ -2570,8 +2612,14 @@ body[data-theme="light"] .asset-detail-row {
 .text-blue {
     color: #2563eb !important;
 }
+.text-purple {
+    color: #7c3aed !important;
+}
 .text-amber {
     color: #d97706 !important;
+}
+.text-sky {
+    color: #0284c7 !important;
 }
 .text-emerald {
     color: #16a34a !important;
@@ -2668,6 +2716,24 @@ body[data-theme="light"] .asset-detail-row {
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.detail-card.full-width-card {
+    grid-column: 1 / -1;
+}
+
+.detail-card.full-width-card .card-field-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+}
+
+.detail-card.full-width-card .card-field-list .field-row {
+    background: transparent;
+}
+
+.detail-card.full-width-card .card-field-list .field-row.full-width {
+    grid-column: 1 / -1;
 }
 
 .detail-card .card-header {
@@ -2833,7 +2899,8 @@ body[data-theme="light"] .asset-detail-row {
 
 /* Responsive */
 @media (max-width: 960px) {
-    .hero-metrics-row {
+    .hero-metrics-row,
+    .hero-metrics-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -2864,6 +2931,19 @@ body[data-theme="light"] .asset-detail-row {
 
     .asset-details-grid {
         grid-template-columns: 1fr;
+    }
+
+    .detail-card.full-width-card .card-field-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .asset-window-toolbar {
+        padding: 8px 14px;
+    }
+    .toolbar-title {
+        display: none;
     }
 }
 
