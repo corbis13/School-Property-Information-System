@@ -1848,28 +1848,7 @@ function getAssetDetailUrl(assetId) {
 function openAssetWindow(assetId, targetUrl) {
     const safeId = encodeURIComponent(String(assetId || "UNKNOWN").trim());
     const finalUrl = targetUrl || `asset.html?assetId=${safeId}`;
-
-    // On mobile screens, open in standard tab
-    if (window.innerWidth < 768) {
-        window.open(finalUrl, "_blank");
-        return;
-    }
-
-    // On desktop, open a well-sized, centered inspector window
-    const screenW = window.screen.availWidth || window.innerWidth || 1200;
-    const screenH = window.screen.availHeight || window.innerHeight || 800;
-    const width = Math.min(1080, Math.max(800, Math.round(screenW * 0.72)));
-    const height = Math.min(920, Math.max(680, Math.round(screenH * 0.88)));
-    const left = Math.max(0, Math.round((screenW - width) / 2));
-    const top = Math.max(0, Math.round((screenH - height) / 2));
-    const windowFeatures = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`;
-
-    const popup = window.open(finalUrl, `SPIS_Asset_${safeId}`, windowFeatures);
-    if (popup) {
-        popup.focus();
-    } else {
-        window.open(finalUrl, "_blank");
-    }
+    window.location.href = finalUrl;
 }
 
 function getQrPayload(item) {
