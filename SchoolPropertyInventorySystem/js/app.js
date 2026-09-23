@@ -3181,6 +3181,7 @@ function renderTable() {
             <td><span class="badge" style="${getStatusBadgeStyles(status)}">${escapeHtml(status || "Unspecified")}</span></td>
             <td>
                 <div class="row-actions">
+                    <button type="button" data-action="open" data-id="${escapeHtml(item.assetId)}">Open</button>
                     <button type="button" data-action="qr" data-id="${escapeHtml(item.assetId)}">QR</button>
                     <button type="button" data-action="edit" data-id="${escapeHtml(item.assetId)}">Edit</button>
                     <button type="button" data-action="delete" data-id="${escapeHtml(item.assetId)}">Delete</button>
@@ -4341,6 +4342,11 @@ async function handleTableClick(event) {
 
     const item = items.find((entry) => entry.assetId === button.dataset.id);
     if (!item) return;
+
+    if (button.dataset.action === "open") {
+        openAssetWindow(item.assetId);
+        return;
+    }
 
     if (button.dataset.action === "qr") {
         selectedId = item.assetId;

@@ -121,7 +121,7 @@
       box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
     }
   </style>
-  <link rel="stylesheet" href="css/spis-modules.css?v=20260918_v22">
+  <link rel="stylesheet" href="css/spis-modules.css?v=20260923_v23">
 </head>
 <body class="bg-[#f0f4f8] text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-green selection:text-white">
 
@@ -2355,28 +2355,31 @@
                         </form>
                     </article>
 
-                    <article class="module-card">
-                        <p class="eyebrow">Appearance</p>
-                        <h2>Theme</h2>
-                        <div class="theme-switcher" role="group" aria-label="Theme selection">
-                            <button class="theme-option active" type="button" data-theme-choice="dark">Dark</button>
-                            <button class="theme-option" type="button" data-theme-choice="light">Light</button>
-                        </div>
-                    </article>
-                    <article class="module-card">
-                        <p class="eyebrow">Settings</p>
-                        <h2>Database Connection</h2>
-                        <dl class="settings-list">
-                            <div>
-                                <dt>Storage Mode</dt>
-                                <dd>Supabase REST API</dd>
+                    <!-- Secondary Settings Column -->
+                    <div class="settings-secondary-col">
+                        <article class="module-card">
+                            <p class="eyebrow">Appearance</p>
+                            <h2>Theme</h2>
+                            <div class="theme-switcher" role="group" aria-label="Theme selection">
+                                <button class="theme-option active" type="button" data-theme-choice="dark">Dark</button>
+                                <button class="theme-option" type="button" data-theme-choice="light">Light</button>
                             </div>
-                            <div>
-                                <dt>Configured Tables</dt>
-                                <dd>assets, classifications</dd>
-                            </div>
-                        </dl>
-                    </article>
+                        </article>
+                        <article class="module-card">
+                            <p class="eyebrow">Settings</p>
+                            <h2>Database Connection</h2>
+                            <dl class="settings-list">
+                                <div>
+                                    <dt>Storage Mode</dt>
+                                    <dd>Supabase REST API</dd>
+                                </div>
+                                <div>
+                                    <dt>Configured Tables</dt>
+                                    <dd>assets, classifications</dd>
+                                </div>
+                            </dl>
+                        </article>
+                    </div>
                 </section>
         </div>
 
@@ -2517,7 +2520,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="supabase-config.js?v=20260904"></script>
-  <script src="js/app.js?v=20260918_v5"></script>
+  <script src="js/app.js?v=20260923_v6"></script>
   <script>
     if (typeof lucide !== "undefined") { lucide.createIcons(); }
   </script>
