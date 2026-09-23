@@ -1848,7 +1848,7 @@ function getAssetDetailUrl(assetId) {
 function openAssetWindow(assetId, targetUrl) {
     const safeId = encodeURIComponent(String(assetId || "UNKNOWN").trim());
     const finalUrl = targetUrl || `asset.html?assetId=${safeId}`;
-    window.location.href = finalUrl;
+    window.open(finalUrl, "_blank");
 }
 
 function getQrPayload(item) {
