@@ -4587,7 +4587,7 @@ function showModule(moduleName, targetId = "") {
 
     // Synchronize Sidebar Nav Items
     document.querySelectorAll(".nav-item").forEach((item) => {
-        const isActive = item.dataset.view === moduleName || (targetModuleView === "document" && moduleName === "document" && item.dataset.view === "ics");
+        const isActive = item.dataset.view === moduleName || (targetModuleView === "document" && item.dataset.view === "ics");
         item.classList.toggle("active", isActive);
 
         const indicator = item.querySelector(".nav-indicator");
@@ -4614,7 +4614,7 @@ function showModule(moduleName, targetId = "") {
 
     const documentSubmenu = document.getElementById("documentSubmenu");
     const documentToggle = document.querySelector("[data-document-toggle]");
-    const isDocumentModule = targetModuleView === "document" || targetModuleView === "rspi";
+    const isDocumentModule = targetModuleView === "document" || targetModuleView === "rspi" || moduleName === "rspi";
     if (documentSubmenu) documentSubmenu.classList.toggle("hidden", !isDocumentModule);
     if (documentToggle) {
         documentToggle.setAttribute("aria-expanded", String(isDocumentModule));
@@ -4623,7 +4623,7 @@ function showModule(moduleName, targetId = "") {
 
     // Synchronize Top Horizontal Navigation Bar Buttons
     document.querySelectorAll(".top-nav-btn").forEach((btn) => {
-        const isActive = btn.dataset.view === targetModuleView || btn.dataset.view === moduleName || (btn.dataset.view === "document" && targetModuleView === "rspi");
+        const isActive = btn.dataset.view === targetModuleView || btn.dataset.view === moduleName || (btn.dataset.view === "document" && (targetModuleView === "rspi" || moduleName === "rspi"));
         btn.classList.toggle("active", isActive);
         if (isActive) {
             btn.classList.add("bg-[#00335e]", "text-white", "font-bold", "shadow-xs");
@@ -4645,16 +4645,16 @@ function showModule(moduleName, targetId = "") {
         loadRemoteQrDownloadHistory();
     }
 
+    if (moduleName === "reports") {
+        renderReports();
+    }
+
     if (moduleName === "rspi") {
         if (typeof renderRspiReport === "function") {
             populateRspiSignatories();
             populateRspiIcsOptions();
             renderRspiReport();
         }
-    }
-
-    if (moduleName === "reports") {
-        renderReports();
     }
 
     if (moduleName === "about" || moduleName === "settings") {
