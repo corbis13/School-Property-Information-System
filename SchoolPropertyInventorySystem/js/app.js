@@ -7010,12 +7010,16 @@ function formatRspiCurrency(val) {
     return num.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+let isOpeningRspiPdf = false;
 async function openRspiDocumentPdf(slip) {
-    const JsPdf = window.jspdf && window.jspdf.jsPDF;
-    if (!JsPdf) {
-        showToast("PDF generation library is unavailable.");
-        return;
-    }
+    if (isOpeningRspiPdf) return;
+    isOpeningRspiPdf = true;
+    try {
+        const JsPdf = window.jspdf && window.jspdf.jsPDF;
+        if (!JsPdf) {
+            showToast("PDF generation library is unavailable.");
+            return;
+        }
 
     // Gather all items that share the same Serial No. or Report ID
     const slipItems = rspiSlips.filter((entry) =>
@@ -7082,73 +7086,14 @@ async function openRspiDocumentPdf(slip) {
 
     y += 6;
 
-    // Dynamic Column Width Auto-Fit (sum = 184 mm / contentWidth)
+    // Table Column Widths (sum = 184 mm)
     // [ICS No, Center Code, Property No, Description, Unit, Qty, Unit Cost, Amount]
-    const minWidths = [22, 20, 25, 42, 11, 14, 18, 18];
-    const maxWidths = [30, 26, 38, 75, 16, 20, 26, 26];
-    const desired = [...minWidths];
-
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7.5);
-
-    slipItems.forEach((item) => {
-        if (!item) return;
-        const vals = [
-            String(item.icsNo || ""),
-            String(item.centerCode || ""),
-            String(item.semiExpendablePropertyNo || ""),
-            String(item.description || ""),
-            String(item.unit || ""),
-            String(item.quantity ?? ""),
-            item.unitCost !== "" ? formatRspiCurrency(item.unitCost) : "",
-            item.amount !== "" ? formatRspiCurrency(item.amount) : ""
-        ];
-        vals.forEach((v, i) => {
-            if (i === 3) {
-                const words = v.split(/\s+/);
-                let maxWordW = 0;
-                words.forEach((w) => {
-                    const ww = pdf.getTextWidth(w) + 4;
-                    if (ww > maxWordW) maxWordW = ww;
-                });
-                const descDesired = Math.max(minWidths[3], maxWordW, Math.min(maxWidths[3], v.length * 0.7));
-                if (descDesired > desired[3]) desired[3] = Math.min(maxWidths[3], descDesired);
-            } else {
-                const tw = pdf.getTextWidth(v) + 4;
-                if (tw > desired[i]) desired[i] = Math.min(maxWidths[i], tw);
-            }
-        });
-    });
-
-    const totalTableWidth = contentWidth; // 184 mm
-    let sumCols = desired.reduce((a, b) => a + b, 0);
-    let remainder = totalTableWidth - sumCols;
-    if (remainder > 0) {
-        desired[3] += remainder * 0.7;
-        desired[2] += remainder * 0.3;
-    } else if (remainder < 0) {
-        desired[3] = Math.max(minWidths[3], desired[3] + remainder);
-        sumCols = desired.reduce((a, b) => a + b, 0);
-        remainder = totalTableWidth - sumCols;
-        if (remainder < 0) {
-            for (let i = 0; i < desired.length; i++) {
-                if (desired[i] > minWidths[i]) {
-                    const take = Math.min(desired[i] - minWidths[i], -remainder);
-                    desired[i] -= take;
-                    remainder += take;
-                    if (remainder >= 0) break;
-                }
-            }
-        }
-    }
-    const columns = desired.map((w) => Math.round(w * 10) / 10);
-    const roundSum = columns.reduce((a, b) => a + b, 0);
-    columns[3] = Math.round((columns[3] + (totalTableWidth - roundSum)) * 10) / 10;
+    const columns = [23, 22, 25, 46, 12, 16, 20, 20];
 
     // Sub-header 1: Department Fill-in indicators
     const subheaderHeight = 11;
-    const supplyWidth = columns[0] + columns[1] + columns[2] + columns[3] + columns[4] + columns[5];
-    const acctWidth = columns[6] + columns[7];
+    const supplyWidth = columns[0] + columns[1] + columns[2] + columns[3] + columns[4] + columns[5]; // 144 mm
+    const acctWidth = columns[6] + columns[7]; // 40 mm
 
     pdf.setFont("helvetica", "oblique");
     pdf.setFontSize(7.5);
@@ -7194,51 +7139,59 @@ async function openRspiDocumentPdf(slip) {
 
     y += colHeaderHeight;
 
-    // Table Data Rows with dynamic height per row
+    // Table Data Rows
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(7.5);
 
-    const targetRowCount = Math.max(12, slipItems.length);
+    const targetRowCount = 12;
     const renderedItems = [...slipItems];
 
     for (let r = 0; r < targetRowCount; r++) {
         const item = renderedItems[r];
-        let rowHeight = 6.5;
-        let colLines = [[], [], [], [], [], [], [], []];
-
-        if (item) {
-            colLines = [
-                pdf.splitTextToSize(String(item.icsNo || "-"), columns[0] - 2),
-                pdf.splitTextToSize(String(item.centerCode || "-"), columns[1] - 2),
-                pdf.splitTextToSize(String(item.semiExpendablePropertyNo || "-"), columns[2] - 2),
-                pdf.splitTextToSize(String(item.description || "-"), columns[3] - 2.5),
-                pdf.splitTextToSize(String(item.unit || "-"), columns[4] - 2),
-                pdf.splitTextToSize(String(item.quantity ?? "-"), columns[5] - 2),
-                pdf.splitTextToSize(item.unitCost !== "" ? formatRspiCurrency(item.unitCost) : "", columns[6] - 2),
-                pdf.splitTextToSize(item.amount !== "" ? formatRspiCurrency(item.amount) : "", columns[7] - 2)
-            ];
-            const maxLines = Math.max(1, ...colLines.map((l) => l.length));
-            rowHeight = Math.max(6.5, maxLines * 3.5 + 2.5);
-        }
+        const descText = item ? String(item.description || "-") : "";
+        const descLines = pdf.splitTextToSize(descText, columns[3] - 2.5);
+        const rowHeight = item ? Math.max(6.5, descLines.length * 3.5 + 2) : 6.5;
 
         currentX = marginX;
-        for (let c = 0; c < 8; c++) {
-            const colW = columns[c];
-            pdf.rect(currentX, y, colW, rowHeight);
-            if (item && colLines[c].length > 0) {
-                colLines[c].forEach((lineText, lineIdx) => {
-                    const lineY = y + 4.5 + lineIdx * 3.5;
-                    if (c === 3) {
-                        pdf.text(lineText, currentX + 1.5, lineY, { align: "left" });
-                    } else if (c === 6 || c === 7) {
-                        pdf.text(lineText, currentX + colW - 1.5, lineY, { align: "right" });
-                    } else {
-                        pdf.text(lineText, currentX + colW / 2, lineY, { align: "center" });
-                    }
-                });
-            }
-            currentX += colW;
-        }
+
+        // Col 0: ICS No.
+        pdf.rect(currentX, y, columns[0], rowHeight);
+        if (item) pdf.text(String(item.icsNo || "-"), currentX + columns[0] / 2, y + 4.5, { align: "center" });
+        currentX += columns[0];
+
+        // Col 1: Center Code
+        pdf.rect(currentX, y, columns[1], rowHeight);
+        if (item) pdf.text(String(item.centerCode || "-"), currentX + columns[1] / 2, y + 4.5, { align: "center" });
+        currentX += columns[1];
+
+        // Col 2: Semi-Expendable Property No.
+        pdf.rect(currentX, y, columns[2], rowHeight);
+        if (item) pdf.text(String(item.semiExpendablePropertyNo || "-"), currentX + columns[2] / 2, y + 4.5, { align: "center" });
+        currentX += columns[2];
+
+        // Col 3: Item Description
+        pdf.rect(currentX, y, columns[3], rowHeight);
+        if (item) pdf.text(descLines, currentX + 1.5, y + 4.5);
+        currentX += columns[3];
+
+        // Col 4: Unit
+        pdf.rect(currentX, y, columns[4], rowHeight);
+        if (item) pdf.text(String(item.unit || "-"), currentX + columns[4] / 2, y + 4.5, { align: "center" });
+        currentX += columns[4];
+
+        // Col 5: Quantity Issued
+        pdf.rect(currentX, y, columns[5], rowHeight);
+        if (item) pdf.text(String(item.quantity ?? "-"), currentX + columns[5] / 2, y + 4.5, { align: "center" });
+        currentX += columns[5];
+
+        // Col 6: Unit Cost
+        pdf.rect(currentX, y, columns[6], rowHeight);
+        if (item && item.unitCost !== "") pdf.text(formatRspiCurrency(item.unitCost), currentX + columns[6] - 1.5, y + 4.5, { align: "right" });
+        currentX += columns[6];
+
+        // Col 7: Amount
+        pdf.rect(currentX, y, columns[7], rowHeight);
+        if (item && item.amount !== "") pdf.text(formatRspiCurrency(item.amount), currentX + columns[7] - 1.5, y + 4.5, { align: "right" });
 
         y += rowHeight;
     }
@@ -7309,6 +7262,11 @@ async function openRspiDocumentPdf(slip) {
     const preview = window.open(pdfUrl, "_blank");
     if (!preview) {
         showToast("Please allow popups to view the RSPI PDF.");
+    }
+    } finally {
+        setTimeout(() => {
+            isOpeningRspiPdf = false;
+        }, 600);
     }
 }
 
@@ -7473,10 +7431,14 @@ window.resetRspiSlipForm = resetRspiSlipForm;
 window.getRspiSlipFormData = getRspiSlipFormData;
 window.populateRspiIcsOptions = populateRspiIcsOptions;
 
+let isRspiModuleInitialized = false;
+
 async function initRspiModule() {
+    if (isRspiModuleInitialized) return;
     const form = document.querySelector("#rspiSlipForm");
     const table = document.querySelector("#rspiSlipTable");
     if (!form || !table) return;
+    isRspiModuleInitialized = true;
 
     populateRspiDescriptionDropdown();
     populateRspiSignatories();
@@ -7619,6 +7581,10 @@ async function initRspiModule() {
         if (!slip) return;
 
         if (button.dataset.rspiAction === "open") {
+            event.stopPropagation();
+            if (button.dataset.opening === "true") return;
+            button.dataset.opening = "true";
+            setTimeout(() => { delete button.dataset.opening; }, 1000);
             openRspiDocumentPdf(slip);
             return;
         }
