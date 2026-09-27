@@ -63,10 +63,11 @@ app.get(['/SchoolPropertyInventorySystem/supabase-config.js', '/supabase-config.
   res.type('application/javascript');
   const url = process.env.SUPABASE_URL || 'https://ouqgkytallctnptshefo.supabase.co';
   const anonKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS';
+  const assetUrl = process.env.ASSET_URL || 'https://corbis13.github.io/School-Property-Information-System/SchoolPropertyInventorySystem/asset.html';
   res.send(`window.SUPABASE_CONFIG = {
     url: ${JSON.stringify(url)},
     anonKey: ${JSON.stringify(anonKey)},
-    assetUrl: (typeof window !== "undefined" && window.location ? window.location.origin : "") + "/SchoolPropertyInventorySystem/asset.html"
+    assetUrl: ${JSON.stringify(assetUrl)}
 };`);
 });
 

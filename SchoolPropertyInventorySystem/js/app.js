@@ -1855,18 +1855,20 @@ function getAssetDetailUrl(assetId) {
     const safeId = encodeURIComponent(String(assetId || "UNKNOWN").trim());
     const query = `?assetId=${safeId}`;
 
-    if (configuredUrl) {
+    // If a valid absolute URL is configured that is not localhost / loopback
+    if (configuredUrl && /^https?:\/\//i.test(configuredUrl) && !/localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(configuredUrl)) {
         return `${configuredUrl.replace(/\/+$|\?+$/g, "")}${query}`;
     }
 
+    // If current origin is a public non-localhost domain (e.g. GitHub Pages or custom domain)
     if (typeof window !== "undefined" && window.location && window.location.origin) {
         const origin = window.location.origin;
-        const pathname = window.location.pathname;
-        if (pathname.includes("SchoolPropertyInventorySystem")) {
+        if (!/localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(origin)) {
             return `${origin}/SchoolPropertyInventorySystem/asset.html${query}`;
         }
     }
 
+    // Default to the publicly accessible GitHub Pages URL so mobile cameras anywhere can open it
     return `https://corbis13.github.io/School-Property-Information-System/SchoolPropertyInventorySystem/asset.html${query}`;
 }
 
