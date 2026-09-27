@@ -4647,8 +4647,19 @@ function showModule(moduleName, targetId = "") {
     }
 
     // Synchronize Top Horizontal Navigation Bar Buttons
+    const hasTopNavRspiBtn = Boolean(document.querySelector('.top-nav-btn[data-view="rspi"]'));
     document.querySelectorAll(".top-nav-btn").forEach((btn) => {
-        const isActive = btn.dataset.view === targetModuleView || btn.dataset.view === moduleName || (btn.dataset.view === "document" && (targetModuleView === "rspi" || moduleName === "rspi"));
+        const isRspi = targetModuleView === "rspi" || moduleName === "rspi";
+        let isActive = false;
+        if (btn.dataset.view === "rspi") {
+            isActive = isRspi;
+        } else if (btn.dataset.view === "document") {
+            isActive = hasTopNavRspiBtn
+                ? ((targetModuleView === "document" || moduleName === "document" || moduleName === "ics") && !isRspi)
+                : (targetModuleView === "document" || moduleName === "document" || moduleName === "ics" || isRspi);
+        } else {
+            isActive = btn.dataset.view === targetModuleView || btn.dataset.view === moduleName;
+        }
         btn.classList.toggle("active", isActive);
         if (isActive) {
             btn.classList.add("bg-[#00335e]", "text-white", "font-bold", "shadow-xs");
@@ -5225,9 +5236,32 @@ async function init() {
     }
 
 
-    if (params.get("module") === "qr") {
-        showModule("qr");
+    const requestedModule = params.get("module") || (window.location.hash ? window.location.hash.replace("#", "") : "");
+    if (requestedModule) {
+        showModule(requestedModule);
+    } else if (window.innerWidth < 768) {
+        // In mobile view, display the RSPI module
+        showModule("rspi");
     }
+
+    // Support deep-link hash navigation and responsive mobile view switching
+    window.addEventListener("hashchange", () => {
+        const hashModule = window.location.hash.replace("#", "");
+        if (hashModule) showModule(hashModule);
+    });
+
+    let lastWindowWidth = window.innerWidth;
+    window.addEventListener("resize", () => {
+        const currentWidth = window.innerWidth;
+        if (currentWidth < 768 && lastWindowWidth >= 768) {
+            // When transitioning to mobile view, display RSPI if on dashboard
+            const activeModule = document.querySelector(".module-view.active");
+            if (activeModule && activeModule.dataset.module === "dashboard") {
+                showModule("rspi");
+            }
+        }
+        lastWindowWidth = currentWidth;
+    });
 
     if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
         setDatabaseStatus("Supabase config pending.", "Set your Supabase anon key in supabase-config.js to enable remote persistence.");

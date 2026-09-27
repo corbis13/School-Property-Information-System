@@ -326,6 +326,26 @@
   .module-view:not([data-module="dashboard"]) .mobile-school-info-card {
     display: none !important;
   }
+
+  /* RSPI & Document module mobile responsiveness */
+  .module-view[data-module="rspi"] .two-column,
+  .module-view[data-module="document"] .two-column {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .module-view[data-module="rspi"] .ics-slip-table-wrap,
+  .module-view[data-module="document"] .ics-slip-table-wrap {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .module-view[data-module="rspi"] .ics-slip-table-wrap table,
+  .module-view[data-module="document"] .ics-slip-table-wrap table {
+    min-width: 680px !important;
+  }
 }
 
 /* Base Card & Container Surfaces */
@@ -399,8 +419,9 @@
   align-items: start;
 }
 
-/* Document Module: Full-width stacked layout (Document Template on top, Saved Documents below) */
-.module-view[data-module="document"] .reports-grid {
+/* Document & RSPI Modules: Full-width stacked layout (Template on top, Saved Documents below) */
+.module-view[data-module="document"] .reports-grid,
+.module-view[data-module="rspi"] .reports-grid {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -408,7 +429,9 @@
 }
 
 .module-view[data-module="document"] .item-form,
-.module-view[data-module="document"] .module-card {
+.module-view[data-module="document"] .module-card,
+.module-view[data-module="rspi"] .item-form,
+.module-view[data-module="rspi"] .module-card {
   width: 100%;
   margin-bottom: 0;
 }
@@ -726,6 +749,9 @@ body[data-theme="light"] #saveAssetBtn,
 body[data-theme="light"] #icsNewBtn,
 body[data-theme="light"] #icsClearBtn,
 body[data-theme="light"] #saveIcsBtn,
+body[data-theme="light"] #rspiNewBtn,
+body[data-theme="light"] #rspiClearBtn,
+body[data-theme="light"] #saveRspiBtn,
 body[data-theme="light"] #selectActiveSchoolBtn,
 body[data-theme="light"] #saveSchoolDetailsBtn,
 body[data-theme="light"] #refreshSchoolDetailsBtn,
@@ -739,6 +765,9 @@ body[data-theme="dark"] #saveAssetBtn,
 body[data-theme="dark"] #icsNewBtn,
 body[data-theme="dark"] #icsClearBtn,
 body[data-theme="dark"] #saveIcsBtn,
+body[data-theme="dark"] #rspiNewBtn,
+body[data-theme="dark"] #rspiClearBtn,
+body[data-theme="dark"] #saveRspiBtn,
 body[data-theme="dark"] #selectActiveSchoolBtn,
 body[data-theme="dark"] #saveSchoolDetailsBtn,
 body[data-theme="dark"] #refreshSchoolDetailsBtn,
@@ -3382,7 +3411,10 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   #saveAssetBtn.button,
   #icsNewBtn.button,
   #icsClearBtn.button,
-  #saveIcsBtn.button {
+  #saveIcsBtn.button,
+  #rspiNewBtn.button,
+  #rspiClearBtn.button,
+  #saveRspiBtn.button {
     flex: 1 1 0% !important;
     width: 100% !important;
     min-width: 0 !important;
