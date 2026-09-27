@@ -133,6 +133,8 @@ const dom = {
     qrHistoryEmptyState: document.querySelector("#qrHistoryEmptyState"),
     icsSlipPagination: document.querySelector("#icsSlipPagination"),
     icsSlipSearchInput: document.querySelector("#icsSlipSearchInput"),
+    rspiSlipPagination: document.querySelector("#rspiSlipPagination"),
+    rspiSlipSearchInput: document.querySelector("#rspiSlipSearchInput"),
     themeButtons: document.querySelectorAll("[data-theme-choice]"),
     toast: document.querySelector("#toast"),
     databaseStatus: document.querySelector("#databaseStatus"),
@@ -181,9 +183,12 @@ let canOpenClassificationModal = false;
 let canOpenStatusModal = false;
 let inventoryPage = 1;
 const inventoryCustodianSlipStorageKey = "propertyInventoryCustodianSlips";
+const rspiReportStorageKey = "propertyInventoryRspiReports";
 const qrDownloadHistoryStorageKey = "propertyInventoryQrDownloadHistory";
 const qrDownloadedFileNamesStorageKey = "propertyInventoryQrDownloadedFileNames";
 let inventoryCustodianSlips = [];
+let rspiReports = [];
+let activeRspiReportId = "";
 let qrDownloadHistory = [];
 let icsSlipPage = 1;
 const icsSlipPageSize = 10;
@@ -644,6 +649,26 @@ async function loadSchoolNameOptions() {
     }
 
     entitySelect.value = currentValue;
+
+    const rspiEntitySelect = document.querySelector("#rspiEntityName");
+    if (rspiEntitySelect) {
+        const curRspiVal = rspiEntitySelect.value.trim();
+        rspiEntitySelect.innerHTML = '<option value="">Select school</option>';
+        schoolNames.forEach((schoolName) => {
+            const opt = document.createElement("option");
+            opt.value = schoolName;
+            opt.textContent = schoolName;
+            rspiEntitySelect.appendChild(opt);
+        });
+        if (curRspiVal && schoolNames.includes(curRspiVal)) {
+            rspiEntitySelect.value = curRspiVal;
+        } else if (activeSchoolRecord && activeSchoolRecord.school_name && schoolNames.includes(activeSchoolRecord.school_name)) {
+            rspiEntitySelect.value = activeSchoolRecord.school_name;
+        } else if (rspiEntitySelect.options.length > 1) {
+            rspiEntitySelect.selectedIndex = 1;
+        }
+    }
+
     return schoolNames;
 }
 
@@ -6231,11 +6256,709 @@ async function openInventoryCustodianSlipPdf(slip) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   RSPI REPORT GENERATOR (Report of Semi-Expendable Property Issued)
+   RSPI MODULE (Report of Semi-Expendable Property Issued)
+   Replicates the field logic of the ICS module with dedicated database/local
+   storage and exact PDF generation matching the official DepEd template.
    ══════════════════════════════════════════════════════════════════════════ */
 
+const rspiSlipsStorageKey = "propertyInventoryRspiSlips";
+let rspiSlips = [];
+let rspiSlipPage = 1;
+const rspiSlipPageSize = 10;
+let isSelectingRspiOption = false;
+
+function hasRspiRemoteDatabase() {
+    return hasInventoryCustodianSlipRemoteDatabase();
+}
+
+function loadRspiSlips() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(rspiSlipsStorageKey) || "[]");
+        if (Array.isArray(stored) && stored.length > 0) return stored;
+
+        // Check if legacy rspiReports exist and convert them
+        const legacyReports = JSON.parse(localStorage.getItem(rspiReportStorageKey) || "[]");
+        if (Array.isArray(legacyReports) && legacyReports.length > 0) {
+            return mapRspiLegacyReports(legacyReports);
+        }
+        return [];
+    } catch {
+        return [];
+    }
+}
+
+function mapRspiLegacyReports(reports) {
+    return (reports || []).flatMap((rep) => {
+        const lineItems = Array.isArray(rep.items) ? rep.items : [];
+        if (!lineItems.length) {
+            return [{
+                id: rep.id || `RSPI-${Date.now()}`,
+                dbReportId: rep.dbReportId || null,
+                serialNo: rep.serialNo || "",
+                entityName: rep.entityName || "",
+                fundCluster: rep.fundCluster || "",
+                centerCode: rep.centerCode || "",
+                description: "",
+                icsNo: rep.sourceIcsNo || "",
+                semiExpendablePropertyNo: "",
+                unit: "piece",
+                quantity: 1,
+                unitCost: 0,
+                amount: 0,
+                rspiDate: rep.reportDate || "",
+                custodianName: rep.custodianName || "",
+                accountingStaffName: rep.accountingStaffName || "",
+                postedDate: rep.postedDate || "",
+                savedAt: rep.savedAt || new Date().toISOString()
+            }];
+        }
+        return lineItems.map((item, idx) => ({
+            id: `${rep.id || "RSPI"}-${item.dbItemId || idx}`,
+            dbReportId: rep.dbReportId || null,
+            dbItemId: item.dbItemId || null,
+            lineNo: idx + 1,
+            serialNo: rep.serialNo || "",
+            entityName: rep.entityName || "",
+            fundCluster: rep.fundCluster || "",
+            centerCode: item.centerCode || rep.centerCode || "",
+            description: item.description || "",
+            icsNo: item.icsNo || rep.sourceIcsNo || "",
+            semiExpendablePropertyNo: item.propNo || "",
+            unit: item.unit || "piece",
+            quantity: item.qty ?? 1,
+            unitCost: item.unitCost ?? 0,
+            amount: item.amount ?? 0,
+            rspiDate: rep.reportDate || "",
+            custodianName: rep.custodianName || "",
+            accountingStaffName: rep.accountingStaffName || "",
+            postedDate: rep.postedDate || "",
+            savedAt: rep.savedAt || new Date().toISOString()
+        }));
+    });
+}
+
+function saveRspiSlips() {
+    try {
+        localStorage.setItem(rspiSlipsStorageKey, JSON.stringify(rspiSlips));
+    } catch (error) {
+        console.error("Unable to save RSPI slips locally.", error);
+    }
+}
+
+function mapRspiReportRows(rows) {
+    return (rows || []).flatMap((header) => {
+        const lineItems = Array.isArray(header.rspi_report_items) ? header.rspi_report_items : [];
+        if (!lineItems.length) {
+            return [{
+                id: `RSPI-${header.id}`,
+                dbReportId: header.id,
+                serialNo: header.serial_no || "",
+                entityName: header.entity_name || "",
+                fundCluster: header.fund_cluster || "",
+                centerCode: header.responsibility_center_code || "",
+                description: "",
+                icsNo: header.source_ics_no || "",
+                semiExpendablePropertyNo: "",
+                unit: "piece",
+                quantity: 1,
+                unitCost: 0,
+                amount: 0,
+                rspiDate: header.report_date || "",
+                custodianName: header.custodian_name || "",
+                accountingStaffName: header.accounting_staff_name || "",
+                postedDate: header.posted_date || "",
+                savedAt: header.created_at || new Date().toISOString()
+            }];
+        }
+        return lineItems
+            .sort((first, second) => Number(first.line_no || 0) - Number(second.line_no || 0))
+            .map((item) => ({
+                id: `RSPI-${header.id}-${item.id}`,
+                dbReportId: header.id,
+                dbItemId: item.id,
+                lineNo: item.line_no,
+                entityName: header.entity_name || "",
+                fundCluster: header.fund_cluster || "",
+                serialNo: header.serial_no || "",
+                centerCode: item.responsibility_center_code || header.responsibility_center_code || "",
+                description: item.description_snapshot || "",
+                icsNo: item.ics_no_snapshot || header.source_ics_no || "",
+                semiExpendablePropertyNo: item.semi_expendable_property_no || "",
+                unit: item.unit || "piece",
+                quantity: item.quantity_issued ?? 1,
+                unitCost: item.unit_cost ?? 0,
+                amount: item.amount ?? 0,
+                rspiDate: header.report_date || "",
+                custodianName: header.custodian_name || "",
+                accountingStaffName: header.accounting_staff_name || "",
+                postedDate: header.posted_date || "",
+                savedAt: item.created_at || header.created_at || new Date().toISOString()
+            }));
+    });
+}
+
+async function requestRspiDatabase(path, options = {}) {
+    const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
+        ...options,
+        headers: {
+            ...supabaseHeaders,
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+            ...(options.headers || {})
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`RSPI database request failed: HTTP ${response.status}`);
+    }
+
+    return response;
+}
+
+async function loadRspiSlipsFromDatabase() {
+    if (!hasRspiRemoteDatabase()) return false;
+
+    const select = [
+        "id", "serial_no", "entity_name", "fund_cluster", "report_date",
+        "responsibility_center_code", "source_ics_no",
+        "custodian_name", "accounting_staff_name", "posted_date", "created_at",
+        "rspi_report_items(id,line_no,ics_no_snapshot,responsibility_center_code,semi_expendable_property_no,description_snapshot,unit,quantity_issued,unit_cost,amount)"
+    ].join(",");
+
+    const response = await fetch(`${supabaseUrl}/rest/v1/rspi_reports?select=${encodeURIComponent(select)}&order=created_at.desc`, {
+        headers: supabaseHeaders
+    });
+
+    if (!response.ok) {
+        throw new Error(`Unable to load RSPI reports: HTTP ${response.status}`);
+    }
+
+    rspiSlips = mapRspiReportRows(await response.json());
+    saveRspiSlips();
+    return true;
+}
+
+async function saveRspiSlipToDatabase(action, slip) {
+    const sameReportRows = rspiSlips.filter((entry) => entry.dbReportId && entry.serialNo === slip.serialNo);
+    let reportId = slip.dbReportId || sameReportRows[0]?.dbReportId;
+
+    const headerPayload = {
+        serial_no: slip.serialNo,
+        entity_name: slip.entityName,
+        fund_cluster: slip.fundCluster || null,
+        report_date: slip.rspiDate || new Date().toISOString().slice(0, 10),
+        responsibility_center_code: slip.centerCode || null,
+        source_ics_no: slip.icsNo || null,
+        custodian_name: slip.custodianName || null,
+        accounting_staff_name: slip.accountingStaffName || null,
+        posted_date: slip.postedDate || null
+    };
+
+    if (reportId) {
+        await requestRspiDatabase(`rspi_reports?id=eq.${encodeURIComponent(reportId)}`, {
+            method: "PATCH",
+            body: JSON.stringify(headerPayload)
+        });
+    } else {
+        const response = await requestRspiDatabase("rspi_reports", {
+            method: "POST",
+            body: JSON.stringify(headerPayload)
+        });
+        const rows = await response.json();
+        reportId = rows[0]?.id;
+        if (!reportId) throw new Error("RSPI report header was created without an identifier.");
+    }
+
+    const itemPayload = {
+        rspi_report_id: reportId,
+        line_no: slip.lineNo || 1,
+        ics_no_snapshot: slip.icsNo || "",
+        responsibility_center_code: slip.centerCode || null,
+        semi_expendable_property_no: slip.semiExpendablePropertyNo || null,
+        description_snapshot: slip.description || "",
+        unit: slip.unit || "piece",
+        quantity_issued: Number(slip.quantity) || 1,
+        unit_cost: Number(slip.unitCost) || 0,
+        amount: Number(slip.amount) || ((Number(slip.quantity) || 1) * (Number(slip.unitCost) || 0))
+    };
+
+    if (action === "update" && slip.dbItemId) {
+        await requestRspiDatabase(`rspi_report_items?id=eq.${encodeURIComponent(slip.dbItemId)}`, {
+            method: "PATCH",
+            body: JSON.stringify(itemPayload)
+        });
+    } else {
+        const lineNo = Math.max(0, ...sameReportRows.map((entry) => Number(entry.lineNo) || 0)) + 1;
+        itemPayload.line_no = lineNo;
+        await requestRspiDatabase("rspi_report_items", {
+            method: "POST",
+            body: JSON.stringify(itemPayload)
+        });
+    }
+}
+
+async function deleteRspiSlipFromDatabase(slip) {
+    if (!slip) return;
+    const sameReportRows = rspiSlips.filter((entry) => slip.dbReportId && entry.dbReportId === slip.dbReportId);
+    const itemCount = sameReportRows.length;
+
+    if (slip.dbItemId) {
+        try {
+            await requestRspiDatabase(`rspi_report_items?id=eq.${encodeURIComponent(slip.dbItemId)}`, { method: "DELETE" });
+        } catch (error) {
+            console.warn("Could not delete from rspi_report_items:", error);
+        }
+    }
+
+    if (slip.dbReportId && itemCount <= 1) {
+        try {
+            await requestRspiDatabase(`rspi_reports?id=eq.${encodeURIComponent(slip.dbReportId)}`, { method: "DELETE" });
+        } catch (error) {
+            console.warn("Could not delete from rspi_reports:", error);
+        }
+    }
+}
+
+function updateRspiSlipAmount() {
+    const qtyEl = document.querySelector("#rspiQuantity");
+    const costEl = document.querySelector("#rspiUnitCost");
+    const amountEl = document.querySelector("#rspiAmount");
+    if (!qtyEl || !costEl || !amountEl) return;
+
+    const qty = Number(qtyEl.value);
+    const cost = Number(costEl.value);
+    amountEl.value = Number.isFinite(qty) && Number.isFinite(cost)
+        ? (qty * cost).toFixed(2)
+        : "";
+}
+
+function resetRspiSlipForm() {
+    const form = document.querySelector("#rspiSlipForm");
+    if (!form) return;
+
+    form.reset();
+    const editingIdEl = document.querySelector("#rspiEditingId");
+    if (editingIdEl) editingIdEl.value = "";
+    const amountEl = document.querySelector("#rspiAmount");
+    if (amountEl) amountEl.value = "";
+    const titleEl = document.querySelector("#rspiFormTitle");
+    if (titleEl) titleEl.textContent = "Report of Semi-Expendable Property Issued";
+
+    const descSearch = document.querySelector("#rspiDescriptionSearch");
+    if (descSearch) descSearch.value = "";
+    const descSelect = document.querySelector("#rspiDescription");
+    if (descSelect) descSelect.value = "";
+
+    const dateInput = document.querySelector("#rspiDate");
+    if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+
+    const centerInput = document.querySelector("#rspiCenterCode");
+    if (centerInput) centerInput.value = activeSchoolRecord?.school_id || "500243";
+
+    const entitySelect = document.querySelector("#rspiEntityName");
+    if (entitySelect && activeSchoolRecord?.school_name) {
+        entitySelect.value = activeSchoolRecord.school_name;
+    }
+
+    populateRspiSignatories();
+    closeRspiDropdownMenu();
+    filterRspiDropdownOptions("");
+}
+
+function openRspiDropdownMenu() {
+    const menu = document.querySelector("#rspiOptionsMenu");
+    const container = document.querySelector("#rspiSearchableSelect");
+    if (menu) menu.style.display = "block";
+    if (container) container.classList.add("open");
+}
+
+function closeRspiDropdownMenu() {
+    const menu = document.querySelector("#rspiOptionsMenu");
+    const container = document.querySelector("#rspiSearchableSelect");
+    if (menu) menu.style.display = "none";
+    if (container) container.classList.remove("open");
+}
+
+function toggleRspiDropdownMenu() {
+    const menu = document.querySelector("#rspiOptionsMenu");
+    if (!menu) return;
+    if (menu.style.display === "none" || !menu.style.display) {
+        const searchInput = document.querySelector("#rspiDescriptionSearch");
+        filterRspiDropdownOptions(searchInput ? searchInput.value : "");
+        openRspiDropdownMenu();
+    } else {
+        closeRspiDropdownMenu();
+    }
+}
+
+function filterRspiDropdownOptions(filterText = "") {
+    const list = document.querySelector("#rspiOptionsList");
+    if (!list) return;
+
+    const query = String(filterText || "").trim().toLowerCase();
+    const optionItems = list.querySelectorAll(".ics-option-item");
+    let matchCount = 0;
+
+    optionItems.forEach((itemEl) => {
+        const text = (itemEl.dataset.text || itemEl.textContent || "").toLowerCase();
+        if (!query || text.includes(query)) {
+            itemEl.style.display = "flex";
+            matchCount++;
+        } else {
+            itemEl.style.display = "none";
+        }
+    });
+
+    let noResultsEl = list.querySelector(".ics-option-no-results");
+    if (matchCount === 0) {
+        if (!noResultsEl) {
+            noResultsEl = document.createElement("div");
+            noResultsEl.className = "ics-option-no-results";
+            noResultsEl.textContent = "No matching items found";
+            list.appendChild(noResultsEl);
+        }
+        noResultsEl.style.display = "block";
+    } else if (noResultsEl) {
+        noResultsEl.style.display = "none";
+    }
+}
+
+function selectRspiDescriptionItem(description, assetId) {
+    isSelectingRspiOption = true;
+    const searchInput = document.querySelector("#rspiDescriptionSearch");
+    const descriptionSelect = document.querySelector("#rspiDescription");
+
+    if (searchInput) {
+        searchInput.value = description;
+        searchInput.blur();
+    }
+
+    if (descriptionSelect) {
+        if (description && !Array.from(descriptionSelect.options).some(opt => opt.value === description)) {
+            const opt = document.createElement("option");
+            opt.value = description;
+            opt.textContent = description;
+            if (assetId) opt.dataset.assetId = assetId;
+            descriptionSelect.appendChild(opt);
+        }
+        descriptionSelect.value = description;
+        if (assetId && descriptionSelect.selectedOptions[0]) {
+            descriptionSelect.selectedOptions[0].dataset.assetId = assetId;
+        }
+    }
+
+    closeRspiDropdownMenu();
+    setTimeout(() => {
+        isSelectingRspiOption = false;
+    }, 250);
+
+    let asset = null;
+    if (assetId) {
+        asset = items.find(i => i.assetId === assetId);
+    }
+    if (!asset && description) {
+        asset = findAssetByIcsDescription(description);
+    }
+    populateRspiFieldsFromDescription(asset);
+}
+
+function populateRspiFieldsFromDescription(selectedAsset = null) {
+    if (!selectedAsset) {
+        const descriptionSelect = document.querySelector("#rspiDescription");
+        const selectedAssetId = descriptionSelect?.selectedOptions[0]?.dataset.assetId;
+        if (selectedAssetId) {
+            selectedAsset = items.find((item) => item.assetId === selectedAssetId);
+        }
+    }
+
+    if (!selectedAsset) {
+        const searchInput = document.querySelector("#rspiDescriptionSearch");
+        const currentVal = (searchInput?.value || document.querySelector("#rspiDescription")?.value || "").trim();
+        selectedAsset = findAssetByIcsDescription(currentVal);
+    }
+
+    const fundClusterEl = document.querySelector("#rspiFundCluster");
+    const propNoEl = document.querySelector("#rspiSemiExpendablePropertyNo");
+    const unitEl = document.querySelector("#rspiUnit");
+    const unitCostEl = document.querySelector("#rspiUnitCost");
+    const qtyEl = document.querySelector("#rspiQuantity");
+    const icsNoEl = document.querySelector("#rspiIcsNo");
+    const centerCodeEl = document.querySelector("#rspiCenterCode");
+    const entityNameEl = document.querySelector("#rspiEntityName");
+
+    if (!selectedAsset) {
+        if (propNoEl) propNoEl.value = "";
+        if (unitEl) unitEl.value = "";
+        if (unitCostEl) unitCostEl.value = "";
+        updateRspiSlipAmount();
+        return;
+    }
+
+    if (fundClusterEl && !fundClusterEl.value) fundClusterEl.value = selectedAsset.fundCluster || "";
+    if (propNoEl) propNoEl.value = selectedAsset.semiExpandableNo || selectedAsset.propertyNo || "";
+    if (unitEl) unitEl.value = selectedAsset.unitMeasurement || "piece";
+    if (unitCostEl) unitCostEl.value = selectedAsset.unitValue ?? "";
+    if (qtyEl && (!qtyEl.value || Number(qtyEl.value) <= 1)) {
+        qtyEl.value = selectedAsset.onHand || selectedAsset.balance || 1;
+    }
+    if (centerCodeEl && !centerCodeEl.value) {
+        centerCodeEl.value = activeSchoolRecord?.school_id || "500243";
+    }
+    if (entityNameEl && (!entityNameEl.value || entityNameEl.value === "") && activeSchoolRecord?.school_name) {
+        entityNameEl.value = activeSchoolRecord.school_name;
+    }
+
+    // Try finding matching ICS No from inventoryCustodianSlips
+    if (icsNoEl && !icsNoEl.value) {
+        const matchingSlip = (inventoryCustodianSlips || []).find((s) =>
+            s.inventoryItemNo === (selectedAsset.semiExpandableNo || selectedAsset.propertyNo) ||
+            s.description === getIcsAssetDescription(selectedAsset)
+        );
+        if (matchingSlip && matchingSlip.icsNo) {
+            icsNoEl.value = matchingSlip.icsNo;
+        } else if (selectedAsset.semiExpandableNo) {
+            icsNoEl.value = selectedAsset.semiExpandableNo;
+        }
+    }
+
+    updateRspiSlipAmount();
+}
+
+function populateRspiDescriptionDropdown(selectedValue = "") {
+    const descriptionSelect = document.querySelector("#rspiDescription");
+    const searchInput = document.querySelector("#rspiDescriptionSearch");
+    const optionsList = document.querySelector("#rspiOptionsList");
+
+    const options = items
+        .map((item) => {
+            const description = getIcsAssetDescription(item);
+            return {
+                description,
+                assetId: item.assetId,
+                semiExpandableNo: item.semiExpandableNo || item.propertyNo || "",
+                unitValue: item.unitValue ?? ""
+            };
+        })
+        .filter((entry) => entry.description)
+        .filter((entry, index, entries) => entries.findIndex((candidate) => candidate.description === entry.description) === index)
+        .sort((first, second) => first.description.localeCompare(second.description, undefined, { sensitivity: "base" }));
+
+    if (descriptionSelect) {
+        descriptionSelect.innerHTML = '<option value="">Select an inventory item</option>';
+        descriptionSelect.insertAdjacentHTML("beforeend", options.map((entry) => `
+            <option value="${escapeHtml(entry.description)}" data-asset-id="${escapeHtml(entry.assetId)}">${escapeHtml(entry.description)}</option>
+        `).join(""));
+
+        if (selectedValue && options.some((entry) => entry.description === selectedValue)) {
+            descriptionSelect.value = selectedValue;
+        }
+    }
+
+    if (optionsList) {
+        optionsList.innerHTML = options.map((entry) => `
+            <div class="ics-option-item" data-value="${escapeHtml(entry.description)}" data-text="${escapeHtml(entry.description)}" data-asset-id="${escapeHtml(entry.assetId)}">
+                <div class="ics-option-main">
+                    <span class="ics-option-title">${escapeHtml(entry.description)}</span>
+                    ${entry.semiExpandableNo ? `<span class="ics-option-subtitle">Item No: ${escapeHtml(entry.semiExpandableNo)}</span>` : ""}
+                </div>
+                ${entry.unitValue ? `<span class="ics-option-cost">${formatCurrency(entry.unitValue)}</span>` : ""}
+            </div>
+        `).join("");
+
+        optionsList.querySelectorAll(".ics-option-item").forEach((itemEl) => {
+            itemEl.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+            });
+            itemEl.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const desc = itemEl.dataset.value;
+                const aid = itemEl.dataset.assetId;
+                selectRspiDescriptionItem(desc, aid);
+            });
+        });
+    }
+
+    if (selectedValue && searchInput) {
+        searchInput.value = selectedValue;
+    }
+}
+
+function populateRspiSignatories() {
+    const custodianSelect = document.querySelector("#rspiCustodian");
+    const accountingSelect = document.querySelector("#rspiAccountingStaff");
+    if (!custodianSelect && !accountingSelect) return;
+
+    const curCustodian = custodianSelect ? custodianSelect.value : "";
+    const curAccounting = accountingSelect ? accountingSelect.value : "";
+
+    const list = [...(signatoryEntries || [])];
+    if (!list.some(s => (s.name || s.signatory || "").toLowerCase().includes("tuwahan"))) {
+        list.unshift({ name: "Janine Carlyle G. Tuwahan", position: "Administrative Officer II" });
+    }
+    if (!list.some(s => (s.name || s.signatory || "").toLowerCase().includes("avellana"))) {
+        list.push({ name: "Rodrigo A. Avellana, Jr.", position: "Designated Accounting Staff" });
+    }
+
+    const seen = new Set();
+    const optionsHtml = ['<option value="">Select signatory</option>'];
+    list.forEach((entry) => {
+        const name = (entry.name || entry.signatory || "").trim();
+        if (!name || seen.has(name.toLowerCase())) return;
+        seen.add(name.toLowerCase());
+        const label = `${name}${entry.position ? ` (${entry.position})` : ""}`;
+        optionsHtml.push(`<option value="${escapeHtml(name)}">${escapeHtml(label)}</option>`);
+    });
+
+    const rendered = optionsHtml.join("");
+    if (custodianSelect) {
+        custodianSelect.innerHTML = rendered;
+        if (curCustodian && Array.from(custodianSelect.options).some(o => o.value === curCustodian)) {
+            custodianSelect.value = curCustodian;
+        } else {
+            const def = Array.from(custodianSelect.options).find(o => o.value.toLowerCase().includes("tuwahan"));
+            if (def) custodianSelect.value = def.value;
+            else if (custodianSelect.options.length > 1) custodianSelect.selectedIndex = 1;
+        }
+    }
+
+    if (accountingSelect) {
+        accountingSelect.innerHTML = rendered;
+        if (curAccounting && Array.from(accountingSelect.options).some(o => o.value === curAccounting)) {
+            accountingSelect.value = curAccounting;
+        } else {
+            const def = Array.from(accountingSelect.options).find(o => o.value.toLowerCase().includes("avellana"));
+            if (def) accountingSelect.value = def.value;
+            else if (accountingSelect.options.length > 2) accountingSelect.selectedIndex = 2;
+            else if (accountingSelect.options.length > 1) accountingSelect.selectedIndex = 1;
+        }
+    }
+}
+
+function renderRspiSlipTable() {
+    const table = document.querySelector("#rspiSlipTable");
+    if (!table) return;
+
+    const searchInput = document.querySelector("#rspiSlipSearchInput");
+    const query = (searchInput ? searchInput.value : "").trim().toLowerCase();
+
+    const filteredSlips = query
+        ? rspiSlips.filter((slip) => [
+            slip.serialNo,
+            slip.rspiDate,
+            slip.icsNo,
+            slip.semiExpendablePropertyNo,
+            slip.description,
+            slip.unit,
+            slip.quantity,
+            slip.unitCost,
+            slip.amount,
+            slip.centerCode,
+            slip.entityName,
+            slip.fundCluster,
+            slip.custodianName,
+            slip.accountingStaffName
+        ].some((f) => String(f ?? "").toLowerCase().includes(query)))
+        : rspiSlips;
+
+    const totalPages = Math.max(1, Math.ceil(filteredSlips.length / rspiSlipPageSize));
+    rspiSlipPage = Math.min(Math.max(1, rspiSlipPage), totalPages);
+    const startIndex = (rspiSlipPage - 1) * rspiSlipPageSize;
+    const visibleSlips = filteredSlips.slice(startIndex, startIndex + rspiSlipPageSize);
+
+    table.innerHTML = visibleSlips.length
+        ? visibleSlips.map((slip) => `
+            <tr>
+                <td><strong>${escapeHtml(slip.serialNo || "-")}</strong></td>
+                <td>${escapeHtml(formatRspiDate(slip.rspiDate))}</td>
+                <td>${escapeHtml(slip.icsNo || "-")}</td>
+                <td>${escapeHtml(slip.semiExpendablePropertyNo || "-")}</td>
+                <td>${escapeHtml(slip.description || "-")}</td>
+                <td>${escapeHtml(String(slip.quantity ?? "-"))}</td>
+                <td>${escapeHtml(slip.unit || "-")}</td>
+                <td style="text-align:right;">${escapeHtml(formatPeso(Number(slip.unitCost) || 0))}</td>
+                <td style="text-align:right;"><strong>${escapeHtml(formatPeso(Number(slip.amount) || 0))}</strong></td>
+                <td>
+                    <div class="row-actions">
+                        <button type="button" data-rspi-action="open" data-rspi-id="${escapeHtml(slip.id)}">Open</button>
+                        <button type="button" data-rspi-action="edit" data-rspi-id="${escapeHtml(slip.id)}">Edit</button>
+                        <button type="button" data-rspi-action="delete" data-rspi-id="${escapeHtml(slip.id)}">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `).join("")
+        : `<tr><td colspan="10">${query ? `No records matched "<strong>${escapeHtml(query)}</strong>".` : "No Report of Semi-Expendable Property Issued records yet."}</td></tr>`;
+
+    const paginationEl = document.querySelector("#rspiSlipPagination");
+    if (paginationEl) {
+        paginationEl.innerHTML = filteredSlips.length > rspiSlipPageSize ? `
+            <button class="inventory-page-btn" type="button" data-rspi-slip-page="${Math.max(1, rspiSlipPage - 1)}" ${rspiSlipPage === 1 ? "disabled" : ""}>Previous</button>
+            <span class="inventory-page-status">Page ${rspiSlipPage} of ${totalPages}${query ? ` (${filteredSlips.length} result${filteredSlips.length !== 1 ? "s" : ""})` : ""}</span>
+            <button class="inventory-page-btn" type="button" data-rspi-slip-page="${Math.min(totalPages, rspiSlipPage + 1)}" ${rspiSlipPage === totalPages ? "disabled" : ""}>Next</button>
+        ` : "";
+    }
+}
+
+function editRspiSlip(id) {
+    const slip = rspiSlips.find((entry) => entry.id === id);
+    if (!slip) return;
+
+    const fieldMap = {
+        rspiEditingId: "id",
+        rspiEntityName: "entityName",
+        rspiFundCluster: "fundCluster",
+        rspiSerialNo: "serialNo",
+        rspiCenterCode: "centerCode",
+        rspiDescription: "description",
+        rspiIcsNo: "icsNo",
+        rspiSemiExpendablePropertyNo: "semiExpendablePropertyNo",
+        rspiUnit: "unit",
+        rspiQuantity: "quantity",
+        rspiUnitCost: "unitCost",
+        rspiAmount: "amount",
+        rspiDate: "rspiDate",
+        rspiCustodian: "custodianName",
+        rspiAccountingStaff: "accountingStaffName",
+        rspiPostedDate: "postedDate"
+    };
+
+    Object.entries(fieldMap).forEach(([elementId, property]) => {
+        const el = document.querySelector(`#${elementId}`);
+        if (!el) return;
+        const val = slip[property] || "";
+        if (elementId === "rspiDescription" && val && !Array.from(el.options).some((opt) => opt.value === val)) {
+            const opt = document.createElement("option");
+            opt.value = val;
+            opt.textContent = val;
+            el.appendChild(opt);
+        }
+        if ((elementId === "rspiCustodian" || elementId === "rspiAccountingStaff") && val) {
+            const hasOption = Array.from(el.options).some((opt) => opt.value === val);
+            if (!hasOption) {
+                const opt = document.createElement("option");
+                opt.value = val;
+                opt.textContent = val;
+                el.appendChild(opt);
+            }
+        }
+        el.value = val;
+    });
+
+    const searchInput = document.querySelector("#rspiDescriptionSearch");
+    if (searchInput) {
+        searchInput.value = slip.description || "";
+        filterRspiDropdownOptions(slip.description || "");
+    }
+
+    const titleEl = document.querySelector("#rspiFormTitle");
+    if (titleEl) titleEl.textContent = "Edit Report of Semi-Expendable Property Issued";
+
+    showModule("rspi");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 function formatRspiDate(dateString) {
-    if (!dateString) return "March 25, 2026";
+    if (!dateString) return "";
     const parts = String(dateString).split("-");
     if (parts.length === 3) {
         const d = new Date(parts[0], parts[1] - 1, parts[2]);
@@ -6250,378 +6973,622 @@ function formatRspiCurrency(val) {
     if (val === "" || val === null || val === undefined) return "";
     const num = Number(String(val).replace(/[^0-9.-]/g, ""));
     if (!Number.isFinite(num) || isNaN(num)) return String(val);
-    return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return num.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function populateRspiSignatories() {
-    const custodianSelect = document.getElementById("rspiCustodianSelect");
-    const accountingSelect = document.getElementById("rspiAccountingStaffSelect");
-    if (!custodianSelect || !accountingSelect) return;
-
-    const currentCustodian = custodianSelect.value;
-    const currentAccounting = accountingSelect.value;
-
-    custodianSelect.innerHTML = '<option value="">Select signatory</option>';
-    accountingSelect.innerHTML = '<option value="">Select signatory</option>';
-
-    const names = new Set();
-    const list = [...(signatoryEntries || [])];
-
-    // Ensure default signatories from template exist
-    if (!list.some(s => (s.name || s.signatory || "").toLowerCase().includes("tuwahan"))) {
-        list.unshift({ name: "Janine Carlyle G. Tuwahan", position: "Administrative Officer II" });
-    }
-    if (!list.some(s => (s.name || s.signatory || "").toLowerCase().includes("avellana"))) {
-        list.push({ name: "Rodrigo A. Avellana, Jr.", position: "Designated Accounting Staff" });
+async function openRspiDocumentPdf(slip) {
+    const JsPdf = window.jspdf && window.jspdf.jsPDF;
+    if (!JsPdf) {
+        showToast("PDF generation library is unavailable.");
+        return;
     }
 
-    list.forEach((entry) => {
-        const name = (entry.name || entry.signatory || "").trim();
-        if (!name || names.has(name.toLowerCase())) return;
-        names.add(name.toLowerCase());
+    // Gather all items that share the same Serial No. or Report ID
+    const slipItems = rspiSlips.filter((entry) =>
+        slip.dbReportId ? entry.dbReportId === slip.dbReportId : (entry.serialNo && entry.serialNo === slip.serialNo)
+    );
+    if (!slipItems.length) {
+        slipItems.push(slip);
+    }
 
-        const opt1 = document.createElement("option");
-        opt1.value = name;
-        opt1.textContent = `${name}${entry.position ? ` (${entry.position})` : ""}`;
-        custodianSelect.appendChild(opt1);
+    const headerSlip = slipItems[0];
+    const pdf = new JsPdf({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const marginX = 13;
+    const marginY = 10;
+    const contentWidth = pageWidth - marginX * 2; // 184 mm
 
-        const opt2 = document.createElement("option");
-        opt2.value = name;
-        opt2.textContent = `${name}${entry.position ? ` (${entry.position})` : ""}`;
-        accountingSelect.appendChild(opt2);
+    // Load DepEd Seal Logo
+    const loadSeal = () => new Promise((resolve) => {
+        const seal = new Image();
+        seal.onload = () => resolve(seal);
+        seal.onerror = () => resolve(null);
+        seal.src = "images/deped_logo.png";
+    });
+    const seal = await loadSeal();
+
+    let y = marginY;
+
+    // Centered Seal Logo
+    if (seal) {
+        pdf.addImage(seal, "PNG", pageWidth / 2 - 8.5, y, 17, 17);
+    }
+    y += 20;
+
+    // Document Title
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(13);
+    pdf.text("REPORT OF SEMI-EXPENDABLE PROPERTY ISSUED", pageWidth / 2, y, { align: "center" });
+    y += 9;
+
+    // Metadata Header
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.text("Entity Name:", marginX, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(String(headerSlip.entityName || "-"), marginX + 22, y);
+
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Serial No.:", pageWidth - marginX - 52, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(String(headerSlip.serialNo || "-"), pageWidth - marginX - 34, y);
+
+    y += 5;
+
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Fund Cluster:", marginX, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(String(headerSlip.fundCluster || "-"), marginX + 22, y);
+
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Date :", pageWidth - marginX - 52, y);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(formatRspiDate(headerSlip.rspiDate || ""), pageWidth - marginX - 34, y);
+
+    y += 6;
+
+    // Table Column Widths (sum = 184 mm)
+    // [ICS No, Center Code, Property No, Description, Unit, Qty, Unit Cost, Amount]
+    const columns = [23, 22, 25, 46, 12, 16, 20, 20];
+
+    // Sub-header 1: Department Fill-in indicators
+    const subheaderHeight = 6.5;
+    const supplyWidth = columns[0] + columns[1] + columns[2] + columns[3] + columns[4] + columns[5]; // 144 mm
+    const acctWidth = columns[6] + columns[7]; // 40 mm
+
+    pdf.setFont("helvetica", "oblique");
+    pdf.setFontSize(7.5);
+    pdf.rect(marginX, y, supplyWidth, subheaderHeight);
+    pdf.text("To be filled up by the Supply and/or Property Division/Unit", marginX + supplyWidth / 2, y + 4.3, { align: "center" });
+
+    pdf.rect(marginX + supplyWidth, y, acctWidth, subheaderHeight);
+    pdf.text("To be filled up by the Accounting Division/Unit", marginX + supplyWidth + acctWidth / 2, y + 4.3, { align: "center" });
+
+    y += subheaderHeight;
+
+    // Sub-header 2: Column Titles
+    const colHeaderHeight = 11;
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7.5);
+
+    const headers = [
+        "ICS No.",
+        "Responsibility\nCenter Code",
+        "Semi-Expendable\nProperty No.",
+        "Item Description",
+        "Unit",
+        "Quantity\nIssued",
+        "Unit Cost",
+        "Amount"
+    ];
+
+    let currentX = marginX;
+    headers.forEach((title, idx) => {
+        const colW = columns[idx];
+        pdf.rect(currentX, y, colW, colHeaderHeight);
+        const lines = title.split("\n");
+        if (lines.length === 1) {
+            pdf.text(title, currentX + colW / 2, y + 6.5, { align: "center" });
+        } else {
+            pdf.text(lines[0], currentX + colW / 2, y + 4.5, { align: "center" });
+            pdf.text(lines[1], currentX + colW / 2, y + 8.5, { align: "center" });
+        }
+        currentX += colW;
     });
 
-    if (currentCustodian && Array.from(custodianSelect.options).some(o => o.value === currentCustodian)) {
-        custodianSelect.value = currentCustodian;
-    } else {
-        const defCustodian = Array.from(custodianSelect.options).find(o => o.value.toLowerCase().includes("tuwahan"));
-        if (defCustodian) custodianSelect.value = defCustodian.value;
-        else if (custodianSelect.options.length > 1) custodianSelect.selectedIndex = 1;
+    y += colHeaderHeight;
+
+    // Table Data Rows
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7.5);
+
+    const targetRowCount = 12;
+    const renderedItems = [...slipItems];
+
+    for (let r = 0; r < targetRowCount; r++) {
+        const item = renderedItems[r];
+        const descText = item ? String(item.description || "-") : "";
+        const descLines = pdf.splitTextToSize(descText, columns[3] - 2.5);
+        const rowHeight = item ? Math.max(6.5, descLines.length * 3.5 + 2) : 6.5;
+
+        currentX = marginX;
+
+        // Col 0: ICS No.
+        pdf.rect(currentX, y, columns[0], rowHeight);
+        if (item) pdf.text(String(item.icsNo || "-"), currentX + columns[0] / 2, y + 4.5, { align: "center" });
+        currentX += columns[0];
+
+        // Col 1: Center Code
+        pdf.rect(currentX, y, columns[1], rowHeight);
+        if (item) pdf.text(String(item.centerCode || "-"), currentX + columns[1] / 2, y + 4.5, { align: "center" });
+        currentX += columns[1];
+
+        // Col 2: Semi-Expendable Property No.
+        pdf.rect(currentX, y, columns[2], rowHeight);
+        if (item) pdf.text(String(item.semiExpendablePropertyNo || "-"), currentX + columns[2] / 2, y + 4.5, { align: "center" });
+        currentX += columns[2];
+
+        // Col 3: Item Description
+        pdf.rect(currentX, y, columns[3], rowHeight);
+        if (item) pdf.text(descLines, currentX + 1.5, y + 4.5);
+        currentX += columns[3];
+
+        // Col 4: Unit
+        pdf.rect(currentX, y, columns[4], rowHeight);
+        if (item) pdf.text(String(item.unit || "-"), currentX + columns[4] / 2, y + 4.5, { align: "center" });
+        currentX += columns[4];
+
+        // Col 5: Quantity Issued
+        pdf.rect(currentX, y, columns[5], rowHeight);
+        if (item) pdf.text(String(item.quantity ?? "-"), currentX + columns[5] / 2, y + 4.5, { align: "center" });
+        currentX += columns[5];
+
+        // Col 6: Unit Cost
+        pdf.rect(currentX, y, columns[6], rowHeight);
+        if (item && item.unitCost !== "") pdf.text(formatRspiCurrency(item.unitCost), currentX + columns[6] - 1.5, y + 4.5, { align: "right" });
+        currentX += columns[6];
+
+        // Col 7: Amount
+        pdf.rect(currentX, y, columns[7], rowHeight);
+        if (item && item.amount !== "") pdf.text(formatRspiCurrency(item.amount), currentX + columns[7] - 1.5, y + 4.5, { align: "right" });
+
+        y += rowHeight;
     }
 
-    if (currentAccounting && Array.from(accountingSelect.options).some(o => o.value === currentAccounting)) {
-        accountingSelect.value = currentAccounting;
-    } else {
-        const defAccounting = Array.from(accountingSelect.options).find(o => o.value.toLowerCase().includes("avellana"));
-        if (defAccounting) accountingSelect.value = defAccounting.value;
-        else if (accountingSelect.options.length > 2) accountingSelect.selectedIndex = 2;
-        else if (accountingSelect.options.length > 1) accountingSelect.selectedIndex = 1;
+    // Signatures / Certification Box (Matching Image Template)
+    const sigBoxHeight = 44;
+    const leftSigWidth = 104; // under supply cols
+    const rightSigWidth = contentWidth - leftSigWidth; // 80 mm
+
+    pdf.rect(marginX, y, contentWidth, sigBoxHeight);
+    pdf.line(marginX + leftSigWidth, y, marginX + leftSigWidth, y + sigBoxHeight);
+
+    // Left Box: Supply and/or Property Custodian Certification
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.text("I hereby certify to the correctness of the above information.", marginX + 3.5, y + 6);
+
+    const leftCenterX = marginX + leftSigWidth / 2;
+    pdf.line(leftCenterX - 36, y + 24, leftCenterX + 36, y + 24);
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8.5);
+    const custodianName = (headerSlip.custodianName || "JANINE CARLYLE G. TUWAHAN").toUpperCase();
+    pdf.text(custodianName, leftCenterX, y + 22.5, { align: "center" });
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7.5);
+    pdf.text("Signature over Printed Name of Property", leftCenterX, y + 28, { align: "center" });
+    pdf.text("and/or Supply Custodian", leftCenterX, y + 32, { align: "center" });
+
+    // Right Box: Accounting Staff Posting
+    const rightStartX = marginX + leftSigWidth;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.text("Posted by:", rightStartX + 3.5, y + 6);
+
+    // Sub-col 1: Accounting Signature
+    const acctSigCenterX = rightStartX + 25;
+    pdf.line(rightStartX + 3, y + 24, rightStartX + 48, y + 24);
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+    const acctName = (headerSlip.accountingStaffName || "RODRIGO A. AVELLANA, JR.").toUpperCase();
+    pdf.text(acctName, acctSigCenterX, y + 22.5, { align: "center" });
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.text("Signature over Printed Name of", acctSigCenterX, y + 28, { align: "center" });
+    pdf.text("Designated Accounting Staff", acctSigCenterX, y + 32, { align: "center" });
+
+    // Sub-col 2: Date
+    const dateCenterX = rightStartX + 63;
+    pdf.line(rightStartX + 52, y + 24, rightStartX + 75, y + 24);
+
+    if (headerSlip.postedDate || headerSlip.rspiDate) {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7.5);
+        pdf.text(headerSlip.postedDate || headerSlip.rspiDate, dateCenterX, y + 22.5, { align: "center" });
     }
 
-    updateRspiSignatoryDisplays();
-}
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7.5);
+    pdf.text("Date", dateCenterX, y + 28, { align: "center" });
 
-function updateRspiSignatoryDisplays() {
-    const custodianSelect = document.getElementById("rspiCustodianSelect");
-    const accountingSelect = document.getElementById("rspiAccountingStaffSelect");
-    const custodianDisplay = document.getElementById("rspiCustodianDisplay");
-    const accountingDisplay = document.getElementById("rspiAccountingDisplay");
-
-    if (custodianDisplay && custodianSelect) {
-        custodianDisplay.textContent = (custodianSelect.value || "JANINE CARLYLE G. TUWAHAN").toUpperCase();
-    }
-    if (accountingDisplay && accountingSelect) {
-        accountingDisplay.textContent = (accountingSelect.value || "RODRIGO A. AVELLANA, JR.").toUpperCase();
+    // Open Generated PDF blob in new tab
+    const pdfBlob = pdf.output("blob");
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    const preview = window.open(pdfUrl, "_blank");
+    if (!preview) {
+        showToast("Please allow popups to view the RSPI PDF.");
     }
 }
 
 function populateRspiIcsOptions() {
-    const select = document.getElementById("rspiIcsFilterSelect");
-    if (!select) return;
-
-    const currentVal = select.value;
-    select.innerHTML = '<option value="all">All Issued Semi-Expendable Items</option>';
-
-    const distinctIcs = new Set();
-    (inventoryCustodianSlips || []).forEach(slip => {
-        if (slip.icsNo && slip.icsNo.trim()) {
-            distinctIcs.add(slip.icsNo.trim());
-        }
-    });
-
-    distinctIcs.forEach(icsNo => {
-        const opt = document.createElement("option");
-        opt.value = icsNo;
-        opt.textContent = `ICS No: ${icsNo}`;
-        select.appendChild(opt);
-    });
-
-    if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
-        select.value = currentVal;
-    }
+    populateRspiDescriptionDropdown();
 }
 
-function updateRspiLiveMeta() {
-    const entityInput = document.getElementById("rspiEntityNameInput");
-    const fundInput = document.getElementById("rspiFundClusterInput");
-    const serialInput = document.getElementById("rspiSerialNoInput");
-    const dateInput = document.getElementById("rspiDateInput");
+function getRspiSlipFormData() {
+    const value = (selector) => {
+        const el = document.querySelector(selector);
+        return el ? el.value.trim() : "";
+    };
 
-    const entityDisplay = document.getElementById("rspiEntityNameDisplay");
-    const fundDisplay = document.getElementById("rspiFundClusterDisplay");
-    const serialDisplay = document.getElementById("rspiSerialNoDisplay");
-    const dateDisplay = document.getElementById("rspiDateDisplay");
+    const editingId = value("#rspiEditingId");
+    const existing = editingId ? rspiSlips.find((entry) => entry.id === editingId) : null;
 
-    if (entityDisplay && entityInput) entityDisplay.textContent = entityInput.value.trim() || "Department of Education";
-    if (fundDisplay && fundInput) fundDisplay.textContent = fundInput.value.trim() || "School MOOE Fund MARCH 2026";
-    if (serialDisplay && serialInput) serialDisplay.textContent = serialInput.value.trim() || "MOOEES-2026-03-0001";
-    if (dateDisplay && dateInput) dateDisplay.textContent = formatRspiDate(dateInput.value);
+    const descSearch = document.querySelector("#rspiDescriptionSearch");
+    const descSelect = document.querySelector("#rspiDescription");
+    const descriptionVal = (descSearch?.value || descSelect?.value || "").trim();
+
+    const qty = Number(value("#rspiQuantity")) || 1;
+    const unitCost = Number(value("#rspiUnitCost")) || 0;
+    const rawAmount = value("#rspiAmount");
+    const amountVal = rawAmount !== "" ? Number(rawAmount) : (qty * unitCost);
+
+    return {
+        id: editingId || `RSPI-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        dbReportId: existing?.dbReportId || null,
+        dbItemId: existing?.dbItemId || null,
+        lineNo: existing?.lineNo || 1,
+        entityName: value("#rspiEntityName"),
+        fundCluster: value("#rspiFundCluster"),
+        serialNo: value("#rspiSerialNo"),
+        centerCode: value("#rspiCenterCode"),
+        icsNo: value("#rspiIcsNo"),
+        semiExpendablePropertyNo: value("#rspiSemiExpendablePropertyNo"),
+        description: descriptionVal,
+        unit: value("#rspiUnit") || "piece",
+        quantity: qty,
+        unitCost: unitCost,
+        amount: Number.isFinite(amountVal) ? amountVal : (qty * unitCost),
+        rspiDate: value("#rspiDate") || new Date().toISOString().slice(0, 10),
+        custodianName: value("#rspiCustodian"),
+        accountingStaffName: value("#rspiAccountingStaff"),
+        postedDate: value("#rspiPostedDate") || "",
+        savedAt: existing?.savedAt || new Date().toISOString()
+    };
 }
 
-function renderRspiReport() {
-    const tbody = document.getElementById("rspiTableBody");
-    if (!tbody) return;
+let isSavingRspiSlip = false;
 
-    updateRspiLiveMeta();
-    updateRspiSignatoryDisplays();
-
-    const centerCodeInput = document.getElementById("rspiCenterCodeInput");
-    const defaultCenterCode = (centerCodeInput && centerCodeInput.value.trim()) || activeSchoolRecord?.school_id || "500243";
-
-    const filterSelect = document.getElementById("rspiIcsFilterSelect");
-    const selectedIcs = filterSelect ? filterSelect.value : "all";
-
-    // Gather records from database
-    let records = [];
-
-    if (Array.isArray(inventoryCustodianSlips) && inventoryCustodianSlips.length > 0) {
-        records = inventoryCustodianSlips.filter(slip => {
-            if (selectedIcs !== "all" && slip.icsNo !== selectedIcs) return false;
-            return true;
-        }).map(slip => {
-            const cost = Number(slip.unitCost) || 0;
-            const qty = Number(slip.quantity) || 1;
-            const total = Number(slip.totalCost) || (cost * qty);
-            return {
-                icsNo: slip.icsNo || "MOOEES-2026-03-0001",
-                centerCode: defaultCenterCode,
-                propNo: slip.inventoryItemNo || slip.icsNo || "MOOEES-2026-03-0001",
-                description: slip.description || "SEMI-EXPENDABLE ITEM",
-                unit: slip.unit || "piece",
-                qty: qty,
-                unitCost: cost,
-                amount: total
-            };
-        });
+// Proper standalone Save handler for RSPI module
+async function saveRspiSlip(e) {
+    if (e && typeof e.preventDefault === "function") {
+        e.preventDefault();
     }
 
-    if (records.length === 0 && Array.isArray(items) && items.length > 0) {
-        const issuedItems = items.filter(it => it.status === "Issued" || it.status === "In Use" || it.semiExpandableNo);
-        if (issuedItems.length > 0) {
-            records = issuedItems.map(it => {
-                const cost = Number(it.unitValue) || 7500;
-                const qty = Number(it.onHand || it.balance) || 1;
-                const total = Number(it.total) || (cost * qty);
-                return {
-                    icsNo: it.semiExpandableNo || "MOOEES-2026-03-0001",
-                    centerCode: defaultCenterCode,
-                    propNo: it.semiExpandableNo || it.propertyNo || "MOOEES-2026-03-0001",
-                    description: `${it.itemBrandModel || ""}${it.serialNo ? ` - SN: ${it.serialNo}` : ""}`.trim() || "ESPON ECOTANK PRINTER L121",
-                    unit: it.unitMeasurement || "piece",
-                    qty: qty,
-                    unitCost: cost,
-                    amount: total
-                };
-            });
-        }
-    }
+    if (isSavingRspiSlip) return;
 
-    // Default template row matching uploaded image
-    if (records.length === 0) {
-        records = [
-            {
-                icsNo: "MOOEES-2026-03-0001",
-                centerCode: defaultCenterCode,
-                propNo: "MOOEES-2026-03-0001",
-                description: "ESPON ECOTANK PRINTER\nL121",
-                unit: "piece",
-                qty: 1,
-                unitCost: 7500.00,
-                amount: 7500.00
-            }
-        ];
-    }
-
-    let rowsHtml = "";
-    records.forEach(r => {
-        const formattedDesc = escapeHtml(r.description).replace(/\n/g, "<br>");
-        rowsHtml += `
-            <tr>
-              <td style="border:1px solid #000; padding:5px 3px; text-align:center; font-size:7.2pt; font-weight:bold; vertical-align:top; word-break:break-word;">${escapeHtml(r.icsNo)}</td>
-              <td style="border:1px solid #000; padding:5px 3px; text-align:center; font-size:7.2pt; vertical-align:top; word-break:break-word;">${escapeHtml(r.centerCode)}</td>
-              <td style="border:1px solid #000; padding:5px 3px; text-align:center; font-size:7.2pt; font-weight:bold; vertical-align:top; word-break:break-word;">${escapeHtml(r.propNo)}</td>
-              <td style="border:1px solid #000; padding:5px 5px; text-align:left; font-size:7.2pt; font-weight:bold; vertical-align:top; text-transform:uppercase; word-break:break-word;">${formattedDesc}</td>
-              <td style="border:1px solid #000; padding:5px 2px; text-align:center; font-size:7.2pt; vertical-align:top;">${escapeHtml(r.unit)}</td>
-              <td style="border:1px solid #000; padding:5px 2px; text-align:center; font-size:7.2pt; font-weight:bold; vertical-align:top;">${escapeHtml(String(r.qty))}</td>
-              <td style="border:1px solid #000; padding:5px 4px; text-align:right; font-size:7.2pt; vertical-align:top; white-space:nowrap;">${formatRspiCurrency(r.unitCost)}</td>
-              <td style="border:1px solid #000; padding:5px 4px; text-align:right; font-size:7.2pt; font-weight:bold; vertical-align:top; white-space:nowrap;">${formatRspiCurrency(r.amount)}</td>
-            </tr>
-        `;
-    });
-
-    // Add empty rows for padding (at least 4-6 rows to mirror the official template layout)
-    const targetRowCount = Math.max(4, records.length + 2);
-    const emptyRowsCount = Math.max(0, targetRowCount - records.length);
-    for (let i = 0; i < emptyRowsCount; i++) {
-        rowsHtml += `
-            <tr class="empty-row">
-              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
-              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
-              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
-              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
-              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
-              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
-              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
-              <td style="border:1px solid #000; height:20px;">&nbsp;</td>
-            </tr>
-        `;
-    }
-
-    tbody.innerHTML = rowsHtml;
-}
-
-async function generateRspiPdf() {
-    const paper = document.getElementById("rspiReportPaper");
-    if (!paper) return;
-
-    if (!window.html2canvas || !window.jspdf?.jsPDF) {
-        showToast("PDF tools are still loading. Please try again in a moment.");
+    const form = document.querySelector("#rspiSlipForm");
+    if (form && !form.reportValidity()) {
         return;
     }
 
-    showToast("Generating A4 RSPI PDF, please wait...");
+    const slip = getRspiSlipFormData();
+
+    // Field validations replicating ICS standards
+    if (!slip.serialNo) {
+        showToast("Please enter an RSPI Serial No.");
+        document.querySelector("#rspiSerialNo")?.focus();
+        return;
+    }
+    if (!slip.entityName) {
+        showToast("Please select an Entity Name.");
+        document.querySelector("#rspiEntityName")?.focus();
+        return;
+    }
+    if (!slip.description) {
+        showToast("Please select or enter an Item Description.");
+        document.querySelector("#rspiDescriptionSearch")?.focus();
+        return;
+    }
+    if (!slip.quantity || Number(slip.quantity) <= 0) {
+        showToast("Please enter a valid Quantity Issued (minimum 1).");
+        document.querySelector("#rspiQuantity")?.focus();
+        return;
+    }
+    if (!slip.rspiDate) {
+        showToast("Please enter an RSPI Date.");
+        document.querySelector("#rspiDate")?.focus();
+        return;
+    }
+
+    isSavingRspiSlip = true;
+    const saveBtn = document.querySelector("#saveRspiBtn");
+    const textSpan = saveBtn?.querySelector(".button__text");
+    const originalText = textSpan ? textSpan.textContent : "Save";
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        if (textSpan) textSpan.textContent = "Saving...";
+    }
+
+    const existingIndex = rspiSlips.findIndex((entry) => entry.id === slip.id);
+    const action = existingIndex >= 0 ? "update" : "create";
+
     try {
-        const serialNo = (document.getElementById("rspiSerialNoInput")?.value || "RSPI-REPORT").replace(/[^a-zA-Z0-9_-]/g, "_");
-
-        // Temporarily lock paper element to standard A4 printable width (794px = 210mm at 96dpi)
-        const prevWidth = paper.style.width;
-        const prevMaxWidth = paper.style.maxWidth;
-        const prevBoxShadow = paper.style.boxShadow;
-        const prevBorder = paper.style.border;
-
-        paper.style.width = "794px";
-        paper.style.maxWidth = "794px";
-        paper.style.boxShadow = "none";
-        paper.style.border = "none";
-
-        const canvas = await html2canvas(paper, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: "#ffffff",
-            windowWidth: 1200
-        });
-
-        // Restore styles
-        paper.style.width = prevWidth;
-        paper.style.maxWidth = prevMaxWidth;
-        paper.style.boxShadow = prevBoxShadow;
-        paper.style.border = prevBorder;
-
-        const imgData = canvas.toDataURL("image/png");
-        const { jsPDF } = window.jspdf;
-        // Standard A4: 210mm x 297mm
-        const pdf = new jsPDF({
-            orientation: "portrait",
-            unit: "mm",
-            format: "a4"
-        });
-
-        const pageWidth = 210;
-        const pageHeight = 297;
-        const marginX = 12; // 12mm left & right margins
-        const marginY = 14; // 14mm top & bottom margins
-
-        const availableWidth = pageWidth - (marginX * 2); // 186mm
-        const availableHeight = pageHeight - (marginY * 2); // 269mm
-
-        let renderWidth = availableWidth;
-        let renderHeight = (canvas.height * renderWidth) / canvas.width;
-
-        // Ensure content fits within single A4 page without exceeding bottom margin
-        if (renderHeight > availableHeight) {
-            const ratio = availableHeight / renderHeight;
-            renderHeight = availableHeight;
-            renderWidth = renderWidth * ratio;
+        if (hasRspiRemoteDatabase()) {
+            const existing = existingIndex >= 0 ? rspiSlips[existingIndex] : null;
+            await saveRspiSlipToDatabase(action, { ...existing, ...slip });
+            await loadRspiSlipsFromDatabase();
+        } else if (existingIndex >= 0) {
+            rspiSlips[existingIndex] = slip;
+        } else {
+            rspiSlips.unshift(slip);
         }
 
-        // Center horizontally on the A4 page so left and right margins are exactly equal
-        const posX = (pageWidth - renderWidth) / 2;
-        const posY = marginY;
+        saveRspiSlips();
+        renderRspiSlipTable();
+        resetRspiSlipForm();
 
-        pdf.addImage(imgData, "PNG", posX, posY, renderWidth, renderHeight);
-        pdf.save(`RSPI_${serialNo}.pdf`);
-        showToast("A4 RSPI PDF downloaded successfully!");
-    } catch (err) {
-        console.error("RSPI PDF error:", err);
-        showToast("Failed to generate PDF. Using print dialog instead.");
-        printRspiReport();
+        showSuccessModal(
+            action === "update" ? "RSPI record updated successfully in database!" : "RSPI record saved successfully in database!",
+            "Success"
+        );
+    } catch (error) {
+        console.error("Error saving RSPI slip to database:", error);
+        // Fallback: preserve in local storage even if remote request fails
+        if (existingIndex >= 0) {
+            rspiSlips[existingIndex] = slip;
+        } else {
+            rspiSlips.unshift(slip);
+        }
+        saveRspiSlips();
+        renderRspiSlipTable();
+        resetRspiSlipForm();
+
+        const errMsg = String(error?.message || "");
+        if (errMsg.includes("42501") || errMsg.toLowerCase().includes("row-level security")) {
+            showSuccessModal(
+                "Record saved to local storage, but saving to the Supabase database failed because the Row-Level Security (RLS) policy blocks anonymous inserts. Please run the provided RLS policy SQL in your Supabase SQL Editor.",
+                "Database Permission Notice"
+            );
+        } else {
+            showSuccessModal(
+                "Record saved to local storage, but remote database save encountered an error: " + errMsg.slice(0, 150),
+                "Database Warning"
+            );
+        }
+    } finally {
+        isSavingRspiSlip = false;
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            if (textSpan) textSpan.textContent = originalText;
+        }
     }
 }
 
+// Expose globally so inline onclick handlers and console calls work
+window.saveRspiSlip = saveRspiSlip;
+window.saveRspiReport = saveRspiSlip;
+window.resetRspiSlipForm = resetRspiSlipForm;
+window.getRspiSlipFormData = getRspiSlipFormData;
+window.populateRspiIcsOptions = populateRspiIcsOptions;
 
-function printRspiReport() {
-    document.body.classList.add("printing-rspi");
-    window.print();
-    setTimeout(() => {
-        document.body.classList.remove("printing-rspi");
-    }, 1000);
-}
+async function initRspiModule() {
+    const form = document.querySelector("#rspiSlipForm");
+    const table = document.querySelector("#rspiSlipTable");
+    if (!form || !table) return;
 
-function initRspiReport() {
+    populateRspiDescriptionDropdown();
     populateRspiSignatories();
-    populateRspiIcsOptions();
-    renderRspiReport();
 
-    ["rspiEntityNameInput", "rspiFundClusterInput", "rspiSerialNoInput", "rspiDateInput"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener("input", updateRspiLiveMeta);
-            el.addEventListener("change", updateRspiLiveMeta);
+    const descSearchInput = document.querySelector("#rspiDescriptionSearch");
+    const descSelect = document.querySelector("#rspiDescription");
+    const toggleBtn = document.querySelector("#rspiDropdownToggleBtn");
+    const container = document.querySelector("#rspiSearchableSelect");
+
+    if (descSearchInput) {
+        descSearchInput.addEventListener("input", () => {
+            const val = descSearchInput.value;
+            filterRspiDropdownOptions(val);
+            openRspiDropdownMenu();
+
+            if (descSelect) {
+                const trimmed = val.trim();
+                if (trimmed && !Array.from(descSelect.options).some(opt => opt.value === trimmed)) {
+                    const opt = document.createElement("option");
+                    opt.value = trimmed;
+                    opt.textContent = trimmed;
+                    descSelect.appendChild(opt);
+                }
+                descSelect.value = trimmed;
+            }
+            populateRspiFieldsFromDescription();
+        });
+
+        descSearchInput.addEventListener("focus", () => {
+            if (isSelectingRspiOption) return;
+            filterRspiDropdownOptions(descSearchInput.value);
+            openRspiDropdownMenu();
+        });
+
+        descSearchInput.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                closeRspiDropdownMenu();
+            } else if (e.key === "ArrowDown") {
+                openRspiDropdownMenu();
+                const first = document.querySelector("#rspiOptionsList .ics-option-item[style*='display: flex']");
+                if (first) first.focus();
+            }
+        });
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleRspiDropdownMenu();
+            if (descSearchInput) descSearchInput.focus();
+        });
+    }
+
+    document.addEventListener("click", (e) => {
+        if (container && !container.contains(e.target)) {
+            closeRspiDropdownMenu();
         }
     });
 
-    const centerInput = document.getElementById("rspiCenterCodeInput");
-    if (centerInput) {
-        centerInput.addEventListener("input", renderRspiReport);
-    }
+    ["#rspiQuantity", "#rspiUnitCost"].forEach((sel) => {
+        const el = document.querySelector(sel);
+        if (el) el.addEventListener("input", updateRspiSlipAmount);
+    });
 
-    const icsFilter = document.getElementById("rspiIcsFilterSelect");
-    if (icsFilter) {
-        icsFilter.addEventListener("change", renderRspiReport);
-    }
-
-    const custSelect = document.getElementById("rspiCustodianSelect");
-    if (custSelect) {
-        custSelect.addEventListener("change", updateRspiSignatoryDisplays);
-    }
-
-    const acctSelect = document.getElementById("rspiAccountingStaffSelect");
-    if (acctSelect) {
-        acctSelect.addEventListener("change", updateRspiSignatoryDisplays);
-    }
-
-    const refreshBtn = document.getElementById("refreshRspiBtn");
-    if (refreshBtn) {
-        refreshBtn.addEventListener("click", async () => {
-            showToast("Refreshing RSPI data...");
-            await loadInventoryCustodianSlipsFromDatabase();
-            populateRspiIcsOptions();
-            populateRspiSignatories();
-            renderRspiReport();
-            showToast("RSPI data updated!");
+    const newBtn = document.querySelector("#rspiNewBtn");
+    if (newBtn) {
+        newBtn.addEventListener("click", () => {
+            resetRspiSlipForm();
+            showSuccessModal("Ready for new RSPI!", "New RSPI");
         });
     }
 
-    const printBtn = document.getElementById("printRspiBtn");
-    if (printBtn) {
-        printBtn.addEventListener("click", printRspiReport);
+    const clearBtn = document.querySelector("#rspiClearBtn");
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            resetRspiSlipForm();
+            showSuccessModal("Form has been cleared.", "Clear");
+        });
     }
 
-    const pdfBtn = document.getElementById("generateRspiPdfBtn");
-    if (pdfBtn) {
-        pdfBtn.addEventListener("click", generateRspiPdf);
+    const searchInput = document.querySelector("#rspiSlipSearchInput");
+    if (searchInput) {
+        searchInput.addEventListener("input", () => {
+            rspiSlipPage = 1;
+            renderRspiSlipTable();
+        });
+    }
+
+    const paginationContainer = document.querySelector("#rspiSlipPagination");
+    if (paginationContainer) {
+        paginationContainer.addEventListener("click", (e) => {
+            const btn = e.target.closest("button[data-rspi-slip-page]");
+            if (btn && btn.dataset.rspiSlipPage) {
+                rspiSlipPage = Number(btn.dataset.rspiSlipPage) || 1;
+                renderRspiSlipTable();
+            }
+        });
+    }
+
+    // Load initial RSPI records
+    rspiSlips = loadRspiSlips();
+    renderRspiSlipTable();
+
+    try {
+        if (await loadRspiSlipsFromDatabase()) {
+            renderRspiSlipTable();
+        }
+    } catch (err) {
+        console.warn("RSPI remote DB unavailable, local storage is active:", err);
+    }
+
+    // Set default initial date and center code
+    const dateInput = document.querySelector("#rspiDate");
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().slice(0, 10);
+    }
+    const centerInput = document.querySelector("#rspiCenterCode");
+    if (centerInput && !centerInput.value) {
+        centerInput.value = activeSchoolRecord?.school_id || "500243";
+    }
+
+    // Form submission & Save button
+    form.addEventListener("submit", saveRspiSlip);
+    const saveBtn = document.querySelector("#saveRspiBtn");
+    if (saveBtn) {
+        saveBtn.addEventListener("click", (e) => {
+            if (e.target.type !== "submit") {
+                saveRspiSlip(e);
+            }
+        });
+    }
+
+    // Table action buttons (Open, Edit, Delete)
+    table.addEventListener("click", async (event) => {
+        const button = event.target.closest("button[data-rspi-action]");
+        if (!button) return;
+
+        const slip = rspiSlips.find((entry) => entry.id === button.dataset.rspiId);
+        if (!slip) return;
+
+        if (button.dataset.rspiAction === "open") {
+            openRspiDocumentPdf(slip);
+            return;
+        }
+
+        if (button.dataset.rspiAction === "edit") {
+            editRspiSlip(slip.id);
+            return;
+        }
+
+        if (button.dataset.rspiAction === "delete") {
+            const confirmed = await showConfirmDialog({
+                title: "Delete Document",
+                message: `Are you sure you want to delete the RSPI record for "${slip.description || slip.serialNo || 'this item'}" (${slip.serialNo})? This action cannot be undone.`,
+                confirmText: "Delete",
+                cancelText: "Cancel"
+            });
+            if (!confirmed) return;
+
+            const targetId = slip.id;
+            rspiSlips = rspiSlips.filter((entry) => String(entry.id) !== String(targetId));
+            saveRspiSlips();
+            renderRspiSlipTable();
+
+            const editingIdEl = document.querySelector("#rspiEditingId");
+            if (editingIdEl && String(editingIdEl.value) === String(targetId)) {
+                resetRspiSlipForm();
+            }
+
+            showToast("RSPI record deleted.");
+
+            if (hasRspiRemoteDatabase() && (slip.dbReportId || slip.dbItemId)) {
+                try {
+                    await deleteRspiSlipFromDatabase(slip);
+                    await loadRspiSlipsFromDatabase();
+                    renderRspiSlipTable();
+                } catch (error) {
+                    console.error("Remote RSPI database deletion error:", error);
+                }
+            }
+        }
+    });
+}
+
+// Preserve backwards-compatible function names for any existing callers
+function initRspiReport() {
+    initRspiModule();
+}
+function renderRspiReport() {
+    renderRspiSlipTable();
+}
+function generateRspiPdf() {
+    if (rspiSlips.length > 0) {
+        openRspiDocumentPdf(rspiSlips[0]);
+    } else {
+        showToast("No RSPI records available to generate PDF.");
     }
 }
 
-
+// Initialize RSPI CRUD
+initRspiModule();

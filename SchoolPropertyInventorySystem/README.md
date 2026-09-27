@@ -29,6 +29,8 @@ Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The scr
 - signatories (source for report signatory options; column: `signatory`)
 - ics_slips (Inventory Custodian Slip headers)
 - ics_slip_items (line items linked to slips and optional assets)
+- rspi_reports (Report of Semi-Expendable Property Issued base records)
+- rspi_report_items (saved item snapshots linked to RSPI records and source ICS items)
 
 ### Expected asset columns
 

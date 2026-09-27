@@ -710,6 +710,9 @@ body[data-theme="light"] .ghost-button {
 #icsNewBtn,
 #icsClearBtn,
 #saveIcsBtn,
+#rspiNewBtn,
+#rspiClearBtn,
+#saveRspiBtn,
 #selectActiveSchoolBtn,
 #saveSchoolDetailsBtn,
 #refreshSchoolDetailsBtn,
@@ -1818,11 +1821,69 @@ body[data-theme="dark"] .qr-uiverse-btn p {
   font-family: "Times New Roman", Times, Georgia, serif;
   width: 100%;
   max-width: 794px; /* Exact standard A4 pixel width at 96 DPI */
+  min-height: 1123px;
   box-sizing: border-box;
-  padding: 24px 20px 32px 20px;
+  padding: 20px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   border: 1px solid #cbd5e1;
   margin: 0 auto;
+}
+
+.rspi-form-header {
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.rspi-form-seal {
+  display: block;
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  margin: 0 auto 6px;
+}
+
+.rspi-form-title {
+  margin: 0;
+  color: #000000;
+  font-family: "Times New Roman", Times, Georgia, serif;
+  font-size: 13pt;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.rspi-form-metadata {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.78fr);
+  gap: 20px;
+  margin-bottom: 10px;
+  color: #000000;
+  font-size: 9pt;
+  line-height: 1.3;
+}
+
+.rspi-meta-block {
+  min-width: 0;
+}
+
+.rspi-meta-line {
+  display: flex;
+  gap: 5px;
+  margin: 0 0 3px;
+}
+
+.rspi-meta-line strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rspi-meta-label {
+  flex: 0 0 auto;
+  min-width: 76px;
+}
+
+.rspi-table-wrap {
+  width: 100%;
 }
 
 .rspi-table {
@@ -1836,8 +1897,17 @@ body[data-theme="dark"] .qr-uiverse-btn p {
   color: #000000 !important;
   background: #ffffff !important;
   box-sizing: border-box !important;
-  word-break: break-word !important;
+  word-break: normal !important;
 }
+
+.rspi-col-ics { width: 14%; }
+.rspi-col-center { width: 9%; }
+.rspi-col-property { width: 14%; }
+.rspi-col-description { width: 24%; }
+.rspi-col-unit { width: 5%; }
+.rspi-col-quantity { width: 5%; }
+.rspi-col-cost { width: 14%; }
+.rspi-col-amount { width: 15%; }
 
 .rspi-table th,
 .rspi-table td {
@@ -1869,17 +1939,100 @@ body[data-theme="dark"] .qr-uiverse-btn p {
 
 .rspi-table tbody tr td {
   font-size: 7.5pt;
-  padding: 5px 4px;
+  padding: 4px 3px;
+  line-height: 1.2;
+}
+
+.rspi-data-row .rspi-cell {
+  vertical-align: top !important;
+}
+
+.rspi-cell-id,
+.rspi-cell-center,
+.rspi-cell-unit,
+.rspi-cell-quantity {
+  text-align: center;
+}
+
+.rspi-cell-id,
+.rspi-cell-quantity,
+.rspi-cell-amount {
+  font-weight: 700;
+}
+
+.rspi-cell-description {
+  text-align: left;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.rspi-cell-currency {
+  text-align: right;
+  white-space: nowrap;
 }
 
 .rspi-table tbody tr.empty-row td {
-  height: 20px;
+  height: 18px;
 }
 
 .rspi-table tfoot td {
   border: 1px solid #000000 !important;
   border-top: 2px solid #000000 !important;
   box-sizing: border-box !important;
+}
+
+.rspi-certification-cell,
+.rspi-posting-cell {
+  vertical-align: top !important;
+  padding: 9px 10px 12px !important;
+}
+
+.rspi-certification-copy {
+  margin: 0 0 24px;
+  font-size: 7.5pt;
+  line-height: 1.25;
+}
+
+.rspi-signature-block {
+  text-align: center;
+}
+
+.rspi-signatory-name {
+  display: block;
+  min-height: 13px;
+  font-size: 8.5pt;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  text-decoration: underline;
+  text-transform: uppercase;
+}
+
+.rspi-signatory-role {
+  display: block;
+  margin-top: 2px;
+  font-size: 6.7pt;
+  line-height: 1.2;
+}
+
+.rspi-accounting-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  align-items: end;
+  gap: 4px;
+  text-align: left;
+}
+
+.rspi-date-line {
+  display: block;
+  font-size: 6.7pt;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.rspi-date-line i {
+  display: block;
+  height: 10px;
+  border-bottom: 1px solid #000000;
 }
 
 @media print {
@@ -1904,6 +2057,7 @@ body[data-theme="dark"] .qr-uiverse-btn p {
     box-shadow: none !important;
     padding: 0 !important;
     margin: 0 !important;
+    min-height: 0 !important;
   }
 }
 
