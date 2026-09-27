@@ -9,7 +9,11 @@ const app = express();
 const PORT = 3000;
 
 // Serve SchoolPropertyInventorySystem as static directory
-app.use('/SchoolPropertyInventorySystem', express.static(path.join(__dirname, 'SchoolPropertyInventorySystem')));
+app.use('/SchoolPropertyInventorySystem', express.static(path.join(__dirname, 'SchoolPropertyInventorySystem'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  }
+}));
 
 // Redirect root to /SchoolPropertyInventorySystem/
 app.get('/', (req, res) => {

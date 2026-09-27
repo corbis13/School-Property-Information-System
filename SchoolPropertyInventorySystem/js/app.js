@@ -7087,17 +7087,19 @@ async function openRspiDocumentPdf(slip) {
     const columns = [23, 22, 25, 46, 12, 16, 20, 20];
 
     // Sub-header 1: Department Fill-in indicators
-    const subheaderHeight = 6.5;
+    const subheaderHeight = 11;
     const supplyWidth = columns[0] + columns[1] + columns[2] + columns[3] + columns[4] + columns[5]; // 144 mm
     const acctWidth = columns[6] + columns[7]; // 40 mm
 
     pdf.setFont("helvetica", "oblique");
     pdf.setFontSize(7.5);
     pdf.rect(marginX, y, supplyWidth, subheaderHeight);
-    pdf.text("To be filled up by the Supply and/or Property Division/Unit", marginX + supplyWidth / 2, y + 4.3, { align: "center" });
+    pdf.text("To be filled up by the Supply and/or Property Division/Unit", marginX + supplyWidth / 2, y + 6.8, { align: "center" });
 
     pdf.rect(marginX + supplyWidth, y, acctWidth, subheaderHeight);
-    pdf.text("To be filled up by the Accounting Division/Unit", marginX + supplyWidth + acctWidth / 2, y + 4.3, { align: "center" });
+    pdf.setFontSize(7);
+    pdf.text("To be filled up by the", marginX + supplyWidth + acctWidth / 2, y + 4.8, { align: "center" });
+    pdf.text("Accounting Division/Unit", marginX + supplyWidth + acctWidth / 2, y + 8.5, { align: "center" });
 
     y += subheaderHeight;
 
