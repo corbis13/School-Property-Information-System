@@ -7010,16 +7010,12 @@ function formatRspiCurrency(val) {
     return num.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-let isOpeningRspiPdf = false;
 async function openRspiDocumentPdf(slip) {
-    if (isOpeningRspiPdf) return;
-    isOpeningRspiPdf = true;
-    try {
-        const JsPdf = window.jspdf && window.jspdf.jsPDF;
-        if (!JsPdf) {
-            showToast("PDF generation library is unavailable.");
-            return;
-        }
+    const JsPdf = window.jspdf && window.jspdf.jsPDF;
+    if (!JsPdf) {
+        showToast("PDF generation library is unavailable.");
+        return;
+    }
 
     // Gather all items that share the same Serial No. or Report ID
     const slipItems = rspiSlips.filter((entry) =>
@@ -7263,11 +7259,6 @@ async function openRspiDocumentPdf(slip) {
     if (!preview) {
         showToast("Please allow popups to view the RSPI PDF.");
     }
-    } finally {
-        setTimeout(() => {
-            isOpeningRspiPdf = false;
-        }, 600);
-    }
 }
 
 function populateRspiIcsOptions() {
@@ -7431,14 +7422,10 @@ window.resetRspiSlipForm = resetRspiSlipForm;
 window.getRspiSlipFormData = getRspiSlipFormData;
 window.populateRspiIcsOptions = populateRspiIcsOptions;
 
-let isRspiModuleInitialized = false;
-
 async function initRspiModule() {
-    if (isRspiModuleInitialized) return;
     const form = document.querySelector("#rspiSlipForm");
     const table = document.querySelector("#rspiSlipTable");
     if (!form || !table) return;
-    isRspiModuleInitialized = true;
 
     populateRspiDescriptionDropdown();
     populateRspiSignatories();
@@ -7581,10 +7568,6 @@ async function initRspiModule() {
         if (!slip) return;
 
         if (button.dataset.rspiAction === "open") {
-            event.stopPropagation();
-            if (button.dataset.opening === "true") return;
-            button.dataset.opening = "true";
-            setTimeout(() => { delete button.dataset.opening; }, 1000);
             openRspiDocumentPdf(slip);
             return;
         }
