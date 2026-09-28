@@ -5241,28 +5241,15 @@ async function init() {
     const requestedModule = params.get("module") || (window.location.hash ? window.location.hash.replace("#", "") : "");
     if (requestedModule) {
         showModule(requestedModule);
-    } else if (window.innerWidth < 768) {
-        // In mobile view, display the RSPI module
-        showModule("rspi");
+    } else {
+        // Default homepage is always the Dashboard
+        showModule("dashboard");
     }
 
-    // Support deep-link hash navigation and responsive mobile view switching
+    // Support deep-link hash navigation
     window.addEventListener("hashchange", () => {
         const hashModule = window.location.hash.replace("#", "");
         if (hashModule) showModule(hashModule);
-    });
-
-    let lastWindowWidth = window.innerWidth;
-    window.addEventListener("resize", () => {
-        const currentWidth = window.innerWidth;
-        if (currentWidth < 768 && lastWindowWidth >= 768) {
-            // When transitioning to mobile view, display RSPI if on dashboard
-            const activeModule = document.querySelector(".module-view.active");
-            if (activeModule && activeModule.dataset.module === "dashboard") {
-                showModule("rspi");
-            }
-        }
-        lastWindowWidth = currentWidth;
     });
 
     if (!supabaseUrl || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
