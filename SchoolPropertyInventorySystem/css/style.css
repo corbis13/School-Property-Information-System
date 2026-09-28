@@ -2260,6 +2260,7 @@ body[data-theme="light"] .asset-detail-row {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    box-sizing: border-box;
 }
 
 /* Institutional DepEd Header */
@@ -2575,7 +2576,7 @@ body[data-theme="light"] .asset-detail-row {
 
 .hero-metrics-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
     gap: 12px;
 }
 
@@ -2723,8 +2724,10 @@ body[data-theme="light"] .asset-detail-row {
 /* 4-Section Grid */
 .asset-details-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
     gap: 20px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .detail-card {
@@ -2733,18 +2736,20 @@ body[data-theme="light"] .asset-detail-row {
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
 }
 
 .asset-details-grid > .full-width-card,
 .detail-card.full-width-card {
     grid-column: 1 / -1 !important;
-    grid-column: span 2 !important;
     width: 100%;
 }
 
 .detail-card.full-width-card .card-field-list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
     gap: 0;
 }
 
@@ -2783,15 +2788,19 @@ body[data-theme="light"] .asset-detail-row {
     display: flex;
     flex-direction: column;
     gap: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .field-row {
     display: grid;
-    grid-template-columns: 160px 1fr;
+    grid-template-columns: minmax(130px, auto) 1fr;
     align-items: baseline;
-    gap: 12px;
+    gap: 8px 14px;
     padding: 10px 12px;
     border-bottom: 1px solid #f1f5f9;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .field-row:nth-child(even) {
@@ -2919,8 +2928,7 @@ body[data-theme="light"] .asset-detail-row {
 
 /* Responsive */
 @media (max-width: 960px) {
-    .hero-metrics-row,
-    .hero-metrics-grid {
+    .hero-metrics-row {
         grid-template-columns: 1fr;
     }
 }
@@ -2948,14 +2956,6 @@ body[data-theme="light"] .asset-detail-row {
         align-items: flex-start;
         text-align: left;
     }
-
-    .asset-details-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .detail-card.full-width-card .card-field-list {
-        grid-template-columns: 1fr;
-    }
 }
 
 @media (max-width: 640px) {
@@ -2964,6 +2964,93 @@ body[data-theme="light"] .asset-detail-row {
     }
     .toolbar-title {
         display: none;
+    }
+
+    .asset-window-container {
+        padding: 0 12px;
+        margin: 12px auto 32px;
+        gap: 14px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .asset-hero-card {
+        padding: 16px 14px;
+        border-radius: 12px;
+    }
+
+    .hero-header-bar {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .hero-metrics-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .metric-card {
+        padding: 10px 12px;
+    }
+
+    .hero-qr-card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 12px;
+    }
+
+    .asset-details-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .detail-card {
+        padding: 14px 12px;
+        border-radius: 12px;
+        box-sizing: border-box;
+        width: 100%;
+    }
+
+    .detail-card .card-header {
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+
+    .detail-card .card-header h2 {
+        font-size: 0.9375rem;
+    }
+
+    .detail-card.full-width-card .card-field-list {
+        grid-template-columns: 1fr;
+    }
+
+    .field-row {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+        padding: 8px 10px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .field-row dt {
+        font-size: 0.725rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        font-weight: 700;
+    }
+
+    .field-row dd {
+        font-size: 0.875rem;
+        color: #0f172a;
+        width: 100%;
+        word-break: break-word;
+        overflow-wrap: anywhere;
     }
 }
 
