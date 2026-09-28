@@ -3254,7 +3254,8 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   --wc-accent-shadow: rgba(68, 158, 56, 0.3);
 }
 
-.witcher-card-qr {
+.witcher-card-qr,
+.witcher-card-rspi {
   --wc-accent: #0284c7;
   --wc-magic-aura: rgba(2, 132, 199, 0.18);
   --wc-corner-border: rgba(2, 132, 199, 0.45);

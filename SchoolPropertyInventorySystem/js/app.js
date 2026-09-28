@@ -97,6 +97,7 @@ const dom = {
     qrDetails: document.querySelector("#qrDetails"),
     totalItems: document.querySelector("#totalItems"),
     icsGenerated: document.querySelector("#icsGenerated"),
+    totalRspi: document.querySelector("#totalRspi"),
     repairItems: document.querySelector("#repairItems"),
     qrItems: document.querySelector("#qrItems"),
     portfolioChart: document.querySelector("#portfolioChart"),
@@ -1940,8 +1941,11 @@ function renderStats() {
 
     dom.totalItems.textContent = items.length;
     renderIcsGeneratedCount();
+    renderTotalRspiCount();
     dom.repairItems.textContent = getRepairItemsCount();
-    dom.qrItems.textContent = getQrDownloadCount();
+    if (dom.qrItems) {
+        dom.qrItems.textContent = getQrDownloadCount();
+    }
 }
 
 function getRepairItemsCount() {
@@ -1962,6 +1966,24 @@ function renderIcsGeneratedCount() {
     }));
 
     dom.icsGenerated.textContent = slipKeys.size;
+}
+
+function renderTotalRspiCount() {
+    const el = dom.totalRspi || document.querySelector("#totalRspi");
+    if (!el) return;
+
+    if (!Array.isArray(rspiSlips) || rspiSlips.length === 0) {
+        el.textContent = "0";
+        return;
+    }
+
+    const reportKeys = new Set(rspiSlips.map((slip) => {
+        if (slip.dbReportId != null) return `database:${slip.dbReportId}`;
+        if (String(slip.serialNo || "").trim()) return `serial:${slip.serialNo}`;
+        return `local:${slip.id}`;
+    }));
+
+    el.textContent = reportKeys.size;
 }
 
 function renderDashboard() {
@@ -5232,6 +5254,12 @@ async function init() {
     qrDownloadHistory = loadQrDownloadHistory();
     renderQrDownloadHistory();
     await loadRemoteQrDownloadHistory();
+    rspiSlips = loadRspiSlips();
+    try {
+        await loadRspiSlipsFromDatabase();
+    } catch (err) {
+        console.warn("Unable to pull RSPI records from database on init:", err);
+    }
     renderApp();
     if (typeof initRspiReport === "function") {
         initRspiReport();
@@ -6366,6 +6394,7 @@ function saveRspiSlips() {
     } catch (error) {
         console.error("Unable to save RSPI slips locally.", error);
     }
+    renderTotalRspiCount();
 }
 
 function mapRspiReportRows(rows) {
@@ -7522,6 +7551,7 @@ async function initRspiModule() {
     try {
         if (await loadRspiSlipsFromDatabase()) {
             renderRspiSlipTable();
+            renderTotalRspiCount();
         }
     } catch (err) {
         console.warn("RSPI remote DB unavailable, local storage is active:", err);
