@@ -4726,9 +4726,16 @@ function showModule(moduleName, targetId = "") {
     }
 
     if (targetId) {
-        window.requestAnimationFrame(() => {
-            document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
+        setTimeout(() => {
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+                targetEl.classList.add("ring-2", "ring-[#0284c7]/40", "transition-all", "duration-500");
+                setTimeout(() => {
+                    targetEl.classList.remove("ring-2", "ring-[#0284c7]/40");
+                }, 2000);
+            }
+        }, 50);
         return;
     }
 
