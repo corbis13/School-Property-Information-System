@@ -6152,8 +6152,11 @@ async function openInventoryCustodianSlipPdf(slip) {
         pdf.text(String(headerSlip.entityName || "-"), marginX + 25, y + 36);
         pdf.text("Fund Cluster:", marginX, y + 44);
         pdf.text(String(headerSlip.fundCluster || "-"), marginX + 25, y + 44);
-        pdf.text("ICS No.:", pageWidth - marginX - 46, y + 44);
-        pdf.text(String(headerSlip.icsNo || "-"), pageWidth - marginX, y + 44, { align: "right" });
+        const icsLabel = "ICS No.:";
+        const icsLabelX = pageWidth - marginX - 46;
+        const icsValueX = icsLabelX + pdf.getTextWidth(icsLabel) + 2;
+        pdf.text(icsLabel, icsLabelX, y + 44);
+        pdf.text(String(headerSlip.icsNo || "-"), icsValueX, y + 44);
         y = tableStartY;
     };
 
