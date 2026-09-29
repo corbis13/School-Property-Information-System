@@ -7189,60 +7189,85 @@ async function openRspiDocumentPdf(slip) {
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(7.5);
 
+    const tableRows = [];
+    slipItems.forEach((item) => {
+        const additionalItem = (item.additionalItem || "").trim() || (
+            (typeof items !== "undefined" && Array.isArray(items))
+                ? (items.find((asset) =>
+                    (asset.semiExpendableNo && asset.semiExpendableNo === item.semiExpendablePropertyNo) ||
+                    (asset.propertyNo && asset.propertyNo === item.semiExpendablePropertyNo) ||
+                    (getIcsAssetDescription(asset) === (item.description || ""))
+                )?.additionalItem || "")
+                : ""
+        ).trim();
+
+        // First row: main item details
+        tableRows.push([
+            item.icsNo || "-",
+            item.centerCode || "-",
+            item.semiExpendablePropertyNo || "-",
+            item.description || "-",
+            item.unit || "-",
+            item.quantity ?? "-",
+            (item.unitCost !== "" && item.unitCost != null) ? formatRspiCurrency(item.unitCost) : "",
+            (item.amount !== "" && item.amount != null) ? formatRspiCurrency(item.amount) : ""
+        ]);
+
+        // Next row: Additional Item row under Item Description (like ICS style of Date Acquired)
+        if (additionalItem) {
+            tableRows.push([
+                "",
+                "",
+                "",
+                additionalItem,
+                "",
+                "",
+                "",
+                ""
+            ]);
+        }
+    });
+
     const targetRowCount = 12;
-    const renderedItems = [...slipItems];
+    const finalRows = tableRows.slice(0, Math.max(targetRowCount, tableRows.length));
+    while (finalRows.length < targetRowCount) {
+        finalRows.push(["", "", "", "", "", "", "", ""]);
+    }
 
-    for (let r = 0; r < targetRowCount; r++) {
-        const item = renderedItems[r];
-        const descText = item
-            ? (item.additionalItem ? `${item.description || "-"}\n(${item.additionalItem})` : String(item.description || "-"))
-            : "";
-        const descLines = pdf.splitTextToSize(descText, columns[3] - 2.5);
-        const rowHeight = item ? Math.max(6.5, descLines.length * 3.5 + 2) : 6.5;
+    finalRows.forEach((rowValues) => {
+        const wrappedValues = rowValues.map((value, index) =>
+            pdf.splitTextToSize(String(value || "").replace(/\r\n/g, "\n"), columns[index] - 2.5)
+        );
+        const rowHeight = Math.max(
+            6.5,
+            ...wrappedValues.map((lines) => {
+                if (!lines || lines.length === 0 || (lines.length === 1 && lines[0] === "")) {
+                    return 6.5;
+                }
+                return lines.length * 3.5 + 2;
+            })
+        );
 
-        currentX = marginX;
-
-        // Col 0: ICS No.
-        pdf.rect(currentX, y, columns[0], rowHeight);
-        if (item) pdf.text(String(item.icsNo || "-"), currentX + columns[0] / 2, y + 4.5, { align: "center" });
-        currentX += columns[0];
-
-        // Col 1: Center Code
-        pdf.rect(currentX, y, columns[1], rowHeight);
-        if (item) pdf.text(String(item.centerCode || "-"), currentX + columns[1] / 2, y + 4.5, { align: "center" });
-        currentX += columns[1];
-
-        // Col 2: Semi-Expendable Property No.
-        pdf.rect(currentX, y, columns[2], rowHeight);
-        if (item) pdf.text(String(item.semiExpendablePropertyNo || "-"), currentX + columns[2] / 2, y + 4.5, { align: "center" });
-        currentX += columns[2];
-
-        // Col 3: Item Description
-        pdf.rect(currentX, y, columns[3], rowHeight);
-        if (item) pdf.text(descLines, currentX + 1.5, y + 4.5);
-        currentX += columns[3];
-
-        // Col 4: Unit
-        pdf.rect(currentX, y, columns[4], rowHeight);
-        if (item) pdf.text(String(item.unit || "-"), currentX + columns[4] / 2, y + 4.5, { align: "center" });
-        currentX += columns[4];
-
-        // Col 5: Quantity Issued
-        pdf.rect(currentX, y, columns[5], rowHeight);
-        if (item) pdf.text(String(item.quantity ?? "-"), currentX + columns[5] / 2, y + 4.5, { align: "center" });
-        currentX += columns[5];
-
-        // Col 6: Unit Cost
-        pdf.rect(currentX, y, columns[6], rowHeight);
-        if (item && item.unitCost !== "") pdf.text(formatRspiCurrency(item.unitCost), currentX + columns[6] - 1.5, y + 4.5, { align: "right" });
-        currentX += columns[6];
-
-        // Col 7: Amount
-        pdf.rect(currentX, y, columns[7], rowHeight);
-        if (item && item.amount !== "") pdf.text(formatRspiCurrency(item.amount), currentX + columns[7] - 1.5, y + 4.5, { align: "right" });
+        let currentX = marginX;
+        wrappedValues.forEach((lines, index) => {
+            pdf.rect(currentX, y, columns[index], rowHeight);
+            if (lines && lines.length > 0 && lines[0] !== "") {
+                if (index === 0 || index === 1 || index === 2 || index === 4 || index === 5) {
+                    // Center align: ICS No, Center Code, Property No, Unit, Quantity Issued
+                    pdf.text(lines, currentX + columns[index] / 2, y + 4.5, { align: "center" });
+                } else if (index === 6 || index === 7) {
+                    // Right align: Unit Cost, Amount
+                    pdf.text(lines, currentX + columns[index] - 1.5, y + 4.5, { align: "right" });
+                } else {
+                    // Left align: Item Description (Col 3)
+                    pdf.text(lines, currentX + 1.5, y + 4.5);
+                }
+            }
+            currentX += columns[index];
+        });
 
         y += rowHeight;
-    }
+    });
 
     // Signatures / Certification Box (Matching Image Template)
     const sigBoxHeight = 44;
