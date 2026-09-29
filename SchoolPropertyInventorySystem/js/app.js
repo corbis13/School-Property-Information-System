@@ -6324,9 +6324,19 @@ let rspiSlips = [];
 let rspiSlipPage = 1;
 const rspiSlipPageSize = 10;
 let isSelectingRspiOption = false;
+let isRspiModuleInitialized = false;
+let isGeneratingRspiPdf = false;
 
 function hasRspiRemoteDatabase() {
     return hasInventoryCustodianSlipRemoteDatabase();
+}
+
+function generateRspiSerialNo(dateStr = "") {
+    const d = dateStr ? new Date(dateStr) : new Date();
+    const y = !isNaN(d.getFullYear()) ? d.getFullYear() : new Date().getFullYear();
+    const m = String(!isNaN(d.getMonth()) ? d.getMonth() + 1 : (new Date().getMonth() + 1)).padStart(2, "0");
+    const count = (Array.isArray(rspiSlips) ? rspiSlips.length : 0) + 1;
+    return `RSPI-${y}-${m}-${String(count).padStart(4, "0")}`;
 }
 
 function loadRspiSlips() {
@@ -6411,11 +6421,12 @@ function mapRspiReportRows(rows) {
             return [{
                 id: `RSPI-${header.id}`,
                 dbReportId: header.id,
-                serialNo: header.serial_no || "",
+                serialNo: header.serial_no || (header.id ? `RSPI-${String(header.id).padStart(4, "0")}` : ""),
                 entityName: header.entity_name || "",
                 fundCluster: header.fund_cluster || "",
                 centerCode: header.responsibility_center_code || "",
                 description: "",
+                additionalItem: "",
                 icsNo: header.source_ics_no || "",
                 semiExpendablePropertyNo: "",
                 unit: "piece",
@@ -6438,9 +6449,13 @@ function mapRspiReportRows(rows) {
                 lineNo: item.line_no,
                 entityName: header.entity_name || "",
                 fundCluster: header.fund_cluster || "",
-                serialNo: header.serial_no || "",
+                serialNo: header.serial_no || (header.id ? `RSPI-${String(header.id).padStart(4, "0")}` : ""),
                 centerCode: item.responsibility_center_code || header.responsibility_center_code || "",
                 description: item.description_snapshot || "",
+                additionalItem: items.find((asset) => {
+                    return getIcsAssetDescription(asset) === (item.description_snapshot || "") ||
+                           (asset.semiExpendableNo && asset.semiExpendableNo === item.semi_expendable_property_no);
+                })?.additionalItem || "",
                 icsNo: item.ics_no_snapshot || header.source_ics_no || "",
                 semiExpendablePropertyNo: item.semi_expendable_property_no || "",
                 unit: item.unit || "piece",
@@ -6478,7 +6493,7 @@ async function loadRspiSlipsFromDatabase() {
     if (!hasRspiRemoteDatabase()) return false;
 
     const select = [
-        "id", "serial_no", "entity_name", "fund_cluster", "report_date",
+        "id", "entity_name", "fund_cluster", "report_date",
         "responsibility_center_code", "source_ics_no",
         "custodian_name", "accounting_staff_name", "posted_date", "created_at",
         "rspi_report_items(id,line_no,ics_no_snapshot,responsibility_center_code,semi_expendable_property_no,description_snapshot,unit,quantity_issued,unit_cost,amount)"
@@ -6498,11 +6513,10 @@ async function loadRspiSlipsFromDatabase() {
 }
 
 async function saveRspiSlipToDatabase(action, slip) {
-    const sameReportRows = rspiSlips.filter((entry) => entry.dbReportId && entry.serialNo === slip.serialNo);
+    const sameReportRows = rspiSlips.filter((entry) => entry.dbReportId && (slip.dbReportId ? entry.dbReportId === slip.dbReportId : false));
     let reportId = slip.dbReportId || sameReportRows[0]?.dbReportId;
 
     const headerPayload = {
-        serial_no: slip.serialNo,
         entity_name: slip.entityName,
         fund_cluster: slip.fundCluster || null,
         report_date: slip.rspiDate || new Date().toISOString().slice(0, 10),
@@ -6607,6 +6621,8 @@ function resetRspiSlipForm() {
     if (descSearch) descSearch.value = "";
     const descSelect = document.querySelector("#rspiDescription");
     if (descSelect) descSelect.value = "";
+    const additionalItemEl = document.querySelector("#rspiAdditionalItem");
+    if (additionalItemEl) additionalItemEl.value = "";
 
     const dateInput = document.querySelector("#rspiDate");
     if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
@@ -6738,6 +6754,7 @@ function populateRspiFieldsFromDescription(selectedAsset = null) {
 
     const fundClusterEl = document.querySelector("#rspiFundCluster");
     const propNoEl = document.querySelector("#rspiSemiExpendablePropertyNo");
+    const additionalItemEl = document.querySelector("#rspiAdditionalItem");
     const unitEl = document.querySelector("#rspiUnit");
     const unitCostEl = document.querySelector("#rspiUnitCost");
     const qtyEl = document.querySelector("#rspiQuantity");
@@ -6747,6 +6764,7 @@ function populateRspiFieldsFromDescription(selectedAsset = null) {
 
     if (!selectedAsset) {
         if (propNoEl) propNoEl.value = "";
+        if (additionalItemEl) additionalItemEl.value = "";
         if (unitEl) unitEl.value = "";
         if (unitCostEl) unitCostEl.value = "";
         updateRspiSlipAmount();
@@ -6755,6 +6773,7 @@ function populateRspiFieldsFromDescription(selectedAsset = null) {
 
     if (fundClusterEl && !fundClusterEl.value) fundClusterEl.value = selectedAsset.fundCluster || "";
     if (propNoEl) propNoEl.value = selectedAsset.semiExpandableNo || selectedAsset.propertyNo || "";
+    if (additionalItemEl) additionalItemEl.value = selectedAsset.additionalItem || "";
     if (unitEl) unitEl.value = selectedAsset.unitMeasurement || "piece";
     if (unitCostEl) unitCostEl.value = selectedAsset.unitValue ?? "";
     if (qtyEl && (!qtyEl.value || Number(qtyEl.value) <= 1)) {
@@ -6908,6 +6927,7 @@ function renderRspiSlipTable() {
             slip.icsNo,
             slip.semiExpendablePropertyNo,
             slip.description,
+            slip.additionalItem,
             slip.unit,
             slip.quantity,
             slip.unitCost,
@@ -6969,6 +6989,7 @@ function editRspiSlip(id) {
         rspiSerialNo: "serialNo",
         rspiCenterCode: "centerCode",
         rspiDescription: "description",
+        rspiAdditionalItem: "additionalItem",
         rspiIcsNo: "icsNo",
         rspiSemiExpendablePropertyNo: "semiExpendablePropertyNo",
         rspiUnit: "unit",
@@ -7036,11 +7057,15 @@ function formatRspiCurrency(val) {
 }
 
 async function openRspiDocumentPdf(slip) {
-    const JsPdf = window.jspdf && window.jspdf.jsPDF;
-    if (!JsPdf) {
-        showToast("PDF generation library is unavailable.");
-        return;
-    }
+    if (isGeneratingRspiPdf) return;
+    isGeneratingRspiPdf = true;
+
+    try {
+        const JsPdf = window.jspdf && window.jspdf.jsPDF;
+        if (!JsPdf) {
+            showToast("PDF generation library is unavailable.");
+            return;
+        }
 
     // Gather all items that share the same Serial No. or Report ID
     const slipItems = rspiSlips.filter((entry) =>
@@ -7169,7 +7194,9 @@ async function openRspiDocumentPdf(slip) {
 
     for (let r = 0; r < targetRowCount; r++) {
         const item = renderedItems[r];
-        const descText = item ? String(item.description || "-") : "";
+        const descText = item
+            ? (item.additionalItem ? `${item.description || "-"}\n(${item.additionalItem})` : String(item.description || "-"))
+            : "";
         const descLines = pdf.splitTextToSize(descText, columns[3] - 2.5);
         const rowHeight = item ? Math.max(6.5, descLines.length * 3.5 + 2) : 6.5;
 
@@ -7284,6 +7311,11 @@ async function openRspiDocumentPdf(slip) {
     if (!preview) {
         showToast("Please allow popups to view the RSPI PDF.");
     }
+    } finally {
+        setTimeout(() => {
+            isGeneratingRspiPdf = false;
+        }, 800);
+    }
 }
 
 function populateRspiIcsOptions() {
@@ -7308,6 +7340,8 @@ function getRspiSlipFormData() {
     const rawAmount = value("#rspiAmount");
     const amountVal = rawAmount !== "" ? Number(rawAmount) : (qty * unitCost);
 
+    const serialVal = value("#rspiSerialNo") || existing?.serialNo || generateRspiSerialNo(value("#rspiDate"));
+
     return {
         id: editingId || `RSPI-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         dbReportId: existing?.dbReportId || null,
@@ -7315,11 +7349,12 @@ function getRspiSlipFormData() {
         lineNo: existing?.lineNo || 1,
         entityName: value("#rspiEntityName"),
         fundCluster: value("#rspiFundCluster"),
-        serialNo: value("#rspiSerialNo"),
+        serialNo: serialVal,
         centerCode: value("#rspiCenterCode"),
         icsNo: value("#rspiIcsNo"),
         semiExpendablePropertyNo: value("#rspiSemiExpendablePropertyNo"),
         description: descriptionVal,
+        additionalItem: value("#rspiAdditionalItem"),
         unit: value("#rspiUnit") || "piece",
         quantity: qty,
         unitCost: unitCost,
@@ -7349,11 +7384,9 @@ async function saveRspiSlip(e) {
 
     const slip = getRspiSlipFormData();
 
-    // Field validations replicating ICS standards
+    // Ensure serialNo is present
     if (!slip.serialNo) {
-        showToast("Please enter an RSPI Serial No.");
-        document.querySelector("#rspiSerialNo")?.focus();
-        return;
+        slip.serialNo = generateRspiSerialNo(slip.rspiDate);
     }
     if (!slip.entityName) {
         showToast("Please select an Entity Name.");
@@ -7452,6 +7485,12 @@ async function initRspiModule() {
     const table = document.querySelector("#rspiSlipTable");
     if (!form || !table) return;
 
+    if (isRspiModuleInitialized) {
+        renderRspiSlipTable();
+        return;
+    }
+    isRspiModuleInitialized = true;
+
     populateRspiDescriptionDropdown();
     populateRspiSignatories();
 
@@ -7517,7 +7556,7 @@ async function initRspiModule() {
     });
 
     const newBtn = document.querySelector("#rspiNewBtn");
-    if (newBtn) {
+    if (newBtn && !newBtn.getAttribute("onclick")) {
         newBtn.addEventListener("click", () => {
             resetRspiSlipForm();
             showSuccessModal("Ready for new RSPI!", "New RSPI");
@@ -7525,7 +7564,7 @@ async function initRspiModule() {
     }
 
     const clearBtn = document.querySelector("#rspiClearBtn");
-    if (clearBtn) {
+    if (clearBtn && !clearBtn.getAttribute("onclick")) {
         clearBtn.addEventListener("click", () => {
             resetRspiSlipForm();
             showSuccessModal("Form has been cleared.", "Clear");
@@ -7589,12 +7628,21 @@ async function initRspiModule() {
     table.addEventListener("click", async (event) => {
         const button = event.target.closest("button[data-rspi-action]");
         if (!button) return;
+        event.stopImmediatePropagation();
 
         const slip = rspiSlips.find((entry) => entry.id === button.dataset.rspiId);
         if (!slip) return;
 
         if (button.dataset.rspiAction === "open") {
-            openRspiDocumentPdf(slip);
+            if (button.disabled) return;
+            button.disabled = true;
+            try {
+                await openRspiDocumentPdf(slip);
+            } finally {
+                setTimeout(() => {
+                    button.disabled = false;
+                }, 800);
+            }
             return;
         }
 
@@ -7653,4 +7701,6 @@ function generateRspiPdf() {
 }
 
 // Initialize RSPI CRUD
-initRspiModule();
+if (!isRspiModuleInitialized) {
+    initRspiModule();
+}

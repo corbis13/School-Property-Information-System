@@ -1569,25 +1569,29 @@
                 <label>Fund Cluster<input id="rspiFundCluster" type="text" required></label>
               </div>
               <div class="two-column">
-                <label>Serial No.<input id="rspiSerialNo" type="text" placeholder="e.g. RSPI-2026-03-0001" required></label>
                 <label>Responsibility Center Code<input id="rspiCenterCode" type="text" placeholder="e.g. 500243"></label>
-              </div>
-              <div class="full-width ics-form-group">
-                <label for="rspiDescriptionSearch">Item Description</label>
-                <div class="ics-searchable-select" id="rspiSearchableSelect">
-                  <input type="text" id="rspiDescriptionSearch" placeholder="Search or select a semi-expendable item..." autocomplete="off" required>
-                  <button type="button" id="rspiDropdownToggleBtn" class="ics-dropdown-toggle-btn" aria-label="Toggle semi-expendable items dropdown" title="Show all items">
-                    <svg class="ics-chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </button>
-                  <div class="ics-options-menu" id="rspiOptionsMenu" style="display: none;">
-                    <div class="ics-options-list" id="rspiOptionsList"></div>
+                <div class="ics-form-group">
+                  <label for="rspiDescriptionSearch">Item Description</label>
+                  <div class="ics-searchable-select" id="rspiSearchableSelect">
+                    <input type="text" id="rspiDescriptionSearch" placeholder="Search or select a semi-expendable item..." autocomplete="off" required>
+                    <button type="button" id="rspiDropdownToggleBtn" class="ics-dropdown-toggle-btn" aria-label="Toggle semi-expendable items dropdown" title="Show all items">
+                      <svg class="ics-chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </button>
+                    <div class="ics-options-menu" id="rspiOptionsMenu" style="display: none;">
+                      <div class="ics-options-list" id="rspiOptionsList"></div>
+                    </div>
+                    <select id="rspiDescription" style="display: none;" tabindex="-1" aria-hidden="true">
+                      <option value="">Select an inventory item</option>
+                    </select>
                   </div>
-                  <select id="rspiDescription" style="display: none;" tabindex="-1" aria-hidden="true">
-                    <option value="">Select an inventory item</option>
-                  </select>
                 </div>
+              </div>
+              <div class="full-width">
+                <label>Additional Item
+                  <textarea id="rspiAdditionalItem" class="ics-tall-field" rows="3" placeholder="No additional item" readonly></textarea>
+                </label>
               </div>
               <div class="two-column">
                 <label>ICS No.<input id="rspiIcsNo" type="text" placeholder="e.g. ICS-2026-03-0001"></label>
