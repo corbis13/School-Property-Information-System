@@ -209,6 +209,13 @@
               <span class="nav-label">QR Code</span>
             </a>
 
+            <!-- Personnel -->
+            <a href="#" class="nav-item flex items-center space-x-3 px-3.5 py-2.5 text-slate-100 hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-view="personnel" data-tooltip="Personnel">
+              <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+              <i data-lucide="users" class="w-5 h-5 text-slate-200 shrink-0"></i>
+              <span class="nav-label">Personnel</span>
+            </a>
+
             <!-- Report -->
             <a href="#" class="nav-item flex items-center space-x-3 px-3.5 py-2.5 text-slate-100 hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-view="reports" data-tooltip="Report">
               <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
@@ -369,6 +376,10 @@
         <button type="button" class="top-nav-btn flex items-center space-x-1.5 sm:space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-[#00335e] hover:bg-slate-100 transition whitespace-nowrap" data-view="rspi">
           <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
           <span>RSPI</span>
+        </button>
+        <button type="button" class="top-nav-btn flex items-center space-x-1.5 sm:space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-[#00335e] hover:bg-slate-100 transition whitespace-nowrap" data-view="personnel">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>Personnel</span>
         </button>
         <button type="button" class="top-nav-btn flex items-center space-x-1.5 sm:space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-[#00335e] hover:bg-slate-100 transition whitespace-nowrap" data-view="reports">
           <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
@@ -1688,6 +1699,21 @@
                 </table>
               </div>
               <div class="inventory-pagination ics-slip-pagination" id="rspiSlipPagination" aria-label="RSPI pagination"></div>
+            </article>
+          </section>
+        </div>
+
+        <!-- MODULE: PERSONNEL -->
+        <div class="module-view" data-module="personnel" style="display:none;">
+          <section class="reports-grid">
+            <article class="module-card">
+              <div class="section-heading">
+                <div class="flex items-center space-x-2">
+                  <i data-lucide="users" class="w-5 h-5 text-[#00335e]"></i>
+                  <h2 class="module-title">Personnel</h2>
+                </div>
+                <p class="module-copy">Personnel module — coming soon.</p>
+              </div>
             </article>
           </section>
         </div>
