@@ -105,8 +105,7 @@ app.get(['/acquisition-year-report', '/acquisition-year-report.html'], (req, res
 });
 
 app.get(['/accountable-person-report', '/accountable-person-report.html'], (req, res) => {
-  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  res.redirect(302, `/SchoolPropertyInventorySystem/accountable-person-report.html${query}`);
+  res.redirect(302, `/SchoolPropertyInventorySystem/index.html?module=personnel`);
 });
 
 app.get('/asset.html', (req, res) => {
