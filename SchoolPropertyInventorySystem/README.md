@@ -16,7 +16,7 @@ To get started:
 2. Fill in your Supabase **Project URL** and **anon / public key** (Project Settings → API in the Supabase dashboard).
 3. Set `assetUrl` to the GitHub Pages URL of `asset.html` (used as the QR code payload).
 
-Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the `inventory_item`, `geras_teacher`, and `signatories` lookup tables and configures public read/write policies for this no-login app.
+Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the `inventory_item`, `school_teacher`, and `signatories` lookup tables and configures public read/write policies for this no-login app.
 
 ### Expected tables
 
@@ -25,7 +25,7 @@ Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The scr
 - statuses (source for status options; column: `status_name`)
 - inventory_item (source for inventory item type options; column: `inventory_item_type`)
 - education_level (source for education level options; column: `education_level`)
-- geras_teacher (source for accountable-person options; columns: `teacher_name`, `position`, `school_level`)
+- school_teacher (Personnel Accountability records; columns: `teacher_name`, `employee_id`, `position`, `plantilla_position`, `school_level`, `personnel_type`, `grade_section`, `email`, `phone`, `school_name`, `location`, `date_hired`, `employment_status`, `status`, `photo_url`)
 - signatories (source for report signatory options; column: `signatory`)
 - ics_slips (Inventory Custodian Slip headers)
 - ics_slip_items (line items linked to slips and optional assets)

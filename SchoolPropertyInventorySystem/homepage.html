@@ -122,6 +122,8 @@
     }
   </style>
   <link rel="stylesheet" href="css/spis-modules.css?v=20260923_v26">
+  <!-- Font Awesome – used by Personnel Accountability module -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
 <body class="bg-[#f0f4f8] text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-green selection:text-white">
 
@@ -1704,19 +1706,1120 @@
         </div>
 
         <!-- MODULE: PERSONNEL -->
-        <div class="module-view" data-module="personnel" style="display:none;">
-          <section class="reports-grid">
-            <article class="module-card">
-              <div class="section-heading">
-                <div class="flex items-center space-x-2">
-                  <i data-lucide="users" class="w-5 h-5 text-[#00335e]"></i>
-                  <h2 class="module-title">Personnel</h2>
-                </div>
-                <p class="module-copy">Personnel module — coming soon.</p>
+        <div class="module-view" data-module="personnel" style="display:none;" id="personnelModule">
+
+          <!-- Page Header -->
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+            <div>
+              <h1 class="text-[22px] font-bold text-[#10213c] leading-tight">Personnel Accountability</h1>
+              <p class="text-sm text-gray-500 mt-0.5">Manage personnel profiles and view their accountable school properties.</p>
+            </div>
+
+            <!-- Global Search & Personnel Selector -->
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <div class="relative w-full sm:w-[220px]">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                <input type="text" id="personnelGlobalSearch" placeholder="Search personnel..."
+                  class="w-full h-[38px] pl-9 pr-3 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
               </div>
-            </article>
+              <select id="personnelSelectDropdown" class="h-[38px] px-3 rounded-lg border border-gray-300 bg-white text-sm text-[#10213c] font-medium outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] max-w-[240px] truncate" title="Select Personnel">
+                <option value="">Loading personnel...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Back + Actions Row -->
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+            <button id="personnelBackBtn" class="flex items-center gap-2 text-sm font-medium text-[#253c59] hover:text-[#078f95]">
+              <i class="fa-solid fa-arrow-left"></i>
+              Back to Personnel List
+            </button>
+
+            <div class="flex items-center gap-2">
+              <button type="button" id="personnelEditProfileBtn" onclick="openEditPersonnelModal()" class="h-[38px] px-4 rounded-md bg-[#078f95] hover:bg-[#05777c] text-white text-sm font-semibold flex items-center gap-2 transition cursor-pointer">
+                <i class="fa-solid fa-pen"></i>
+                Edit Profile
+              </button>
+              <button class="h-[38px] px-4 rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-[#243852] text-sm font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-print"></i>
+                Print Profile
+                <i class="fa-solid fa-chevron-down text-[10px] ml-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- ===================================================
+               PERSONNEL PROFILE CARD
+          =================================================== -->
+          <section class="bg-white rounded-xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,.04)] p-5 lg:p-6 mb-4">
+            <div class="grid grid-cols-1 xl:grid-cols-[1fr_390px] gap-6">
+
+              <!-- PERSON -->
+              <div class="flex flex-col md:flex-row gap-5">
+
+                <!-- Photo -->
+                <div class="relative shrink-0">
+                  <img id="personnelCardPhoto" src="https://i.pravatar.cc/300?img=47" alt="Personnel Photo"
+                    class="w-[156px] h-[198px] rounded-xl object-cover border border-gray-200" />
+                  <button class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-white shadow-md text-[#243852] hover:text-[#078f95]">
+                    <i class="fa-solid fa-camera"></i>
+                  </button>
+                </div>
+
+                <!-- Personnel Information -->
+                <div class="flex-1">
+                  <h2 id="personnelCardName" class="text-[28px] font-extrabold tracking-tight text-[#11213b]">DIANAH JEAN D. SEGAYO</h2>
+                  <p id="personnelCardPosition" class="text-[17px] font-medium text-[#172b47] mt-0.5">School Principal - II</p>
+
+                  <!-- Badges -->
+                  <div class="flex flex-wrap gap-2 mt-2">
+                    <span id="personnelCardEmpIdBadge" class="px-3 py-1 rounded-full bg-[#e7f0ff] text-[#245a9c] text-xs font-semibold">Employee ID: 2008-001</span>
+                    <span id="personnelCardStatusBadge" class="px-3 py-1 rounded-full bg-[#d9f7e7] text-[#18824b] text-xs font-semibold">Active</span>
+                  </div>
+
+                  <!-- Details Grid -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 mt-5">
+
+                    <div class="flex items-start gap-3">
+                      <i class="fa-solid fa-building-columns text-[#607086] mt-1 w-4"></i>
+                      <p id="personnelCardSchool" class="text-sm text-[#253852]">GERAS Integrated School</p>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                      <i class="fa-solid fa-envelope text-[#607086] mt-1 w-4"></i>
+                      <p id="personnelCardEmail" class="text-sm text-[#253852]">dj.segayo@deped.gov.ph</p>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                      <i class="fa-solid fa-book-open text-[#607086] mt-1 w-4"></i>
+                      <p id="personnelCardGradeSection" class="text-sm text-[#253852]">Admin Department</p>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                      <i class="fa-solid fa-phone text-[#607086] mt-1 w-4"></i>
+                      <p id="personnelCardPhone" class="text-sm text-[#253852]">0917-821-4301</p>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                      <i class="fa-solid fa-users text-[#607086] mt-1 w-4"></i>
+                      <p id="personnelCardType" class="text-sm text-[#253852]">School Administration</p>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                      <i class="fa-solid fa-location-dot text-[#607086] mt-1 w-4"></i>
+                      <p id="personnelCardLocation" class="text-sm text-[#253852]">Principal's Office</p>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                      <i class="fa-solid fa-calendar text-[#607086] mt-1 w-4"></i>
+                      <p id="personnelCardDateHired" class="text-sm text-[#253852]">Date Hired: June 2, 2008</p>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                      <i class="fa-solid fa-file-lines text-[#607086] mt-1 w-4"></i>
+                      <div>
+                        <p id="personnelCardPlantilla" class="text-sm text-[#253852]">Plantilla Position: School Principal II</p>
+                        <p id="personnelCardEmploymentStatus" class="text-xs text-gray-500 mt-0.5">Employment Status: Permanent</p>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+
+              <!-- QUOTE / INFO -->
+              <div class="rounded-xl bg-gradient-to-br from-[#edf6ff] to-[#dcecff] p-6 flex items-center relative overflow-hidden">
+                <i class="fa-solid fa-quote-left absolute left-5 top-5 text-[34px] text-[#8cb8ed]/70"></i>
+                <p class="relative z-10 text-[17px] leading-7 text-[#0d57a0] italic pl-2">
+                  Accountability leads to responsible use of school resources for better learning opportunities.
+                </p>
+                <i class="fa-solid fa-school absolute right-5 bottom-5 text-[70px] text-[#b9d5f6]/50"></i>
+              </div>
+
+            </div>
           </section>
-        </div>
+
+          <!-- ===================================================
+               ACCOUNTABILITY SUMMARY
+          =================================================== -->
+          <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-5">
+
+            <div class="bg-white border border-gray-200 rounded-xl p-4">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-[#eaf4ff] text-[#1971c2] flex items-center justify-center">
+                  <i class="fa-solid fa-cubes text-lg"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-[#1550a0] font-medium">Total Properties</p>
+                  <p id="personnelCountTotal" class="text-2xl font-bold text-[#14253e]">0</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-xl p-4">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-[#ddf8e9] text-[#15945b] flex items-center justify-center">
+                  <i class="fa-solid fa-circle-check text-lg"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-[#14794d] font-medium">Accountable</p>
+                  <p id="personnelCountAccountable" class="text-2xl font-bold text-[#153d2d]">0</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-xl p-4">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-[#f0e7ff] text-[#7040d4] flex items-center justify-center">
+                  <i class="fa-solid fa-box text-lg"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-[#6940bd] font-medium">Semi-Expendable</p>
+                  <p id="personnelCountSemi" class="text-2xl font-bold text-[#3f257d]">0</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-xl p-4">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-[#dff8ed] text-[#13976c] flex items-center justify-center">
+                  <i class="fa-solid fa-wrench text-lg"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-[#187658] font-medium">Serviceable</p>
+                  <p id="personnelCountServiceable" class="text-2xl font-bold text-[#164f3d]">0</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-xl p-4">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-[#fff4d8] text-[#dc9200] flex items-center justify-center">
+                  <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-[#a86d00] font-medium">For Repair</p>
+                  <p id="personnelCountRepair" class="text-2xl font-bold text-[#704800]">0</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-xl p-4">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-[#ffe3e3] text-[#e03131] flex items-center justify-center">
+                  <i class="fa-solid fa-circle-xmark text-lg"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-[#c62828] font-medium">Unserviceable</p>
+                  <p id="personnelCountUnserviceable" class="text-2xl font-bold text-[#761c1c]">0</p>
+                </div>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- ===================================================
+               MAIN CONTENT GRID
+          =================================================== -->
+          <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_305px] gap-5">
+
+            <!-- ===============================================
+                 LEFT: PROPERTY RECORDS + TABS
+            ================================================ -->
+            <section class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+
+              <!-- Tabs -->
+              <div class="border-b border-gray-200 px-4 flex overflow-x-auto" id="personnelTabBar">
+                <button class="personnel-tab-btn active-personnel-tab flex items-center gap-2 px-5 py-4 text-sm font-semibold whitespace-nowrap" data-personnel-tab="properties">
+                  <i class="fa-solid fa-cube"></i> Properties
+                </button>
+                <button class="personnel-tab-btn flex items-center gap-2 px-5 py-4 text-sm text-gray-500 whitespace-nowrap" data-personnel-tab="history">
+                  <i class="fa-solid fa-clock-rotate-left"></i> History
+                </button>
+                <button class="personnel-tab-btn flex items-center gap-2 px-5 py-4 text-sm text-gray-500 whitespace-nowrap" data-personnel-tab="documents">
+                  <i class="fa-solid fa-file-lines"></i> Documents
+                </button>
+                <button class="personnel-tab-btn flex items-center gap-2 px-5 py-4 text-sm text-gray-500 whitespace-nowrap" data-personnel-tab="activity">
+                  <i class="fa-solid fa-list"></i> Activity Log
+                </button>
+                <button class="personnel-tab-btn flex items-center gap-2 px-5 py-4 text-sm text-gray-500 whitespace-nowrap" data-personnel-tab="personal">
+                  <i class="fa-solid fa-user"></i> Personal Information
+                </button>
+              </div>
+
+              <!-- TAB: Properties -->
+              <div id="personnel-tab-properties" class="personnel-tab-content">
+
+                <div class="p-5 flex flex-wrap justify-between items-end gap-3">
+                  <div>
+                    <h2 class="text-[20px] font-bold text-[#14253e]">Properties Under Accountability</h2>
+                    <p class="text-sm text-gray-500 mt-1">List of school properties currently assigned to this personnel.</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="relative">
+                      <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                      <input id="personnelPropertySearch" type="text" placeholder="Search property..."
+                        class="w-[220px] h-[36px] pl-9 pr-3 rounded-lg border border-gray-300 text-xs outline-none focus:border-[#078f95]" />
+                    </div>
+                    <button id="personnelFilterBtn" class="h-[36px] px-3 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2">
+                      <i class="fa-solid fa-filter"></i> Filter
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Property Table -->
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm">
+                    <thead class="bg-[#f5f7fa] border-y border-gray-200">
+                      <tr class="text-left text-[11px] uppercase tracking-wide text-gray-500">
+                        <th class="px-4 py-3 font-semibold">Property No.</th>
+                        <th class="px-4 py-3 font-semibold">Description</th>
+                        <th class="px-4 py-3 font-semibold">Category</th>
+                        <th class="px-4 py-3 font-semibold">Acquisition Date</th>
+                        <th class="px-4 py-3 font-semibold">Value</th>
+                        <th class="px-4 py-3 font-semibold">Condition</th>
+                        <th class="px-4 py-3 font-semibold">Status</th>
+                        <th class="px-4 py-3 font-semibold text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="personnelPropertyTable">
+                      <tr>
+                        <td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm">
+                          <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-[#078f95] block"></i>
+                          Loading property records...
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Table Footer / Pagination -->
+                <div class="px-5 py-4 flex flex-wrap justify-between items-center gap-3">
+                  <p id="personnelPropertyCountFooter" class="text-xs text-gray-500">Showing 0 entries</p>
+                  <div class="flex items-center gap-1">
+                    <button class="personnel-page-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button class="personnel-page-btn personnel-page-active">1</button>
+                    <button class="personnel-page-btn"><i class="fa-solid fa-chevron-right"></i></button>
+                  </div>
+                </div>
+
+              </div><!-- /tab-properties -->
+
+              <!-- TAB: History -->
+              <div id="personnel-tab-history" class="personnel-tab-content hidden p-6">
+                <h2 class="text-xl font-bold">Accountability History</h2>
+                <p class="text-sm text-gray-500 mt-1">Previous property assignments and transactions.</p>
+                <div class="mt-6 space-y-5">
+                  <div class="flex gap-4">
+                    <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-box"></i></div>
+                    <div>
+                      <p class="font-semibold text-sm">Property assignment updated</p>
+                      <p class="text-xs text-gray-500 mt-1">Automated log from Property Inventory registry</p>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- /tab-history -->
+
+              <!-- TAB: Documents -->
+              <div id="personnel-tab-documents" class="personnel-tab-content hidden p-6">
+                <h2 class="text-xl font-bold">Property Documents</h2>
+                <p class="text-sm text-gray-500 mt-1">Documents associated with this personnel's accountability.</p>
+                <div class="mt-5 grid md:grid-cols-2 gap-3">
+                  <div class="border rounded-lg p-4 flex gap-3">
+                    <div class="text-red-500 text-2xl"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div><p class="font-semibold text-sm">Inventory Custodian Slip (ICS)</p><p class="text-xs text-gray-500">Available via ICS Module</p></div>
+                  </div>
+                  <div class="border rounded-lg p-4 flex gap-3">
+                    <div class="text-red-500 text-2xl"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div><p class="font-semibold text-sm">RSPI Document</p><p class="text-xs text-gray-500">Available via RSPI Module</p></div>
+                  </div>
+                </div>
+              </div><!-- /tab-documents -->
+
+              <!-- TAB: Activity Log -->
+              <div id="personnel-tab-activity" class="personnel-tab-content hidden p-6">
+                <h2 class="text-xl font-bold">Activity Log</h2>
+                <p class="text-sm text-gray-500 mt-1">Recent actions involving this personnel account.</p>
+                <div class="mt-6 space-y-5">
+                  <div class="border-l-2 border-blue-300 pl-4">
+                    <p class="text-sm font-semibold">Account verified</p>
+                    <p class="text-xs text-gray-500">Record active in school database</p>
+                  </div>
+                </div>
+              </div><!-- /tab-activity -->
+
+              <!-- TAB: Personal Information -->
+              <div id="personnel-tab-personal" class="personnel-tab-content hidden p-6">
+                <h2 class="text-xl font-bold">Personal Information</h2>
+                <div class="grid md:grid-cols-2 gap-5 mt-6">
+                  <div><label class="personnel-field-label">First Name</label><div id="personnelPersonalFirstName" class="personnel-field-value">—</div></div>
+                  <div><label class="personnel-field-label">Last Name</label><div id="personnelPersonalLastName" class="personnel-field-value">—</div></div>
+                  <div><label class="personnel-field-label">Employee ID</label><div id="personnelPersonalEmpId" class="personnel-field-value">—</div></div>
+                  <div><label class="personnel-field-label">Position</label><div id="personnelPersonalPosition" class="personnel-field-value">—</div></div>
+                </div>
+              </div><!-- /tab-personal -->
+
+            </section><!-- /LEFT -->
+
+
+            <!-- ===============================================
+                 RIGHT SIDEBAR
+            ================================================ -->
+            <aside class="space-y-5">
+
+              <!-- Recent Activity -->
+              <section class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-100">
+                  <h3 class="font-bold text-[#172840] flex items-center gap-2">
+                    <i class="fa-solid fa-clock text-gray-500"></i> Recent Activity
+                  </h3>
+                </div>
+                <div class="p-5">
+                  <div class="relative space-y-5">
+                    <div class="absolute left-[5px] top-2 bottom-2 w-px bg-gray-200"></div>
+
+                    <div class="relative flex gap-3">
+                      <div class="w-[11px] h-[11px] rounded-full bg-[#2386c8] mt-1 shrink-0 z-10"></div>
+                      <div><p class="text-xs font-semibold">Active Record</p><p class="text-[11px] text-gray-500 mt-1">Personnel profile loaded</p></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Documents -->
+              <section class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-100">
+                  <h3 class="font-bold text-[#172840] flex items-center gap-2">
+                    <i class="fa-solid fa-file-lines text-gray-500"></i> Documents
+                  </h3>
+                </div>
+                <div class="p-5 space-y-4">
+                  <div class="flex gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div class="min-w-0"><p class="text-xs font-semibold truncate">Inventory Custodian Slip</p><p class="text-[10px] text-gray-500">Standard DepEd ICS</p></div>
+                  </div>
+                  <div class="flex gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div class="min-w-0"><p class="text-xs font-semibold truncate">RSPI Slip</p><p class="text-[10px] text-gray-500">Semi-Expendable Property</p></div>
+                  </div>
+                </div>
+              </section>
+
+            </aside><!-- /RIGHT SIDEBAR -->
+
+          </div><!-- /grid -->
+
+          <!-- ===================================================
+               EDIT PROFILE MODAL
+          =================================================== -->
+          <div id="personnelEditModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto hidden" aria-modal="true" role="dialog">
+            <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-gray-200 overflow-hidden my-auto max-h-[92vh] flex flex-col">
+              
+              <!-- Modal Header -->
+              <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-[#078f95]/10 text-[#078f95] flex items-center justify-center">
+                    <i class="fa-solid fa-user-pen text-lg"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-bold text-[#10213c]">Edit Personnel Profile</h3>
+                    <p class="text-xs text-gray-500">Modify personnel details in the school_teacher database.</p>
+                  </div>
+                </div>
+                <button type="button" id="personnelEditModalCloseBtn" onclick="closeEditPersonnelModal()" class="text-gray-400 hover:text-gray-700 w-8 h-8 rounded-lg hover:bg-gray-200/60 flex items-center justify-center transition" aria-label="Close edit profile modal">
+                  <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+              </div>
+
+              <!-- Modal Form Body -->
+              <form id="personnelEditForm" class="p-6 overflow-y-auto space-y-6 text-sm flex-1">
+                <input type="hidden" id="editTeacherId" />
+
+                <!-- Section: Basic Information -->
+                <div>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-[#078f95] mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-id-card"></i> Basic Information
+                  </h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editTeacherName">Full Name <span class="text-red-500">*</span></label>
+                      <input type="text" id="editTeacherName" required placeholder="e.g. Dianah Jean D. Segayo"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editEmployeeId">Employee ID</label>
+                      <input type="text" id="editEmployeeId" placeholder="e.g. 2008-001"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editStatus">Status</label>
+                      <select id="editStatus"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="On Leave">On Leave</option>
+                        <option value="Retired">Retired</option>
+                        <option value="Transferred">Transferred</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editPhotoUrl">Photo URL</label>
+                      <input type="text" id="editPhotoUrl" placeholder="https://example.com/photo.jpg"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section: Position & Assignment -->
+                <div>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-[#078f95] mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-briefcase"></i> Position & Assignment
+                  </h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editPosition">Position / Designation</label>
+                      <input type="text" id="editPosition" placeholder="e.g. School Principal - II"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editPlantillaPosition">Plantilla Position</label>
+                      <input type="text" id="editPlantillaPosition" placeholder="e.g. School Principal II"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editPersonnelType">Personnel Type</label>
+                      <select id="editPersonnelType"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white">
+                        <option value="Teaching Personnel">Teaching Personnel</option>
+                        <option value="Non-Teaching Personnel">Non-Teaching Personnel</option>
+                        <option value="School Administration">School Administration</option>
+                        <option value="COS Teacher">COS Teacher</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editSchoolLevel">School Level / Department</label>
+                      <select id="editSchoolLevel"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white">
+                        <option value="Elementary">Elementary</option>
+                        <option value="Junior High">Junior High</option>
+                        <option value="Senior High">Senior High</option>
+                        <option value="Admin">Admin</option>
+                        <option value="ALIVE">ALIVE</option>
+                        <option value="Kindergarten">Kindergarten</option>
+                      </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editGradeSection">Grade & Section / Advisory</label>
+                      <input type="text" id="editGradeSection" placeholder="e.g. Grade 6 – Adviser"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section: Station & Employment -->
+                <div>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-[#078f95] mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-building-columns"></i> Station & Employment
+                  </h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editSchoolName">School Name</label>
+                      <input type="text" id="editSchoolName" placeholder="e.g. GERAS Integrated School"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editLocation">Classroom / Office Location</label>
+                      <input type="text" id="editLocation" placeholder="e.g. Principal's Office"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editDateHired">Date Hired</label>
+                      <input type="date" id="editDateHired"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editEmploymentStatus">Employment Status</label>
+                      <select id="editEmploymentStatus"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white">
+                        <option value="Permanent">Permanent</option>
+                        <option value="Contractual">Contractual</option>
+                        <option value="Contract of Service">Contract of Service</option>
+                        <option value="Substitute">Substitute</option>
+                        <option value="Provisional">Provisional</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section: Contact Details -->
+                <div>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-[#078f95] mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-address-book"></i> Contact Details
+                  </h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editEmail">Email Address</label>
+                      <input type="email" id="editEmail" placeholder="e.g. dj.segayo@deped.gov.ph"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editPhone">Contact Number</label>
+                      <input type="text" id="editPhone" placeholder="e.g. 0917-821-4301"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Feedback Message -->
+                <div id="personnelEditMessage" class="hidden p-3 rounded-lg text-xs font-medium"></div>
+
+              </form>
+
+              <!-- Modal Footer -->
+              <div class="px-6 py-4 border-t border-gray-200 bg-slate-50 flex items-center justify-end gap-3">
+                <button type="button" id="personnelEditModalCancelBtn" onclick="closeEditPersonnelModal()"
+                  class="h-[38px] px-4 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-slate-700 text-sm font-semibold transition cursor-pointer">
+                  Cancel
+                </button>
+                <button type="button" id="personnelEditModalSaveBtn"
+                  class="h-[38px] px-5 rounded-lg bg-[#078f95] hover:bg-[#05777c] text-white text-sm font-semibold flex items-center gap-2 shadow-sm transition cursor-pointer disabled:opacity-50">
+                  <i class="fa-solid fa-floppy-disk"></i>
+                  <span>Save Changes</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ===================================================
+               SCOPED STYLES
+          =================================================== -->
+          <style>
+            .personnel-status-good { display:inline-flex; align-items:center; padding:5px 10px; border-radius:7px; background:#dff7e9; color:#147a49; font-size:11px; font-weight:600; }
+            .personnel-status-accountable { display:inline-flex; align-items:center; padding:5px 10px; border-radius:7px; background:#e4efff; color:#1764ad; font-size:11px; font-weight:600; }
+            .personnel-status-repair { display:inline-flex; align-items:center; padding:5px 10px; border-radius:7px; background:#fff1cc; color:#a76b00; font-size:11px; font-weight:600; }
+            .personnel-status-unserviceable { display:inline-flex; align-items:center; padding:5px 10px; border-radius:7px; background:#ffe3e3; color:#c62828; font-size:11px; font-weight:600; }
+            .personnel-action-btn { width:32px; height:32px; border:1px solid #d9dee5; border-radius:7px; background:white; color:#69788b; transition:all .15s ease; }
+            .personnel-action-btn:hover { background:#f3f7fa; color:#078f95; border-color:#b8d9da; }
+            .personnel-page-btn { min-width:30px; height:30px; padding:0 8px; border:1px solid #dce1e7; border-radius:6px; background:white; color:#607086; font-size:12px; }
+            .personnel-page-btn:hover { background:#f3f6f8; }
+            .personnel-page-active { background:#0878e5; color:white; border-color:#0878e5; }
+            .personnel-tab-btn { border-bottom:3px solid transparent; transition:all .15s ease; }
+            .personnel-tab-btn:hover { color:#078f95; }
+            .active-personnel-tab { color:#0864b4; border-bottom-color:#0878e5; }
+            .personnel-field-label { display:block; font-size:11px; font-weight:600; color:#7a8796; margin-bottom:5px; }
+            .personnel-field-value { padding:11px 12px; border:1px solid #e0e4e8; border-radius:7px; font-size:13px; color:#263852; background:#fafbfc; }
+          </style>
+
+          <!-- ===================================================
+               SCOPED JAVASCRIPT
+          =================================================== -->
+          <script>
+            (function () {
+              var _personnelInited = false;
+              window.personnelList = [];
+              window.activePersonnel = null;
+
+              function formatPersonnelDate(dateStr) {
+                if (!dateStr) return "N/A";
+                var raw = String(dateStr).trim();
+                if (!raw) return "N/A";
+                var parts = raw.split("-");
+                if (parts.length === 3) {
+                  var y = parseInt(parts[0], 10);
+                  var m = parseInt(parts[1], 10) - 1;
+                  var d = parseInt(parts[2], 10);
+                  var dateObj = new Date(y, m, d);
+                  if (!isNaN(dateObj.getTime())) {
+                    return dateObj.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+                  }
+                }
+                return raw;
+              }
+
+              function safeEscape(str) {
+                if (!str) return "";
+                return String(str)
+                  .replace(/&/g, "&amp;")
+                  .replace(/</g, "&lt;")
+                  .replace(/>/g, "&gt;")
+                  .replace(/"/g, "&quot;")
+                  .replace(/'/g, "&#039;");
+              }
+
+              function renderPersonnelProfile(teacher) {
+                if (!teacher) return;
+                window.activePersonnel = teacher;
+
+                // Photo
+                var photoEl = document.getElementById("personnelCardPhoto");
+                if (photoEl) {
+                  photoEl.src = teacher.photo_url || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(teacher.teacher_name || "Personnel") + "&background=078f95&color=fff");
+                  photoEl.alt = teacher.teacher_name || "Personnel Photo";
+                }
+
+                // Name & Position
+                var nameEl = document.getElementById("personnelCardName");
+                if (nameEl) nameEl.textContent = (teacher.teacher_name || "").toUpperCase();
+
+                var posEl = document.getElementById("personnelCardPosition");
+                if (posEl) posEl.textContent = teacher.position || teacher.plantilla_position || "—";
+
+                // Badges
+                var empBadge = document.getElementById("personnelCardEmpIdBadge");
+                if (empBadge) empBadge.textContent = "Employee ID: " + (teacher.employee_id || "N/A");
+
+                var stBadge = document.getElementById("personnelCardStatusBadge");
+                if (stBadge) {
+                  var st = teacher.status || "Active";
+                  stBadge.textContent = st;
+                  if (st.toLowerCase() === "active") {
+                    stBadge.className = "px-3 py-1 rounded-full bg-[#d9f7e7] text-[#18824b] text-xs font-semibold";
+                  } else {
+                    stBadge.className = "px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold";
+                  }
+                }
+
+                // Details Grid
+                var schoolEl = document.getElementById("personnelCardSchool");
+                if (schoolEl) schoolEl.textContent = teacher.school_name || "GERAS Integrated School";
+
+                var emailEl = document.getElementById("personnelCardEmail");
+                if (emailEl) emailEl.textContent = teacher.email || "—";
+
+                var gradeEl = document.getElementById("personnelCardGradeSection");
+                if (gradeEl) gradeEl.textContent = teacher.grade_section || (teacher.school_level ? teacher.school_level + " Department" : "—");
+
+                var phoneEl = document.getElementById("personnelCardPhone");
+                if (phoneEl) phoneEl.textContent = teacher.phone || "—";
+
+                var typeEl = document.getElementById("personnelCardType");
+                if (typeEl) typeEl.textContent = teacher.personnel_type || "Teaching Personnel";
+
+                var locEl = document.getElementById("personnelCardLocation");
+                if (locEl) locEl.textContent = teacher.location || "—";
+
+                var dateHiredEl = document.getElementById("personnelCardDateHired");
+                if (dateHiredEl) dateHiredEl.textContent = "Date Hired: " + formatPersonnelDate(teacher.date_hired);
+
+                var plantillaEl = document.getElementById("personnelCardPlantilla");
+                if (plantillaEl) plantillaEl.textContent = "Plantilla Position: " + (teacher.plantilla_position || teacher.position || "—");
+
+                var empStatusEl = document.getElementById("personnelCardEmploymentStatus");
+                if (empStatusEl) empStatusEl.textContent = "Employment Status: " + (teacher.employment_status || "Permanent");
+
+                // Personal Info Tab
+                var pFirst = document.getElementById("personnelPersonalFirstName");
+                var pLast = document.getElementById("personnelPersonalLastName");
+                if (pFirst && pLast && teacher.teacher_name) {
+                  var parts = teacher.teacher_name.trim().split(" ");
+                  if (parts.length > 1) {
+                    pLast.textContent = parts.pop();
+                    pFirst.textContent = parts.join(" ");
+                  } else {
+                    pFirst.textContent = teacher.teacher_name;
+                    pLast.textContent = "—";
+                  }
+                }
+                var pEmp = document.getElementById("personnelPersonalEmpId");
+                if (pEmp) pEmp.textContent = teacher.employee_id || "N/A";
+
+                var pPos = document.getElementById("personnelPersonalPosition");
+                if (pPos) pPos.textContent = teacher.position || teacher.plantilla_position || "—";
+
+                // Render assigned properties
+                renderPersonnelProperties(teacher);
+              }
+
+              function renderPersonnelProperties(teacher) {
+                var tableBody = document.getElementById("personnelPropertyTable");
+                var footerCount = document.getElementById("personnelPropertyCountFooter");
+                if (!tableBody) return;
+
+                var teacherName = (teacher && teacher.teacher_name ? teacher.teacher_name : "").trim().toLowerCase();
+                var allItems = (typeof items !== "undefined" && Array.isArray(items)) ? items : [];
+                var matched = allItems.filter(function (it) {
+                  var acc = String(it.accountable || it.accountable_person || "").trim().toLowerCase();
+                  return acc && acc === teacherName;
+                });
+
+                // Summary calculations
+                var total = matched.length;
+                var accountable = matched.length;
+                var semi = matched.filter(function (i) { return Boolean(i.semiExpendableNo || i.semi_expandable_no); }).length;
+                var repair = matched.filter(function (i) { return String(i.status || "").toLowerCase().includes("repair"); }).length;
+                var unserviceable = matched.filter(function (i) {
+                  var s = String(i.status || "").toLowerCase();
+                  return s.includes("unserviceable") || s.includes("stolen");
+                }).length;
+                var serviceable = total - repair - unserviceable;
+                if (serviceable < 0) serviceable = 0;
+
+                var elTotal = document.getElementById("personnelCountTotal");
+                var elAccountable = document.getElementById("personnelCountAccountable");
+                var elSemi = document.getElementById("personnelCountSemi");
+                var elServiceable = document.getElementById("personnelCountServiceable");
+                var elRepair = document.getElementById("personnelCountRepair");
+                var elUnserviceable = document.getElementById("personnelCountUnserviceable");
+
+                if (elTotal) elTotal.textContent = total;
+                if (elAccountable) elAccountable.textContent = accountable;
+                if (elSemi) elSemi.textContent = semi;
+                if (elServiceable) elServiceable.textContent = serviceable;
+                if (elRepair) elRepair.textContent = repair;
+                if (elUnserviceable) elUnserviceable.textContent = unserviceable;
+
+                if (matched.length === 0) {
+                  tableBody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm"><i class="fa-solid fa-box-open text-2xl mb-2 text-slate-300 block"></i>No property records currently assigned to this personnel.</td></tr>';
+                  if (footerCount) footerCount.textContent = "Showing 0 entries";
+                  return;
+                }
+
+                var html = "";
+                matched.forEach(function (item) {
+                  var propNo = safeEscape(item.propertyNo || item.property_no || "—");
+                  var desc = safeEscape(item.brand || item.item_brand_model || "—");
+                  var cat = safeEscape(item.classification || item.item_classification || "General");
+                  var acqDate = formatPersonnelDate(item.acquisitionDate || item.acquisition_date);
+                  var val = item.unitValue || item.unit_value || item.total;
+                  var formattedVal = val ? (typeof formatTotalDisplay === "function" ? formatTotalDisplay(val) : ("₱" + Number(val).toLocaleString())) : "—";
+                  var status = safeEscape(item.status || "Accountable");
+
+                  var statusClass = "personnel-status-accountable";
+                  var stLower = (item.status || "").toLowerCase();
+                  if (stLower.includes("good") || stLower.includes("serviceable") || stLower === "issued") {
+                    statusClass = "personnel-status-good";
+                  } else if (stLower.includes("repair")) {
+                    statusClass = "personnel-status-repair";
+                  } else if (stLower.includes("unserviceable") || stLower.includes("stolen")) {
+                    statusClass = "personnel-status-unserviceable";
+                  }
+
+                  html += '<tr class="personnel-property-row border-b border-gray-100 hover:bg-[#f8fbfc] transition">' +
+                    '<td class="px-4 py-3"><div class="flex items-center gap-2"><i class="fa-solid fa-cube text-gray-500"></i><span class="font-semibold text-[#0759a5]">' + propNo + '</span></div></td>' +
+                    '<td class="px-4 py-3"><p class="font-semibold text-[#263852]">' + desc + '</p></td>' +
+                    '<td class="px-4 py-3 text-gray-600">' + cat + '</td>' +
+                    '<td class="px-4 py-3 text-gray-600">' + acqDate + '</td>' +
+                    '<td class="px-4 py-3 font-medium text-gray-700">' + formattedVal + '</td>' +
+                    '<td class="px-4 py-3"><span class="' + statusClass + '">' + status + '</span></td>' +
+                    '<td class="px-4 py-3"><span class="personnel-status-accountable">Accountable</span></td>' +
+                    '<td class="px-4 py-3 text-center"><button class="personnel-action-btn" title="View in Inventory" onclick="if(typeof showModule===\'function\'){showModule(\'inventory\');}"><i class="fa-solid fa-arrow-up-right-from-square"></i></button></td>' +
+                    '</tr>';
+                });
+
+                tableBody.innerHTML = html;
+                if (footerCount) footerCount.textContent = "Showing " + matched.length + " of " + matched.length + " entries";
+              }
+
+              window.loadPersonnelFromDatabase = async function () {
+                var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+                var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+                var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
+
+                try {
+                  var res = await fetch(sUrl + "/rest/v1/school_teacher?select=*&order=id.asc", { headers: sHeaders });
+                  if (!res.ok) throw new Error("Failed to load personnel");
+                  var rows = await res.json();
+                  window.personnelList = rows || [];
+
+                  // Populate dropdown
+                  var dropdown = document.getElementById("personnelSelectDropdown");
+                  if (dropdown && window.personnelList.length > 0) {
+                    var optionsHtml = "";
+                    window.personnelList.forEach(function (t) {
+                      var sub = t.position || t.plantilla_position || t.school_level || "";
+                      optionsHtml += '<option value="' + t.id + '">' + safeEscape(t.teacher_name) + (sub ? ' (' + safeEscape(sub) + ')' : '') + '</option>';
+                    });
+                    dropdown.innerHTML = optionsHtml;
+                  }
+
+                  // Default to 1st personnel in database if no active personnel
+                  if (window.personnelList.length > 0) {
+                    var target = window.activePersonnel
+                      ? (window.personnelList.find(function (t) { return Number(t.id) === Number(window.activePersonnel.id); }) || window.personnelList[0])
+                      : window.personnelList[0];
+                    renderPersonnelProfile(target);
+                    if (dropdown) dropdown.value = target.id;
+                  }
+                } catch (err) {
+                  console.error("Error loading personnel from database:", err);
+                }
+              };
+
+              /* --- Modal Operations --- */
+              function openEditPersonnelModal() {
+                if (!window.activePersonnel) {
+                  if (window.personnelList && window.personnelList.length > 0) {
+                    window.activePersonnel = window.personnelList[0];
+                  } else {
+                    alert("Please wait for personnel records to load.");
+                    return;
+                  }
+                }
+                var p = window.activePersonnel;
+
+                document.getElementById("editTeacherId").value = p.id || "";
+                document.getElementById("editTeacherName").value = p.teacher_name || "";
+                document.getElementById("editEmployeeId").value = p.employee_id || "";
+                document.getElementById("editStatus").value = p.status || "Active";
+                document.getElementById("editPhotoUrl").value = p.photo_url || "";
+                document.getElementById("editPosition").value = p.position || "";
+                document.getElementById("editPlantillaPosition").value = p.plantilla_position || "";
+                document.getElementById("editPersonnelType").value = p.personnel_type || "Teaching Personnel";
+                document.getElementById("editSchoolLevel").value = p.school_level || "Elementary";
+                document.getElementById("editGradeSection").value = p.grade_section || "";
+                document.getElementById("editSchoolName").value = p.school_name || "GERAS Integrated School";
+                document.getElementById("editLocation").value = p.location || "";
+                document.getElementById("editDateHired").value = p.date_hired ? String(p.date_hired).split("T")[0] : "";
+                document.getElementById("editEmploymentStatus").value = p.employment_status || "Permanent";
+                document.getElementById("editEmail").value = p.email || "";
+                document.getElementById("editPhone").value = p.phone || "";
+
+                var msgEl = document.getElementById("personnelEditMessage");
+                if (msgEl) {
+                  msgEl.className = "hidden p-3 rounded-lg text-xs font-medium";
+                  msgEl.textContent = "";
+                }
+
+                var modal = document.getElementById("personnelEditModal");
+                if (modal) modal.classList.remove("hidden");
+              }
+
+              function closeEditPersonnelModal() {
+                var modal = document.getElementById("personnelEditModal");
+                if (modal) modal.classList.add("hidden");
+                var msgEl = document.getElementById("personnelEditMessage");
+                if (msgEl) {
+                  msgEl.className = "hidden p-3 rounded-lg text-xs font-medium";
+                  msgEl.textContent = "";
+                }
+              }
+
+              window.openEditPersonnelModal = openEditPersonnelModal;
+              window.closeEditPersonnelModal = closeEditPersonnelModal;
+
+              async function savePersonnelProfile() {
+                var id = document.getElementById("editTeacherId").value;
+                if (!id) return;
+
+                var nameInput = document.getElementById("editTeacherName");
+                if (!nameInput.value.trim()) {
+                  nameInput.focus();
+                  return;
+                }
+
+                var saveBtn = document.getElementById("personnelEditModalSaveBtn");
+                var msgEl = document.getElementById("personnelEditMessage");
+
+                if (saveBtn) {
+                  saveBtn.disabled = true;
+                  saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+                }
+
+                var updated = {
+                  teacher_name: document.getElementById("editTeacherName").value.trim(),
+                  employee_id: document.getElementById("editEmployeeId").value.trim() || null,
+                  status: document.getElementById("editStatus").value.trim(),
+                  photo_url: document.getElementById("editPhotoUrl").value.trim() || null,
+                  position: document.getElementById("editPosition").value.trim() || null,
+                  plantilla_position: document.getElementById("editPlantillaPosition").value.trim() || null,
+                  personnel_type: document.getElementById("editPersonnelType").value.trim() || null,
+                  school_level: document.getElementById("editSchoolLevel").value.trim() || null,
+                  grade_section: document.getElementById("editGradeSection").value.trim() || null,
+                  school_name: document.getElementById("editSchoolName").value.trim() || null,
+                  location: document.getElementById("editLocation").value.trim() || null,
+                  date_hired: document.getElementById("editDateHired").value || null,
+                  employment_status: document.getElementById("editEmploymentStatus").value.trim() || null,
+                  email: document.getElementById("editEmail").value.trim() || null,
+                  phone: document.getElementById("editPhone").value.trim() || null
+                };
+
+                var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+                var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+                var sHeaders = {
+                  apikey: sKey,
+                  Authorization: "Bearer " + sKey,
+                  "Content-Type": "application/json",
+                  "Prefer": "return=representation"
+                };
+
+                try {
+                  var res = await fetch(sUrl + "/rest/v1/school_teacher?id=eq." + id, {
+                    method: "PATCH",
+                    headers: sHeaders,
+                    body: JSON.stringify(updated)
+                  });
+
+                  if (!res.ok) {
+                    var errText = await res.text();
+                    throw new Error(errText || "Database update failed");
+                  }
+
+                  var result = await res.json();
+                  var savedRow = (Array.isArray(result) && result[0]) ? result[0] : Object.assign({}, window.activePersonnel, updated);
+
+                  // Update in-memory personnelList
+                  var idx = window.personnelList.findIndex(function (t) { return Number(t.id) === Number(id); });
+                  if (idx !== -1) {
+                    window.personnelList[idx] = Object.assign({}, window.personnelList[idx], savedRow);
+                  }
+
+                  // Refresh profile card and properties
+                  renderPersonnelProfile(savedRow);
+
+                  // Update dropdown option text
+                  var dropdown = document.getElementById("personnelSelectDropdown");
+                  if (dropdown) {
+                    var opt = dropdown.querySelector('option[value="' + id + '"]');
+                    if (opt) {
+                      var sub = savedRow.position || savedRow.plantilla_position || savedRow.school_level || "";
+                      opt.textContent = savedRow.teacher_name + (sub ? ' (' + sub + ')' : '');
+                    }
+                  }
+
+                  closeEditPersonnelModal();
+
+                  if (typeof showToast === "function") {
+                    showToast("Personnel profile updated successfully.");
+                  }
+                } catch (err) {
+                  console.error("Save personnel error:", err);
+                  if (msgEl) {
+                    msgEl.className = "p-3 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200 block";
+                    msgEl.textContent = "Error saving changes: " + (err.message || "Please check connection.");
+                  }
+                } finally {
+                  if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Save Changes</span>';
+                  }
+                }
+              }
+
+              function initPersonnelModule() {
+                if (_personnelInited) return;
+                _personnelInited = true;
+
+                /* --- Tab switching --- */
+                var tabBtns = document.querySelectorAll(".personnel-tab-btn");
+                var tabContents = document.querySelectorAll(".personnel-tab-content");
+                tabBtns.forEach(function (btn) {
+                  btn.addEventListener("click", function () {
+                    var target = btn.dataset.personnelTab;
+                    tabBtns.forEach(function (b) {
+                      b.classList.remove("active-personnel-tab", "text-[#0864b4]");
+                      b.classList.add("text-gray-500");
+                    });
+                    btn.classList.add("active-personnel-tab", "text-[#0864b4]");
+                    btn.classList.remove("text-gray-500");
+                    tabContents.forEach(function (c) { c.classList.add("hidden"); });
+                    var sel = document.getElementById("personnel-tab-" + target);
+                    if (sel) sel.classList.remove("hidden");
+                  });
+                });
+
+                /* --- Dropdown selector change --- */
+                var dropdown = document.getElementById("personnelSelectDropdown");
+                if (dropdown) {
+                  dropdown.addEventListener("change", function () {
+                    var selectedId = Number(this.value);
+                    var matched = window.personnelList.find(function (t) { return Number(t.id) === selectedId; });
+                    if (matched) renderPersonnelProfile(matched);
+                  });
+                }
+
+                /* --- Global personnel search --- */
+                var globalSearch = document.getElementById("personnelGlobalSearch");
+                if (globalSearch) {
+                  globalSearch.addEventListener("input", function () {
+                    var q = this.value.toLowerCase().trim();
+                    if (!q || !window.personnelList.length) return;
+                    var found = window.personnelList.find(function (t) {
+                      return String(t.teacher_name || "").toLowerCase().includes(q) ||
+                        String(t.employee_id || "").toLowerCase().includes(q) ||
+                        String(t.position || "").toLowerCase().includes(q) ||
+                        String(t.grade_section || "").toLowerCase().includes(q);
+                    });
+                    if (found) {
+                      renderPersonnelProfile(found);
+                      if (dropdown) dropdown.value = found.id;
+                    }
+                  });
+                }
+
+                /* --- Property search within assigned table --- */
+                var searchInput = document.getElementById("personnelPropertySearch");
+                if (searchInput) {
+                  searchInput.addEventListener("input", function () {
+                    var q = this.value.toLowerCase().trim();
+                    var count = 0;
+                    document.querySelectorAll("#personnelPropertyTable .personnel-property-row").forEach(function (row) {
+                      var match = row.textContent.toLowerCase().includes(q);
+                      row.style.display = match ? "" : "none";
+                      if (match) count++;
+                    });
+                    var footerCount = document.getElementById("personnelPropertyCountFooter");
+                    if (footerCount) footerCount.textContent = "Showing " + count + " entries";
+                  });
+                }
+
+                /* --- Back button --- */
+                var backBtn = document.getElementById("personnelBackBtn");
+                if (backBtn) {
+                  backBtn.addEventListener("click", function () {
+                    if (typeof showModule === "function") showModule("dashboard");
+                  });
+                }
+
+                /* --- Edit Profile Modal Wiring --- */
+                var editBtn = document.getElementById("personnelEditProfileBtn");
+                if (editBtn) {
+                  editBtn.addEventListener("click", openEditPersonnelModal);
+                }
+
+                var modalCloseBtn = document.getElementById("personnelEditModalCloseBtn");
+                if (modalCloseBtn) {
+                  modalCloseBtn.addEventListener("click", closeEditPersonnelModal);
+                }
+
+                var modalCancelBtn = document.getElementById("personnelEditModalCancelBtn");
+                if (modalCancelBtn) {
+                  modalCancelBtn.addEventListener("click", closeEditPersonnelModal);
+                }
+
+                var modalSaveBtn = document.getElementById("personnelEditModalSaveBtn");
+                if (modalSaveBtn) {
+                  modalSaveBtn.addEventListener("click", savePersonnelProfile);
+                }
+
+                // Initial fetch from DB
+                window.loadPersonnelFromDatabase();
+              }
+
+              // Trigger init when module becomes visible
+              var moduleEl = document.getElementById("personnelModule");
+              if (moduleEl) {
+                var observer = new MutationObserver(function () {
+                  if (moduleEl.style.display !== "none") {
+                    initPersonnelModule();
+                  }
+                });
+                observer.observe(moduleEl, { attributes: true, attributeFilter: ["style"] });
+              }
+
+              // Also pre-fetch if document ready
+              if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", function () {
+                  window.loadPersonnelFromDatabase();
+                });
+              } else {
+                window.loadPersonnelFromDatabase();
+              }
+            })();
+          </script>
+
+        </div><!-- /MODULE: PERSONNEL -->
+
 
         <!-- MODULE 5: REPORT -->
         <div class="module-view" data-module="reports" style="display:none;">

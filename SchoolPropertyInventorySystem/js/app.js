@@ -315,7 +315,7 @@ async function loadTeacherOptions() {
     teacherOptions = [];
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/geras_teacher?select=teacher_name,position,school_level`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/school_teacher?select=teacher_name,position,school_level`, {
             headers: supabaseHeaders
         });
 
@@ -4623,6 +4623,13 @@ async function syncStatusToSheet(name) {
 function showModule(moduleName, targetId = "") {
     if (!moduleName) return;
 
+    if (typeof window.closeEditPersonnelModal === "function") {
+        window.closeEditPersonnelModal();
+    } else {
+        const pModal = document.getElementById("personnelEditModal");
+        if (pModal) pModal.classList.add("hidden");
+    }
+
     const targetModuleView = (moduleName === "ics" || moduleName === "document-ics") ? "document" : moduleName;
 
     document.querySelector(".app-sidebar")?.classList.remove("mobile-open");
@@ -4719,6 +4726,12 @@ function showModule(moduleName, targetId = "") {
 
     if (moduleName === "about" || moduleName === "settings") {
         loadSchoolDetails();
+    }
+
+    if (moduleName === "personnel") {
+        if (typeof window.loadPersonnelFromDatabase === "function") {
+            window.loadPersonnelFromDatabase();
+        }
     }
 
     if (typeof lucide !== "undefined") {
