@@ -5417,6 +5417,12 @@ async function loadInventoryCustodianSlipsFromDatabase() {
     if (window.activePersonnel && typeof window.renderPersonnelProfile === "function") {
         window.renderPersonnelProfile(window.activePersonnel);
     }
+    if (typeof window.updatePersonnelStatCards === "function") {
+        window.updatePersonnelStatCards();
+    }
+    if (typeof window.renderPersonnelListTable === "function") {
+        window.renderPersonnelListTable();
+    }
     return true;
 }
 

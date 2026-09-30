@@ -226,7 +226,7 @@
             </a>
 
           </nav>
-        </div>
+      </div>
 
       <!-- Bottom School Branch Info Bar -->
       <div id="sidebarSchoolInfoCard" class="relative overflow-hidden p-3 bg-[#002444]/95 border-t border-white/10">
@@ -1711,8 +1711,8 @@
           <!-- Page Header -->
           <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div>
-              <h1 class="text-[22px] font-bold text-[#10213c] leading-tight">Personnel Accountability</h1>
-              <p class="text-sm text-gray-500 mt-0.5">Manage personnel profiles and view their accountable school properties.</p>
+              <h1 id="personnelHeaderTitle" class="text-[22px] font-bold text-[#10213c] leading-tight">Personnel Directory & Accountability</h1>
+              <p id="personnelHeaderSubtitle" class="text-sm text-gray-500 mt-0.5">Manage personnel profiles and view their accountable school properties.</p>
             </div>
 
             <!-- Global Search & Personnel Selector -->
@@ -1728,10 +1728,137 @@
             </div>
           </div>
 
+          <!-- ===================================================
+               PERSONNEL LIST / DIRECTORY VIEW
+          =================================================== -->
+          <div id="personnelListView" class="space-y-5">
+            <!-- Summary Metric Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_3px_rgba(0,0,0,.04)] flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Personnel</div>
+                  <div class="text-2xl font-bold text-[#10213c] mt-1" id="personnelStatTotal">0</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">DepEd Faculty & Staff</div>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-blue-50 text-[#00335e] flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-users"></i>
+                </div>
+              </div>
+
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_3px_rgba(0,0,0,.04)] flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Elementary Dept</div>
+                  <div class="text-2xl font-bold text-emerald-700 mt-1" id="personnelStatElem">0</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">Elementary Faculty</div>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-school"></i>
+                </div>
+              </div>
+
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_3px_rgba(0,0,0,.04)] flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Secondary Dept</div>
+                  <div class="text-2xl font-bold text-[#0759a5] mt-1" id="personnelStatSec">0</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">Junior & Senior High</div>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-sky-50 text-[#0759a5] flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+              </div>
+
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_3px_rgba(0,0,0,.04)] flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin & ALIVE</div>
+                  <div class="text-2xl font-bold text-amber-700 mt-1" id="personnelStatAdmin">0</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">Admin & COS Teachers</div>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-user-shield"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Personnel Directory Table Card -->
+            <section class="bg-white rounded-xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,.04)] overflow-hidden">
+              <!-- Toolbar -->
+              <div class="flex flex-wrap items-center justify-between gap-3 p-4 lg:p-5 border-b border-gray-100 bg-[#fafbfc]">
+                <div>
+                  <h2 class="text-base font-bold text-[#10213c] flex items-center gap-2">
+                    <i class="fa-solid fa-address-book text-[#078f95]"></i>
+                    Personnel Directory & Property Accountability
+                  </h2>
+                  <p class="text-xs text-gray-500 mt-0.5">Click any personnel row to view profile details and accountable school properties.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  <div class="relative flex-1 sm:flex-none sm:w-[260px]">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                    <input type="text" id="personnelListSearchInput" placeholder="Filter by name, ID, position..."
+                      class="w-full h-[38px] pl-9 pr-3 rounded-lg border border-gray-300 bg-white text-xs outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                  </div>
+
+                  <select id="personnelListLevelFilter"
+                    class="h-[38px] px-3 rounded-lg border border-gray-300 bg-white text-xs text-[#10213c] font-semibold outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]">
+                    <option value="all">All School Levels</option>
+                    <option value="Elementary">Elementary</option>
+                    <option value="Junior High">Junior High</option>
+                    <option value="Senior High">Senior High</option>
+                    <option value="Admin">Admin</option>
+                    <option value="ALIVE">ALIVE</option>
+                  </select>
+
+                  <select id="personnelListStatusFilter"
+                    class="h-[38px] px-3 rounded-lg border border-gray-300 bg-white text-xs text-[#10213c] font-semibold outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]">
+                    <option value="all">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="On Leave">On Leave</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Table -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr class="bg-[#f4f7f9] text-[#475569] text-xs font-semibold uppercase tracking-wider border-b border-gray-200">
+                      <th class="px-5 py-3.5">Personnel Name</th>
+                      <th class="px-4 py-3.5">Employee ID</th>
+                      <th class="px-4 py-3.5">Position / Plantilla</th>
+                      <th class="px-4 py-3.5">School Level</th>
+                      <th class="px-4 py-3.5 text-center">Status</th>
+                      <th class="px-4 py-3.5 text-center">Accountable Properties</th>
+                      <th class="px-4 py-3.5 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="personnelListTableBody" class="divide-y divide-gray-100 bg-white text-slate-700">
+                    <tr>
+                      <td colspan="7" class="px-5 py-8 text-center text-gray-400 text-xs">
+                        <i class="fa-solid fa-spinner fa-spin text-base mb-2 block text-[#078f95]"></i> Loading personnel directory...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Table Footer & Pagination -->
+              <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-t border-gray-100 bg-slate-50 text-xs text-gray-500">
+                <span id="personnelListCountFooter">Showing 0 entries</span>
+                <div id="personnelListPagination" class="flex items-center gap-1"></div>
+              </div>
+            </section>
+          </div>
+
+          <!-- ===================================================
+               PERSONNEL PROFILE VIEW (Detail)
+          =================================================== -->
+          <div id="personnelProfileView" class="hidden">
+
           <!-- Back + Actions Row -->
           <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
-            <button id="personnelBackBtn" class="flex items-center gap-2 text-sm font-medium text-[#253c59] hover:text-[#078f95]">
-              <i class="fa-solid fa-arrow-left"></i>
+            <button type="button" id="personnelBackBtn" onclick="showPersonnelListView()" class="flex items-center gap-2 text-sm font-semibold text-[#253c59] hover:text-[#078f95] transition cursor-pointer">
+              <i class="fa-solid fa-arrow-left text-xs"></i>
               Back to Personnel List
             </button>
 
@@ -2116,6 +2243,7 @@
             </aside><!-- /RIGHT SIDEBAR -->
 
           </div><!-- /grid -->
+        </div><!-- /#personnelProfileView -->
 
           <!-- ===================================================
                EDIT PROFILE MODAL
@@ -2444,14 +2572,66 @@
               var personnelPageSize = 8;
               var personnelActiveStatusFilter = "all";
 
+              var personnelListCurrentPage = 1;
+              var personnelListPageSize = 10;
+              var personnelListFiltered = [];
+              window.currentPersonnelView = "list";
+
               function formatPesoCurrency(val) {
                 var num = Number(val);
                 if (isNaN(num) || num <= 0) return "₱0.00";
                 return "₱" + num.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
               }
 
-              async function fetchIcsSlipsDirectly() {
-                if (Array.isArray(window.inventoryCustodianSlips) && window.inventoryCustodianSlips.length > 0) {
+              /* --- Exact Name Matching Engine for Accountable Person --- */
+              function normalizeName(str) {
+                if (!str) return "";
+                return String(str)
+                  .toLowerCase()
+                  .replace(/\b(mr|mrs|ms|dr|prof|engr|principal|head teacher|master teacher|teacher|cos|ao)\b\.?/gi, "")
+                  .replace(/[^a-z0-9\s]/g, " ")
+                  .replace(/\s+/g, " ")
+                  .trim();
+              }
+
+              function parseFullName(str) {
+                var clean = String(str || "").trim().toLowerCase();
+                var isLastFirst = clean.includes(",");
+                if (isLastFirst) {
+                  var segs = clean.split(",");
+                  var lastName = segs[0].trim().replace(/[^a-z0-9]/g, "");
+                  var firstSegs = (segs[1] || "").trim().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean);
+                  var firstName = firstSegs[0] || "";
+                  return { firstName: firstName, lastName: lastName };
+                }
+                var tokens = clean.replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean);
+                var sig = tokens.filter(function (t) { return t.length > 1 || tokens.length <= 2; });
+                if (sig.length === 0) sig = tokens;
+                var lastName = sig[sig.length - 1] || "";
+                var firstName = sig[0] || "";
+                return { firstName: firstName, lastName: lastName };
+              }
+
+              function isAccountablePersonMatch(recordPersonName, targetTeacherName) {
+                if (!recordPersonName || !targetTeacherName) return false;
+                var normRecord = normalizeName(recordPersonName);
+                var normTarget = normalizeName(targetTeacherName);
+                if (!normRecord || !normTarget) return false;
+                if (normRecord === normTarget) return true;
+                var recParsed = parseFullName(recordPersonName);
+                var tgtParsed = parseFullName(targetTeacherName);
+                if (recParsed.lastName && tgtParsed.lastName && recParsed.lastName === tgtParsed.lastName) {
+                  if (recParsed.firstName === tgtParsed.firstName) return true;
+                  if (recParsed.firstName.length >= 3 && tgtParsed.firstName.length >= 3) {
+                    if (recParsed.firstName.startsWith(tgtParsed.firstName) || tgtParsed.firstName.startsWith(recParsed.firstName)) return true;
+                  }
+                }
+                return false;
+              }
+
+              /* --- Database Data Fetchers --- */
+              async function fetchIcsSlipsDirectly(force) {
+                if (!force && Array.isArray(window.inventoryCustodianSlips) && window.inventoryCustodianSlips.length > 0) {
                   return window.inventoryCustodianSlips;
                 }
                 var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
@@ -2466,7 +2646,7 @@
                     (data || []).forEach(function (header) {
                       (header.ics_slip_items || []).forEach(function (it) {
                         mapped.push({
-                          id: header.id + "-" + it.line_no,
+                          id: "ICS-" + header.id + "-" + it.line_no,
                           dbSlipId: header.id,
                           dbItemId: it.id,
                           lineNo: it.line_no,
@@ -2480,7 +2660,8 @@
                           estimatedUsefulLife: it.estimated_useful_life || "—",
                           receivedBy: header.received_by_name || "",
                           receivedFrom: header.received_from_name || "",
-                          receivedByDate: header.received_by_date || header.received_from_date || ""
+                          receivedByDate: header.received_by_date || "",
+                          receivedFromDate: header.received_from_date || ""
                         });
                       });
                     });
@@ -2490,123 +2671,429 @@
                 } catch (e) {
                   console.warn("Direct ICS fetch fallback error:", e);
                 }
+                return Array.isArray(window.inventoryCustodianSlips) ? window.inventoryCustodianSlips : [];
+              }
+
+              async function fetchInventoryAssetsDirectly() {
+                if (Array.isArray(window.inventoryData) && window.inventoryData.length > 0) {
+                  return window.inventoryData;
+                }
+                if (typeof items !== "undefined" && Array.isArray(items) && items.length > 0) {
+                  return items;
+                }
+                var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+                var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+                var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
+                try {
+                  var res = await fetch(sUrl + "/rest/v1/assets?select=asset_id,item_brand_model,accountable_person,semi_expandable_no,property_no,unit_value,total,unit_measurement,on_hand,status,date_issue,acquisition_date,created_at", { headers: sHeaders });
+                  if (res.ok) {
+                    var rows = await res.json();
+                    var mappedAssets = rows.map(function(r) {
+                      return {
+                        assetId: r.asset_id,
+                        itemBrandModel: r.item_brand_model,
+                        accountable: r.accountable_person,
+                        semiExpandableNo: r.semi_expandable_no,
+                        propertyNo: r.property_no,
+                        unitValue: r.unit_value,
+                        total: r.total,
+                        unitMeasurement: r.unit_measurement,
+                        onHand: r.on_hand,
+                        status: r.status,
+                        dateIssue: r.date_issue,
+                        acquisitionDate: r.acquisition_date
+                      };
+                    });
+                    window.inventoryData = mappedAssets;
+                    return mappedAssets;
+                  }
+                } catch(e) {
+                  console.warn("Direct assets fetch fallback error:", e);
+                }
                 return [];
               }
 
+              /* --- Unified Accountability Record Builder --- */
+              function getAccountabilityRecordsForTeacher(teacher, allSlips, allItems) {
+                if (!teacher || !teacher.teacher_name) return [];
+                var teacherName = teacher.teacher_name;
+
+                var slips = Array.isArray(allSlips) ? allSlips : [];
+                var assets = Array.isArray(allItems) ? allItems : [];
+
+                // 1. ICS Slips where Received By is this accountable person ONLY
+                var matchedSlips = slips.filter(function (slip) {
+                  var rec = slip.receivedBy || slip.received_by_name || slip.receivedByName || "";
+                  return isAccountablePersonMatch(rec, teacherName);
+                });
+
+                // 2. Inventory assets where accountable person is this teacher ONLY
+                var matchedAssets = assets.filter(function (asset) {
+                  var acc = asset.accountable || asset.accountable_person || asset.accountablePerson || "";
+                  return isAccountablePersonMatch(acc, teacherName);
+                });
+
+                var records = [];
+                var seenKeys = {};
+
+                // A) Official ICS records where Received By is this teacher
+                matchedSlips.forEach(function (slip) {
+                  var key = (String(slip.icsNo || "") + "_" + String(slip.inventoryItemNo || slip.description || "")).toLowerCase();
+                  seenKeys[key] = true;
+                  if (slip.inventoryItemNo && slip.inventoryItemNo !== "—") {
+                    seenKeys[String(slip.inventoryItemNo).trim().toLowerCase()] = true;
+                  }
+                  if (slip.description && slip.description !== "—") {
+                    seenKeys[String(slip.description).trim().toLowerCase()] = true;
+                  }
+
+                  var unitCost = Number(slip.unitCost || slip.unit_cost) || 0;
+                  var qty = Number(slip.quantity) || 1;
+                  var totalCost = Number(slip.totalCost || slip.total_cost) || (unitCost * qty);
+
+                  records.push({
+                    icsNo: slip.icsNo || "—",
+                    inventoryItemNo: slip.inventoryItemNo || slip.inventory_item_no || "—",
+                    description: slip.description || slip.description_snapshot || "—",
+                    quantity: qty,
+                    unit: slip.unit || "unit",
+                    unitCost: unitCost,
+                    totalCost: totalCost,
+                    estimatedUsefulLife: slip.estimatedUsefulLife || slip.estimated_useful_life || "5 years",
+                    receivedDate: formatPersonnelDate(slip.receivedByDate || slip.received_by_date || slip.receivedFromDate || slip.received_from_date),
+                    status: "Accountable",
+                    condition: "Good",
+                    isSemi: true,
+                    isPendingIcs: false,
+                    rawSlip: slip,
+                    rawAsset: null
+                  });
+                });
+
+                // B) Pending ICS: Assets under this teacher's accountability that don't have an ICS slip yet
+                matchedAssets.forEach(function (asset) {
+                  var desc = (typeof getIcsAssetDescription === "function" ? getIcsAssetDescription(asset) : (asset.brand || asset.itemBrandModel || asset.item_brand_model || asset.item_description || "—"));
+                  var itemNo = asset.semiExpandableNo || asset.semi_expandable_no || asset.propertyNo || asset.property_no || "—";
+                  var itemKey = (itemNo + "_" + desc).toLowerCase();
+
+                  if (seenKeys[itemKey]) return;
+                  if (itemNo && itemNo !== "—" && seenKeys[String(itemNo).trim().toLowerCase()]) return;
+                  if (desc && desc !== "—" && seenKeys[String(desc).trim().toLowerCase()]) return;
+
+                  var alreadyInSlip = matchedSlips.some(function (s) {
+                    return (s.inventoryItemNo && s.inventoryItemNo === itemNo) ||
+                           (s.description && (s.description === desc || s.description.includes(desc) || desc.includes(s.description)));
+                  });
+                  if (alreadyInSlip) return;
+
+                  seenKeys[itemKey] = true;
+                  var unitVal = Number(asset.unitValue || asset.unit_value || asset.total || 0);
+                  var qty = Number(asset.quantity || asset.onHand || asset.on_hand || 1);
+                  var totalVal = asset.total ? Number(asset.total) : (unitVal * qty);
+                  var status = asset.status || "Accountable";
+                  var isSemi = Boolean(asset.semiExpandableNo || asset.semi_expandable_no);
+
+                  records.push({
+                    icsNo: "Pending ICS",
+                    inventoryItemNo: itemNo,
+                    description: desc,
+                    quantity: qty,
+                    unit: asset.unit || asset.unitMeasurement || asset.unit_measurement || "unit",
+                    unitCost: unitVal,
+                    totalCost: totalVal,
+                    estimatedUsefulLife: asset.estimatedUsefulLife || asset.est_useful_life || "5 years",
+                    receivedDate: formatPersonnelDate(asset.dateIssue || asset.date_issue || asset.acquisitionDate || asset.acquisition_date),
+                    status: status,
+                    condition: asset.condition || (status.toLowerCase().includes("unserviceable") ? "Unserviceable" : "Good"),
+                    isSemi: isSemi,
+                    isPendingIcs: true,
+                    rawSlip: null,
+                    rawAsset: asset
+                  });
+                });
+
+                return records;
+              }
+
+              function calculatePersonnelItemCount(teacher) {
+                var allSlips = (Array.isArray(window.inventoryCustodianSlips) && window.inventoryCustodianSlips.length > 0)
+                  ? window.inventoryCustodianSlips
+                  : [];
+                var allItems = (Array.isArray(window.inventoryData) && window.inventoryData.length > 0)
+                  ? window.inventoryData
+                  : ((typeof items !== "undefined" && Array.isArray(items)) ? items : []);
+                return getAccountabilityRecordsForTeacher(teacher, allSlips, allItems).length;
+              }
+
+              function updatePersonnelStatCards() {
+                var list = window.personnelList || [];
+                var elTotal = document.getElementById("personnelStatTotal");
+                var elElem = document.getElementById("personnelStatElem");
+                var elSec = document.getElementById("personnelStatSec");
+                var elAdmin = document.getElementById("personnelStatAdmin");
+
+                var total = list.length;
+                var elem = list.filter(function (t) {
+                  return String(t.school_level || "").toLowerCase().includes("elem");
+                }).length;
+                var sec = list.filter(function (t) {
+                  var lvl = String(t.school_level || "").toLowerCase();
+                  return lvl.includes("junior") || lvl.includes("senior") || lvl.includes("high");
+                }).length;
+                var adminAlive = list.filter(function (t) {
+                  var lvl = String(t.school_level || "").toLowerCase();
+                  return lvl.includes("admin") || lvl.includes("alive");
+                }).length;
+
+                if (elTotal) elTotal.textContent = total;
+                if (elElem) elElem.textContent = elem;
+                if (elSec) elSec.textContent = sec;
+                if (elAdmin) elAdmin.textContent = adminAlive;
+              }
+
+              /* --- View Switching --- */
+              window.showPersonnelListView = function () {
+                window.currentPersonnelView = "list";
+                var listView = document.getElementById("personnelListView");
+                var profileView = document.getElementById("personnelProfileView");
+                if (listView) listView.classList.remove("hidden");
+                if (profileView) profileView.classList.add("hidden");
+
+                var hTitle = document.getElementById("personnelHeaderTitle");
+                var hSub = document.getElementById("personnelHeaderSubtitle");
+                if (hTitle) hTitle.textContent = "Personnel Directory & Accountability";
+                if (hSub) hSub.textContent = "Overview of all school teachers, staff, and their property accountability.";
+
+                updatePersonnelStatCards();
+                renderPersonnelListTable();
+              };
+
+              window.showPersonnelProfileView = function (teacherOrId) {
+                window.currentPersonnelView = "profile";
+                var target = null;
+                if (typeof teacherOrId === "object" && teacherOrId !== null) {
+                  target = teacherOrId;
+                } else if (teacherOrId !== undefined && teacherOrId !== null) {
+                  target = window.personnelList.find(function (t) { return Number(t.id) === Number(teacherOrId); });
+                }
+                if (!target && window.personnelList.length > 0) {
+                  target = window.personnelList[0];
+                }
+                if (!target) return;
+
+                var listView = document.getElementById("personnelListView");
+                var profileView = document.getElementById("personnelProfileView");
+                if (listView) listView.classList.add("hidden");
+                if (profileView) profileView.classList.remove("hidden");
+
+                var hTitle = document.getElementById("personnelHeaderTitle");
+                var hSub = document.getElementById("personnelHeaderSubtitle");
+                if (hTitle) hTitle.textContent = "Personnel Accountability";
+                if (hSub) hSub.textContent = "Manage personnel profiles and view their accountable school properties.";
+
+                var dropdown = document.getElementById("personnelSelectDropdown");
+                if (dropdown) dropdown.value = target.id;
+
+                renderPersonnelProfile(target);
+              };
+
+              window.createIcsForPersonnelAsset = function (itemNo, desc) {
+                if (typeof showModule === "function") {
+                  showModule("document");
+                  setTimeout(function () {
+                    var recBySelect = document.querySelector("#icsReceivedBy");
+                    if (recBySelect && window.activePersonnel) {
+                      recBySelect.value = window.activePersonnel.teacher_name;
+                      recBySelect.dispatchEvent(new Event("change"));
+                    }
+                    var searchInput = document.querySelector("#icsSlipSearchInput");
+                    if (searchInput && itemNo && itemNo !== "—") {
+                      searchInput.value = itemNo;
+                    }
+                  }, 200);
+                }
+              };
+
+              /* --- Directory List Table Rendering --- */
+              function renderPersonnelListTable() {
+                var tbody = document.getElementById("personnelListTableBody");
+                var footerCount = document.getElementById("personnelListCountFooter");
+                var paginationEl = document.getElementById("personnelListPagination");
+                if (!tbody) return;
+
+                var searchInput = document.getElementById("personnelListSearchInput");
+                var q = searchInput ? searchInput.value.toLowerCase().trim() : "";
+                var levelFilter = document.getElementById("personnelListLevelFilter");
+                var lvlVal = levelFilter ? levelFilter.value : "all";
+                var statusFilter = document.getElementById("personnelListStatusFilter");
+                var statusVal = statusFilter ? statusFilter.value : "all";
+
+                var list = window.personnelList || [];
+
+                personnelListFiltered = list.filter(function (t) {
+                  if (lvlVal !== "all") {
+                    var tl = String(t.school_level || "").toLowerCase();
+                    if (!tl.includes(lvlVal.toLowerCase())) return false;
+                  }
+                  if (statusVal !== "all") {
+                    var ts = String(t.status || "").toLowerCase();
+                    if (!ts.includes(statusVal.toLowerCase())) return false;
+                  }
+                  if (!q) return true;
+                  return [
+                    t.teacher_name,
+                    t.employee_id,
+                    t.position,
+                    t.plantilla_position,
+                    t.school_level,
+                    t.grade_section,
+                    t.location,
+                    t.email,
+                    t.phone
+                  ].some(function (f) {
+                    return String(f || "").toLowerCase().includes(q);
+                  });
+                });
+
+                if (personnelListFiltered.length === 0) {
+                  tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-8 text-center text-slate-400 text-xs">' +
+                    '<i class="fa-solid fa-user-slash text-2xl mb-2 text-slate-300 block"></i>' +
+                    (q ? 'No personnel matched "' + safeEscape(q) + '".' : 'No personnel records found.') +
+                    '</td></tr>';
+                  if (footerCount) footerCount.textContent = "Showing 0 entries";
+                  if (paginationEl) paginationEl.innerHTML = "";
+                  return;
+                }
+
+                var totalPages = Math.max(1, Math.ceil(personnelListFiltered.length / personnelListPageSize));
+                if (personnelListCurrentPage > totalPages) personnelListCurrentPage = totalPages;
+                if (personnelListCurrentPage < 1) personnelListCurrentPage = 1;
+
+                var startIndex = (personnelListCurrentPage - 1) * personnelListPageSize;
+                var pageRows = personnelListFiltered.slice(startIndex, startIndex + personnelListPageSize);
+
+                var html = "";
+                pageRows.forEach(function (t) {
+                  var initials = (t.teacher_name || "P").split(" ").map(function (w) { return w[0]; }).filter(Boolean).slice(0, 2).join("").toUpperCase();
+                  var avatarHtml = t.photo_url
+                    ? '<img src="' + safeEscape(t.photo_url) + '" alt="' + safeEscape(t.teacher_name) + '" class="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0" onerror="this.onerror=null; this.src=\'https://ui-avatars.com/api/?name=' + encodeURIComponent(t.teacher_name || "Personnel") + '&background=078f95&color=fff\';">'
+                    : '<div class="w-10 h-10 rounded-full bg-[#00335e]/10 text-[#00335e] font-bold text-xs flex items-center justify-center border border-[#00335e]/20 shrink-0">' + safeEscape(initials) + '</div>';
+
+                  var lvl = String(t.school_level || "").toLowerCase();
+                  var badgeClass = "bg-slate-100 text-slate-700 border border-slate-200";
+                  if (lvl.includes("elem")) {
+                    badgeClass = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+                  } else if (lvl.includes("junior")) {
+                    badgeClass = "bg-sky-50 text-sky-700 border border-sky-200";
+                  } else if (lvl.includes("senior")) {
+                    badgeClass = "bg-indigo-50 text-indigo-700 border border-indigo-200";
+                  } else if (lvl.includes("alive")) {
+                    badgeClass = "bg-amber-50 text-amber-700 border border-amber-200";
+                  } else if (lvl.includes("admin")) {
+                    badgeClass = "bg-purple-50 text-purple-700 border border-purple-200";
+                  }
+
+                  var itemCount = calculatePersonnelItemCount(t);
+                  var itemBadge = (itemCount > 0)
+                    ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#e8f4f8] text-[#0759a5] border border-[#d0e5f2]"><i class="fa-solid fa-boxes-stacked text-[10px]"></i> ' + itemCount + (itemCount === 1 ? ' item' : ' items') + '</span>'
+                    : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-gray-400 bg-gray-50 border border-gray-100">0 items</span>';
+
+                  var statusClass = (String(t.status || "").toLowerCase().includes("leave"))
+                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                    : "bg-green-50 text-green-700 border-green-200";
+
+                  html += '<tr class="border-b border-gray-100 hover:bg-[#f6f9fc] transition cursor-pointer" onclick="showPersonnelProfileView(' + t.id + ')">' +
+                    '<td class="px-5 py-3.5 whitespace-nowrap">' +
+                      '<div class="flex items-center gap-3">' +
+                        avatarHtml +
+                        '<div class="min-w-0">' +
+                          '<div class="font-bold text-[#10213c] text-sm hover:text-[#078f95] transition truncate">' + safeEscape(t.teacher_name) + '</div>' +
+                          '<div class="text-[11px] text-gray-400 truncate">' + safeEscape(t.email || t.phone || t.grade_section || 'DepEd Zamboanga City') + '</div>' +
+                        '</div>' +
+                      '</div>' +
+                    '</td>' +
+                    '<td class="px-4 py-3.5 whitespace-nowrap">' +
+                      '<span class="font-mono text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200 font-semibold">' + safeEscape(t.employee_id || "—") + '</span>' +
+                    '</td>' +
+                    '<td class="px-4 py-3.5">' +
+                      '<div class="font-semibold text-slate-800 text-xs">' + safeEscape(t.position || t.plantilla_position || "Teacher") + '</div>' +
+                      '<div class="text-[11px] text-gray-400">' + safeEscape(t.personnel_type || "Teaching Personnel") + '</div>' +
+                    '</td>' +
+                    '<td class="px-4 py-3.5 whitespace-nowrap">' +
+                      '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ' + badgeClass + '">' + safeEscape(t.school_level || "Elementary") + '</span>' +
+                    '</td>' +
+                    '<td class="px-4 py-3.5 text-center whitespace-nowrap">' +
+                      '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ' + statusClass + '">' +
+                        '<span class="w-1.5 h-1.5 rounded-full ' + (statusClass.includes("green") ? "bg-green-500" : "bg-amber-500") + '"></span>' +
+                        safeEscape(t.status || "Active") +
+                      '</span>' +
+                    '</td>' +
+                    '<td class="px-4 py-3.5 text-center whitespace-nowrap">' +
+                      itemBadge +
+                    '</td>' +
+                    '<td class="px-4 py-3.5 text-center whitespace-nowrap" onclick="event.stopPropagation()">' +
+                      '<button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00335e] hover:bg-[#078f95] text-white text-xs font-semibold transition shadow-xs cursor-pointer" onclick="showPersonnelProfileView(' + t.id + ')">' +
+                        '<i class="fa-solid fa-arrow-right text-[10px]"></i>' +
+                        '<span>View Profile</span>' +
+                      '</button>' +
+                    '</td>' +
+                  '</tr>';
+                });
+
+                tbody.innerHTML = html;
+
+                var endCount = Math.min(startIndex + personnelListPageSize, personnelListFiltered.length);
+                if (footerCount) {
+                  footerCount.textContent = "Showing " + (startIndex + 1) + " to " + endCount + " of " + personnelListFiltered.length + " personnel";
+                }
+
+                if (paginationEl) {
+                  if (totalPages <= 1) {
+                    paginationEl.innerHTML = "";
+                  } else {
+                    var pagHtml = '<button type="button" class="personnel-page-btn" ' + (personnelListCurrentPage === 1 ? 'disabled style="opacity:0.4;cursor:default;"' : 'onclick="changePersonnelListPage(' + (personnelListCurrentPage - 1) + ')"') + '><i class="fa-solid fa-chevron-left"></i></button>';
+                    for (var p = 1; p <= totalPages; p++) {
+                      var activeCls = (p === personnelListCurrentPage) ? ' personnel-page-active' : '';
+                      pagHtml += '<button type="button" class="personnel-page-btn' + activeCls + '" onclick="changePersonnelListPage(' + p + ')">' + p + '</button>';
+                    }
+                    pagHtml += '<button type="button" class="personnel-page-btn" ' + (personnelListCurrentPage === totalPages ? 'disabled style="opacity:0.4;cursor:default;"' : 'onclick="changePersonnelListPage(' + (personnelListCurrentPage + 1) + ')"') + '><i class="fa-solid fa-chevron-right"></i></button>';
+                    paginationEl.innerHTML = pagHtml;
+                  }
+                }
+              }
+
+              window.changePersonnelListPage = function (page) {
+                personnelListCurrentPage = page;
+                renderPersonnelListTable();
+              };
+
+              window.renderPersonnelListTable = renderPersonnelListTable;
+              window.updatePersonnelStatCards = updatePersonnelStatCards;
+              window.renderPersonnelProfile = renderPersonnelProfile;
+              window.renderPersonnelProperties = renderPersonnelProperties;
+
+              /* --- Profile Property Table Rendering --- */
               async function renderPersonnelProperties(teacher) {
                 var tableBody = document.getElementById("personnelPropertyTable");
                 var footerCount = document.getElementById("personnelPropertyCountFooter");
                 var summaryCountEl = document.getElementById("personnelPropertySummaryCount");
                 if (!tableBody) return;
 
-                var teacherName = (teacher && teacher.teacher_name ? teacher.teacher_name : "").trim().toLowerCase();
+                var teacherName = (teacher && teacher.teacher_name ? teacher.teacher_name : "").trim();
                 if (!teacherName) {
                   tableBody.innerHTML = '<tr><td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm">Please select a personnel.</td></tr>';
                   if (footerCount) footerCount.textContent = "Showing 0 entries";
                   return;
                 }
 
-                // Show spinner while fetching/calculating
-                tableBody.innerHTML = '<tr><td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-[#078f95] block"></i>Loading ICS property records...</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-[#078f95] block"></i>Loading property records for ' + safeEscape(teacherName) + '...</td></tr>';
 
-                // Get all ICS slips
-                var allSlips = (Array.isArray(window.inventoryCustodianSlips) && window.inventoryCustodianSlips.length > 0)
-                  ? window.inventoryCustodianSlips
-                  : await fetchIcsSlipsDirectly();
+                // Fetch latest ICS slips and assets
+                var allSlips = await fetchIcsSlipsDirectly(true);
+                var allItems = await fetchInventoryAssetsDirectly();
 
-                // 1. Slips where receivedBy matches this teacher
-                var matchedSlips = (allSlips || []).filter(function (slip) {
-                  var rec = String(slip.receivedBy || "").trim().toLowerCase();
-                  return rec && (rec === teacherName || teacherName.includes(rec) || rec.includes(teacherName));
-                });
-
-                // 2. Also check assets assigned to this teacher in inventory
-                var allItems = (typeof items !== "undefined" && Array.isArray(items)) ? items : [];
-                var matchedAssets = allItems.filter(function (it) {
-                  var acc = String(it.accountable || it.accountable_person || "").trim().toLowerCase();
-                  return acc && (acc === teacherName || teacherName.includes(acc) || recSurnameMatch(acc, teacherName));
-                });
-
-                function recSurnameMatch(a, b) {
-                  if (!a || !b) return false;
-                  var aP = a.split(" ").filter(Boolean);
-                  var bP = b.split(" ").filter(Boolean);
-                  return aP.length > 1 && bP.length > 1 && aP[aP.length - 1] === bP[bP.length - 1];
-                }
-
-                // Build unified ICS-oriented record list
-                var records = [];
-                var seenKeys = {};
-
-                // A) Add all matched ICS slip items
-                matchedSlips.forEach(function (slip) {
-                  var key = (String(slip.icsNo || "") + "_" + String(slip.inventoryItemNo || slip.description || "")).toLowerCase();
-                  seenKeys[key] = true;
-                  var unitCost = Number(slip.unitCost) || 0;
-                  var qty = Number(slip.quantity) || 1;
-                  var totalCost = Number(slip.totalCost) || (unitCost * qty);
-
-                  records.push({
-                    icsNo: slip.icsNo || "—",
-                    inventoryItemNo: slip.inventoryItemNo || "—",
-                    description: slip.description || "—",
-                    quantity: qty,
-                    unit: slip.unit || "unit",
-                    unitCost: unitCost,
-                    totalCost: totalCost,
-                    estimatedUsefulLife: slip.estimatedUsefulLife || "5 years",
-                    receivedDate: formatPersonnelDate(slip.receivedByDate || slip.receivedFromDate),
-                    status: "Accountable",
-                    condition: "Good",
-                    isSemi: true,
-                    rawSlip: slip
-                  });
-                });
-
-                // B) Add matched assets not yet in an ICS slip
-                matchedAssets.forEach(function (asset) {
-                  var desc = (typeof getIcsAssetDescription === "function" ? getIcsAssetDescription(asset) : (asset.brand || asset.itemBrandModel || "—"));
-                  var itemNo = asset.semiExpandableNo || asset.semi_expandable_no || asset.propertyNo || asset.property_no || "—";
-                  var key = (itemNo + "_" + desc).toLowerCase();
-
-                  // Check if already represented by an existing slip
-                  var existingSlip = (allSlips || []).find(function (s) {
-                    return (s.inventoryItemNo && s.inventoryItemNo === itemNo) ||
-                           (s.description && (s.description === desc || s.description.includes(desc)));
-                  });
-
-                  if (existingSlip && seenKeys[(String(existingSlip.icsNo || "") + "_" + String(existingSlip.inventoryItemNo || existingSlip.description || "")).toLowerCase()]) {
-                    return;
-                  }
-
-                  if (!seenKeys[key]) {
-                    seenKeys[key] = true;
-                    var unitVal = Number(asset.unitValue || asset.unit_value || asset.total || 0);
-                    var qty = Number(asset.quantity || asset.onHand || 1);
-                    var totalVal = asset.total ? Number(asset.total) : (unitVal * qty);
-                    var icsNo = (existingSlip && existingSlip.icsNo) || asset.icsNo || "—";
-                    var status = asset.status || "Accountable";
-                    var isSemi = Boolean(asset.semiExpandableNo || asset.semi_expandable_no || existingSlip);
-
-                    records.push({
-                      icsNo: icsNo,
-                      inventoryItemNo: itemNo,
-                      description: desc,
-                      quantity: qty,
-                      unit: asset.unit || asset.unitMeasurement || "unit",
-                      unitCost: unitVal,
-                      totalCost: totalVal,
-                      estimatedUsefulLife: asset.estimatedUsefulLife || asset.est_useful_life || (existingSlip ? existingSlip.estimatedUsefulLife : "5 years"),
-                      receivedDate: formatPersonnelDate(asset.dateIssue || asset.acquisitionDate || asset.acquisition_date),
-                      status: status,
-                      condition: asset.condition || (status.toLowerCase().includes("unserviceable") ? "Unserviceable" : "Good"),
-                      isSemi: isSemi,
-                      rawAsset: asset,
-                      rawSlip: existingSlip || null
-                    });
-                  }
-                });
-
+                // Compute records for THIS accountable person ONLY
+                var records = getAccountabilityRecordsForTeacher(teacher, allSlips, allItems);
                 personnelPropertiesList = records;
                 personnelCurrentPage = 1;
 
@@ -2688,7 +3175,7 @@
 
                 if (filtered.length === 0) {
                   tableBody.innerHTML = '<tr><td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm"><i class="fa-solid fa-box-open text-2xl mb-2 text-slate-300 block"></i>' +
-                    (query ? 'No property records matched "' + safeEscape(query) + '".' : 'No ICS property records under this personnel\'s name.') +
+                    (query ? 'No property records matched "' + safeEscape(query) + '".' : 'No properties or pending ICS under this personnel\'s accountability.') +
                     '</td></tr>';
                   if (footerCount) footerCount.textContent = "Showing 0 entries";
                   if (paginationEl) paginationEl.innerHTML = "";
@@ -2706,7 +3193,7 @@
                 pageRecords.forEach(function (rec) {
                   var icsBadge = (rec.icsNo && rec.icsNo !== "—" && rec.icsNo !== "Pending ICS")
                     ? '<div class="flex items-center gap-1.5"><i class="fa-solid fa-file-invoice text-[#078f95] text-xs"></i><span class="font-bold text-[#0759a5]">' + safeEscape(rec.icsNo) + '</span></div>'
-                    : '<span class="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-medium">Pending ICS</span>';
+                    : '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200"><i class="fa-regular fa-clock text-[10px]"></i> Pending ICS</span>';
 
                   var itemNo = safeEscape(rec.inventoryItemNo || "—");
                   var desc = safeEscape(rec.description || "—");
@@ -2729,8 +3216,11 @@
                       '</div>';
                   } else {
                     actionsHtml = '<div class="flex items-center justify-center gap-1">' +
+                      '<button type="button" class="personnel-action-btn" title="Create ICS Slip in ICS Module" onclick="createIcsForPersonnelAsset(\'' + safeEscape(rec.inventoryItemNo) + '\', \'' + safeEscape(rec.description) + '\')">' +
+                      '<i class="fa-solid fa-file-circle-plus text-[#078f95]"></i>' +
+                      '</button>' +
                       '<button type="button" class="personnel-action-btn" title="View in Inventory" onclick="if(typeof showModule===\'function\'){showModule(\'inventory\');}">' +
-                      '<i class="fa-solid fa-arrow-up-right-from-square text-[#078f95]"></i>' +
+                      '<i class="fa-solid fa-arrow-up-right-from-square text-slate-400"></i>' +
                       '</button>' +
                       '</div>';
                   }
@@ -2849,13 +3339,22 @@
                     dropdown.innerHTML = optionsHtml;
                   }
 
-                  // Default to 1st personnel in database if no active personnel
-                  if (window.personnelList.length > 0) {
-                    var target = window.activePersonnel
-                      ? (window.personnelList.find(function (t) { return Number(t.id) === Number(window.activePersonnel.id); }) || window.personnelList[0])
-                      : window.personnelList[0];
-                    renderPersonnelProfile(target);
-                    if (dropdown) dropdown.value = target.id;
+                  // Pre-load latest slips and assets
+                  await fetchIcsSlipsDirectly(true);
+                  await fetchInventoryAssetsDirectly();
+
+                  updatePersonnelStatCards();
+
+                  if (window.currentPersonnelView === "list") {
+                    showPersonnelListView();
+                  } else {
+                    if (window.personnelList.length > 0) {
+                      var target = window.activePersonnel
+                        ? (window.personnelList.find(function (t) { return Number(t.id) === Number(window.activePersonnel.id); }) || window.personnelList[0])
+                        : window.personnelList[0];
+                      renderPersonnelProfile(target);
+                      if (dropdown) dropdown.value = target.id;
+                    }
                   }
                 } catch (err) {
                   console.error("Error loading personnel from database:", err);
@@ -2980,8 +3479,10 @@
                     window.personnelList[idx] = Object.assign({}, window.personnelList[idx], savedRow);
                   }
 
-                  // Refresh profile card and properties
+                  // Refresh profile card, directory table, and stat cards
                   renderPersonnelProfile(savedRow);
+                  updatePersonnelStatCards();
+                  renderPersonnelListTable();
 
                   // Update dropdown option text
                   var dropdown = document.getElementById("personnelSelectDropdown");
@@ -3040,7 +3541,7 @@
                   dropdown.addEventListener("change", function () {
                     var selectedId = Number(this.value);
                     var matched = window.personnelList.find(function (t) { return Number(t.id) === selectedId; });
-                    if (matched) renderPersonnelProfile(matched);
+                    if (matched) showPersonnelProfileView(matched);
                   });
                 }
 
@@ -3057,7 +3558,7 @@
                         String(t.grade_section || "").toLowerCase().includes(q);
                     });
                     if (found) {
-                      renderPersonnelProfile(found);
+                      showPersonnelProfileView(found);
                       if (dropdown) dropdown.value = found.id;
                     }
                   });
@@ -3086,11 +3587,36 @@
                   if (dd) dd.classList.add("hidden");
                 });
 
-                /* --- Back button --- */
+                /* --- Back to Personnel List button --- */
                 var backBtn = document.getElementById("personnelBackBtn");
                 if (backBtn) {
                   backBtn.addEventListener("click", function () {
-                    if (typeof showModule === "function") showModule("dashboard");
+                    showPersonnelListView();
+                  });
+                }
+
+                /* --- Directory List Filters --- */
+                var listSearchInput = document.getElementById("personnelListSearchInput");
+                if (listSearchInput) {
+                  listSearchInput.addEventListener("input", function () {
+                    personnelListCurrentPage = 1;
+                    renderPersonnelListTable();
+                  });
+                }
+
+                var listLevelFilter = document.getElementById("personnelListLevelFilter");
+                if (listLevelFilter) {
+                  listLevelFilter.addEventListener("change", function () {
+                    personnelListCurrentPage = 1;
+                    renderPersonnelListTable();
+                  });
+                }
+
+                var listStatusFilter = document.getElementById("personnelListStatusFilter");
+                if (listStatusFilter) {
+                  listStatusFilter.addEventListener("change", function () {
+                    personnelListCurrentPage = 1;
+                    renderPersonnelListTable();
                   });
                 }
 
@@ -4090,6 +4616,7 @@
   </div>
 
   <!-- Initialize Lucide Icons -->
+
   <!-- ── Success Modal ── -->
   <div id="successModal" class="success-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="successModalTitle" hidden>
     <div class="success-modal-card">
