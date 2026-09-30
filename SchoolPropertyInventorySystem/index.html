@@ -121,7 +121,7 @@
       box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
     }
   </style>
-  <link rel="stylesheet" href="css/spis-modules.css?v=20260923_v26">
+  <link rel="stylesheet" href="css/spis-modules.css?v=20260930_v1">
   <!-- Font Awesome – used by Personnel Accountability module -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
@@ -1717,10 +1717,12 @@
 
             <!-- Global Search & Personnel Selector -->
             <div class="flex items-center gap-2 w-full sm:w-auto">
-              <div class="relative w-full sm:w-[220px]">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <div class="personnel-search-wrapper w-full sm:w-[240px]">
+                <span class="personnel-search-icon">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
                 <input type="text" id="personnelGlobalSearch" placeholder="Search personnel..."
-                  class="w-full h-[38px] pl-9 pr-3 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                  class="personnel-search-input w-full" />
               </div>
               <select id="personnelSelectDropdown" class="h-[38px] px-3 rounded-lg border border-gray-300 bg-white text-sm text-[#10213c] font-medium outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] max-w-[240px] truncate" title="Select Personnel">
                 <option value="">Loading personnel...</option>
@@ -1792,10 +1794,12 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                  <div class="relative flex-1 sm:flex-none sm:w-[260px]">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                  <div class="personnel-search-wrapper flex-1 sm:flex-none sm:w-[260px]">
+                    <span class="personnel-search-icon">
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
                     <input type="text" id="personnelListSearchInput" placeholder="Filter by name, ID, position..."
-                      class="w-full h-[38px] pl-9 pr-3 rounded-lg border border-gray-300 bg-white text-xs outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                      class="personnel-search-input w-full" />
                   </div>
 
                   <select id="personnelListLevelFilter"
@@ -2083,10 +2087,12 @@
                     <p class="text-sm text-gray-500 mt-1">List of school properties currently assigned to this personnel (<span id="personnelPropertySummaryCount" class="font-semibold text-[#078f95]">0 properties</span>).</p>
                   </div>
                   <div class="flex items-center gap-2">
-                    <div class="relative">
-                      <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                    <div class="personnel-search-wrapper w-full sm:w-[220px]">
+                      <span class="personnel-search-icon">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                      </span>
                       <input id="personnelPropertySearch" type="search" placeholder="Search ICS property..."
-                        class="w-[220px] h-[36px] pl-9 pr-3 rounded-lg border border-gray-300 text-xs outline-none focus:border-[#078f95]" />
+                        class="personnel-search-input w-full" />
                     </div>
                     <div class="relative">
                       <button id="personnelFilterBtn" type="button" class="h-[36px] px-3 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2 cursor-pointer">
