@@ -1844,7 +1844,7 @@
           =================================================== -->
           <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-5">
 
-            <div class="bg-white border border-gray-200 rounded-xl p-4">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[#1971c2]/40 transition" onclick="setPersonnelStatusFilter('all')" title="Filter by All Properties">
               <div class="flex items-center gap-3">
                 <div class="w-11 h-11 rounded-full bg-[#eaf4ff] text-[#1971c2] flex items-center justify-center">
                   <i class="fa-solid fa-cubes text-lg"></i>
@@ -1856,7 +1856,7 @@
               </div>
             </div>
 
-            <div class="bg-white border border-gray-200 rounded-xl p-4">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[#15945b]/40 transition" onclick="setPersonnelStatusFilter('accountable')" title="Filter by Accountable">
               <div class="flex items-center gap-3">
                 <div class="w-11 h-11 rounded-full bg-[#ddf8e9] text-[#15945b] flex items-center justify-center">
                   <i class="fa-solid fa-circle-check text-lg"></i>
@@ -1868,7 +1868,7 @@
               </div>
             </div>
 
-            <div class="bg-white border border-gray-200 rounded-xl p-4">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[#7040d4]/40 transition" onclick="setPersonnelStatusFilter('semi')" title="Filter by Semi-Expendable">
               <div class="flex items-center gap-3">
                 <div class="w-11 h-11 rounded-full bg-[#f0e7ff] text-[#7040d4] flex items-center justify-center">
                   <i class="fa-solid fa-box text-lg"></i>
@@ -1880,7 +1880,7 @@
               </div>
             </div>
 
-            <div class="bg-white border border-gray-200 rounded-xl p-4">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[#13976c]/40 transition" onclick="setPersonnelStatusFilter('serviceable')" title="Filter by Serviceable">
               <div class="flex items-center gap-3">
                 <div class="w-11 h-11 rounded-full bg-[#dff8ed] text-[#13976c] flex items-center justify-center">
                   <i class="fa-solid fa-wrench text-lg"></i>
@@ -1892,7 +1892,7 @@
               </div>
             </div>
 
-            <div class="bg-white border border-gray-200 rounded-xl p-4">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[#dc9200]/40 transition" onclick="setPersonnelStatusFilter('repair')" title="Filter by For Repair">
               <div class="flex items-center gap-3">
                 <div class="w-11 h-11 rounded-full bg-[#fff4d8] text-[#dc9200] flex items-center justify-center">
                   <i class="fa-solid fa-triangle-exclamation text-lg"></i>
@@ -1904,7 +1904,7 @@
               </div>
             </div>
 
-            <div class="bg-white border border-gray-200 rounded-xl p-4">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[#e03131]/40 transition" onclick="setPersonnelStatusFilter('unserviceable')" title="Filter by Unserviceable">
               <div class="flex items-center gap-3">
                 <div class="w-11 h-11 rounded-full bg-[#ffe3e3] text-[#e03131] flex items-center justify-center">
                   <i class="fa-solid fa-circle-xmark text-lg"></i>
@@ -1953,17 +1953,27 @@
                 <div class="p-5 flex flex-wrap justify-between items-end gap-3">
                   <div>
                     <h2 class="text-[20px] font-bold text-[#14253e]">Properties Under Accountability</h2>
-                    <p class="text-sm text-gray-500 mt-1">List of school properties currently assigned to this personnel.</p>
+                    <p class="text-sm text-gray-500 mt-1">List of school properties currently assigned to this personnel (<span id="personnelPropertySummaryCount" class="font-semibold text-[#078f95]">0 properties</span>).</p>
                   </div>
                   <div class="flex items-center gap-2">
                     <div class="relative">
                       <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                      <input id="personnelPropertySearch" type="text" placeholder="Search property..."
+                      <input id="personnelPropertySearch" type="search" placeholder="Search ICS property..."
                         class="w-[220px] h-[36px] pl-9 pr-3 rounded-lg border border-gray-300 text-xs outline-none focus:border-[#078f95]" />
                     </div>
-                    <button id="personnelFilterBtn" class="h-[36px] px-3 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2">
-                      <i class="fa-solid fa-filter"></i> Filter
-                    </button>
+                    <div class="relative">
+                      <button id="personnelFilterBtn" type="button" class="h-[36px] px-3 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-filter"></i> <span id="personnelFilterLabel">All Status</span>
+                      </button>
+                      <div id="personnelFilterDropdown" class="hidden absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-30 py-1 text-xs">
+                        <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('all')">All Properties</button>
+                        <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('accountable')">Accountable</button>
+                        <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('semi')">Semi-Expendable</button>
+                        <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('serviceable')">Serviceable</button>
+                        <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('repair')">For Repair</button>
+                        <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('unserviceable')">Unserviceable</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1972,21 +1982,23 @@
                   <table class="w-full text-sm">
                     <thead class="bg-[#f5f7fa] border-y border-gray-200">
                       <tr class="text-left text-[11px] uppercase tracking-wide text-gray-500">
-                        <th class="px-4 py-3 font-semibold">Property No.</th>
-                        <th class="px-4 py-3 font-semibold">Description</th>
-                        <th class="px-4 py-3 font-semibold">Category</th>
-                        <th class="px-4 py-3 font-semibold">Acquisition Date</th>
-                        <th class="px-4 py-3 font-semibold">Value</th>
-                        <th class="px-4 py-3 font-semibold">Condition</th>
-                        <th class="px-4 py-3 font-semibold">Status</th>
-                        <th class="px-4 py-3 font-semibold text-center">Action</th>
+                        <th class="px-4 py-3 font-semibold whitespace-nowrap">ICS No.</th>
+                        <th class="px-4 py-3 font-semibold whitespace-nowrap">Inventory Item No.</th>
+                        <th class="px-4 py-3 font-semibold min-w-[200px]">Item Description</th>
+                        <th class="px-4 py-3 font-semibold text-center whitespace-nowrap">Qty</th>
+                        <th class="px-4 py-3 font-semibold whitespace-nowrap">Unit</th>
+                        <th class="px-4 py-3 font-semibold text-right whitespace-nowrap">Unit Cost</th>
+                        <th class="px-4 py-3 font-semibold text-right whitespace-nowrap">Total Cost</th>
+                        <th class="px-4 py-3 font-semibold whitespace-nowrap">Est. Useful Life</th>
+                        <th class="px-4 py-3 font-semibold whitespace-nowrap">Date Received</th>
+                        <th class="px-4 py-3 font-semibold text-center whitespace-nowrap">Action</th>
                       </tr>
                     </thead>
                     <tbody id="personnelPropertyTable">
                       <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm">
+                        <td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm">
                           <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-[#078f95] block"></i>
-                          Loading property records...
+                          Loading ICS property records...
                         </td>
                       </tr>
                     </tbody>
@@ -1996,11 +2008,7 @@
                 <!-- Table Footer / Pagination -->
                 <div class="px-5 py-4 flex flex-wrap justify-between items-center gap-3">
                   <p id="personnelPropertyCountFooter" class="text-xs text-gray-500">Showing 0 entries</p>
-                  <div class="flex items-center gap-1">
-                    <button class="personnel-page-btn"><i class="fa-solid fa-chevron-left"></i></button>
-                    <button class="personnel-page-btn personnel-page-active">1</button>
-                    <button class="personnel-page-btn"><i class="fa-solid fa-chevron-right"></i></button>
-                  </div>
+                  <div class="flex items-center gap-1" id="personnelPropertyPagination"></div>
                 </div>
 
               </div><!-- /tab-properties -->
@@ -2431,29 +2439,193 @@
                 renderPersonnelProperties(teacher);
               }
 
-              function renderPersonnelProperties(teacher) {
+              var personnelPropertiesList = [];
+              var personnelCurrentPage = 1;
+              var personnelPageSize = 8;
+              var personnelActiveStatusFilter = "all";
+
+              function formatPesoCurrency(val) {
+                var num = Number(val);
+                if (isNaN(num) || num <= 0) return "₱0.00";
+                return "₱" + num.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              }
+
+              async function fetchIcsSlipsDirectly() {
+                if (Array.isArray(window.inventoryCustodianSlips) && window.inventoryCustodianSlips.length > 0) {
+                  return window.inventoryCustodianSlips;
+                }
+                var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+                var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+                var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
+                try {
+                  var sel = "id,ics_no,entity_name,fund_cluster,received_from_name,received_from_position,received_from_date,received_by_name,received_by_position,received_by_date,ics_slip_items(id,line_no,inventory_item_no,description_snapshot,quantity,unit,unit_cost,total_cost,estimated_useful_life)";
+                  var res = await fetch(sUrl + "/rest/v1/ics_slips?select=" + encodeURIComponent(sel) + "&order=created_at.desc", { headers: sHeaders });
+                  if (res.ok) {
+                    var data = await res.json();
+                    var mapped = [];
+                    (data || []).forEach(function (header) {
+                      (header.ics_slip_items || []).forEach(function (it) {
+                        mapped.push({
+                          id: header.id + "-" + it.line_no,
+                          dbSlipId: header.id,
+                          dbItemId: it.id,
+                          lineNo: it.line_no,
+                          icsNo: header.ics_no || "",
+                          inventoryItemNo: it.inventory_item_no || "",
+                          description: it.description_snapshot || "",
+                          quantity: it.quantity ?? 1,
+                          unit: it.unit || "unit",
+                          unitCost: it.unit_cost ?? 0,
+                          totalCost: it.total_cost ?? 0,
+                          estimatedUsefulLife: it.estimated_useful_life || "—",
+                          receivedBy: header.received_by_name || "",
+                          receivedFrom: header.received_from_name || "",
+                          receivedByDate: header.received_by_date || header.received_from_date || ""
+                        });
+                      });
+                    });
+                    window.inventoryCustodianSlips = mapped;
+                    return mapped;
+                  }
+                } catch (e) {
+                  console.warn("Direct ICS fetch fallback error:", e);
+                }
+                return [];
+              }
+
+              async function renderPersonnelProperties(teacher) {
                 var tableBody = document.getElementById("personnelPropertyTable");
                 var footerCount = document.getElementById("personnelPropertyCountFooter");
+                var summaryCountEl = document.getElementById("personnelPropertySummaryCount");
                 if (!tableBody) return;
 
                 var teacherName = (teacher && teacher.teacher_name ? teacher.teacher_name : "").trim().toLowerCase();
-                var allItems = (typeof items !== "undefined" && Array.isArray(items)) ? items : [];
-                var matched = allItems.filter(function (it) {
-                  var acc = String(it.accountable || it.accountable_person || "").trim().toLowerCase();
-                  return acc && acc === teacherName;
+                if (!teacherName) {
+                  tableBody.innerHTML = '<tr><td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm">Please select a personnel.</td></tr>';
+                  if (footerCount) footerCount.textContent = "Showing 0 entries";
+                  return;
+                }
+
+                // Show spinner while fetching/calculating
+                tableBody.innerHTML = '<tr><td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-[#078f95] block"></i>Loading ICS property records...</td></tr>';
+
+                // Get all ICS slips
+                var allSlips = (Array.isArray(window.inventoryCustodianSlips) && window.inventoryCustodianSlips.length > 0)
+                  ? window.inventoryCustodianSlips
+                  : await fetchIcsSlipsDirectly();
+
+                // 1. Slips where receivedBy matches this teacher
+                var matchedSlips = (allSlips || []).filter(function (slip) {
+                  var rec = String(slip.receivedBy || "").trim().toLowerCase();
+                  return rec && (rec === teacherName || teacherName.includes(rec) || rec.includes(teacherName));
                 });
 
-                // Summary calculations
-                var total = matched.length;
-                var accountable = matched.length;
-                var semi = matched.filter(function (i) { return Boolean(i.semiExpendableNo || i.semi_expandable_no); }).length;
-                var repair = matched.filter(function (i) { return String(i.status || "").toLowerCase().includes("repair"); }).length;
-                var unserviceable = matched.filter(function (i) {
-                  var s = String(i.status || "").toLowerCase();
+                // 2. Also check assets assigned to this teacher in inventory
+                var allItems = (typeof items !== "undefined" && Array.isArray(items)) ? items : [];
+                var matchedAssets = allItems.filter(function (it) {
+                  var acc = String(it.accountable || it.accountable_person || "").trim().toLowerCase();
+                  return acc && (acc === teacherName || teacherName.includes(acc) || recSurnameMatch(acc, teacherName));
+                });
+
+                function recSurnameMatch(a, b) {
+                  if (!a || !b) return false;
+                  var aP = a.split(" ").filter(Boolean);
+                  var bP = b.split(" ").filter(Boolean);
+                  return aP.length > 1 && bP.length > 1 && aP[aP.length - 1] === bP[bP.length - 1];
+                }
+
+                // Build unified ICS-oriented record list
+                var records = [];
+                var seenKeys = {};
+
+                // A) Add all matched ICS slip items
+                matchedSlips.forEach(function (slip) {
+                  var key = (String(slip.icsNo || "") + "_" + String(slip.inventoryItemNo || slip.description || "")).toLowerCase();
+                  seenKeys[key] = true;
+                  var unitCost = Number(slip.unitCost) || 0;
+                  var qty = Number(slip.quantity) || 1;
+                  var totalCost = Number(slip.totalCost) || (unitCost * qty);
+
+                  records.push({
+                    icsNo: slip.icsNo || "—",
+                    inventoryItemNo: slip.inventoryItemNo || "—",
+                    description: slip.description || "—",
+                    quantity: qty,
+                    unit: slip.unit || "unit",
+                    unitCost: unitCost,
+                    totalCost: totalCost,
+                    estimatedUsefulLife: slip.estimatedUsefulLife || "5 years",
+                    receivedDate: formatPersonnelDate(slip.receivedByDate || slip.receivedFromDate),
+                    status: "Accountable",
+                    condition: "Good",
+                    isSemi: true,
+                    rawSlip: slip
+                  });
+                });
+
+                // B) Add matched assets not yet in an ICS slip
+                matchedAssets.forEach(function (asset) {
+                  var desc = (typeof getIcsAssetDescription === "function" ? getIcsAssetDescription(asset) : (asset.brand || asset.itemBrandModel || "—"));
+                  var itemNo = asset.semiExpandableNo || asset.semi_expandable_no || asset.propertyNo || asset.property_no || "—";
+                  var key = (itemNo + "_" + desc).toLowerCase();
+
+                  // Check if already represented by an existing slip
+                  var existingSlip = (allSlips || []).find(function (s) {
+                    return (s.inventoryItemNo && s.inventoryItemNo === itemNo) ||
+                           (s.description && (s.description === desc || s.description.includes(desc)));
+                  });
+
+                  if (existingSlip && seenKeys[(String(existingSlip.icsNo || "") + "_" + String(existingSlip.inventoryItemNo || existingSlip.description || "")).toLowerCase()]) {
+                    return;
+                  }
+
+                  if (!seenKeys[key]) {
+                    seenKeys[key] = true;
+                    var unitVal = Number(asset.unitValue || asset.unit_value || asset.total || 0);
+                    var qty = Number(asset.quantity || asset.onHand || 1);
+                    var totalVal = asset.total ? Number(asset.total) : (unitVal * qty);
+                    var icsNo = (existingSlip && existingSlip.icsNo) || asset.icsNo || "—";
+                    var status = asset.status || "Accountable";
+                    var isSemi = Boolean(asset.semiExpandableNo || asset.semi_expandable_no || existingSlip);
+
+                    records.push({
+                      icsNo: icsNo,
+                      inventoryItemNo: itemNo,
+                      description: desc,
+                      quantity: qty,
+                      unit: asset.unit || asset.unitMeasurement || "unit",
+                      unitCost: unitVal,
+                      totalCost: totalVal,
+                      estimatedUsefulLife: asset.estimatedUsefulLife || asset.est_useful_life || (existingSlip ? existingSlip.estimatedUsefulLife : "5 years"),
+                      receivedDate: formatPersonnelDate(asset.dateIssue || asset.acquisitionDate || asset.acquisition_date),
+                      status: status,
+                      condition: asset.condition || (status.toLowerCase().includes("unserviceable") ? "Unserviceable" : "Good"),
+                      isSemi: isSemi,
+                      rawAsset: asset,
+                      rawSlip: existingSlip || null
+                    });
+                  }
+                });
+
+                personnelPropertiesList = records;
+                personnelCurrentPage = 1;
+
+                // Update summary counters
+                var totalCount = records.length;
+                var accountableCount = records.filter(function (r) {
+                  var s = (r.status || "").toLowerCase();
+                  return !s.includes("unserviceable") && !s.includes("stolen");
+                }).length;
+                var semiCount = records.filter(function (r) { return r.isSemi || (r.icsNo && r.icsNo !== "—"); }).length;
+                var repairCount = records.filter(function (r) {
+                  return (r.status || "").toLowerCase().includes("repair") || (r.condition || "").toLowerCase().includes("repair");
+                }).length;
+                var unserviceableCount = records.filter(function (r) {
+                  var s = (r.status || "").toLowerCase();
                   return s.includes("unserviceable") || s.includes("stolen");
                 }).length;
-                var serviceable = total - repair - unserviceable;
-                if (serviceable < 0) serviceable = 0;
+                var serviceableCount = totalCount - repairCount - unserviceableCount;
+                if (serviceableCount < 0) serviceableCount = 0;
 
                 var elTotal = document.getElementById("personnelCountTotal");
                 var elAccountable = document.getElementById("personnelCountAccountable");
@@ -2462,54 +2634,198 @@
                 var elRepair = document.getElementById("personnelCountRepair");
                 var elUnserviceable = document.getElementById("personnelCountUnserviceable");
 
-                if (elTotal) elTotal.textContent = total;
-                if (elAccountable) elAccountable.textContent = accountable;
-                if (elSemi) elSemi.textContent = semi;
-                if (elServiceable) elServiceable.textContent = serviceable;
-                if (elRepair) elRepair.textContent = repair;
-                if (elUnserviceable) elUnserviceable.textContent = unserviceable;
+                if (elTotal) elTotal.textContent = totalCount;
+                if (elAccountable) elAccountable.textContent = accountableCount;
+                if (elSemi) elSemi.textContent = semiCount;
+                if (elServiceable) elServiceable.textContent = serviceableCount;
+                if (elRepair) elRepair.textContent = repairCount;
+                if (elUnserviceable) elUnserviceable.textContent = unserviceableCount;
+                if (summaryCountEl) summaryCountEl.textContent = totalCount + (totalCount === 1 ? " property" : " properties");
 
-                if (matched.length === 0) {
-                  tableBody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400 text-sm"><i class="fa-solid fa-box-open text-2xl mb-2 text-slate-300 block"></i>No property records currently assigned to this personnel.</td></tr>';
+                renderPersonnelPropertyTableRows();
+              }
+
+              function renderPersonnelPropertyTableRows() {
+                var tableBody = document.getElementById("personnelPropertyTable");
+                var footerCount = document.getElementById("personnelPropertyCountFooter");
+                var paginationEl = document.getElementById("personnelPropertyPagination");
+                if (!tableBody) return;
+
+                var searchInput = document.getElementById("personnelPropertySearch");
+                var query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+                var filtered = personnelPropertiesList.filter(function (r) {
+                  if (personnelActiveStatusFilter === "accountable") {
+                    var s = (r.status || "").toLowerCase();
+                    if (s.includes("unserviceable") || s.includes("stolen")) return false;
+                  } else if (personnelActiveStatusFilter === "semi") {
+                    if (!r.isSemi && (!r.icsNo || r.icsNo === "—")) return false;
+                  } else if (personnelActiveStatusFilter === "serviceable") {
+                    var st = (r.status || "").toLowerCase();
+                    if (st.includes("unserviceable") || st.includes("repair") || st.includes("stolen")) return false;
+                  } else if (personnelActiveStatusFilter === "repair") {
+                    if (!(r.status || "").toLowerCase().includes("repair")) return false;
+                  } else if (personnelActiveStatusFilter === "unserviceable") {
+                    var su = (r.status || "").toLowerCase();
+                    if (!su.includes("unserviceable") && !su.includes("stolen")) return false;
+                  }
+
+                  if (!query) return true;
+                  return [
+                    r.icsNo,
+                    r.inventoryItemNo,
+                    r.description,
+                    r.unit,
+                    r.estimatedUsefulLife,
+                    r.receivedDate,
+                    String(r.quantity),
+                    String(r.unitCost),
+                    String(r.totalCost)
+                  ].some(function (f) {
+                    return String(f || "").toLowerCase().includes(query);
+                  });
+                });
+
+                if (filtered.length === 0) {
+                  tableBody.innerHTML = '<tr><td colspan="10" class="px-4 py-8 text-center text-slate-400 text-sm"><i class="fa-solid fa-box-open text-2xl mb-2 text-slate-300 block"></i>' +
+                    (query ? 'No property records matched "' + safeEscape(query) + '".' : 'No ICS property records under this personnel\'s name.') +
+                    '</td></tr>';
                   if (footerCount) footerCount.textContent = "Showing 0 entries";
+                  if (paginationEl) paginationEl.innerHTML = "";
                   return;
                 }
 
-                var html = "";
-                matched.forEach(function (item) {
-                  var propNo = safeEscape(item.propertyNo || item.property_no || "—");
-                  var desc = safeEscape(item.brand || item.item_brand_model || "—");
-                  var cat = safeEscape(item.classification || item.item_classification || "General");
-                  var acqDate = formatPersonnelDate(item.acquisitionDate || item.acquisition_date);
-                  var val = item.unitValue || item.unit_value || item.total;
-                  var formattedVal = val ? (typeof formatTotalDisplay === "function" ? formatTotalDisplay(val) : ("₱" + Number(val).toLocaleString())) : "—";
-                  var status = safeEscape(item.status || "Accountable");
+                var totalPages = Math.max(1, Math.ceil(filtered.length / personnelPageSize));
+                if (personnelCurrentPage > totalPages) personnelCurrentPage = totalPages;
+                if (personnelCurrentPage < 1) personnelCurrentPage = 1;
 
-                  var statusClass = "personnel-status-accountable";
-                  var stLower = (item.status || "").toLowerCase();
-                  if (stLower.includes("good") || stLower.includes("serviceable") || stLower === "issued") {
-                    statusClass = "personnel-status-good";
-                  } else if (stLower.includes("repair")) {
-                    statusClass = "personnel-status-repair";
-                  } else if (stLower.includes("unserviceable") || stLower.includes("stolen")) {
-                    statusClass = "personnel-status-unserviceable";
+                var startIndex = (personnelCurrentPage - 1) * personnelPageSize;
+                var pageRecords = filtered.slice(startIndex, startIndex + personnelPageSize);
+
+                var html = "";
+                pageRecords.forEach(function (rec) {
+                  var icsBadge = (rec.icsNo && rec.icsNo !== "—" && rec.icsNo !== "Pending ICS")
+                    ? '<div class="flex items-center gap-1.5"><i class="fa-solid fa-file-invoice text-[#078f95] text-xs"></i><span class="font-bold text-[#0759a5]">' + safeEscape(rec.icsNo) + '</span></div>'
+                    : '<span class="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-medium">Pending ICS</span>';
+
+                  var itemNo = safeEscape(rec.inventoryItemNo || "—");
+                  var desc = safeEscape(rec.description || "—");
+                  var qty = rec.quantity || 1;
+                  var unit = safeEscape(rec.unit || "unit");
+                  var unitCost = formatPesoCurrency(rec.unitCost);
+                  var totalCost = formatPesoCurrency(rec.totalCost);
+                  var usefulLife = safeEscape(rec.estimatedUsefulLife || "—");
+                  var dateRec = safeEscape(rec.receivedDate || "—");
+
+                  var actionsHtml = "";
+                  if (rec.rawSlip) {
+                    actionsHtml = '<div class="flex items-center justify-center gap-1">' +
+                      '<button type="button" class="personnel-action-btn" title="Open ICS PDF" onclick="viewPersonnelSlipPdf(\'' + safeEscape(rec.icsNo) + '\')">' +
+                      '<i class="fa-solid fa-file-pdf text-red-500"></i>' +
+                      '</button>' +
+                      '<button type="button" class="personnel-action-btn" title="View in ICS Module" onclick="viewPersonnelInIcs(\'' + safeEscape(rec.icsNo) + '\')">' +
+                      '<i class="fa-solid fa-arrow-up-right-from-square text-[#078f95]"></i>' +
+                      '</button>' +
+                      '</div>';
+                  } else {
+                    actionsHtml = '<div class="flex items-center justify-center gap-1">' +
+                      '<button type="button" class="personnel-action-btn" title="View in Inventory" onclick="if(typeof showModule===\'function\'){showModule(\'inventory\');}">' +
+                      '<i class="fa-solid fa-arrow-up-right-from-square text-[#078f95]"></i>' +
+                      '</button>' +
+                      '</div>';
                   }
 
                   html += '<tr class="personnel-property-row border-b border-gray-100 hover:bg-[#f8fbfc] transition">' +
-                    '<td class="px-4 py-3"><div class="flex items-center gap-2"><i class="fa-solid fa-cube text-gray-500"></i><span class="font-semibold text-[#0759a5]">' + propNo + '</span></div></td>' +
-                    '<td class="px-4 py-3"><p class="font-semibold text-[#263852]">' + desc + '</p></td>' +
-                    '<td class="px-4 py-3 text-gray-600">' + cat + '</td>' +
-                    '<td class="px-4 py-3 text-gray-600">' + acqDate + '</td>' +
-                    '<td class="px-4 py-3 font-medium text-gray-700">' + formattedVal + '</td>' +
-                    '<td class="px-4 py-3"><span class="' + statusClass + '">' + status + '</span></td>' +
-                    '<td class="px-4 py-3"><span class="personnel-status-accountable">Accountable</span></td>' +
-                    '<td class="px-4 py-3 text-center"><button class="personnel-action-btn" title="View in Inventory" onclick="if(typeof showModule===\'function\'){showModule(\'inventory\');}"><i class="fa-solid fa-arrow-up-right-from-square"></i></button></td>' +
+                    '<td class="px-4 py-3 whitespace-nowrap">' + icsBadge + '</td>' +
+                    '<td class="px-4 py-3 whitespace-nowrap"><span class="font-mono text-xs font-semibold text-slate-700">' + itemNo + '</span></td>' +
+                    '<td class="px-4 py-3"><p class="font-semibold text-[#1c2d42] leading-snug">' + desc + '</p></td>' +
+                    '<td class="px-4 py-3 text-center font-bold text-slate-800">' + qty + '</td>' +
+                    '<td class="px-4 py-3 uppercase text-xs font-medium text-slate-600">' + unit + '</td>' +
+                    '<td class="px-4 py-3 text-right text-xs font-semibold text-slate-700">' + unitCost + '</td>' +
+                    '<td class="px-4 py-3 text-right text-xs font-bold text-[#00335e]">' + totalCost + '</td>' +
+                    '<td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">' + usefulLife + '</td>' +
+                    '<td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">' + dateRec + '</td>' +
+                    '<td class="px-4 py-3 text-center whitespace-nowrap">' + actionsHtml + '</td>' +
                     '</tr>';
                 });
 
                 tableBody.innerHTML = html;
-                if (footerCount) footerCount.textContent = "Showing " + matched.length + " of " + matched.length + " entries";
+
+                var endCount = Math.min(startIndex + personnelPageSize, filtered.length);
+                if (footerCount) {
+                  footerCount.textContent = "Showing " + (startIndex + 1) + " to " + endCount + " of " + filtered.length + " entries";
+                }
+
+                if (paginationEl) {
+                  if (totalPages <= 1) {
+                    paginationEl.innerHTML = "";
+                  } else {
+                    var pagHtml = '<button type="button" class="personnel-page-btn" ' + (personnelCurrentPage === 1 ? 'disabled style="opacity:0.4;cursor:default;"' : 'onclick="changePersonnelPage(' + (personnelCurrentPage - 1) + ')"') + '><i class="fa-solid fa-chevron-left"></i></button>';
+                    for (var p = 1; p <= totalPages; p++) {
+                      var activeCls = (p === personnelCurrentPage) ? ' personnel-page-active' : '';
+                      pagHtml += '<button type="button" class="personnel-page-btn' + activeCls + '" onclick="changePersonnelPage(' + p + ')">' + p + '</button>';
+                    }
+                    pagHtml += '<button type="button" class="personnel-page-btn" ' + (personnelCurrentPage === totalPages ? 'disabled style="opacity:0.4;cursor:default;"' : 'onclick="changePersonnelPage(' + (personnelCurrentPage + 1) + ')"') + '><i class="fa-solid fa-chevron-right"></i></button>';
+                    paginationEl.innerHTML = pagHtml;
+                  }
+                }
               }
+
+              window.changePersonnelPage = function (page) {
+                personnelCurrentPage = page;
+                renderPersonnelPropertyTableRows();
+              };
+
+              window.setPersonnelStatusFilter = function (status) {
+                personnelActiveStatusFilter = status;
+                personnelCurrentPage = 1;
+                var dropdown = document.getElementById("personnelFilterDropdown");
+                if (dropdown) dropdown.classList.add("hidden");
+                var labelEl = document.getElementById("personnelFilterLabel");
+                if (labelEl) {
+                  var labels = {
+                    all: "All Status",
+                    accountable: "Accountable",
+                    semi: "Semi-Expendable",
+                    serviceable: "Serviceable",
+                    repair: "For Repair",
+                    unserviceable: "Unserviceable"
+                  };
+                  labelEl.textContent = labels[status] || "Filter";
+                }
+                renderPersonnelPropertyTableRows();
+              };
+
+              window.viewPersonnelSlipPdf = function (icsNo) {
+                var slips = (Array.isArray(window.inventoryCustodianSlips) && window.inventoryCustodianSlips.length > 0)
+                  ? window.inventoryCustodianSlips
+                  : [];
+                var slip = slips.find(function (s) { return String(s.icsNo).trim() === String(icsNo).trim(); });
+                if (slip && typeof window.openInventoryCustodianSlipPdf === "function") {
+                  window.openInventoryCustodianSlipPdf(slip);
+                } else {
+                  if (typeof showToast === "function") showToast("Opening ICS document...");
+                  if (typeof showModule === "function") {
+                    showModule("document");
+                    var searchEl = document.querySelector("#icsSlipSearchInput");
+                    if (searchEl && icsNo) {
+                      searchEl.value = icsNo;
+                      if (typeof renderInventoryCustodianSlipTable === "function") renderInventoryCustodianSlipTable();
+                    }
+                  }
+                }
+              };
+
+              window.viewPersonnelInIcs = function (icsNo) {
+                if (typeof showModule === "function") {
+                  showModule("document");
+                  var searchEl = document.querySelector("#icsSlipSearchInput");
+                  if (searchEl && icsNo) {
+                    searchEl.value = icsNo;
+                    if (typeof renderInventoryCustodianSlipTable === "function") renderInventoryCustodianSlipTable();
+                  }
+                }
+              };
 
               window.loadPersonnelFromDatabase = async function () {
                 var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
@@ -2751,17 +3067,24 @@
                 var searchInput = document.getElementById("personnelPropertySearch");
                 if (searchInput) {
                   searchInput.addEventListener("input", function () {
-                    var q = this.value.toLowerCase().trim();
-                    var count = 0;
-                    document.querySelectorAll("#personnelPropertyTable .personnel-property-row").forEach(function (row) {
-                      var match = row.textContent.toLowerCase().includes(q);
-                      row.style.display = match ? "" : "none";
-                      if (match) count++;
-                    });
-                    var footerCount = document.getElementById("personnelPropertyCountFooter");
-                    if (footerCount) footerCount.textContent = "Showing " + count + " entries";
+                    personnelCurrentPage = 1;
+                    renderPersonnelPropertyTableRows();
                   });
                 }
+
+                /* --- Property status filter dropdown toggle --- */
+                var filterBtn = document.getElementById("personnelFilterBtn");
+                if (filterBtn) {
+                  filterBtn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    var dd = document.getElementById("personnelFilterDropdown");
+                    if (dd) dd.classList.toggle("hidden");
+                  });
+                }
+                document.addEventListener("click", function () {
+                  var dd = document.getElementById("personnelFilterDropdown");
+                  if (dd) dd.classList.add("hidden");
+                });
 
                 /* --- Back button --- */
                 var backBtn = document.getElementById("personnelBackBtn");

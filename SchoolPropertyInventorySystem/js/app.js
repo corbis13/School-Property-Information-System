@@ -5314,14 +5314,18 @@ function hasInventoryCustodianSlipRemoteDatabase() {
 function loadInventoryCustodianSlips() {
     try {
         const stored = JSON.parse(localStorage.getItem(inventoryCustodianSlipStorageKey) || "[]");
-        return Array.isArray(stored) ? stored : [];
+        const list = Array.isArray(stored) ? stored : [];
+        window.inventoryCustodianSlips = list;
+        return list;
     } catch {
+        window.inventoryCustodianSlips = [];
         return [];
     }
 }
 
 function saveInventoryCustodianSlips() {
     try {
+        window.inventoryCustodianSlips = inventoryCustodianSlips;
         localStorage.setItem(inventoryCustodianSlipStorageKey, JSON.stringify(inventoryCustodianSlips));
     } catch (error) {
         console.error("Unable to save Inventory Custodian Slips locally.", error);
@@ -5408,7 +5412,11 @@ async function loadInventoryCustodianSlipsFromDatabase() {
     }
 
     inventoryCustodianSlips = mapInventoryCustodianSlipRows(await response.json());
+    window.inventoryCustodianSlips = inventoryCustodianSlips;
     saveInventoryCustodianSlips();
+    if (window.activePersonnel && typeof window.renderPersonnelProfile === "function") {
+        window.renderPersonnelProfile(window.activePersonnel);
+    }
     return true;
 }
 
@@ -6126,6 +6134,7 @@ async function initInventoryCustodianSlipCrud() {
 }
 
 initInventoryCustodianSlipCrud();
+window.openInventoryCustodianSlipPdf = openInventoryCustodianSlipPdf;
 async function openInventoryCustodianSlipPdf(slip) {
     const JsPdf = window.jspdf && window.jspdf.jsPDF;
     if (!JsPdf) {
