@@ -464,3 +464,31 @@ create policy "Allow public insert access to qr_download_history" on public.qr_d
 create policy "Allow public update access to qr_download_history" on public.qr_download_history
   for update to anon, authenticated using (true) with check (true);
 
+-- =====================================================
+-- STORAGE SETUP: Personnel Profile Photos
+-- =====================================================
+-- Create 'personnel-photos' storage bucket for profile avatars
+insert into storage.buckets (id, name, public)
+values ('personnel-photos', 'personnel-photos', true)
+on conflict (id) do update set public = true;
+
+-- Public read access to personnel-photos
+drop policy if exists "Public Access personnel-photos" on storage.objects;
+create policy "Public Access personnel-photos"
+on storage.objects for select
+using ( bucket_id = 'personnel-photos' );
+
+-- Public/anon upload access to personnel-photos
+drop policy if exists "Allow Public Upload personnel-photos" on storage.objects;
+create policy "Allow Public Upload personnel-photos"
+on storage.objects for insert
+to anon, authenticated
+with check ( bucket_id = 'personnel-photos' );
+
+-- Public/anon update access to personnel-photos
+drop policy if exists "Allow Public Update personnel-photos" on storage.objects;
+create policy "Allow Public Update personnel-photos"
+on storage.objects for update
+to anon, authenticated
+using ( bucket_id = 'personnel-photos' );
+

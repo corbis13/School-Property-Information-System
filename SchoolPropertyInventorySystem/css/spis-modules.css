@@ -3737,7 +3737,8 @@ body[data-theme="dark"] .ics-option-no-results {
   align-items: center;
 }
 
-.personnel-search-icon {
+.personnel-search-icon,
+body[data-theme="dark"] .personnel-search-icon {
   position: absolute;
   left: 0.75rem;
   top: 50%;
@@ -3748,7 +3749,7 @@ body[data-theme="dark"] .ics-option-no-results {
   width: 1rem;
   height: 1rem;
   pointer-events: none;
-  color: #94a3b8;
+  color: #94a3b8 !important;
   z-index: 5;
   transition: color 0.15s ease;
 }
@@ -3761,7 +3762,11 @@ body[data-theme="dark"] .ics-option-no-results {
 .personnel-search-input,
 #personnelGlobalSearch,
 #personnelListSearchInput,
-#personnelPropertySearch {
+#personnelPropertySearch,
+body[data-theme="dark"] .personnel-search-input,
+body[data-theme="dark"] #personnelGlobalSearch,
+body[data-theme="dark"] #personnelListSearchInput,
+body[data-theme="dark"] #personnelPropertySearch {
   width: 100% !important;
   box-sizing: border-box !important;
   padding-left: 2.375rem !important;
@@ -3774,46 +3779,48 @@ body[data-theme="dark"] .ics-option-no-results {
   line-height: 1.4 !important;
   border-radius: 0.5rem !important;
   border: 1px solid #d1d5db !important;
+  background: #ffffff !important;
   background-color: #ffffff !important;
-  color: #0f172a !important;
+  color: #10213c !important;
   outline: none !important;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
   transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 
+.personnel-search-input::placeholder,
+#personnelGlobalSearch::placeholder,
+#personnelListSearchInput::placeholder,
+#personnelPropertySearch::placeholder,
+body[data-theme="dark"] .personnel-search-input::placeholder,
+body[data-theme="dark"] #personnelGlobalSearch::placeholder,
+body[data-theme="dark"] #personnelListSearchInput::placeholder,
+body[data-theme="dark"] #personnelPropertySearch::placeholder {
+  color: #94a3b8 !important;
+}
+
 .personnel-search-input:focus,
 #personnelGlobalSearch:focus,
 #personnelListSearchInput:focus,
-#personnelPropertySearch:focus {
+#personnelPropertySearch:focus,
+body[data-theme="dark"] .personnel-search-input:focus,
+body[data-theme="dark"] #personnelGlobalSearch:focus,
+body[data-theme="dark"] #personnelListSearchInput:focus,
+body[data-theme="dark"] #personnelPropertySearch:focus {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
   border-color: #078f95 !important;
   box-shadow: 0 0 0 3px rgba(7, 143, 149, 0.18) !important;
+  color: #10213c !important;
 }
 
-.personnel-search-wrapper:focus-within .personnel-search-icon {
-  color: #078f95;
+.personnel-search-wrapper:focus-within .personnel-search-icon,
+body[data-theme="dark"] .personnel-search-wrapper:focus-within .personnel-search-icon {
+  color: #078f95 !important;
 }
 
 #personnelPropertySearch::-webkit-search-cancel-button {
   cursor: pointer;
   padding-right: 2px;
-}
-
-/* Dark theme support */
-body[data-theme="dark"] .personnel-search-input,
-body[data-theme="dark"] #personnelGlobalSearch,
-body[data-theme="dark"] #personnelListSearchInput,
-body[data-theme="dark"] #personnelPropertySearch {
-  background-color: #1e293b !important;
-  color: #f1f5f9 !important;
-  border-color: #334155 !important;
-}
-
-body[data-theme="dark"] .personnel-search-icon {
-  color: #64748b;
-}
-
-body[data-theme="dark"] .personnel-search-wrapper:focus-within .personnel-search-icon {
-  color: #38bdf8;
 }
 
 

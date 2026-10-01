@@ -121,7 +121,7 @@
       box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
     }
   </style>
-  <link rel="stylesheet" href="css/spis-modules.css?v=20260930_v1">
+  <link rel="stylesheet" href="css/spis-modules.css?v=20261001_v1">
   <!-- Font Awesome – used by Personnel Accountability module -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
@@ -1722,7 +1722,7 @@
                   <i class="fa-solid fa-magnifying-glass"></i>
                 </span>
                 <input type="text" id="personnelGlobalSearch" placeholder="Search personnel..."
-                  class="personnel-search-input w-full" />
+                  class="personnel-search-input w-full bg-white text-[#10213c]" />
               </div>
               <select id="personnelSelectDropdown" class="h-[38px] px-3 rounded-lg border border-gray-300 bg-white text-sm text-[#10213c] font-medium outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] max-w-[240px] truncate" title="Select Personnel">
                 <option value="">Loading personnel...</option>
@@ -1793,17 +1793,17 @@
                   <p class="text-xs text-gray-500 mt-0.5">Click any personnel row to view profile details and accountable school properties.</p>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                  <div class="personnel-search-wrapper flex-1 sm:flex-none sm:w-[260px]">
+                <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                  <div class="personnel-search-wrapper w-full sm:w-[200px]">
                     <span class="personnel-search-icon">
                       <i class="fa-solid fa-magnifying-glass"></i>
                     </span>
-                    <input type="text" id="personnelListSearchInput" placeholder="Filter by name, ID, position..."
-                      class="personnel-search-input w-full" />
+                    <input type="text" id="personnelListSearchInput" placeholder="Search personnel..." title="Filter by name, ID, position..."
+                      class="personnel-search-input w-full bg-white text-[#10213c]" />
                   </div>
 
                   <select id="personnelListLevelFilter"
-                    class="h-[38px] px-3 rounded-lg border border-gray-300 bg-white text-xs text-[#10213c] font-semibold outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]">
+                    class="h-[38px] w-full sm:w-[200px] px-3 rounded-lg border border-gray-300 bg-white text-xs text-[#10213c] font-semibold outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]">
                     <option value="all">All School Levels</option>
                     <option value="Elementary">Elementary</option>
                     <option value="Junior High">Junior High</option>
@@ -1813,7 +1813,7 @@
                   </select>
 
                   <select id="personnelListStatusFilter"
-                    class="h-[38px] px-3 rounded-lg border border-gray-300 bg-white text-xs text-[#10213c] font-semibold outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]">
+                    class="h-[38px] w-full sm:w-[200px] px-3 rounded-lg border border-gray-300 bg-white text-xs text-[#10213c] font-semibold outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]">
                     <option value="all">All Status</option>
                     <option value="Active">Active</option>
                     <option value="On Leave">On Leave</option>
@@ -1887,9 +1887,10 @@
                 <div class="relative shrink-0">
                   <img id="personnelCardPhoto" src="https://i.pravatar.cc/300?img=47" alt="Personnel Photo"
                     class="w-[156px] h-[198px] rounded-xl object-cover border border-gray-200" />
-                  <button class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-white shadow-md text-[#243852] hover:text-[#078f95]">
+                  <button type="button" id="personnelChangePhotoBtn" class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-white shadow-md text-[#243852] hover:text-[#078f95] flex items-center justify-center transition cursor-pointer hover:scale-105 active:scale-95" title="Upload new photo (WebP)">
                     <i class="fa-solid fa-camera"></i>
                   </button>
+                  <input type="file" id="personnelPhotoFileInput" accept="image/*" class="hidden" />
                 </div>
 
                 <!-- Personnel Information -->
@@ -2084,10 +2085,10 @@
                         <i class="fa-solid fa-magnifying-glass"></i>
                       </span>
                       <input id="personnelPropertySearch" type="search" placeholder="Search ICS property..."
-                        class="personnel-search-input w-full" />
+                        class="personnel-search-input w-full bg-white text-[#10213c]" />
                     </div>
                     <div class="relative">
-                      <button id="personnelFilterBtn" type="button" class="h-[36px] px-3 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2 cursor-pointer">
+                      <button id="personnelFilterBtn" type="button" class="h-[36px] px-3 rounded-lg border border-gray-300 bg-white text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2 cursor-pointer">
                         <i class="fa-solid fa-filter"></i> <span id="personnelFilterLabel">All Status</span>
                       </button>
                       <div id="personnelFilterDropdown" class="hidden absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-30 py-1 text-xs">
@@ -3500,6 +3501,195 @@
                 }
               }
 
+              /* --- Personnel Photo Upload & WebP Conversion --- */
+              function convertImageToWebP(file, maxWidth, maxHeight, quality) {
+                maxWidth = maxWidth || 800;
+                maxHeight = maxHeight || 800;
+                quality = quality || 0.85;
+
+                return new Promise(function (resolve, reject) {
+                  var reader = new FileReader();
+                  reader.onerror = reject;
+                  reader.onload = function (e) {
+                    var img = new Image();
+                    img.onerror = reject;
+                    img.onload = function () {
+                      var width = img.width;
+                      var height = img.height;
+
+                      if (width > maxWidth || height > maxHeight) {
+                        var ratio = Math.min(maxWidth / width, maxHeight / height);
+                        width = Math.round(width * ratio);
+                        height = Math.round(height * ratio);
+                      }
+
+                      var canvas = document.createElement("canvas");
+                      canvas.width = width;
+                      canvas.height = height;
+                      var ctx = canvas.getContext("2d");
+                      ctx.drawImage(img, 0, 0, width, height);
+
+                      if (canvas.toBlob) {
+                        canvas.toBlob(
+                          function (blob) {
+                            if (blob) {
+                              var dataUrl = canvas.toDataURL("image/webp", quality);
+                              resolve({ blob: blob, dataUrl: dataUrl });
+                            } else {
+                              canvas.toBlob(function (fallbackBlob) {
+                                var dataUrl = canvas.toDataURL("image/jpeg", quality);
+                                resolve({ blob: fallbackBlob, dataUrl: dataUrl });
+                              }, "image/jpeg", quality);
+                            }
+                          },
+                          "image/webp",
+                          quality
+                        );
+                      } else {
+                        var dataUrl = canvas.toDataURL("image/webp", quality);
+                        resolve({ blob: null, dataUrl: dataUrl });
+                      }
+                    };
+                    img.src = e.target.result;
+                  };
+                  reader.readAsDataURL(file);
+                });
+              }
+
+              async function handlePersonnelPhotoUpload(event) {
+                var file = event.target.files && event.target.files[0];
+                if (!file) return;
+
+                if (!window.activePersonnel) {
+                  if (typeof showToast === "function") {
+                    showToast("Please select a personnel profile first.");
+                  } else {
+                    alert("Please select a personnel profile first.");
+                  }
+                  event.target.value = "";
+                  return;
+                }
+
+                var teacher = window.activePersonnel;
+                var teacherId = teacher.id;
+                var photoBtn = document.getElementById("personnelChangePhotoBtn");
+                var photoEl = document.getElementById("personnelCardPhoto");
+
+                if (photoBtn) {
+                  photoBtn.disabled = true;
+                  photoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm text-[#078f95]"></i>';
+                  photoBtn.classList.add("pointer-events-none", "opacity-80");
+                }
+
+                try {
+                  if (typeof showToast === "function") {
+                    showToast("Converting image to WebP format...");
+                  }
+
+                  var converted = await convertImageToWebP(file);
+                  var blob = converted.blob;
+                  var dataUrl = converted.dataUrl;
+
+                  var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+                  var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+                  var bucketName = "personnel-photos";
+                  var cleanName = (teacher.teacher_name || "personnel").toLowerCase().replace(/[^a-z0-9]/g, "_");
+                  var fileName = teacherId + "_" + cleanName + "_" + Date.now() + ".webp";
+
+                  var finalPhotoUrl = null;
+
+                  // 1. Upload WebP blob directly to Supabase Storage
+                  if (blob) {
+                    try {
+                      var uploadRes = await fetch(sUrl + "/storage/v1/object/" + bucketName + "/" + fileName, {
+                        method: "POST",
+                        headers: {
+                          apikey: sKey,
+                          Authorization: "Bearer " + sKey,
+                          "Content-Type": "image/webp",
+                          "x-upsert": "true"
+                        },
+                        body: blob
+                      });
+
+                      if (uploadRes.ok) {
+                        finalPhotoUrl = sUrl + "/storage/v1/object/public/" + bucketName + "/" + fileName;
+                        console.log("Photo uploaded to Supabase Storage:", finalPhotoUrl);
+                      } else {
+                        var errResp = await uploadRes.text();
+                        console.warn("Supabase Storage upload warning (status " + uploadRes.status + "):", errResp);
+                      }
+                    } catch (storageErr) {
+                      console.warn("Supabase Storage fetch error:", storageErr);
+                    }
+                  }
+
+                  // 2. Seamless fallback: use converted WebP data URL if bucket is not yet created
+                  if (!finalPhotoUrl) {
+                    finalPhotoUrl = dataUrl;
+                    console.log("Using WebP data URL fallback for profile photo.");
+                  }
+
+                  // 3. Update database record in school_teacher
+                  var patchRes = await fetch(sUrl + "/rest/v1/school_teacher?id=eq." + teacherId, {
+                    method: "PATCH",
+                    headers: {
+                      apikey: sKey,
+                      Authorization: "Bearer " + sKey,
+                      "Content-Type": "application/json",
+                      "Prefer": "return=representation"
+                    },
+                    body: JSON.stringify({ photo_url: finalPhotoUrl })
+                  });
+
+                  if (!patchRes.ok) {
+                    var pErr = await patchRes.text();
+                    console.warn("Database photo update warning:", pErr);
+                  }
+
+                  // 4. Update memory & UI
+                  teacher.photo_url = finalPhotoUrl;
+                  window.activePersonnel.photo_url = finalPhotoUrl;
+
+                  if (Array.isArray(window.personnelList)) {
+                    var pIdx = window.personnelList.findIndex(function (t) { return Number(t.id) === Number(teacherId); });
+                    if (pIdx !== -1) {
+                      window.personnelList[pIdx].photo_url = finalPhotoUrl;
+                    }
+                  }
+
+                  if (photoEl) {
+                    photoEl.src = finalPhotoUrl;
+                  }
+                  var modalPhotoInput = document.getElementById("editPhotoUrl");
+                  if (modalPhotoInput) {
+                    modalPhotoInput.value = finalPhotoUrl;
+                  }
+
+                  if (typeof renderPersonnelListTable === "function") {
+                    renderPersonnelListTable();
+                  }
+
+                  if (typeof showToast === "function") {
+                    showToast("Profile photo converted to WebP and saved successfully!");
+                  }
+                } catch (err) {
+                  console.error("Photo upload error:", err);
+                  if (typeof showToast === "function") {
+                    showToast("Failed to process photo: " + (err.message || "Unknown error"));
+                  } else {
+                    alert("Failed to process photo: " + (err.message || "Unknown error"));
+                  }
+                } finally {
+                  event.target.value = "";
+                  if (photoBtn) {
+                    photoBtn.disabled = false;
+                    photoBtn.innerHTML = '<i class="fa-solid fa-camera"></i>';
+                    photoBtn.classList.remove("pointer-events-none", "opacity-80");
+                  }
+                }
+              }
+
               function initPersonnelModule() {
                 if (_personnelInited) return;
                 _personnelInited = true;
@@ -3626,6 +3816,16 @@
                 var modalSaveBtn = document.getElementById("personnelEditModalSaveBtn");
                 if (modalSaveBtn) {
                   modalSaveBtn.addEventListener("click", savePersonnelProfile);
+                }
+
+                /* --- Change Photo Button Wiring --- */
+                var photoBtn = document.getElementById("personnelChangePhotoBtn");
+                var fileInput = document.getElementById("personnelPhotoFileInput");
+                if (photoBtn && fileInput) {
+                  photoBtn.addEventListener("click", function () {
+                    fileInput.click();
+                  });
+                  fileInput.addEventListener("change", handlePersonnelPhotoUpload);
                 }
 
                 // Initial fetch from DB
