@@ -2662,11 +2662,11 @@
                 return Array.isArray(window.inventoryCustodianSlips) ? window.inventoryCustodianSlips : [];
               }
 
-              async function fetchInventoryAssetsDirectly() {
-                if (Array.isArray(window.inventoryData) && window.inventoryData.length > 0) {
+              async function fetchInventoryAssetsDirectly(force) {
+                if (!force && Array.isArray(window.inventoryData) && window.inventoryData.length > 0) {
                   return window.inventoryData;
                 }
-                if (typeof items !== "undefined" && Array.isArray(items) && items.length > 0) {
+                if (!force && typeof items !== "undefined" && Array.isArray(items) && items.length > 0) {
                   return items;
                 }
                 var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
@@ -2693,12 +2693,47 @@
                       };
                     });
                     window.inventoryData = mappedAssets;
+                    if (typeof items !== "undefined" && Array.isArray(items)) {
+                      mappedAssets.forEach(function(ma) {
+                        var match = items.find(function(it) { return it.assetId === ma.assetId; });
+                        if (match) {
+                          match.accountable = ma.accountable;
+                          match.status = ma.status;
+                          if (ma.dateIssue) match.dateIssue = ma.dateIssue;
+                        }
+                      });
+                    }
                     return mappedAssets;
                   }
                 } catch(e) {
                   console.warn("Direct assets fetch fallback error:", e);
                 }
+                if (Array.isArray(window.inventoryData) && window.inventoryData.length > 0) return window.inventoryData;
+                if (typeof items !== "undefined" && Array.isArray(items)) return items;
                 return [];
+              }
+
+              /* --- Helper to locate matching inventory asset for an ICS slip --- */
+              function findAssetForSlip(slip, assets) {
+                if (!slip || !Array.isArray(assets)) return null;
+                var slipNo = String(slip.inventoryItemNo || "").trim().toLowerCase();
+                var slipDesc = String(slip.description || "").trim().toLowerCase();
+                var legacyDesc = slipDesc.replace(/\s+-\s+sn:\s*/i, " - ").trim();
+                return assets.find(function (a) {
+                  var aSemi = String(a.semiExpandableNo || a.semi_expandable_no || "").trim().toLowerCase();
+                  var aProp = String(a.propertyNo || a.property_no || "").trim().toLowerCase();
+                  var aId = String(a.assetId || a.asset_id || "").trim().toLowerCase();
+                  if (slipNo && slipNo !== "—" && slipNo !== "-" && (aSemi === slipNo || aProp === slipNo || aId === slipNo)) return true;
+                  var aBrand = String(a.itemBrandModel || a.item_brand_model || a.brand || "").trim().toLowerCase();
+                  var aSerial = String(a.serialNo || a.serial_no || "").trim().toLowerCase();
+                  if (slipDesc && slipDesc !== "—" && slipDesc !== "-") {
+                    if (aBrand && slipDesc === aBrand) return true;
+                    if (aBrand && aSerial && (slipDesc === (aBrand + " - " + aSerial) || legacyDesc === (aBrand + " - " + aSerial))) return true;
+                    if (aBrand && aSerial && slipDesc.includes(aBrand) && slipDesc.includes(aSerial)) return true;
+                    if (aBrand && (slipDesc === aBrand || slipDesc.startsWith(aBrand))) return true;
+                  }
+                  return false;
+                });
               }
 
               /* --- Unified Accountability Record Builder --- */
@@ -2712,7 +2747,18 @@
                 // 1. ICS Slips where Received By is this accountable person ONLY
                 var matchedSlips = slips.filter(function (slip) {
                   var rec = slip.receivedBy || slip.received_by_name || slip.receivedByName || "";
-                  return isAccountablePersonMatch(rec, teacherName);
+                  if (!isAccountablePersonMatch(rec, teacherName)) return false;
+
+                  // If this item exists in inventory and its current Person Accountable
+                  // has been changed/delegated to someone else, do not show under previous holder
+                  var correspondingAsset = findAssetForSlip(slip, assets);
+                  if (correspondingAsset) {
+                    var curAcc = correspondingAsset.accountable || correspondingAsset.accountable_person || correspondingAsset.accountablePerson || "";
+                    if (curAcc && !isAccountablePersonMatch(curAcc, teacherName)) {
+                      return false;
+                    }
+                  }
+                  return true;
                 });
 
                 // 2. Inventory assets where accountable person is this teacher ONLY
@@ -2726,14 +2772,20 @@
 
                 // A) Official ICS records where Received By is this teacher
                 matchedSlips.forEach(function (slip) {
+                  var itemKey = (String(slip.inventoryItemNo || "") + "_" + String(slip.description || "")).toLowerCase();
+                  var noKey = slip.inventoryItemNo && slip.inventoryItemNo !== "—" ? String(slip.inventoryItemNo).trim().toLowerCase() : "";
+                  var descKey = slip.description && slip.description !== "—" ? String(slip.description).trim().toLowerCase() : "";
+
+                  // If this exact asset was already added from a newer slip, do not duplicate
+                  if ((noKey && seenKeys[noKey]) || (descKey && seenKeys[descKey]) || (itemKey && seenKeys[itemKey])) {
+                    return;
+                  }
+
                   var key = (String(slip.icsNo || "") + "_" + String(slip.inventoryItemNo || slip.description || "")).toLowerCase();
                   seenKeys[key] = true;
-                  if (slip.inventoryItemNo && slip.inventoryItemNo !== "—") {
-                    seenKeys[String(slip.inventoryItemNo).trim().toLowerCase()] = true;
-                  }
-                  if (slip.description && slip.description !== "—") {
-                    seenKeys[String(slip.description).trim().toLowerCase()] = true;
-                  }
+                  if (noKey) seenKeys[noKey] = true;
+                  if (descKey) seenKeys[descKey] = true;
+                  if (itemKey) seenKeys[itemKey] = true;
 
                   var unitCost = Number(slip.unitCost || slip.unit_cost) || 0;
                   var qty = Number(slip.quantity) || 1;
@@ -3078,7 +3130,7 @@
 
                 // Fetch latest ICS slips and assets
                 var allSlips = await fetchIcsSlipsDirectly(true);
-                var allItems = await fetchInventoryAssetsDirectly();
+                var allItems = await fetchInventoryAssetsDirectly(true);
 
                 // Compute records for THIS accountable person ONLY
                 var records = getAccountabilityRecordsForTeacher(teacher, allSlips, allItems);
@@ -3329,7 +3381,7 @@
 
                   // Pre-load latest slips and assets
                   await fetchIcsSlipsDirectly(true);
-                  await fetchInventoryAssetsDirectly();
+                  await fetchInventoryAssetsDirectly(true);
 
                   updatePersonnelStatCards();
 

@@ -4316,6 +4316,15 @@ async function handleSave(event) {
         await syncToSheet(action, data);
         await loadItems();
         renderApp();
+        if (typeof window.updatePersonnelStatCards === "function") {
+            try { window.updatePersonnelStatCards(); } catch (e) {}
+        }
+        if (typeof window.renderPersonnelListTable === "function") {
+            try { window.renderPersonnelListTable(); } catch (e) {}
+        }
+        if (window.activePersonnel && typeof window.renderPersonnelProperties === "function") {
+            try { window.renderPersonnelProperties(window.activePersonnel); } catch (e) {}
+        }
         showSuccessModal(action === "update" ? "The asset record has been updated successfully." : "The asset has been saved and its QR code generated.");
     } catch (error) {
         console.error(error);
@@ -5782,15 +5791,135 @@ function renderInventoryCustodianSlipTable() {
 }
 
 function findAssetForInventoryCustodianSlip(slip) {
-    const legacyDescription = String(slip.description || "").replace(/\s+-\s+SN:\s*/i, " - ").trim();
-    return items.find((asset) => getIcsAssetDescription(asset) === slip.description)
-        || items.find((asset) => `${String(asset.itemBrandModel || "").trim()} - ${String(asset.serialNo || "").trim()}` === legacyDescription)
-        || items.find((asset) => asset.semiExpandableNo && asset.semiExpandableNo === slip.inventoryItemNo);
+    if (!slip) return null;
+    const slipDesc = String(slip.description || "").trim().toLowerCase();
+    const legacyDesc = slipDesc.replace(/\s+-\s+sn:\s*/i, " - ").trim();
+    const slipItemNo = String(slip.inventoryItemNo || "").trim().toLowerCase();
+
+    // 1. Direct description match
+    let found = items.find((asset) => getIcsAssetDescription(asset).toLowerCase() === slipDesc);
+    if (found) return found;
+
+    // 2. Legacy description match
+    found = items.find((asset) => `${String(asset.itemBrandModel || "").trim()} - ${String(asset.serialNo || "").trim()}`.toLowerCase() === legacyDesc);
+    if (found) return found;
+
+    // 3. Item No / Semi-expandable / Property No match
+    if (slipItemNo && slipItemNo !== "—" && slipItemNo !== "-") {
+        found = items.find((asset) => 
+            (asset.semiExpandableNo && asset.semiExpandableNo.trim().toLowerCase() === slipItemNo) ||
+            (asset.propertyNo && asset.propertyNo.trim().toLowerCase() === slipItemNo) ||
+            (asset.assetId && asset.assetId.trim().toLowerCase() === slipItemNo)
+        );
+        if (found) return found;
+    }
+
+    // 4. Item Brand/Model match
+    if (slipDesc && slipDesc !== "—" && slipDesc !== "-") {
+        found = items.find((asset) => {
+            const bm = String(asset.itemBrandModel || "").trim().toLowerCase();
+            return bm && (bm === slipDesc || slipDesc.startsWith(bm));
+        });
+        if (found) return found;
+    }
+
+    return null;
 }
+
+async function updateAssetAccountablePersonFromIcs(slip) {
+    if (!slip || !slip.receivedBy) return;
+    const newAccountable = String(slip.receivedBy).trim();
+    if (!newAccountable) return;
+
+    // Try finding by selected dropdown assetId first
+    let asset = null;
+    const descSelect = document.querySelector("#icsDescription");
+    const selectedAssetId = descSelect?.selectedOptions[0]?.dataset?.assetId;
+    if (selectedAssetId) {
+        asset = items.find((a) => a.assetId === selectedAssetId);
+    }
+    if (!asset) {
+        asset = findAssetForInventoryCustodianSlip(slip);
+    }
+
+    if (!asset) {
+        console.warn("Could not find matching inventory asset to update accountable person for ICS slip:", slip);
+        return;
+    }
+
+    // Update in-memory asset
+    asset.accountable = newAccountable;
+    if (!asset.status || asset.status.toLowerCase() === "available") {
+        asset.status = "Assigned";
+    }
+    if (slip.receivedByDate && !asset.dateIssue) {
+        asset.dateIssue = slip.receivedByDate;
+    }
+    asset.updatedAt = new Date().toISOString();
+
+    // Persist to local storage and window.inventoryData
+    saveLocal();
+    window.inventoryData = items;
+
+    // Persist to Supabase assets table
+    if (supabaseUrl && supabaseAnonKey && supabaseAnonKey !== "YOUR_SUPABASE_ANON_KEY") {
+        try {
+            const patchPayload = {
+                accountable_person: newAccountable,
+                status: asset.status,
+                updated_at: asset.updatedAt
+            };
+            if (asset.dateIssue) {
+                patchPayload.date_issue = asset.dateIssue;
+            }
+            await fetch(`${supabaseUrl}/rest/v1/assets?asset_id=eq.${encodeURIComponent(asset.assetId)}`, {
+                method: "PATCH",
+                headers: {
+                    ...supabaseHeaders,
+                    "Content-Type": "application/json",
+                    Prefer: "return=representation"
+                },
+                body: JSON.stringify(patchPayload)
+            });
+        } catch (err) {
+            console.warn("Failed to persist asset accountable person update to Supabase:", err);
+        }
+    }
+
+    // Update report cache
+    try {
+        localStorage.setItem("accountablePersonReportEntries", JSON.stringify(getAccountablePersonEntries("all")));
+    } catch (e) {}
+
+    // Refresh Inventory module UI
+    try {
+        renderTable();
+        renderStats();
+        renderDashboard();
+        renderRecentAssets();
+    } catch (e) {}
+
+    // Refresh Personnel module UI
+    try {
+        if (typeof window.updatePersonnelStatCards === "function") {
+            window.updatePersonnelStatCards();
+        }
+        if (typeof window.renderPersonnelListTable === "function") {
+            window.renderPersonnelListTable();
+        }
+        if (window.activePersonnel && typeof window.renderPersonnelProperties === "function") {
+            window.renderPersonnelProperties(window.activePersonnel);
+        }
+    } catch (e) {}
+}
+
+window.updateAssetAccountablePersonFromIcs = updateAssetAccountablePersonFromIcs;
 
 function editInventoryCustodianSlip(id) {
     const slip = inventoryCustodianSlips.find((entry) => entry.id === id);
     if (!slip) return;
+
+    const matchedAsset = findAssetForInventoryCustodianSlip(slip);
 
     const fieldMap = {
         icsEditingId: "id",
@@ -5821,6 +5950,7 @@ function editInventoryCustodianSlip(id) {
             const opt = document.createElement("option");
             opt.value = val;
             opt.textContent = val;
+            if (matchedAsset) opt.dataset.assetId = matchedAsset.assetId;
             el.appendChild(opt);
         }
         if ((elementId === "icsReceivedFrom" || elementId === "icsReceivedBy") && val) {
@@ -5833,6 +5963,9 @@ function editInventoryCustodianSlip(id) {
             }
         }
         el.value = val;
+        if (elementId === "icsDescription" && matchedAsset && el.selectedOptions[0]) {
+            el.selectedOptions[0].dataset.assetId = matchedAsset.assetId;
+        }
     });
 
     const searchInput = document.querySelector("#icsDescriptionSearch");
@@ -5993,6 +6126,10 @@ async function initInventoryCustodianSlipCrud() {
             renderIcsGeneratedCount();
             renderInventoryCustodianSlipTable();
             renderRecentAssets();
+
+            // Synchronize Person Accountable in Inventory Module with the new "Received by"
+            await updateAssetAccountablePersonFromIcs(slip);
+
             resetInventoryCustodianSlipForm();
         } catch (error) {
             console.error(error);
