@@ -5300,7 +5300,7 @@ function getInventoryCustodianSlipItemPayload(slip, slipId, lineNo) {
     return {
         ics_slip_id: slipId,
         line_no: lineNo,
-        asset_id: null,
+        asset_id: slip.assetId || null,
         inventory_item_no: slip.inventoryItemNo || null,
         description_snapshot: slip.description,
         quantity: Number(slip.quantity),
@@ -6218,6 +6218,29 @@ async function initInventoryCustodianSlipCrud() {
 }
 
 initInventoryCustodianSlipCrud();
+
+async function createAndPersistInventoryCustodianSlip(slip) {
+    if (hasInventoryCustodianSlipRemoteDatabase()) {
+        await saveInventoryCustodianSlipToDatabase("create", slip);
+        await loadInventoryCustodianSlipsFromDatabase();
+    } else {
+        inventoryCustodianSlips.unshift(slip);
+    }
+    saveInventoryCustodianSlips();
+    renderIcsGeneratedCount();
+    renderInventoryCustodianSlipTable();
+    renderRecentAssets();
+    await updateAssetAccountablePersonFromIcs(slip);
+    return true;
+}
+
+window.createAndPersistInventoryCustodianSlip = createAndPersistInventoryCustodianSlip;
+window.saveInventoryCustodianSlipToDatabase = saveInventoryCustodianSlipToDatabase;
+window.loadInventoryCustodianSlipsFromDatabase = loadInventoryCustodianSlipsFromDatabase;
+window.hasInventoryCustodianSlipRemoteDatabase = hasInventoryCustodianSlipRemoteDatabase;
+window.saveInventoryCustodianSlips = saveInventoryCustodianSlips;
+window.renderInventoryCustodianSlipTable = renderInventoryCustodianSlipTable;
+window.renderIcsGeneratedCount = renderIcsGeneratedCount;
 window.openInventoryCustodianSlipPdf = openInventoryCustodianSlipPdf;
 async function openInventoryCustodianSlipPdf(slip) {
     const JsPdf = window.jspdf && window.jspdf.jsPDF;
