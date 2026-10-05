@@ -1,6 +1,41 @@
 # Property Inventory System
 
-A browser-based Property Inventory System with QR code generation for each item.
+A browser-based School Property Information System (SPIS) with QR code generation for each item, Inventory Custodian Slip (ICS) / RSPI document generation, and Personnel Accountability tracking.
+
+## Running locally
+
+From the repository root:
+
+```powershell
+npm install
+npm run dev
+```
+
+The Express server (`server.js`) serves the app at `http://localhost:3000` (redirects to `/SchoolPropertyInventorySystem/`) and injects `supabase-config.js` from the `SUPABASE_URL` / `SUPABASE_ANON_KEY` environment variables. There is no build step — reload the browser after editing HTML/CSS/JS.
+
+> `index.html` and `homepage.html` are mirrors. Any HTML or inline-script change must be applied to **both** files.
+
+## Modules
+
+- **Dashboard** – stat cards, school-level / status / acquisition-year / category charts, recent assets.
+- **Inventory** – asset CRUD, search/filter, pagination, QR generation and download history.
+- **Document (ICS / RSPI)** – create, edit, delete and export Inventory Custodian Slips to PDF; build RSPI reports from ICS items.
+- **Reports** – printable physical count and other reports (13 × 8.5 in landscape PDF export).
+- **Personnel** – directory and per-person accountability profile (see below).
+
+### Personnel Accountability
+
+- **Personnel Directory** – searchable list sorted by latest update / newly recorded on top (1st row), with School Level and Status filters (white search/filter controls, equal 200px width on desktop, full-width on mobile) and per-person item counts.
+- **Add Personnel** – register a new faculty or staff member via modal card into `school_teacher`, with photo URL / upload (WebP conversion to `personnel-photos` bucket), automatic stat card / directory / dropdown updates, and immediate switch to their new profile.
+- **Profile card**
+  - **Edit Profile** modal (updates `school_teacher`).
+  - **Change photo** (camera button) – picks an image, converts it to **WebP** in the browser, uploads it to the `personnel-photos` Supabase Storage bucket and saves the URL to `school_teacher.photo_url` (falls back to a data URL if Storage is unavailable).
+  - **Add ICS** – opens a modal duplicate of the ICS template with **Received By** locked to the selected personnel. Selecting an inventory item auto-fills item no., unit, unit cost and total. Saving creates the ICS record and updates the asset's accountable person.
+- **Tabs** – Properties, History, Documents, Activity Log. The Properties tab lists the person's ICS records plus assets assigned to them that are still pending an ICS.
+
+### ICS → Inventory accountability sync
+
+When an ICS is saved (from the Document module or the Personnel **Add ICS** modal), the matched asset's **Person Accountable** (`assets.accountable_person`) is updated to the slip's **Received By** value. Its status becomes `Assigned` if it was `Available`, and the issue date is filled in if empty. Because of this, a re-delegated property shows up **only** under the current accountable person in the Personnel Properties tab. Older slips for that item stop appearing under the previous holder.
 
 ## Supabase Database
 
@@ -16,7 +51,11 @@ To get started:
 2. Fill in your Supabase **Project URL** and **anon / public key** (Project Settings → API in the Supabase dashboard).
 3. Set `assetUrl` to the GitHub Pages URL of `asset.html` (used as the QR code payload).
 
-Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the `inventory_item`, `school_teacher`, and `signatories` lookup tables and configures public read/write policies for this no-login app.
+Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the `inventory_item`, `school_teacher`, and `signatories` lookup tables, configures public read/write policies for this no-login app, and creates the `personnel-photos` Storage bucket.
+
+### Storage
+
+- `personnel-photos` (public bucket) – personnel profile photos uploaded as WebP from the Personnel profile card. The setup script adds public select/insert/update policies for this bucket.
 
 ### Expected tables
 
@@ -28,7 +67,7 @@ Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The scr
 - school_teacher (Personnel Accountability records; columns: `teacher_name`, `employee_id`, `position`, `plantilla_position`, `school_level`, `personnel_type`, `grade_section`, `email`, `phone`, `school_name`, `location`, `date_hired`, `employment_status`, `status`, `photo_url`)
 - signatories (source for report signatory options; column: `signatory`)
 - ics_slips (Inventory Custodian Slip headers)
-- ics_slip_items (line items linked to slips and optional assets)
+- ics_slip_items (line items linked to slips; `asset_id` is filled when the item was picked from inventory)
 - rspi_reports (Report of Semi-Expendable Property Issued base records)
 - rspi_report_items (saved item snapshots linked to RSPI records and source ICS items)
 

@@ -1459,7 +1459,7 @@
                         </div>
                         <div class="two-column">
                           <label>Additional Item
-                              <textarea id="icsAdditionalItem" class="ics-tall-field" rows="4" placeholder="No additional item" readonly></textarea>
+                              <textarea id="icsAdditionalItem" class="ics-tall-field" rows="4" placeholder="No additional item"></textarea>
                           </label>
                             <label>Unit<input id="icsUnit" type="text" placeholder="e.g. pcs" required readonly></label>
                         </div>
@@ -1716,17 +1716,23 @@
             </div>
 
             <!-- Global Search & Personnel Selector -->
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-              <div class="personnel-search-wrapper w-full sm:w-[240px]">
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <div class="personnel-search-wrapper w-full sm:w-[200px]">
                 <span class="personnel-search-icon">
                   <i class="fa-solid fa-magnifying-glass"></i>
                 </span>
                 <input type="text" id="personnelGlobalSearch" placeholder="Search personnel..."
                   class="personnel-search-input w-full bg-white text-[#10213c]" />
               </div>
-              <select id="personnelSelectDropdown" class="h-[38px] px-3 rounded-lg border border-gray-300 bg-white text-sm text-[#10213c] font-medium outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] max-w-[240px] truncate" title="Select Personnel">
+              <select id="personnelSelectDropdown" class="h-[38px] px-3 rounded-lg border border-gray-300 bg-white text-sm text-[#10213c] font-medium outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] max-w-[200px] truncate" title="Select Personnel">
                 <option value="">Loading personnel...</option>
               </select>
+              <button type="button" id="personnelHeaderAddBtn" onclick="openAddPersonnelModal()"
+                class="h-[38px] px-3.5 rounded-lg bg-[#00335e] hover:bg-[#078f95] text-white text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-xs whitespace-nowrap shrink-0"
+                title="Add new personnel">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Add Personnel</span>
+              </button>
             </div>
           </div>
 
@@ -1819,6 +1825,13 @@
                     <option value="On Leave">On Leave</option>
                     <option value="Inactive">Inactive</option>
                   </select>
+
+                  <button type="button" id="personnelListAddBtn" onclick="openAddPersonnelModal()"
+                    class="h-[38px] px-4 rounded-lg bg-[#00335e] hover:bg-[#078f95] text-white text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs whitespace-nowrap"
+                    title="Add new personnel to directory">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Add Personnel</span>
+                  </button>
                 </div>
               </div>
 
@@ -1865,17 +1878,6 @@
               <i class="fa-solid fa-arrow-left text-xs"></i>
               Back to Personnel List
             </button>
-
-            <div class="flex items-center gap-2">
-              <button type="button" id="personnelAddIcsBtn" onclick="openPersonnelAddIcsModal()" class="h-[38px] px-4 rounded-md bg-[#00335e] hover:bg-[#078f95] text-white text-sm font-semibold flex items-center gap-2 transition cursor-pointer shadow-sm" title="Add an Inventory Custodian Slip for this personnel">
-                <i class="fa-solid fa-file-circle-plus"></i>
-                <span>Add ICS</span>
-              </button>
-              <button type="button" id="personnelEditProfileBtn" onclick="openEditPersonnelModal()" class="h-[38px] px-4 rounded-md bg-[#078f95] hover:bg-[#05777c] text-white text-sm font-semibold flex items-center gap-2 transition cursor-pointer">
-                <i class="fa-solid fa-pen"></i>
-                <span>Edit Profile</span>
-              </button>
-            </div>
           </div>
 
           <!-- ===================================================
@@ -1904,10 +1906,16 @@
                       <h2 id="personnelCardName" class="text-[28px] font-extrabold tracking-tight text-[#11213b]">DIANAH JEAN D. SEGAYO</h2>
                       <p id="personnelCardPosition" class="text-[17px] font-medium text-[#172b47] mt-0.5">School Principal - II</p>
                     </div>
-                    <button type="button" id="personnelCardAddIcsBtn" onclick="openPersonnelAddIcsModal()" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#00335e] hover:bg-[#078f95] text-white text-xs font-bold transition shadow-xs cursor-pointer" title="Directly add an ICS for this personnel">
-                      <i class="fa-solid fa-file-circle-plus"></i>
-                      <span>Add ICS</span>
-                    </button>
+                    <div class="flex items-center gap-2">
+                      <button type="button" id="personnelCardAddIcsBtn" onclick="openPersonnelAddIcsModal()" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#00335e] hover:bg-[#078f95] text-white text-xs font-bold transition shadow-xs cursor-pointer" title="Directly add an ICS for this personnel">
+                        <i class="fa-solid fa-file-circle-plus"></i>
+                        <span>Add ICS</span>
+                      </button>
+                      <button type="button" id="personnelEditProfileBtn" onclick="openEditPersonnelModal()" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#078f95] hover:bg-[#05777c] text-white text-xs font-bold transition shadow-xs cursor-pointer" title="Edit personnel profile details">
+                        <i class="fa-solid fa-pen"></i>
+                        <span>Edit Profile</span>
+                      </button>
+                    </div>
                   </div>
 
                   <!-- Badges -->
@@ -2359,9 +2367,11 @@
                   </h4>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editSchoolName">School Name</label>
-                      <input type="text" id="editSchoolName" placeholder="e.g. GERAS Integrated School"
-                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editSchoolName">School Name <span class="text-red-500">*</span></label>
+                      <select id="editSchoolName" required
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white">
+                        <option value="">Select school</option>
+                      </select>
                     </div>
                     <div>
                       <label class="block text-xs font-semibold text-slate-700 mb-1" for="editLocation">Classroom / Office Location</label>
@@ -2421,6 +2431,196 @@
                   class="h-[38px] px-5 rounded-lg bg-[#078f95] hover:bg-[#05777c] text-white text-sm font-semibold flex items-center gap-2 shadow-sm transition cursor-pointer disabled:opacity-50">
                   <i class="fa-solid fa-floppy-disk"></i>
                   <span>Save Changes</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ===================================================
+               ADD PERSONNEL MODAL
+          =================================================== -->
+          <div id="personnelAddModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
+              
+              <!-- Modal Header -->
+              <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-[#00335e]/10 text-[#00335e] flex items-center justify-center">
+                    <i class="fa-solid fa-user-plus text-lg"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-bold text-[#10213c]">Add New Personnel</h3>
+                    <p class="text-xs text-gray-500">Register a new faculty or staff member in the school_teacher database.</p>
+                  </div>
+                </div>
+                <button type="button" id="personnelAddModalCloseBtn" onclick="closeAddPersonnelModal()" class="text-gray-400 hover:text-gray-700 w-8 h-8 rounded-lg hover:bg-gray-200/60 flex items-center justify-center transition" aria-label="Close add personnel modal">
+                  <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+              </div>
+
+              <!-- Modal Form Body -->
+              <form id="personnelAddForm" class="p-6 overflow-y-auto space-y-6 text-sm flex-1">
+                
+                <!-- Section: Basic Information -->
+                <div>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-[#00335e] mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-id-card"></i> Basic Information
+                  </h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addTeacherName">Full Name <span class="text-red-500">*</span></label>
+                      <input type="text" id="addTeacherName" required placeholder="e.g. Juan D. Dela Cruz"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addEmployeeId">Employee ID</label>
+                      <input type="text" id="addEmployeeId" placeholder="e.g. 2026-001"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addStatus">Status</label>
+                      <select id="addStatus"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white">
+                        <option value="Active" selected>Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="On Leave">On Leave</option>
+                        <option value="Retired">Retired</option>
+                        <option value="Transferred">Transferred</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addPhotoUrl">Photo URL / Upload</label>
+                      <div class="flex items-center gap-2">
+                        <input type="text" id="addPhotoUrl" placeholder="https://example.com/photo.jpg"
+                          class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                        <label for="addPhotoFileInput" class="h-[38px] px-3 rounded-lg bg-slate-100 hover:bg-slate-200 border border-gray-300 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shrink-0" title="Upload image (WebP)">
+                          <i class="fa-solid fa-camera"></i>
+                          <span>Upload</span>
+                        </label>
+                        <input type="file" id="addPhotoFileInput" accept="image/*" class="hidden" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section: Position & Assignment -->
+                <div>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-[#00335e] mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-briefcase"></i> Position & Assignment
+                  </h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addPosition">Position / Designation</label>
+                      <input type="text" id="addPosition" placeholder="e.g. Teacher - I"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addPlantillaPosition">Plantilla Position</label>
+                      <input type="text" id="addPlantillaPosition" placeholder="e.g. Teacher I"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addPersonnelType">Personnel Type</label>
+                      <select id="addPersonnelType"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white">
+                        <option value="Teaching Personnel" selected>Teaching Personnel</option>
+                        <option value="Non-Teaching Personnel">Non-Teaching Personnel</option>
+                        <option value="School Administration">School Administration</option>
+                        <option value="COS Teacher">COS Teacher</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addSchoolLevel">School Level / Department</label>
+                      <select id="addSchoolLevel"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white">
+                        <option value="Elementary" selected>Elementary</option>
+                        <option value="Junior High">Junior High</option>
+                        <option value="Senior High">Senior High</option>
+                        <option value="Admin">Admin</option>
+                        <option value="ALIVE">ALIVE</option>
+                        <option value="Kindergarten">Kindergarten</option>
+                      </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addGradeSection">Grade & Section / Advisory</label>
+                      <input type="text" id="addGradeSection" placeholder="e.g. Grade 5 – Emerald"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section: Station & Employment -->
+                <div>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-[#00335e] mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-building-columns"></i> Station & Employment
+                  </h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addSchoolName">School Name <span class="text-red-500">*</span></label>
+                      <select id="addSchoolName" required
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white">
+                        <option value="">Select school</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addLocation">Classroom / Office Location</label>
+                      <input type="text" id="addLocation" placeholder="e.g. Room 204, Bldg A"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addDateHired">Date Hired</label>
+                      <input type="date" id="addDateHired"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addEmploymentStatus">Employment Status</label>
+                      <select id="addEmploymentStatus"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] bg-white">
+                        <option value="Permanent" selected>Permanent</option>
+                        <option value="Contractual">Contractual</option>
+                        <option value="Contract of Service">Contract of Service</option>
+                        <option value="Substitute">Substitute</option>
+                        <option value="Provisional">Provisional</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section: Contact Details -->
+                <div>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-[#00335e] mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-address-book"></i> Contact Details
+                  </h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addEmail">Email Address</label>
+                      <input type="email" id="addEmail" placeholder="e.g. juan.delacruz@deped.gov.ph"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addPhone">Contact Number</label>
+                      <input type="text" id="addPhone" placeholder="e.g. 0917-123-4567"
+                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Feedback Message -->
+                <div id="personnelAddMessage" class="hidden p-3 rounded-lg text-xs font-medium"></div>
+
+              </form>
+
+              <!-- Modal Footer -->
+              <div class="px-6 py-4 border-t border-gray-200 bg-slate-50 flex items-center justify-end gap-3">
+                <button type="button" id="personnelAddModalCancelBtn" onclick="closeAddPersonnelModal()"
+                  class="h-[38px] px-4 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 text-slate-700 text-sm font-semibold transition cursor-pointer">
+                  Cancel
+                </button>
+                <button type="button" id="personnelAddModalSaveBtn" onclick="saveNewPersonnel()"
+                  class="h-[38px] px-5 rounded-lg bg-[#00335e] hover:bg-[#078f95] text-white text-sm font-semibold flex items-center gap-2 shadow-sm transition cursor-pointer disabled:opacity-50">
+                  <i class="fa-solid fa-floppy-disk"></i>
+                  <span>Save Personnel</span>
                 </button>
               </div>
 
@@ -2509,8 +2709,8 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalIcsAdditionalItem">Additional Item</label>
-                        <textarea id="modalIcsAdditionalItem" rows="2" readonly placeholder="No additional item"
-                          class="w-full p-2.5 rounded-lg border border-gray-300 bg-slate-100 text-slate-700 text-xs outline-none resize-none"></textarea>
+                        <textarea id="modalIcsAdditionalItem" rows="2" placeholder="e.g. Charger, Bag, Mouse (or auto-filled from item)"
+                          class="w-full p-2.5 rounded-lg border border-gray-300 bg-white text-slate-700 text-xs outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] resize-none"></textarea>
                       </div>
                       <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalIcsUnit">Unit <span class="text-red-500">*</span></label>
@@ -2830,7 +3030,7 @@
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
                 var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
                 try {
-                  var sel = "id,ics_no,entity_name,fund_cluster,received_from_name,received_from_position,received_from_date,received_by_name,received_by_position,received_by_date,ics_slip_items(id,line_no,inventory_item_no,description_snapshot,quantity,unit,unit_cost,total_cost,estimated_useful_life)";
+                  var sel = "id,ics_no,entity_name,fund_cluster,received_from_name,received_from_position,received_from_date,received_by_name,received_by_position,received_by_date,ics_slip_items(id,line_no,asset_id,inventory_item_no,description_snapshot,additional_item,quantity,unit,unit_cost,total_cost,estimated_useful_life)";
                   var res = await fetch(sUrl + "/rest/v1/ics_slips?select=" + encodeURIComponent(sel) + "&order=created_at.desc", { headers: sHeaders });
                   if (res.ok) {
                     var data = await res.json();
@@ -2842,16 +3042,23 @@
                           dbSlipId: header.id,
                           dbItemId: it.id,
                           lineNo: it.line_no,
+                          assetId: it.asset_id || null,
+                          dbAssetId: it.asset_id || null,
+                          entityName: header.entity_name || "",
+                          fundCluster: header.fund_cluster || "",
                           icsNo: header.ics_no || "",
                           inventoryItemNo: it.inventory_item_no || "",
                           description: it.description_snapshot || "",
+                          additionalItem: it.additional_item || "",
                           quantity: it.quantity ?? 1,
                           unit: it.unit || "unit",
                           unitCost: it.unit_cost ?? 0,
                           totalCost: it.total_cost ?? 0,
                           estimatedUsefulLife: it.estimated_useful_life || "—",
                           receivedBy: header.received_by_name || "",
+                          receivedByPosition: header.received_by_position || "",
                           receivedFrom: header.received_from_name || "",
+                          receivedFromPosition: header.received_from_position || "",
                           receivedByDate: header.received_by_date || "",
                           receivedFromDate: header.received_from_date || ""
                         });
@@ -2877,13 +3084,16 @@
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
                 var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
                 try {
-                  var res = await fetch(sUrl + "/rest/v1/assets?select=asset_id,item_brand_model,accountable_person,semi_expandable_no,property_no,unit_value,total,unit_measurement,on_hand,status,date_issue,acquisition_date,created_at", { headers: sHeaders });
+                  var res = await fetch(sUrl + "/rest/v1/assets?select=id,asset_id,item_brand_model,serial_no,accountable_person,semi_expandable_no,property_no,unit_value,total,unit_measurement,on_hand,status,date_issue,acquisition_date,additional_item,fund_cluster,created_at", { headers: sHeaders });
                   if (res.ok) {
                     var rows = await res.json();
                     var mappedAssets = rows.map(function(r) {
                       return {
+                        id: r.id,
+                        dbId: r.id,
                         assetId: r.asset_id,
                         itemBrandModel: r.item_brand_model,
+                        serialNo: r.serial_no || "",
                         accountable: r.accountable_person,
                         semiExpandableNo: r.semi_expandable_no,
                         propertyNo: r.property_no,
@@ -2893,7 +3103,9 @@
                         onHand: r.on_hand,
                         status: r.status,
                         dateIssue: r.date_issue,
-                        acquisitionDate: r.acquisition_date
+                        acquisitionDate: r.acquisition_date,
+                        additionalItem: r.additional_item || "",
+                        fundCluster: r.fund_cluster || "01"
                       };
                     });
                     window.inventoryData = mappedAssets;
@@ -2904,6 +3116,9 @@
                           match.accountable = ma.accountable;
                           match.status = ma.status;
                           if (ma.dateIssue) match.dateIssue = ma.dateIssue;
+                          if (ma.additionalItem) match.additionalItem = ma.additionalItem;
+                          if (ma.serialNo) match.serialNo = ma.serialNo;
+                          if (ma.fundCluster) match.fundCluster = ma.fundCluster;
                         }
                       });
                     }
@@ -2920,6 +3135,13 @@
               /* --- Helper to locate matching inventory asset for an ICS slip --- */
               function findAssetForSlip(slip, assets) {
                 if (!slip || !Array.isArray(assets)) return null;
+                if (slip.dbAssetId || slip.assetId) {
+                  var byId = assets.find(function(a) {
+                    return (slip.dbAssetId && (a.id === slip.dbAssetId || a.dbId === slip.dbAssetId)) ||
+                           (slip.assetId && (a.assetId === slip.assetId || a.asset_id === slip.assetId || String(a.id) === String(slip.assetId)));
+                  });
+                  if (byId) return byId;
+                }
                 var slipNo = String(slip.inventoryItemNo || "").trim().toLowerCase();
                 var slipDesc = String(slip.description || "").trim().toLowerCase();
                 var legacyDesc = slipDesc.replace(/\s+-\s+sn:\s*/i, " - ").trim();
@@ -2994,11 +3216,13 @@
                   var unitCost = Number(slip.unitCost || slip.unit_cost) || 0;
                   var qty = Number(slip.quantity) || 1;
                   var totalCost = Number(slip.totalCost || slip.total_cost) || (unitCost * qty);
+                  var correspondingAsset = findAssetForSlip(slip, assets);
 
                   records.push({
                     icsNo: slip.icsNo || "—",
                     inventoryItemNo: slip.inventoryItemNo || slip.inventory_item_no || "—",
                     description: slip.description || slip.description_snapshot || "—",
+                    additionalItem: slip.additionalItem || (correspondingAsset ? (correspondingAsset.additionalItem || correspondingAsset.additional_item) : "") || "",
                     quantity: qty,
                     unit: slip.unit || "unit",
                     unitCost: unitCost,
@@ -3041,6 +3265,7 @@
                     icsNo: "Pending ICS",
                     inventoryItemNo: itemNo,
                     description: desc,
+                    additionalItem: asset.additionalItem || asset.additional_item || "",
                     quantity: qty,
                     unit: asset.unit || asset.unitMeasurement || asset.unit_measurement || "unit",
                     unitCost: unitVal,
@@ -3070,7 +3295,7 @@
               }
 
               function updatePersonnelStatCards() {
-                var list = window.personnelList || [];
+                var list = sortPersonnelByLatest(window.personnelList || []);
                 var elTotal = document.getElementById("personnelStatTotal");
                 var elElem = document.getElementById("personnelStatElem");
                 var elSec = document.getElementById("personnelStatSec");
@@ -3096,7 +3321,7 @@
               }
 
               /* --- View Switching --- */
-              window.showPersonnelListView = function () {
+              function showPersonnelListView() {
                 window.currentPersonnelView = "list";
                 var listView = document.getElementById("personnelListView");
                 var profileView = document.getElementById("personnelProfileView");
@@ -3110,9 +3335,10 @@
 
                 updatePersonnelStatCards();
                 renderPersonnelListTable();
-              };
+              }
+              window.showPersonnelListView = showPersonnelListView;
 
-              window.showPersonnelProfileView = function (teacherOrId) {
+              function showPersonnelProfileView(teacherOrId) {
                 window.currentPersonnelView = "profile";
                 var target = null;
                 if (typeof teacherOrId === "object" && teacherOrId !== null) {
@@ -3139,7 +3365,8 @@
                 if (dropdown) dropdown.value = target.id;
 
                 renderPersonnelProfile(target);
-              };
+              }
+              window.showPersonnelProfileView = showPersonnelProfileView;
 
               window.createIcsForPersonnelAsset = function (itemNo, desc) {
                 if (typeof openPersonnelAddIcsModal === "function") {
@@ -3159,6 +3386,41 @@
                   }, 200);
                 }
               };
+
+              /* --- Personnel Sorting Helpers --- */
+              function getPersonnelUpdateTimes() {
+                try {
+                  return JSON.parse(localStorage.getItem("spis_personnel_update_times") || "{}");
+                } catch(e) {
+                  return {};
+                }
+              }
+
+              function recordPersonnelUpdateTime(id) {
+                if (!id) return;
+                try {
+                  var times = getPersonnelUpdateTimes();
+                  times[String(id)] = Date.now();
+                  localStorage.setItem("spis_personnel_update_times", JSON.stringify(times));
+                } catch(e) {}
+              }
+
+              function sortPersonnelByLatest(list) {
+                if (!Array.isArray(list)) return [];
+                var times = getPersonnelUpdateTimes();
+                return list.slice().sort(function (a, b) {
+                  var timeA = times[String(a.id)] || (a.updated_at ? new Date(a.updated_at).getTime() : 0);
+                  var timeB = times[String(b.id)] || (b.updated_at ? new Date(b.updated_at).getTime() : 0);
+                  if (timeA && timeB && timeA !== timeB) return timeB - timeA;
+                  if (timeA && !timeB) return -1;
+                  if (!timeA && timeB) return 1;
+                  return (Number(b.id) || 0) - (Number(a.id) || 0);
+                });
+              }
+
+              window.getPersonnelUpdateTimes = getPersonnelUpdateTimes;
+              window.recordPersonnelUpdateTime = recordPersonnelUpdateTime;
+              window.sortPersonnelByLatest = sortPersonnelByLatest;
 
               /* --- Directory List Table Rendering --- */
               function renderPersonnelListTable() {
@@ -3408,6 +3670,7 @@
                     r.icsNo,
                     r.inventoryItemNo,
                     r.description,
+                    r.additionalItem,
                     r.unit,
                     r.estimatedUsefulLife,
                     r.receivedDate,
@@ -3443,6 +3706,8 @@
 
                   var itemNo = safeEscape(rec.inventoryItemNo || "—");
                   var desc = safeEscape(rec.description || "—");
+                  var addItem = rec.additionalItem || (rec.rawAsset ? (rec.rawAsset.additionalItem || rec.rawAsset.additional_item) : "") || (rec.rawSlip ? rec.rawSlip.additionalItem : "");
+                  var addItemHtml = addItem ? '<div class="text-[11px] text-amber-700 font-medium bg-amber-50/90 px-1.5 py-0.5 rounded border border-amber-200/70 inline-flex items-center gap-1 mt-1 max-w-full truncate"><i class="fa-solid fa-puzzle-piece text-[9px] shrink-0"></i> <span class="truncate">' + safeEscape(addItem) + '</span></div>' : '';
                   var qty = rec.quantity || 1;
                   var unit = safeEscape(rec.unit || "unit");
                   var unitCost = formatPesoCurrency(rec.unitCost);
@@ -3456,7 +3721,7 @@
                       '<button type="button" class="personnel-action-btn" title="Open ICS PDF" onclick="viewPersonnelSlipPdf(\'' + safeEscape(rec.icsNo) + '\')">' +
                       '<i class="fa-solid fa-file-pdf text-red-500"></i>' +
                       '</button>' +
-                      '<button type="button" class="personnel-action-btn" title="View in ICS Module" onclick="viewPersonnelInIcs(\'' + safeEscape(rec.icsNo) + '\')">' +
+                      '<button type="button" class="personnel-action-btn" title="Edit in Inventory Custodian Slip card" onclick="viewPersonnelInIcs(\'' + safeEscape(rec.icsNo) + '\', ' + (rec.rawSlip && rec.rawSlip.id ? ('\'' + safeEscape(rec.rawSlip.id) + '\'') : 'null') + ')">' +
                       '<i class="fa-solid fa-arrow-up-right-from-square text-[#078f95]"></i>' +
                       '</button>' +
                       '</div>';
@@ -3474,7 +3739,7 @@
                   html += '<tr class="personnel-property-row border-b border-gray-100 hover:bg-[#f8fbfc] transition">' +
                     '<td class="px-4 py-3 whitespace-nowrap">' + icsBadge + '</td>' +
                     '<td class="px-4 py-3 whitespace-nowrap"><span class="font-mono text-xs font-semibold text-slate-700">' + itemNo + '</span></td>' +
-                    '<td class="px-4 py-3"><p class="font-semibold text-[#1c2d42] leading-snug">' + desc + '</p></td>' +
+                    '<td class="px-4 py-3"><p class="font-semibold text-[#1c2d42] leading-snug">' + desc + '</p>' + addItemHtml + '</td>' +
                     '<td class="px-4 py-3 text-center font-bold text-slate-800">' + qty + '</td>' +
                     '<td class="px-4 py-3 uppercase text-xs font-medium text-slate-600">' + unit + '</td>' +
                     '<td class="px-4 py-3 text-right text-xs font-semibold text-slate-700">' + unitCost + '</td>' +
@@ -3552,15 +3817,131 @@
                 }
               };
 
-              window.viewPersonnelInIcs = function (icsNo) {
+              window.viewPersonnelInIcs = function (icsNo, slipId) {
                 if (typeof showModule === "function") {
                   showModule("document");
+                }
+                setTimeout(function () {
+                  var targetIdentifier = slipId || icsNo;
+                  var editSuccess = false;
+
+                  if (typeof window.editInventoryCustodianSlip === "function") {
+                    editSuccess = window.editInventoryCustodianSlip(targetIdentifier);
+                  } else if (typeof editInventoryCustodianSlip === "function") {
+                    editSuccess = editInventoryCustodianSlip(targetIdentifier);
+                  }
+
+                  // Find the accountability record from personnelPropertiesList
+                  var activePropRec = (Array.isArray(personnelPropertiesList))
+                    ? personnelPropertiesList.find(function(p) {
+                        return (slipId && p.rawSlip && (p.rawSlip.id === slipId || String(p.rawSlip.id) === String(slipId))) ||
+                               (icsNo && String(p.icsNo || "").trim().toLowerCase() === String(icsNo).trim().toLowerCase());
+                      })
+                    : null;
+
+                  var slipsList = (Array.isArray(window.inventoryCustodianSlips) && window.inventoryCustodianSlips.length > 0)
+                    ? window.inventoryCustodianSlips
+                    : ((typeof inventoryCustodianSlips !== "undefined" && Array.isArray(inventoryCustodianSlips)) ? inventoryCustodianSlips : []);
+
+                  var slip = slipsList.find(function (s) {
+                    return (slipId && (s.id === slipId || String(s.id) === String(slipId) || (s.dbItemId && String(s.dbItemId) === String(slipId)))) ||
+                           (icsNo && String(s.icsNo || "").trim().toLowerCase() === String(icsNo).trim().toLowerCase());
+                  }) || (activePropRec ? activePropRec.rawSlip : null);
+
+                  var matchedAsset = (typeof findAssetForSlip === "function" && slip)
+                    ? findAssetForSlip(slip, (Array.isArray(window.inventoryData) ? window.inventoryData : (typeof items !== "undefined" ? items : [])))
+                    : (activePropRec ? activePropRec.rawAsset : null);
+
+                  if (!editSuccess && slip) {
+                    var setVal = function (id, v) { var el = document.getElementById(id); if (el) el.value = v || ""; };
+                    setVal("icsEditingId", slip.id || "");
+                    setVal("icsEntityName", slip.entityName || "");
+                    setVal("icsFundCluster", slip.fundCluster || "");
+                    setVal("icsNo", slip.icsNo || "");
+                    setVal("icsInventoryItemNo", slip.inventoryItemNo || "");
+                    setVal("icsQuantity", slip.quantity || "");
+                    setVal("icsUnit", slip.unit || "");
+                    setVal("icsUnitCost", slip.unitCost || "");
+                    setVal("icsTotalCost", slip.totalCost || "");
+                    setVal("icsEstimatedUsefulLife", slip.estimatedUsefulLife || "");
+                    setVal("icsReceivedFrom", slip.receivedFrom || "");
+                    setVal("icsReceivedBy", slip.receivedBy || (window.activePersonnel ? window.activePersonnel.teacher_name : ""));
+                    setVal("icsReceivedFromDate", slip.receivedFromDate || "");
+                    setVal("icsReceivedByDate", slip.receivedByDate || "");
+
+                    var descEl = document.getElementById("icsDescription");
+                    if (descEl && slip.description) {
+                      var hasOpt = Array.from(descEl.options).some(function (opt) { return opt.value === slip.description; });
+                      if (!hasOpt) {
+                        var newOpt = document.createElement("option");
+                        newOpt.value = slip.description;
+                        newOpt.textContent = slip.description;
+                        descEl.appendChild(newOpt);
+                      }
+                      descEl.value = slip.description;
+                    }
+
+                    var titleEl = document.getElementById("icsFormTitle");
+                    if (titleEl) titleEl.textContent = "Edit Inventory Custodian Slip";
+                  }
+
+                  // 1. Guarantee Additional Item is loaded
+                  var resolvedAdditional = (activePropRec && activePropRec.additionalItem) ||
+                                           (slip && slip.additionalItem) ||
+                                           (matchedAsset ? (matchedAsset.additionalItem || matchedAsset.additional_item) : "") ||
+                                           "";
+                  var addEl = document.getElementById("icsAdditionalItem");
+                  if (addEl && resolvedAdditional) {
+                    addEl.value = resolvedAdditional;
+                  }
+
+                  // 2. Guarantee From Position/Office is loaded
+                  var resolvedFromPos = (slip && slip.receivedFromPosition) || "";
+                  if (!resolvedFromPos && slip && slip.receivedFrom && typeof signatoryEntries !== "undefined") {
+                    var sMatch = signatoryEntries.find(function(s) {
+                      return String(s.name || "").trim().toLowerCase() === String(slip.receivedFrom || "").trim().toLowerCase();
+                    });
+                    if (sMatch && sMatch.position) resolvedFromPos = sMatch.position;
+                  }
+                  var fromPosEl = document.getElementById("icsReceivedFromPosition");
+                  if (fromPosEl && resolvedFromPos) {
+                    fromPosEl.value = resolvedFromPos;
+                  }
+
+                  // 3. Guarantee Recipient Position/Office is loaded
+                  var resolvedByPos = (slip && slip.receivedByPosition) || "";
+                  if (!resolvedByPos) {
+                    if (window.activePersonnel && (window.activePersonnel.position || window.activePersonnel.plantilla_position)) {
+                      resolvedByPos = window.activePersonnel.position || window.activePersonnel.plantilla_position;
+                    } else if (slip && slip.receivedBy && typeof teacherOptions !== "undefined") {
+                      var tMatch = teacherOptions.find(function(t) {
+                        return String(t.name || "").trim().toLowerCase() === String(slip.receivedBy || "").trim().toLowerCase();
+                      });
+                      if (tMatch && tMatch.position) resolvedByPos = tMatch.position;
+                    }
+                  }
+                  var byPosEl = document.getElementById("icsReceivedByPosition");
+                  if (byPosEl && resolvedByPos) {
+                    byPosEl.value = resolvedByPos;
+                  }
+
                   var searchEl = document.querySelector("#icsSlipSearchInput");
                   if (searchEl && icsNo) {
                     searchEl.value = icsNo;
-                    if (typeof renderInventoryCustodianSlipTable === "function") renderInventoryCustodianSlipTable();
+                    if (typeof renderInventoryCustodianSlipTable === "function") {
+                      renderInventoryCustodianSlipTable();
+                    }
                   }
-                }
+
+                  var formEl = document.querySelector("#icsSlipForm");
+                  if (formEl) {
+                    formEl.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+
+                  if (typeof showToast === "function") {
+                    showToast("Editing Inventory Custodian Slip " + (icsNo || ""));
+                  }
+                }, 100);
               };
 
               window.loadPersonnelFromDatabase = async function () {
@@ -3569,10 +3950,10 @@
                 var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
 
                 try {
-                  var res = await fetch(sUrl + "/rest/v1/school_teacher?select=*&order=id.asc", { headers: sHeaders });
+                  var res = await fetch(sUrl + "/rest/v1/school_teacher?select=*&order=id.desc", { headers: sHeaders });
                   if (!res.ok) throw new Error("Failed to load personnel");
                   var rows = await res.json();
-                  window.personnelList = rows || [];
+                  window.personnelList = sortPersonnelByLatest(rows || []);
 
                   // Populate dropdown
                   var dropdown = document.getElementById("personnelSelectDropdown");
@@ -3585,9 +3966,10 @@
                     dropdown.innerHTML = optionsHtml;
                   }
 
-                  // Pre-load latest slips and assets
+                  // Pre-load latest slips, assets, and school details
                   await fetchIcsSlipsDirectly(true);
                   await fetchInventoryAssetsDirectly(true);
+                  await loadSchoolDetailsOptions();
 
                   updatePersonnelStatCards();
 
@@ -3629,7 +4011,8 @@
                 document.getElementById("editPersonnelType").value = p.personnel_type || "Teaching Personnel";
                 document.getElementById("editSchoolLevel").value = p.school_level || "Elementary";
                 document.getElementById("editGradeSection").value = p.grade_section || "";
-                document.getElementById("editSchoolName").value = p.school_name || "GERAS Integrated School";
+                var currentSchool = p.school_name || "GERAS Integrated School";
+                populateSchoolDetailsDropdown("editSchoolName", window.schoolDetailsOptions, currentSchool);
                 document.getElementById("editLocation").value = p.location || "";
                 document.getElementById("editDateHired").value = p.date_hired ? String(p.date_hired).split("T")[0] : "";
                 document.getElementById("editEmploymentStatus").value = p.employment_status || "Permanent";
@@ -3658,6 +4041,306 @@
 
               window.openEditPersonnelModal = openEditPersonnelModal;
               window.closeEditPersonnelModal = closeEditPersonnelModal;
+
+              /* --- School Details Dropdown Operations --- */
+              async function loadSchoolDetailsOptions() {
+                var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+                var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+                var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
+
+                var names = [];
+                try {
+                  var res = await fetch(sUrl + "/rest/v1/school_details?select=school_name&order=school_name.asc", { headers: sHeaders });
+                  if (res.ok) {
+                    var rows = await res.json();
+                    names = Array.from(new Set((rows || []).map(function (r) { return String(r.school_name || "").trim(); }).filter(Boolean)));
+                  }
+                } catch (e) {
+                  console.warn("Unable to load school_details from Supabase:", e);
+                }
+
+                if (names.length === 0) {
+                  try {
+                    var cached = JSON.parse(localStorage.getItem("spis_all_schools") || "[]");
+                    if (Array.isArray(cached) && cached.length > 0) {
+                      names = Array.from(new Set(cached.map(function (s) { return String(s.school_name || "").trim(); }).filter(Boolean)));
+                    }
+                  } catch (e) {}
+                }
+                if (names.length === 0 && typeof allSchoolsList !== "undefined" && Array.isArray(allSchoolsList)) {
+                  names = Array.from(new Set(allSchoolsList.map(function (s) { return String(s.school_name || "").trim(); }).filter(Boolean)));
+                }
+                if (names.length === 0) {
+                  names = ["GERAS Integrated School"];
+                }
+
+                window.schoolDetailsOptions = names;
+                populateSchoolDetailsDropdown("editSchoolName", names);
+                populateSchoolDetailsDropdown("addSchoolName", names);
+                return names;
+              }
+
+              function populateSchoolDetailsDropdown(selectId, schoolNames, selectedValue) {
+                var el = document.getElementById(selectId);
+                if (!el) return;
+
+                var list = Array.isArray(schoolNames) && schoolNames.length > 0
+                  ? schoolNames
+                  : (Array.isArray(window.schoolDetailsOptions) && window.schoolDetailsOptions.length > 0 ? window.schoolDetailsOptions : ["GERAS Integrated School"]);
+
+                var targetVal = (selectedValue !== undefined && selectedValue !== null) ? String(selectedValue).trim() : el.value;
+
+                var html = '<option value="">Select school</option>';
+                list.forEach(function (name) {
+                  html += '<option value="' + safeEscape(name) + '">' + safeEscape(name) + '</option>';
+                });
+                el.innerHTML = html;
+
+                if (targetVal) {
+                  var matchedOpt = Array.from(el.options).find(function (opt) {
+                    return opt.value.toLowerCase() === targetVal.toLowerCase();
+                  });
+                  if (matchedOpt) {
+                    el.value = matchedOpt.value;
+                  } else {
+                    var extraOpt = document.createElement("option");
+                    extraOpt.value = targetVal;
+                    extraOpt.textContent = targetVal;
+                    extraOpt.selected = true;
+                    el.appendChild(extraOpt);
+                    el.value = targetVal;
+                  }
+                } else if (el.options.length > 1) {
+                  el.selectedIndex = 1;
+                }
+              }
+
+              window.loadSchoolDetailsOptions = loadSchoolDetailsOptions;
+              window.populateSchoolDetailsDropdown = populateSchoolDetailsDropdown;
+
+              /* --- Add Personnel Modal Operations --- */
+              function openAddPersonnelModal() {
+                var form = document.getElementById("personnelAddForm");
+                if (form) form.reset();
+
+                var setVal = function(id, val) {
+                  var el = document.getElementById(id);
+                  if (el) el.value = val;
+                };
+
+                setVal("addTeacherName", "");
+                setVal("addEmployeeId", "");
+                setVal("addStatus", "Active");
+                setVal("addPhotoUrl", "");
+                setVal("addPosition", "");
+                setVal("addPlantillaPosition", "");
+                setVal("addPersonnelType", "Teaching Personnel");
+                setVal("addSchoolLevel", "Elementary");
+                setVal("addGradeSection", "");
+                populateSchoolDetailsDropdown("addSchoolName", window.schoolDetailsOptions, "GERAS Integrated School");
+                setVal("addLocation", "");
+                setVal("addDateHired", "");
+                setVal("addEmploymentStatus", "Permanent");
+                setVal("addEmail", "");
+                setVal("addPhone", "");
+
+                var msgEl = document.getElementById("personnelAddMessage");
+                if (msgEl) {
+                  msgEl.className = "hidden p-3 rounded-lg text-xs font-medium";
+                  msgEl.textContent = "";
+                }
+
+                var modal = document.getElementById("personnelAddModal");
+                if (modal) modal.classList.remove("hidden");
+                var nameInput = document.getElementById("addTeacherName");
+                if (nameInput) setTimeout(function() { nameInput.focus(); }, 120);
+              }
+
+              function closeAddPersonnelModal() {
+                var modal = document.getElementById("personnelAddModal");
+                if (modal) modal.classList.add("hidden");
+                var msgEl = document.getElementById("personnelAddMessage");
+                if (msgEl) {
+                  msgEl.className = "hidden p-3 rounded-lg text-xs font-medium";
+                  msgEl.textContent = "";
+                }
+              }
+
+              async function handleAddPersonnelPhotoSelect(event) {
+                var file = event.target.files && event.target.files[0];
+                if (!file) return;
+                var photoInput = document.getElementById("addPhotoUrl");
+                try {
+                  if (typeof showToast === "function") showToast("Converting photo to WebP...");
+                  var converted = await convertImageToWebP(file);
+                  var blob = converted.blob;
+                  var dataUrl = converted.dataUrl;
+
+                  var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+                  var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+                  var bucketName = "personnel-photos";
+                  var fileName = "new_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7) + ".webp";
+
+                  var finalUrl = null;
+                  if (blob) {
+                    try {
+                      var uploadRes = await fetch(sUrl + "/storage/v1/object/" + bucketName + "/" + fileName, {
+                        method: "POST",
+                        headers: {
+                          apikey: sKey,
+                          Authorization: "Bearer " + sKey,
+                          "Content-Type": "image/webp",
+                          "x-upsert": "true"
+                        },
+                        body: blob
+                      });
+                      if (uploadRes.ok) {
+                        finalUrl = sUrl + "/storage/v1/object/public/" + bucketName + "/" + fileName;
+                      }
+                    } catch(e) {
+                      console.warn("Storage upload failed, using dataUrl fallback", e);
+                    }
+                  }
+                  if (!finalUrl && dataUrl) {
+                    finalUrl = dataUrl;
+                  }
+                  if (photoInput && finalUrl) {
+                    photoInput.value = finalUrl;
+                    if (typeof showToast === "function") showToast("Photo uploaded and set.");
+                  }
+                } catch(err) {
+                  console.error("Add personnel photo upload error:", err);
+                } finally {
+                  event.target.value = "";
+                }
+              }
+
+              async function saveNewPersonnel() {
+                var nameInput = document.getElementById("addTeacherName");
+                if (!nameInput || !nameInput.value.trim()) {
+                  if (nameInput) nameInput.focus();
+                  var msgEl = document.getElementById("personnelAddMessage");
+                  if (msgEl) {
+                    msgEl.className = "p-3 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200 block";
+                    msgEl.textContent = "Please enter the personnel's full name.";
+                  }
+                  return;
+                }
+
+                var saveBtn = document.getElementById("personnelAddModalSaveBtn");
+                var msgEl = document.getElementById("personnelAddMessage");
+
+                if (saveBtn) {
+                  saveBtn.disabled = true;
+                  saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Saving...</span>';
+                }
+
+                var newRecord = {
+                  teacher_name: nameInput.value.trim(),
+                  employee_id: (document.getElementById("addEmployeeId") ? document.getElementById("addEmployeeId").value.trim() : "") || null,
+                  status: (document.getElementById("addStatus") ? document.getElementById("addStatus").value.trim() : "Active") || "Active",
+                  photo_url: (document.getElementById("addPhotoUrl") ? document.getElementById("addPhotoUrl").value.trim() : "") || null,
+                  position: (document.getElementById("addPosition") ? document.getElementById("addPosition").value.trim() : "") || null,
+                  plantilla_position: (document.getElementById("addPlantillaPosition") ? document.getElementById("addPlantillaPosition").value.trim() : "") || null,
+                  personnel_type: (document.getElementById("addPersonnelType") ? document.getElementById("addPersonnelType").value.trim() : "Teaching Personnel") || "Teaching Personnel",
+                  school_level: (document.getElementById("addSchoolLevel") ? document.getElementById("addSchoolLevel").value.trim() : "Elementary") || "Elementary",
+                  grade_section: (document.getElementById("addGradeSection") ? document.getElementById("addGradeSection").value.trim() : "") || null,
+                  school_name: (document.getElementById("addSchoolName") ? document.getElementById("addSchoolName").value.trim() : "GERAS Integrated School") || "GERAS Integrated School",
+                  location: (document.getElementById("addLocation") ? document.getElementById("addLocation").value.trim() : "") || null,
+                  date_hired: (document.getElementById("addDateHired") ? document.getElementById("addDateHired").value : "") || null,
+                  employment_status: (document.getElementById("addEmploymentStatus") ? document.getElementById("addEmploymentStatus").value.trim() : "Permanent") || "Permanent",
+                  email: (document.getElementById("addEmail") ? document.getElementById("addEmail").value.trim() : "") || null,
+                  phone: (document.getElementById("addPhone") ? document.getElementById("addPhone").value.trim() : "") || null
+                };
+
+                var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+                var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+                var sHeaders = {
+                  apikey: sKey,
+                  Authorization: "Bearer " + sKey,
+                  "Content-Type": "application/json",
+                  "Prefer": "return=representation"
+                };
+
+                try {
+                  var res = await fetch(sUrl + "/rest/v1/school_teacher", {
+                    method: "POST",
+                    headers: sHeaders,
+                    body: JSON.stringify(newRecord)
+                  });
+
+                  if (!res.ok) {
+                    var errData = await res.json().catch(function() { return {}; });
+                    var errText = errData.message || (await res.text().catch(function() { return "Database insertion failed"; }));
+                    if (errText.includes("employee_id") && errText.includes("duplicate")) {
+                      throw new Error("Employee ID already exists. Please use a unique Employee ID.");
+                    }
+                    throw new Error(errText || "Database insert failed");
+                  }
+
+                  var result = await res.json();
+                  var savedRow = (Array.isArray(result) && result[0]) ? result[0] : Object.assign({ id: Date.now() }, newRecord);
+
+                  recordPersonnelUpdateTime(savedRow.id);
+
+                  // Update in-memory personnelList (newly recorded at 1st row)
+                  if (Array.isArray(window.personnelList)) {
+                    window.personnelList.unshift(savedRow);
+                  } else {
+                    window.personnelList = [savedRow];
+                  }
+                  window.personnelList = sortPersonnelByLatest(window.personnelList);
+                  personnelListCurrentPage = 1;
+
+                  // Update dropdown
+                  var dropdown = document.getElementById("personnelSelectDropdown");
+                  if (dropdown) {
+                    var sub = savedRow.position || savedRow.plantilla_position || savedRow.school_level || "";
+                    var newOpt = document.createElement("option");
+                    newOpt.value = savedRow.id;
+                    newOpt.textContent = savedRow.teacher_name + (sub ? " (" + sub + ")" : "");
+                    dropdown.insertBefore(newOpt, dropdown.firstChild);
+                    dropdown.value = savedRow.id;
+                  }
+
+                  // Update teacher options for Inventory and Document modules
+                  if (typeof loadTeacherOptions === "function") {
+                    try { await loadTeacherOptions(); } catch(e) {}
+                  }
+
+                  // Refresh stat cards and directory table
+                  updatePersonnelStatCards();
+                  renderPersonnelListTable();
+
+                  closeAddPersonnelModal();
+
+                  if (typeof showSuccessModal === "function") {
+                    showSuccessModal("Personnel " + savedRow.teacher_name + " was successfully added to the directory.", "Personnel Added");
+                  } else if (typeof showToast === "function") {
+                    showToast("Personnel " + savedRow.teacher_name + " added successfully.");
+                  }
+
+                  // Switch to view the newly created personnel's profile
+                  showPersonnelProfileView(savedRow.id);
+
+                } catch (err) {
+                  console.error("Save new personnel error:", err);
+                  if (msgEl) {
+                    msgEl.className = "p-3 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200 block";
+                    msgEl.textContent = "Error saving personnel: " + (err.message || "Please check connection.");
+                  }
+                } finally {
+                  if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Save Personnel</span>';
+                  }
+                }
+              }
+
+              window.openAddPersonnelModal = openAddPersonnelModal;
+              window.closeAddPersonnelModal = closeAddPersonnelModal;
+              window.saveNewPersonnel = saveNewPersonnel;
+              window.handleAddPersonnelPhotoSelect = handleAddPersonnelPhotoSelect;
 
               /* --- Add ICS Modal (Direct Personnel ICS Issuance) --- */
               var modalIcsSelectedAsset = null;
@@ -3813,8 +4496,9 @@
                   var desc = (typeof getIcsAssetDescription === "function" ? getIcsAssetDescription(a) : (a.itemBrandModel || a.brand || "Item"));
                   var sn = a.serialNo || a.serial_no || "";
                   var no = a.semiExpandableNo || a.semi_expandable_no || a.propertyNo || a.property_no || "";
+                  var add = a.additionalItem || a.additional_item || "";
                   if (!q) return true;
-                  return desc.toLowerCase().includes(q) || sn.toLowerCase().includes(q) || no.toLowerCase().includes(q);
+                  return desc.toLowerCase().includes(q) || sn.toLowerCase().includes(q) || no.toLowerCase().includes(q) || add.toLowerCase().includes(q);
                 });
 
                 if (filtered.length === 0) {
@@ -3827,12 +4511,16 @@
                   var desc = (typeof getIcsAssetDescription === "function" ? getIcsAssetDescription(a) : (a.itemBrandModel || a.brand || "Item"));
                   var no = a.semiExpandableNo || a.semi_expandable_no || a.propertyNo || a.property_no || "";
                   var cost = a.unitValue != null ? Number(a.unitValue).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
-                  var aid = a.assetId || a.asset_id || "";
+                  var aid = a.assetId || a.asset_id || a.id || "";
+                  var addItem = a.additionalItem || a.additional_item || "";
 
                   html += '<div class="p-2.5 hover:bg-[#f0f7ff] cursor-pointer rounded-lg border-b border-gray-100 last:border-b-0 flex items-center justify-between transition" onclick="selectModalIcsAssetById(\'' + safeEscape(aid) + '\')">' +
                     '<div class="min-w-0 pr-2">' +
                       '<div class="font-semibold text-slate-800 text-xs truncate">' + safeEscape(desc) + '</div>' +
-                      (no ? '<div class="text-[11px] text-slate-400">Item No: ' + safeEscape(no) + '</div>' : '') +
+                      '<div class="flex flex-wrap items-center gap-1.5 mt-0.5">' +
+                        (no ? '<span class="text-[11px] text-slate-400">Item No: ' + safeEscape(no) + '</span>' : '') +
+                        (addItem ? '<span class="text-[11px] text-amber-700 font-medium bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 inline-flex items-center gap-1"><i class="fa-solid fa-puzzle-piece text-[9px]"></i> ' + safeEscape(addItem) + '</span>' : '') +
+                      '</div>' +
                     '</div>' +
                     (cost ? '<div class="text-xs font-bold text-[#078f95] shrink-0">₱' + cost + '</div>' : '') +
                   '</div>';
@@ -3845,13 +4533,39 @@
                 var allA = (Array.isArray(window.inventoryData) && window.inventoryData.length > 0)
                   ? window.inventoryData
                   : ((typeof items !== "undefined" && Array.isArray(items)) ? items : []);
-                var found = allA.find(function(a) { return (a.assetId || a.asset_id) === assetId; });
+                var found = allA.find(function(a) {
+                  return String(a.assetId || a.asset_id || a.id || a.dbId) === String(assetId);
+                });
+                if (!found && typeof items !== "undefined" && Array.isArray(items)) {
+                  found = items.find(function(a) {
+                    return String(a.assetId || a.asset_id || a.id || a.dbId) === String(assetId);
+                  });
+                }
                 if (found) selectModalIcsAsset(found);
               }
 
               function selectModalIcsAsset(asset) {
                 if (!asset) return;
                 modalIcsSelectedAsset = asset;
+
+                var globalItems = (typeof items !== "undefined" && Array.isArray(items)) ? items : [];
+                var globalMatch = globalItems.find(function(it) {
+                  return (asset.assetId && (it.assetId === asset.assetId || it.id === asset.assetId)) ||
+                         (asset.id && (it.id === asset.id || it.assetId === asset.id)) ||
+                         (asset.semiExpandableNo && (it.semiExpandableNo === asset.semiExpandableNo || it.propertyNo === asset.semiExpandableNo));
+                });
+                if (globalMatch) {
+                  if (!asset.additionalItem && (globalMatch.additionalItem || globalMatch.additional_item)) {
+                    asset.additionalItem = globalMatch.additionalItem || globalMatch.additional_item;
+                  }
+                  if (!asset.serialNo && (globalMatch.serialNo || globalMatch.serial_no)) {
+                    asset.serialNo = globalMatch.serialNo || globalMatch.serial_no;
+                  }
+                  if (!asset.fundCluster && globalMatch.fundCluster) {
+                    asset.fundCluster = globalMatch.fundCluster;
+                  }
+                }
+
                 var desc = (typeof getIcsAssetDescription === "function" ? getIcsAssetDescription(asset) : (asset.itemBrandModel || asset.brand || "Item"));
 
                 var searchInput = document.getElementById("modalIcsDescriptionSearch");
@@ -3899,9 +4613,25 @@
                 var descSelect = document.getElementById("modalIcsDescription");
                 var descVal = (searchInput && searchInput.value ? searchInput.value : (descSelect && descSelect.value ? descSelect.value : "")).trim();
 
+                var matchedAsset = modalIcsSelectedAsset;
+                if (!matchedAsset) {
+                  var allA = (Array.isArray(window.inventoryData) && window.inventoryData.length > 0)
+                    ? window.inventoryData
+                    : ((typeof items !== "undefined" && Array.isArray(items)) ? items : []);
+                  var itemNoVal = value("modalIcsInventoryItemNo");
+                  matchedAsset = allA.find(function(a) {
+                    var aNo = a.semiExpandableNo || a.semi_expandable_no || a.propertyNo || a.property_no || a.assetId || a.asset_id;
+                    if (itemNoVal && aNo && String(aNo).trim().toLowerCase() === itemNoVal.toLowerCase()) return true;
+                    var aDesc = typeof getIcsAssetDescription === "function" ? getIcsAssetDescription(a) : (a.itemBrandModel || a.brand || "");
+                    if (descVal && aDesc && aDesc.toLowerCase() === descVal.toLowerCase()) return true;
+                    return false;
+                  });
+                }
+
                 var slip = {
                   id: "ICS-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
-                  assetId: modalIcsSelectedAsset ? (modalIcsSelectedAsset.assetId || modalIcsSelectedAsset.asset_id) : null,
+                  dbAssetId: matchedAsset ? (matchedAsset.id || matchedAsset.dbId || null) : null,
+                  assetId: matchedAsset ? (matchedAsset.assetId || matchedAsset.asset_id || null) : null,
                   entityName: value("modalIcsEntityName"),
                   fundCluster: value("modalIcsFundCluster"),
                   icsNo: value("modalIcsNo"),
@@ -4091,11 +4821,17 @@
                   var result = await res.json();
                   var savedRow = (Array.isArray(result) && result[0]) ? result[0] : Object.assign({}, window.activePersonnel, updated);
 
-                  // Update in-memory personnelList
+                  recordPersonnelUpdateTime(id);
+
+                  // Update in-memory personnelList (latest updated at 1st row)
                   var idx = window.personnelList.findIndex(function (t) { return Number(t.id) === Number(id); });
                   if (idx !== -1) {
                     window.personnelList[idx] = Object.assign({}, window.personnelList[idx], savedRow);
+                  } else {
+                    window.personnelList.unshift(savedRow);
                   }
+                  window.personnelList = sortPersonnelByLatest(window.personnelList);
+                  personnelListCurrentPage = 1;
 
                   // Refresh profile card, directory table, and stat cards
                   renderPersonnelProfile(savedRow);
@@ -4448,6 +5184,32 @@
                   modalSaveBtn.addEventListener("click", savePersonnelProfile);
                 }
 
+                /* --- Add Personnel Modal Wiring --- */
+                var addListBtn = document.getElementById("personnelListAddBtn");
+                if (addListBtn) {
+                  addListBtn.addEventListener("click", openAddPersonnelModal);
+                }
+                var addHeaderBtn = document.getElementById("personnelHeaderAddBtn");
+                if (addHeaderBtn) {
+                  addHeaderBtn.addEventListener("click", openAddPersonnelModal);
+                }
+                var addModalCloseBtn = document.getElementById("personnelAddModalCloseBtn");
+                if (addModalCloseBtn) {
+                  addModalCloseBtn.addEventListener("click", closeAddPersonnelModal);
+                }
+                var addModalCancelBtn = document.getElementById("personnelAddModalCancelBtn");
+                if (addModalCancelBtn) {
+                  addModalCancelBtn.addEventListener("click", closeAddPersonnelModal);
+                }
+                var addModalSaveBtn = document.getElementById("personnelAddModalSaveBtn");
+                if (addModalSaveBtn) {
+                  addModalSaveBtn.addEventListener("click", saveNewPersonnel);
+                }
+                var addPhotoFileInput = document.getElementById("addPhotoFileInput");
+                if (addPhotoFileInput) {
+                  addPhotoFileInput.addEventListener("change", handleAddPersonnelPhotoSelect);
+                }
+
                 /* --- Change Photo Button Wiring --- */
                 var photoBtn = document.getElementById("personnelChangePhotoBtn");
                 var fileInput = document.getElementById("personnelPhotoFileInput");
@@ -4458,7 +5220,8 @@
                   fileInput.addEventListener("change", handlePersonnelPhotoUpload);
                 }
 
-                // Initial fetch from DB
+                // Initial fetch from DB and school details
+                loadSchoolDetailsOptions();
                 window.loadPersonnelFromDatabase();
               }
 

@@ -1522,7 +1522,7 @@ async function loadItems() {
     setDatabaseStatus("Connecting to Supabase...", "Loading inventory records from the backend.");
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=asset_id,education_level,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,additional_item,remarks,created_at,updated_at`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=id,asset_id,education_level,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,additional_item,remarks,created_at,updated_at`, {
             headers: supabaseHeaders
         });
 
@@ -1530,6 +1530,8 @@ async function loadItems() {
 
         const rows = await response.json();
         items = (rows || []).map((row) => ({
+            id: row.id,
+            dbId: row.id,
             assetId: row.asset_id || row.assetId || "",
             educationLevel: row.education_level || row.educationLevel || "",
             fundCluster: row.fund_cluster || row.fundCluster || "",
@@ -5297,16 +5299,32 @@ function getInventoryCustodianSlipHeaderPayload(slip) {
 }
 
 function getInventoryCustodianSlipItemPayload(slip, slipId, lineNo) {
+    let numericAssetId = null;
+    if (slip.dbAssetId && Number.isInteger(Number(slip.dbAssetId))) {
+        numericAssetId = Number(slip.dbAssetId);
+    } else if (slip.assetId && Number.isInteger(Number(slip.assetId))) {
+        numericAssetId = Number(slip.assetId);
+    } else if (slip.assetId) {
+        const allAssets = (typeof items !== "undefined" && Array.isArray(items) && items.length > 0)
+            ? items
+            : (Array.isArray(window.inventoryData) ? window.inventoryData : []);
+        const matched = allAssets.find((a) => a.assetId === slip.assetId || a.asset_id === slip.assetId);
+        if (matched && (matched.id || matched.dbId) && Number.isInteger(Number(matched.id || matched.dbId))) {
+            numericAssetId = Number(matched.id || matched.dbId);
+        }
+    }
+
     return {
         ics_slip_id: slipId,
         line_no: lineNo,
-        asset_id: slip.assetId || null,
+        asset_id: numericAssetId,
         inventory_item_no: slip.inventoryItemNo || null,
-        description_snapshot: slip.description,
-        quantity: Number(slip.quantity),
+        description_snapshot: String(slip.description || "Property Item").trim(),
+        additional_item: slip.additionalItem || null,
+        quantity: Number(slip.quantity) || 1,
         unit: slip.unit || null,
-        unit_cost: Number(slip.unitCost),
-        total_cost: Number(slip.totalCost),
+        unit_cost: Number(String(slip.unitCost || 0).replace(/[^0-9.-]/g, "")) || 0,
+        total_cost: Number(String(slip.totalCost || 0).replace(/[^0-9.-]/g, "")) || 0,
         estimated_useful_life: slip.estimatedUsefulLife || null
     };
 }
@@ -5321,13 +5339,17 @@ function mapInventoryCustodianSlipRows(rows) {
                 dbSlipId: header.id,
                 dbItemId: item.id,
                 lineNo: item.line_no,
+                assetId: item.asset_id || null,
+                dbAssetId: item.asset_id || null,
                 entityName: header.entity_name || "",
                 fundCluster: header.fund_cluster || "",
                 icsNo: header.ics_no || "",
                 inventoryItemNo: item.inventory_item_no || "",
                 description: item.description_snapshot || "",
-                additionalItem: items.find((asset) => {
-                    return getIcsAssetDescription(asset) === (item.description_snapshot || "");
+                additionalItem: item.additional_item || items.find((asset) => {
+                    return (item.asset_id && (String(asset.id) === String(item.asset_id) || String(asset.assetId) === String(item.asset_id))) ||
+                           (item.inventory_item_no && (asset.propertyNo === item.inventory_item_no || asset.semiExpandableNo === item.inventory_item_no || asset.assetId === item.inventory_item_no)) ||
+                           (getIcsAssetDescription(asset) === (item.description_snapshot || ""));
                 })?.additionalItem || "",
                 quantity: item.quantity ?? "",
                 unit: item.unit || "",
@@ -5351,7 +5373,7 @@ async function loadInventoryCustodianSlipsFromDatabase() {
         "id", "ics_no", "entity_name", "fund_cluster",
         "received_from_name", "received_from_position", "received_from_date",
         "received_by_name", "received_by_position", "received_by_date",
-        "ics_slip_items(id,line_no,inventory_item_no,description_snapshot,quantity,unit,unit_cost,total_cost,estimated_useful_life)"
+        "ics_slip_items(id,line_no,asset_id,inventory_item_no,description_snapshot,additional_item,quantity,unit,unit_cost,total_cost,estimated_useful_life)"
     ].join(",");
     const response = await fetch(`${supabaseUrl}/rest/v1/ics_slips?select=${encodeURIComponent(select)}&order=created_at.desc`, {
         headers: supabaseHeaders
@@ -5703,8 +5725,14 @@ function getInventoryCustodianSlipFormData() {
     const descSelect = document.querySelector("#icsDescription");
     const descriptionVal = (descSearch?.value || descSelect?.value || "").trim();
 
+    const descSelectEl = document.querySelector("#icsDescription");
+    const selAssetId = descSelectEl?.selectedOptions[0]?.dataset?.assetId;
+    const selAsset = selAssetId ? (Array.isArray(items) ? items : []).find((a) => a.assetId === selAssetId) : null;
+
     return {
         id: document.querySelector("#icsEditingId").value || `ICS-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        dbAssetId: selAsset ? (selAsset.id || selAsset.dbId || null) : null,
+        assetId: selAssetId || null,
         entityName: value("#icsEntityName"),
         fundCluster: value("#icsFundCluster"),
         icsNo: value("#icsNo"),
@@ -5831,12 +5859,24 @@ async function updateAssetAccountablePersonFromIcs(slip) {
     const newAccountable = String(slip.receivedBy).trim();
     if (!newAccountable) return;
 
-    // Try finding by selected dropdown assetId first
+    const allAssets = (typeof items !== "undefined" && Array.isArray(items) && items.length > 0)
+        ? items
+        : (Array.isArray(window.inventoryData) ? window.inventoryData : []);
+
+    // Try finding by selected dropdown assetId or slip.assetId first
     let asset = null;
-    const descSelect = document.querySelector("#icsDescription");
-    const selectedAssetId = descSelect?.selectedOptions[0]?.dataset?.assetId;
-    if (selectedAssetId) {
-        asset = items.find((a) => a.assetId === selectedAssetId);
+    if (slip.dbAssetId) {
+        asset = allAssets.find((a) => a.id === slip.dbAssetId || a.dbId === slip.dbAssetId);
+    }
+    if (!asset && slip.assetId) {
+        asset = allAssets.find((a) => a.assetId === slip.assetId || a.asset_id === slip.assetId || String(a.id) === String(slip.assetId));
+    }
+    if (!asset) {
+        const descSelect = document.querySelector("#icsDescription");
+        const selectedAssetId = descSelect?.selectedOptions[0]?.dataset?.assetId;
+        if (selectedAssetId) {
+            asset = allAssets.find((a) => a.assetId === selectedAssetId || a.asset_id === selectedAssetId);
+        }
     }
     if (!asset) {
         asset = findAssetForInventoryCustodianSlip(slip);
@@ -5872,7 +5912,9 @@ async function updateAssetAccountablePersonFromIcs(slip) {
             if (asset.dateIssue) {
                 patchPayload.date_issue = asset.dateIssue;
             }
-            await fetch(`${supabaseUrl}/rest/v1/assets?asset_id=eq.${encodeURIComponent(asset.assetId)}`, {
+            const assetIdent = asset.assetId || asset.asset_id;
+            const queryParam = assetIdent ? `asset_id=eq.${encodeURIComponent(assetIdent)}` : `id=eq.${encodeURIComponent(asset.id || asset.dbId)}`;
+            await fetch(`${supabaseUrl}/rest/v1/assets?${queryParam}`, {
                 method: "PATCH",
                 headers: {
                     ...supabaseHeaders,
@@ -5908,7 +5950,7 @@ async function updateAssetAccountablePersonFromIcs(slip) {
             window.renderPersonnelListTable();
         }
         if (window.activePersonnel && typeof window.renderPersonnelProperties === "function") {
-            window.renderPersonnelProperties(window.activePersonnel);
+            await window.renderPersonnelProperties(window.activePersonnel);
         }
     } catch (e) {}
 }
@@ -5916,10 +5958,74 @@ async function updateAssetAccountablePersonFromIcs(slip) {
 window.updateAssetAccountablePersonFromIcs = updateAssetAccountablePersonFromIcs;
 
 function editInventoryCustodianSlip(id) {
-    const slip = inventoryCustodianSlips.find((entry) => entry.id === id);
-    if (!slip) return;
+    let slip = null;
+    if (typeof id === "object" && id !== null) {
+        slip = id;
+    } else {
+        const needle = String(id || "").trim().toLowerCase();
+        slip = inventoryCustodianSlips.find((entry) =>
+            entry.id === id ||
+            String(entry.id).toLowerCase() === needle ||
+            String(entry.icsNo || "").trim().toLowerCase() === needle ||
+            (entry.dbItemId && String(entry.dbItemId).toLowerCase() === needle) ||
+            (entry.dbSlipId && String(entry.dbSlipId).toLowerCase() === needle)
+        );
+        if (!slip && Array.isArray(window.inventoryCustodianSlips)) {
+            slip = window.inventoryCustodianSlips.find((entry) =>
+                entry.id === id ||
+                String(entry.id).toLowerCase() === needle ||
+                String(entry.icsNo || "").trim().toLowerCase() === needle ||
+                (entry.dbItemId && String(entry.dbItemId).toLowerCase() === needle) ||
+                (entry.dbSlipId && String(entry.dbSlipId).toLowerCase() === needle)
+            );
+        }
+    }
+    if (!slip) {
+        console.warn("Could not find Inventory Custodian Slip to edit for identifier:", id);
+        return false;
+    }
+
+    if (!inventoryCustodianSlips.some((entry) => entry.id === slip.id)) {
+        inventoryCustodianSlips.unshift(slip);
+    }
 
     const matchedAsset = findAssetForInventoryCustodianSlip(slip);
+
+    // 1. Resolve Additional Item if missing from slip
+    if (!slip.additionalItem) {
+        if (matchedAsset && (matchedAsset.additionalItem || matchedAsset.additional_item)) {
+            slip.additionalItem = matchedAsset.additionalItem || matchedAsset.additional_item;
+        } else if (Array.isArray(items)) {
+            const byNo = items.find((a) => (slip.inventoryItemNo && (a.propertyNo === slip.inventoryItemNo || a.semiExpandableNo === slip.inventoryItemNo || a.assetId === slip.inventoryItemNo)));
+            if (byNo && (byNo.additionalItem || byNo.additional_item)) {
+                slip.additionalItem = byNo.additionalItem || byNo.additional_item;
+            }
+        }
+    }
+
+    // 2. Resolve From Position/Office if missing from slip
+    if (!slip.receivedFromPosition && slip.receivedFrom) {
+        const fromName = String(slip.receivedFrom || "").trim().toLowerCase();
+        const matchedSig = Array.isArray(signatoryEntries) ? signatoryEntries.find((entry) => String(entry.name || "").trim().toLowerCase() === fromName) : null;
+        if (matchedSig && matchedSig.position) {
+            slip.receivedFromPosition = matchedSig.position;
+        }
+    }
+
+    // 3. Resolve Recipient Position/Office if missing from slip
+    if (!slip.receivedByPosition && slip.receivedBy) {
+        const byName = String(slip.receivedBy || "").trim().toLowerCase();
+        const activeT = (window.activePersonnel && String(window.activePersonnel.teacher_name || "").trim().toLowerCase() === byName) ? window.activePersonnel : null;
+        const matchedT = Array.isArray(teacherOptions) ? teacherOptions.find((entry) => String(entry.name || "").trim().toLowerCase() === byName) : null;
+        const personnelFromList = (Array.isArray(window.personnelList)) ? window.personnelList.find((t) => String(t.teacher_name || "").trim().toLowerCase() === byName) : null;
+        const matchedSig = Array.isArray(signatoryEntries) ? signatoryEntries.find((entry) => String(entry.name || "").trim().toLowerCase() === byName) : null;
+
+        slip.receivedByPosition = (activeT && (activeT.position || activeT.plantilla_position)) ||
+                                  (matchedT && matchedT.position) ||
+                                  (personnelFromList && (personnelFromList.position || personnelFromList.plantilla_position)) ||
+                                  (matchedSig && matchedSig.position) ||
+                                  "";
+    }
 
     const fieldMap = {
         icsEditingId: "id",
@@ -5968,6 +6074,20 @@ function editInventoryCustodianSlip(id) {
         }
     });
 
+    // Guarantee Additional Item, From Position, and Recipient Position are directly displayed
+    const additionalItemEl = document.querySelector("#icsAdditionalItem");
+    if (additionalItemEl) {
+        additionalItemEl.value = slip.additionalItem || "";
+    }
+    const fromPosEl = document.querySelector("#icsReceivedFromPosition");
+    if (fromPosEl && slip.receivedFromPosition) {
+        fromPosEl.value = slip.receivedFromPosition;
+    }
+    const byPosEl = document.querySelector("#icsReceivedByPosition");
+    if (byPosEl && slip.receivedByPosition) {
+        byPosEl.value = slip.receivedByPosition;
+    }
+
     const searchInput = document.querySelector("#icsDescriptionSearch");
     if (searchInput) {
         searchInput.value = slip.description || "";
@@ -5976,6 +6096,14 @@ function editInventoryCustodianSlip(id) {
 
     document.querySelector("#icsFormTitle").textContent = "Edit Inventory Custodian Slip";
     showModule("document");
+
+    const formEl = document.querySelector("#icsSlipForm");
+    if (formEl) {
+        setTimeout(() => {
+            formEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 80);
+    }
+    return true;
 }
 
 async function initInventoryCustodianSlipCrud() {
@@ -6222,15 +6350,16 @@ initInventoryCustodianSlipCrud();
 async function createAndPersistInventoryCustodianSlip(slip) {
     if (hasInventoryCustodianSlipRemoteDatabase()) {
         await saveInventoryCustodianSlipToDatabase("create", slip);
+        await updateAssetAccountablePersonFromIcs(slip);
         await loadInventoryCustodianSlipsFromDatabase();
     } else {
         inventoryCustodianSlips.unshift(slip);
+        await updateAssetAccountablePersonFromIcs(slip);
     }
     saveInventoryCustodianSlips();
     renderIcsGeneratedCount();
     renderInventoryCustodianSlipTable();
     renderRecentAssets();
-    await updateAssetAccountablePersonFromIcs(slip);
     return true;
 }
 
@@ -6242,6 +6371,7 @@ window.saveInventoryCustodianSlips = saveInventoryCustodianSlips;
 window.renderInventoryCustodianSlipTable = renderInventoryCustodianSlipTable;
 window.renderIcsGeneratedCount = renderIcsGeneratedCount;
 window.openInventoryCustodianSlipPdf = openInventoryCustodianSlipPdf;
+window.editInventoryCustodianSlip = editInventoryCustodianSlip;
 async function openInventoryCustodianSlipPdf(slip) {
     const JsPdf = window.jspdf && window.jspdf.jsPDF;
     if (!JsPdf) {
@@ -6274,7 +6404,12 @@ async function openInventoryCustodianSlipPdf(slip) {
 
     // Column ratios follow the uploaded ICS.xlsx template (A:H), including its merged Description field.
     const columns = [14, 13, 22, 22, 68, 30, 20];
-    const formatAmount = (value) => `${Number(value || 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const formatAmount = (value) => {
+        if (value === "" || value === null || value === undefined) return "";
+        const num = Number(String(value).replace(/[^0-9.-]/g, ""));
+        if (!Number.isFinite(num) || isNaN(num)) return String(value);
+        return num.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
     const headerSlip = slipItems[0];
     const tableStartY = 55;
     const tableBottomY = 167;
@@ -6344,48 +6479,126 @@ async function openInventoryCustodianSlipPdf(slip) {
     slipItems.forEach((item) => {
         const matchedAsset = (typeof items !== "undefined" && Array.isArray(items))
             ? items.find((a) =>
+                (item.assetId && (String(a.assetId) === String(item.assetId) || String(a.id) === String(item.assetId))) ||
+                (item.dbAssetId && (String(a.id) === String(item.dbAssetId) || String(a.assetId) === String(item.dbAssetId))) ||
                 (a.propertyNo && a.propertyNo === item.inventoryItemNo) ||
                 (a.semiExpandableNo && a.semiExpandableNo === item.inventoryItemNo) ||
-                (a.assetId && a.assetId === item.inventoryItemNo)
+                (a.assetId && a.assetId === item.inventoryItemNo) ||
+                (getIcsAssetDescription(a).toLowerCase() === String(item.description || "").trim().toLowerCase()) ||
+                (String(a.itemBrandModel || "").trim().toLowerCase() === String(item.description || "").trim().toLowerCase())
             )
             : null;
-        const dateAcquired = item.acquisitionDate || (matchedAsset && matchedAsset.acquisitionDate) || item.receivedFromDate || "";
 
-        // First row: main item details
+        // Resolve Serial No
+        let serialNo = (matchedAsset && (matchedAsset.serialNo || matchedAsset.serial_no)) || item.serialNo || item.serial_no || "";
+        let baseDescription = String(item.description || "").trim();
+
+        // If baseDescription contains " - SN: <serialNo>", extract or clean it
+        if (serialNo && baseDescription.toLowerCase().endsWith(` - sn: ${serialNo}`.toLowerCase())) {
+            baseDescription = baseDescription.substring(0, baseDescription.length - (` - sn: ${serialNo}`).length).trim();
+        } else if (!serialNo && baseDescription.includes(" - SN: ")) {
+            const parts = baseDescription.split(" - SN: ");
+            baseDescription = parts[0].trim();
+            serialNo = parts.slice(1).join(" - SN: ").trim();
+        }
+
+        // Resolve Additional Item
+        const additionalItem = String(
+            item.additionalItem ||
+            (matchedAsset && (matchedAsset.additionalItem || matchedAsset.additional_item)) ||
+            ""
+        ).trim();
+
+        // Resolve Date Acquired
+        const dateAcquired = item.acquisitionDate || (matchedAsset && (matchedAsset.acquisitionDate || matchedAsset.acquisition_date)) || item.receivedFromDate || "";
+
+        // Build consolidated description within the same cell (item description, Serial No., Additional Item)
+        const descParts = [];
+        if (baseDescription) {
+            descParts.push(baseDescription);
+        }
+        if (serialNo && !baseDescription.toLowerCase().includes(serialNo.toLowerCase())) {
+            descParts.push(`Serial No.: ${serialNo}`);
+        }
+        if (additionalItem) {
+            const addText = /^additional\s*item/i.test(additionalItem)
+                ? additionalItem
+                : `Additional Item: ${additionalItem}`;
+            descParts.push(addText);
+        }
+
+        const fullDescription = descParts.length > 0 ? descParts.join("\n") : "-";
+
+        // Resolve Unit Cost and Total Cost
+        const rawUnitCost = (item.unitCost !== "" && item.unitCost != null && Number(String(item.unitCost).replace(/[^0-9.-]/g, "")) !== 0)
+            ? item.unitCost
+            : (matchedAsset ? (matchedAsset.unitValue ?? matchedAsset.unit_value ?? "") : "");
+
+        let rawTotalCost = (item.totalCost !== "" && item.totalCost != null && Number(String(item.totalCost).replace(/[^0-9.-]/g, "")) !== 0)
+            ? item.totalCost
+            : (matchedAsset ? (matchedAsset.total ?? matchedAsset.total_cost ?? "") : "");
+
+        if ((rawTotalCost === "" || rawTotalCost == null || Number(String(rawTotalCost).replace(/[^0-9.-]/g, "")) === 0) && rawUnitCost !== "" && rawUnitCost != null) {
+            const qty = Number(item.quantity) || 1;
+            const uCost = Number(String(rawUnitCost).replace(/[^0-9.-]/g, "")) || 0;
+            if (uCost > 0) {
+                rawTotalCost = qty * uCost;
+            }
+        }
+
+        const formattedUnitCost = formatAmount(rawUnitCost);
+        const formattedTotalCost = formatAmount(rawTotalCost);
+
+        const invNo = item.inventoryItemNo || (matchedAsset ? (matchedAsset.propertyNo || matchedAsset.semiExpandableNo || matchedAsset.assetId) : "") || "";
+        const unitMeasure = item.unit || (matchedAsset ? (matchedAsset.unitMeasurement || matchedAsset.unit_measurement) : "") || "";
+        const estLife = item.estimatedUsefulLife || "-";
+
+        // First row: main item details with Serial No and Additional Item in Description
         tableRows.push([
             item.quantity ?? "",
-            item.unit || "",
-            formatAmount(item.unitCost),
-            formatAmount(item.totalCost),
-            item.description || "-",
-            item.inventoryItemNo || "",
-            item.estimatedUsefulLife || "-"
+            unitMeasure,
+            formattedUnitCost,
+            formattedTotalCost,
+            fullDescription,
+            invNo,
+            estLife
         ]);
 
-        // Next row: Date Acquired row under description
+        // Second row: Date Acquired row under description (like previous)
         if (dateAcquired) {
+            const dateText = /^date\s*acquired/i.test(dateAcquired)
+                ? dateAcquired
+                : `Date Acquired: ${dateAcquired}`;
             tableRows.push([
                 "",
                 "",
                 "",
                 "",
-                `Date Acquired: ${dateAcquired}`,
+                dateText,
                 "",
                 ""
             ]);
         }
     });
 
-    // Limit table to exactly 10 rows
+    // Limit table to at least 10 rows (padding with empty rows if fewer)
     const maxTableRows = 10;
-    const finalRows = tableRows.slice(0, maxTableRows);
+    const finalRows = tableRows.slice(0, Math.max(maxTableRows, tableRows.length));
     while (finalRows.length < maxTableRows) {
         finalRows.push(["", "", "", "", "", "", ""]);
     }
 
     finalRows.forEach((rowValues) => {
-        const wrappedValues = rowValues.map((value, index) => pdf.splitTextToSize(String(value || ""), columns[index] - 3));
-        const rowHeight = Math.max(7, ...wrappedValues.map((lines) => lines.length * 3.6 + 3));
+        const wrappedValues = rowValues.map((value, index) =>
+            pdf.splitTextToSize(String(value || "").replace(/\r\n/g, "\n"), columns[index] - 3)
+        );
+        const rowHeight = Math.max(
+            7,
+            ...wrappedValues.map((lines) => {
+                if (!lines || lines.length === 0 || (lines.length === 1 && lines[0] === "")) return 7;
+                return lines.length * 3.8 + 2.5;
+            })
+        );
 
         let x = marginX;
         pdf.setFontSize(fontTableCell);
@@ -6413,6 +6626,10 @@ async function openInventoryCustodianSlipPdf(slip) {
 
     // Dynamically position signature section directly below the table
     y += 8;
+    if (y + 45 > pageHeight - marginY) {
+        pdf.addPage();
+        y = marginY + 10;
+    }
 
     const signatureWidth = (pageWidth - marginX * 2) / 2 - 4;
     const rightSignatureX = pageWidth - marginX - signatureWidth;
