@@ -2747,6 +2747,10 @@
             .personnel-status-unserviceable { display:inline-flex; align-items:center; padding:5px 10px; border-radius:7px; background:#ffe3e3; color:#c62828; font-size:11px; font-weight:600; }
             .personnel-action-btn { width:32px; height:32px; border:1px solid #d9dee5; border-radius:7px; background:white; color:#69788b; transition:all .15s ease; }
             .personnel-action-btn:hover { background:#f3f7fa; color:#078f95; border-color:#b8d9da; }
+            .personnel-page-nav-button { min-height:32px; padding:0 12px; border:1px solid #dce1e7; border-radius:6px; background:white; color:#334155; font-size:12px; font-weight:600; }
+            .personnel-page-nav-button:hover:not(:disabled) { background:#f3f6f8; }
+            .personnel-page-nav-button:disabled { opacity:.45; cursor:not-allowed; }
+            .personnel-page-indicator { color:#475569; font-size:12px; font-weight:600; white-space:nowrap; }
             .personnel-page-btn { min-width:30px; height:30px; padding:0 8px; border:1px solid #dce1e7; border-radius:6px; background:white; color:#607086; font-size:12px; }
             .personnel-page-btn:hover { background:#f3f6f8; }
             .personnel-page-active { background:#0878e5; color:white; border-color:#0878e5; }
@@ -3552,17 +3556,14 @@
                 }
 
                 if (paginationEl) {
-                  if (totalPages <= 1) {
-                    paginationEl.innerHTML = "";
-                  } else {
-                    var pagHtml = '<button type="button" class="personnel-page-btn" ' + (personnelListCurrentPage === 1 ? 'disabled style="opacity:0.4;cursor:default;"' : 'onclick="changePersonnelListPage(' + (personnelListCurrentPage - 1) + ')"') + '><i class="fa-solid fa-chevron-left"></i></button>';
-                    for (var p = 1; p <= totalPages; p++) {
-                      var activeCls = (p === personnelListCurrentPage) ? ' personnel-page-active' : '';
-                      pagHtml += '<button type="button" class="personnel-page-btn' + activeCls + '" onclick="changePersonnelListPage(' + p + ')">' + p + '</button>';
-                    }
-                    pagHtml += '<button type="button" class="personnel-page-btn" ' + (personnelListCurrentPage === totalPages ? 'disabled style="opacity:0.4;cursor:default;"' : 'onclick="changePersonnelListPage(' + (personnelListCurrentPage + 1) + ')"') + '><i class="fa-solid fa-chevron-right"></i></button>';
-                    paginationEl.innerHTML = pagHtml;
-                  }
+                  var pagHtml = '<button type="button" class="personnel-page-nav-button" aria-label="Previous page" ' +
+                    (personnelListCurrentPage === 1 ? 'disabled' : 'onclick="changePersonnelListPage(' + (personnelListCurrentPage - 1) + ')"') +
+                    '>Previous</button>' +
+                    '<span class="personnel-page-indicator">Page ' + personnelListCurrentPage + ' of ' + totalPages + '</span>' +
+                    '<button type="button" class="personnel-page-nav-button" aria-label="Next page" ' +
+                    (personnelListCurrentPage === totalPages ? 'disabled' : 'onclick="changePersonnelListPage(' + (personnelListCurrentPage + 1) + ')"') +
+                    '>Next</button>';
+                  paginationEl.innerHTML = pagHtml;
                 }
               }
 
