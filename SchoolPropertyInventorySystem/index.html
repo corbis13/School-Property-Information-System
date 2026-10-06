@@ -1826,12 +1826,6 @@
                     <option value="Inactive">Inactive</option>
                   </select>
 
-                  <button type="button" id="personnelListAddBtn" onclick="openAddPersonnelModal()"
-                    class="h-[38px] px-4 rounded-lg bg-[#00335e] hover:bg-[#078f95] text-white text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs whitespace-nowrap"
-                    title="Add new personnel to directory">
-                    <i class="fa-solid fa-user-plus"></i>
-                    <span>Add Personnel</span>
-                  </button>
                 </div>
               </div>
 
@@ -5185,14 +5179,6 @@
                 }
 
                 /* --- Add Personnel Modal Wiring --- */
-                var addListBtn = document.getElementById("personnelListAddBtn");
-                if (addListBtn) {
-                  addListBtn.addEventListener("click", openAddPersonnelModal);
-                }
-                var addHeaderBtn = document.getElementById("personnelHeaderAddBtn");
-                if (addHeaderBtn) {
-                  addHeaderBtn.addEventListener("click", openAddPersonnelModal);
-                }
                 var addModalCloseBtn = document.getElementById("personnelAddModalCloseBtn");
                 if (addModalCloseBtn) {
                   addModalCloseBtn.addEventListener("click", closeAddPersonnelModal);
@@ -5200,6 +5186,10 @@
                 var addModalCancelBtn = document.getElementById("personnelAddModalCancelBtn");
                 if (addModalCancelBtn) {
                   addModalCancelBtn.addEventListener("click", closeAddPersonnelModal);
+                }
+                var addHeaderBtn = document.getElementById("personnelHeaderAddBtn");
+                if (addHeaderBtn) {
+                  addHeaderBtn.addEventListener("click", openAddPersonnelModal);
                 }
                 var addModalSaveBtn = document.getElementById("personnelAddModalSaveBtn");
                 if (addModalSaveBtn) {
