@@ -5263,10 +5263,46 @@ function hasInventoryCustodianSlipRemoteDatabase() {
     return Boolean(supabaseUrl && supabaseAnonKey && supabaseAnonKey !== "YOUR_SUPABASE_ANON_KEY");
 }
 
+function getInventoryCustodianSlipIdentity(slip) {
+    if (!slip || typeof slip !== "object") return "";
+
+    const dbSlipId = slip.dbSlipId != null ? String(slip.dbSlipId) : "";
+    const dbItemId = slip.dbItemId != null ? String(slip.dbItemId) : "";
+    const localId = String(slip.id || "");
+    const icsNo = String(slip.icsNo || "").trim();
+    const description = String(slip.description || "").trim();
+    const inventoryItemNo = String(slip.inventoryItemNo || "").trim();
+    const assetId = String(slip.assetId || "").trim();
+
+    if (dbSlipId && dbItemId) return `db-slip:${dbSlipId}|db-item:${dbItemId}`;
+    if (dbSlipId && icsNo) return `db-slip:${dbSlipId}|ics:${icsNo}`;
+    if (dbSlipId && description) return `db-slip:${dbSlipId}|desc:${description}`;
+    if (icsNo && description && inventoryItemNo) return `ics:${icsNo}|${description}|${inventoryItemNo}`;
+    if (icsNo && description) return `ics:${icsNo}|${description}`;
+    if (icsNo && assetId) return `ics:${icsNo}|${assetId}`;
+    if (localId) return `local:${localId}`;
+    if (dbItemId) return `db-item:${dbItemId}`;
+    return `${description}|${inventoryItemNo}|${assetId}`;
+}
+
+function dedupeInventoryCustodianSlips(slips) {
+    const seen = new Set();
+    const normalized = [];
+
+    (Array.isArray(slips) ? slips : []).forEach((slip) => {
+        const key = getInventoryCustodianSlipIdentity(slip);
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        normalized.push(slip);
+    });
+
+    return normalized;
+}
+
 function loadInventoryCustodianSlips() {
     try {
         const stored = JSON.parse(localStorage.getItem(inventoryCustodianSlipStorageKey) || "[]");
-        const list = Array.isArray(stored) ? stored : [];
+        const list = dedupeInventoryCustodianSlips(Array.isArray(stored) ? stored : []);
         window.inventoryCustodianSlips = list;
         return list;
     } catch {
@@ -5277,6 +5313,7 @@ function loadInventoryCustodianSlips() {
 
 function saveInventoryCustodianSlips() {
     try {
+        inventoryCustodianSlips = dedupeInventoryCustodianSlips(inventoryCustodianSlips);
         window.inventoryCustodianSlips = inventoryCustodianSlips;
         localStorage.setItem(inventoryCustodianSlipStorageKey, JSON.stringify(inventoryCustodianSlips));
     } catch (error) {
@@ -5383,7 +5420,7 @@ async function loadInventoryCustodianSlipsFromDatabase() {
         throw new Error(`Unable to load Inventory Custodian Slips: HTTP ${response.status}`);
     }
 
-    inventoryCustodianSlips = mapInventoryCustodianSlipRows(await response.json());
+    inventoryCustodianSlips = dedupeInventoryCustodianSlips(mapInventoryCustodianSlipRows(await response.json()));
     window.inventoryCustodianSlips = inventoryCustodianSlips;
     saveInventoryCustodianSlips();
     if (window.activePersonnel && typeof window.renderPersonnelProfile === "function") {
@@ -5758,6 +5795,8 @@ function renderInventoryCustodianSlipTable() {
     const table = document.querySelector("#icsSlipTable");
     if (!table) return;
 
+    inventoryCustodianSlips = dedupeInventoryCustodianSlips(inventoryCustodianSlips);
+
     const query = (dom.icsSlipSearchInput ? dom.icsSlipSearchInput.value : "").trim().toLowerCase();
 
     // Filter across all searchable fields when a query is present
@@ -5985,9 +6024,10 @@ function editInventoryCustodianSlip(id) {
         return false;
     }
 
-    if (!inventoryCustodianSlips.some((entry) => entry.id === slip.id)) {
+    if (!inventoryCustodianSlips.some((entry) => getInventoryCustodianSlipIdentity(entry) === getInventoryCustodianSlipIdentity(slip))) {
         inventoryCustodianSlips.unshift(slip);
     }
+    inventoryCustodianSlips = dedupeInventoryCustodianSlips(inventoryCustodianSlips);
 
     const matchedAsset = findAssetForInventoryCustodianSlip(slip);
 

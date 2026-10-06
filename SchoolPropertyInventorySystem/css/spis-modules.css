@@ -3388,6 +3388,36 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   outline-offset: 4px;
 }
 
+.dashboard-stats-grid .witcher-card,
+.dashboard-stats-grid .witcher-card::before,
+.dashboard-stats-grid .witcher-card .witcher-card-corner,
+.dashboard-stats-grid .witcher-card .witcher-icon-medallion {
+  transition: none;
+}
+
+.dashboard-stats-grid .witcher-card .witcher-card-corner {
+  display: none;
+}
+
+.dashboard-stats-grid .witcher-card:hover {
+  transform: none;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  border-color: var(--wc-silver-dark);
+}
+
+.dashboard-stats-grid .witcher-card:hover::before {
+  opacity: 0;
+}
+
+.dashboard-stats-grid .witcher-card:hover .witcher-icon-medallion {
+  transform: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-stats-grid .witcher-card:hover .witcher-card-title {
+  color: inherit;
+}
+
 /* ==========================================================================
    Mobile Action Buttons Alignment (New, Clear, Save in one row)
    ========================================================================== */
@@ -3822,5 +3852,3 @@ body[data-theme="dark"] .personnel-search-wrapper:focus-within .personnel-search
   cursor: pointer;
   padding-right: 2px;
 }
-
-

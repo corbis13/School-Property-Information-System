@@ -1997,26 +1997,26 @@
               </div>
             </div>
 
-            <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[#15945b]/40 transition" onclick="setPersonnelStatusFilter('accountable')" title="Filter by Accountable">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[#dc9200]/40 transition" onclick="setPersonnelStatusFilter('pending')" title="Filter by Pending">
               <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-full bg-[#ddf8e9] text-[#15945b] flex items-center justify-center">
-                  <i class="fa-solid fa-circle-check text-lg"></i>
+                <div class="w-11 h-11 rounded-full bg-[#fff4d8] text-[#dc9200] flex items-center justify-center">
+                  <i class="fa-solid fa-hourglass-half text-lg"></i>
                 </div>
                 <div>
-                  <p class="text-xs text-[#14794d] font-medium">Accountable</p>
-                  <p id="personnelCountAccountable" class="text-2xl font-bold text-[#153d2d]">0</p>
+                  <p class="text-xs text-[#a86d00] font-medium">Pending</p>
+                  <p id="personnelCountPending" class="text-2xl font-bold text-[#704800]">0</p>
                 </div>
               </div>
             </div>
 
-            <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[#7040d4]/40 transition" onclick="setPersonnelStatusFilter('semi')" title="Filter by Semi-Expendable">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[#15945b]/40 transition" onclick="setPersonnelStatusFilter('issued')" title="Filter by Issued ICS">
               <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-full bg-[#f0e7ff] text-[#7040d4] flex items-center justify-center">
-                  <i class="fa-solid fa-box text-lg"></i>
+                <div class="w-11 h-11 rounded-full bg-[#ddf8e9] text-[#15945b] flex items-center justify-center">
+                  <i class="fa-solid fa-file-circle-check text-lg"></i>
                 </div>
                 <div>
-                  <p class="text-xs text-[#6940bd] font-medium">Semi-Expendable</p>
-                  <p id="personnelCountSemi" class="text-2xl font-bold text-[#3f257d]">0</p>
+                  <p class="text-xs text-[#14794d] font-medium">Issued</p>
+                  <p id="personnelCountIssued" class="text-2xl font-bold text-[#153d2d]">0</p>
                 </div>
               </div>
             </div>
@@ -2108,6 +2108,8 @@
                       <div id="personnelFilterDropdown" class="hidden absolute right-0 mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-30 py-1 text-xs">
                         <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('all')">All Properties</button>
                         <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('accountable')">Accountable</button>
+                        <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('pending')">Pending</button>
+                        <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('issued')">Issued</button>
                         <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('semi')">Semi-Expendable</button>
                         <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('serviceable')">Serviceable</button>
                         <button type="button" class="w-full text-left px-3 py-2 hover:bg-slate-50 font-medium text-slate-700" onclick="setPersonnelStatusFilter('repair')">For Repair</button>
@@ -2157,43 +2159,21 @@
               <div id="personnel-tab-history" class="personnel-tab-content hidden p-6">
                 <h2 class="text-xl font-bold">Accountability History</h2>
                 <p class="text-sm text-gray-500 mt-1">Previous property assignments and transactions.</p>
-                <div class="mt-6 space-y-5">
-                  <div class="flex gap-4">
-                    <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-box"></i></div>
-                    <div>
-                      <p class="font-semibold text-sm">Property assignment updated</p>
-                      <p class="text-xs text-gray-500 mt-1">Automated log from Property Inventory registry</p>
-                    </div>
-                  </div>
-                </div>
+                <div id="personnelHistoryContent" class="mt-6 space-y-5"></div>
               </div><!-- /tab-history -->
 
               <!-- TAB: Documents -->
               <div id="personnel-tab-documents" class="personnel-tab-content hidden p-6">
                 <h2 class="text-xl font-bold">Property Documents</h2>
                 <p class="text-sm text-gray-500 mt-1">Documents associated with this personnel's accountability.</p>
-                <div class="mt-5 grid md:grid-cols-2 gap-3">
-                  <div class="border rounded-lg p-4 flex gap-3">
-                    <div class="text-red-500 text-2xl"><i class="fa-solid fa-file-pdf"></i></div>
-                    <div><p class="font-semibold text-sm">Inventory Custodian Slip (ICS)</p><p class="text-xs text-gray-500">Available via ICS Module</p></div>
-                  </div>
-                  <div class="border rounded-lg p-4 flex gap-3">
-                    <div class="text-red-500 text-2xl"><i class="fa-solid fa-file-pdf"></i></div>
-                    <div><p class="font-semibold text-sm">RSPI Document</p><p class="text-xs text-gray-500">Available via RSPI Module</p></div>
-                  </div>
-                </div>
+                <div id="personnelDocumentsContent" class="mt-5 grid md:grid-cols-2 gap-3"></div>
               </div><!-- /tab-documents -->
 
               <!-- TAB: Activity Log -->
               <div id="personnel-tab-activity" class="personnel-tab-content hidden p-6">
                 <h2 class="text-xl font-bold">Activity Log</h2>
                 <p class="text-sm text-gray-500 mt-1">Recent actions involving this personnel account.</p>
-                <div class="mt-6 space-y-5">
-                  <div class="border-l-2 border-blue-300 pl-4">
-                    <p class="text-sm font-semibold">Account verified</p>
-                    <p class="text-xs text-gray-500">Record active in school database</p>
-                  </div>
-                </div>
+                <div id="personnelActivityContent" class="mt-6 space-y-5"></div>
               </div><!-- /tab-activity -->
 
             </section><!-- /LEFT -->
@@ -3601,11 +3581,8 @@
 
                 // Update summary counters
                 var totalCount = records.length;
-                var accountableCount = records.filter(function (r) {
-                  var s = (r.status || "").toLowerCase();
-                  return !s.includes("unserviceable") && !s.includes("stolen");
-                }).length;
-                var semiCount = records.filter(function (r) { return r.isSemi || (r.icsNo && r.icsNo !== "—"); }).length;
+                var pendingCount = records.filter(function (r) { return r.isPendingIcs; }).length;
+                var issuedCount = records.filter(function (r) { return !r.isPendingIcs && r.icsNo && r.icsNo !== "—"; }).length;
                 var repairCount = records.filter(function (r) {
                   return (r.status || "").toLowerCase().includes("repair") || (r.condition || "").toLowerCase().includes("repair");
                 }).length;
@@ -3617,15 +3594,15 @@
                 if (serviceableCount < 0) serviceableCount = 0;
 
                 var elTotal = document.getElementById("personnelCountTotal");
-                var elAccountable = document.getElementById("personnelCountAccountable");
-                var elSemi = document.getElementById("personnelCountSemi");
+                var elPending = document.getElementById("personnelCountPending");
+                var elIssued = document.getElementById("personnelCountIssued");
                 var elServiceable = document.getElementById("personnelCountServiceable");
                 var elRepair = document.getElementById("personnelCountRepair");
                 var elUnserviceable = document.getElementById("personnelCountUnserviceable");
 
                 if (elTotal) elTotal.textContent = totalCount;
-                if (elAccountable) elAccountable.textContent = accountableCount;
-                if (elSemi) elSemi.textContent = semiCount;
+                if (elPending) elPending.textContent = pendingCount;
+                if (elIssued) elIssued.textContent = issuedCount;
                 if (elServiceable) elServiceable.textContent = serviceableCount;
                 if (elRepair) elRepair.textContent = repairCount;
                 if (elUnserviceable) elUnserviceable.textContent = unserviceableCount;
@@ -3644,7 +3621,11 @@
                 var query = searchInput ? searchInput.value.toLowerCase().trim() : "";
 
                 var filtered = personnelPropertiesList.filter(function (r) {
-                  if (personnelActiveStatusFilter === "accountable") {
+                  if (personnelActiveStatusFilter === "pending") {
+                    if (!r.isPendingIcs) return false;
+                  } else if (personnelActiveStatusFilter === "issued") {
+                    if (r.isPendingIcs || !r.icsNo || r.icsNo === "—") return false;
+                  } else if (personnelActiveStatusFilter === "accountable") {
                     var s = (r.status || "").toLowerCase();
                     if (s.includes("unserviceable") || s.includes("stolen")) return false;
                   } else if (personnelActiveStatusFilter === "semi") {
@@ -3781,6 +3762,8 @@
                   var labels = {
                     all: "All Status",
                     accountable: "Accountable",
+                    pending: "Pending",
+                    issued: "Issued",
                     semi: "Semi-Expendable",
                     serviceable: "Serviceable",
                     repair: "For Repair",
