@@ -757,7 +757,7 @@
 
           </div>
 
-          <!-- RIGHT COLUMN (Quick Actions, Recent Activity, Infographic) -->
+          <!-- RIGHT COLUMN (Quick Actions and Infographic) -->
           <div class="lg:col-span-2 flex flex-col h-full space-y-6">
             
             <!-- QUICK ACTIONS CARD -->
@@ -1715,18 +1715,7 @@
               <p id="personnelHeaderSubtitle" class="text-sm text-gray-500 mt-0.5">Manage personnel profiles and view their accountable school properties.</p>
             </div>
 
-            <!-- Global Search & Personnel Selector -->
             <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <div class="personnel-search-wrapper w-full sm:w-[200px]">
-                <span class="personnel-search-icon">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                </span>
-                <input type="text" id="personnelGlobalSearch" placeholder="Search personnel..."
-                  class="personnel-search-input w-full bg-white text-[#10213c]" />
-              </div>
-              <select id="personnelSelectDropdown" class="h-[38px] px-3 rounded-lg border border-gray-300 bg-white text-sm text-[#10213c] font-medium outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95] max-w-[200px] truncate" title="Select Personnel">
-                <option value="">Loading personnel...</option>
-              </select>
               <button type="button" id="personnelHeaderAddBtn" onclick="openAddPersonnelModal()"
                 class="h-[38px] px-3.5 rounded-lg bg-[#00335e] hover:bg-[#078f95] text-white text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-xs whitespace-nowrap shrink-0"
                 title="Add new personnel">
@@ -1830,7 +1819,7 @@
               </div>
 
               <!-- Table -->
-              <div class="overflow-x-auto">
+              <div class="overflow-x-auto personnel-records-scroll">
                 <table class="w-full text-left text-sm border-collapse">
                   <thead>
                     <tr class="bg-[#f4f7f9] text-[#475569] text-xs font-semibold uppercase tracking-wider border-b border-gray-200">
@@ -2062,7 +2051,7 @@
           <!-- ===================================================
                MAIN CONTENT GRID
           =================================================== -->
-          <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_305px] gap-5">
+          <div class="grid grid-cols-1 gap-5">
 
             <!-- ===============================================
                  LEFT: PROPERTY RECORDS + TABS
@@ -2159,70 +2148,25 @@
               <div id="personnel-tab-history" class="personnel-tab-content hidden p-6">
                 <h2 class="text-xl font-bold">Accountability History</h2>
                 <p class="text-sm text-gray-500 mt-1">Previous property assignments and transactions.</p>
-                <div id="personnelHistoryContent" class="mt-6 space-y-5"></div>
+                <div id="personnelHistoryContent" class="personnel-records-scroll personnel-compact-records mt-6 space-y-5"></div>
               </div><!-- /tab-history -->
 
               <!-- TAB: Documents -->
               <div id="personnel-tab-documents" class="personnel-tab-content hidden p-6">
                 <h2 class="text-xl font-bold">Property Documents</h2>
                 <p class="text-sm text-gray-500 mt-1">Documents associated with this personnel's accountability.</p>
-                <div id="personnelDocumentsContent" class="mt-5 grid md:grid-cols-2 gap-3"></div>
+                <div id="personnelDocumentsContent" class="personnel-records-scroll personnel-compact-records mt-5 grid md:grid-cols-2 gap-3"></div>
               </div><!-- /tab-documents -->
 
               <!-- TAB: Activity Log -->
               <div id="personnel-tab-activity" class="personnel-tab-content hidden p-6">
                 <h2 class="text-xl font-bold">Activity Log</h2>
                 <p class="text-sm text-gray-500 mt-1">Recent actions involving this personnel account.</p>
-                <div id="personnelActivityContent" class="mt-6 space-y-5"></div>
+                <div id="personnelActivityContent" class="personnel-records-scroll personnel-compact-records mt-6 space-y-5"></div>
               </div><!-- /tab-activity -->
 
             </section><!-- /LEFT -->
 
-
-            <!-- ===============================================
-                 RIGHT SIDEBAR
-            ================================================ -->
-            <aside class="space-y-5">
-
-              <!-- Recent Activity -->
-              <section class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div class="px-5 py-4 border-b border-gray-100">
-                  <h3 class="font-bold text-[#172840] flex items-center gap-2">
-                    <i class="fa-solid fa-clock text-gray-500"></i> Recent Activity
-                  </h3>
-                </div>
-                <div class="p-5">
-                  <div class="relative space-y-5">
-                    <div class="absolute left-[5px] top-2 bottom-2 w-px bg-gray-200"></div>
-
-                    <div class="relative flex gap-3">
-                      <div class="w-[11px] h-[11px] rounded-full bg-[#2386c8] mt-1 shrink-0 z-10"></div>
-                      <div><p class="text-xs font-semibold">Active Record</p><p class="text-[11px] text-gray-500 mt-1">Personnel profile loaded</p></div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <!-- Documents -->
-              <section class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div class="px-5 py-4 border-b border-gray-100">
-                  <h3 class="font-bold text-[#172840] flex items-center gap-2">
-                    <i class="fa-solid fa-file-lines text-gray-500"></i> Documents
-                  </h3>
-                </div>
-                <div class="p-5 space-y-4">
-                  <div class="flex gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-file-pdf"></i></div>
-                    <div class="min-w-0"><p class="text-xs font-semibold truncate">Inventory Custodian Slip</p><p class="text-[10px] text-gray-500">Standard DepEd ICS</p></div>
-                  </div>
-                  <div class="flex gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0"><i class="fa-solid fa-file-pdf"></i></div>
-                    <div class="min-w-0"><p class="text-xs font-semibold truncate">RSPI Slip</p><p class="text-[10px] text-gray-500">Semi-Expendable Property</p></div>
-                  </div>
-                </div>
-              </section>
-
-            </aside><!-- /RIGHT SIDEBAR -->
 
           </div><!-- /grid -->
         </div><!-- /#personnelProfileView -->
@@ -2930,6 +2874,7 @@
                 if (pPos) pPos.textContent = teacher.position || teacher.plantilla_position || "—";
 
                 // Render assigned properties
+                personnelPropertiesList = [];
                 renderPersonnelProperties(teacher);
               }
 
@@ -2947,6 +2892,83 @@
                 var num = Number(val);
                 if (isNaN(num) || num <= 0) return "₱0.00";
                 return "₱" + num.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              }
+
+              function getPersonnelRecordDate(record) {
+                var source = record.rawSlip || record.rawAsset || {};
+                return source.createdAt || source.created_at || source.savedAt ||
+                  source.updatedAt || source.updated_at || record.receivedDate || "";
+              }
+
+              function formatPersonnelEventDate(value) {
+                if (!value || value === "N/A") return "Date unavailable";
+                var date = new Date(value);
+                return isNaN(date.getTime()) ? safeEscape(value) : date.toLocaleString("en-PH", {
+                  year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit"
+                });
+              }
+
+              function renderPersonnelAccountabilityTabs(records) {
+                var historyEl = document.getElementById("personnelHistoryContent");
+                var documentsEl = document.getElementById("personnelDocumentsContent");
+                var activityEl = document.getElementById("personnelActivityContent");
+                var list = Array.isArray(records) ? records : [];
+                var datedRecords = list.slice().sort(function (first, second) {
+                  return new Date(getPersonnelRecordDate(second) || 0) - new Date(getPersonnelRecordDate(first) || 0);
+                });
+
+                if (historyEl) {
+                  historyEl.innerHTML = datedRecords.length
+                    ? datedRecords.map(function (record) {
+                        var pending = Boolean(record.isPendingIcs);
+                        var itemName = record.description || "Property item";
+                        var eventTitle = pending ? "Property awaiting ICS" : "Inventory Custodian Slip issued";
+                        var eventDetail = pending
+                          ? itemName + " is assigned to this personnel and does not yet have an issued ICS."
+                          : itemName + " — ICS No. " + (record.icsNo || "—");
+                        return '<article class="flex gap-4 border-b border-gray-100 pb-4 last:border-0">' +
+                          '<div class="w-9 h-9 rounded-full ' + (pending ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600') + ' flex items-center justify-center shrink-0"><i class="fa-solid ' + (pending ? 'fa-hourglass-half' : 'fa-file-circle-check') + '"></i></div>' +
+                          '<div><p class="font-semibold text-sm">' + safeEscape(eventTitle) + '</p>' +
+                          '<p class="text-xs text-gray-500 mt-1">' + safeEscape(eventDetail) + '</p>' +
+                          '<p class="text-xs text-gray-400 mt-1">' + formatPersonnelEventDate(getPersonnelRecordDate(record)) + '</p></div></article>';
+                      }).join("")
+                    : '<p class="text-sm text-gray-400">No accountability history is available for this personnel.</p>';
+                }
+
+                if (documentsEl) {
+                  var issuedDocs = list.map(function (record, index) {
+                    return { record: record, index: index };
+                  }).filter(function (entry) {
+                    return !entry.record.isPendingIcs && entry.record.rawSlip && entry.record.icsNo && entry.record.icsNo !== "—";
+                  });
+                  documentsEl.innerHTML = issuedDocs.length
+                    ? issuedDocs.map(function (entry) {
+                        var record = entry.record;
+                        return '<article class="border rounded-lg p-4 flex items-start gap-3">' +
+                          '<div class="text-red-500 text-2xl"><i class="fa-solid fa-file-pdf"></i></div>' +
+                          '<div class="min-w-0 flex-1"><p class="font-semibold text-sm">Inventory Custodian Slip</p>' +
+                          '<p class="text-xs text-gray-600 mt-1">ICS No. ' + safeEscape(record.icsNo) + '</p>' +
+                          '<p class="text-xs text-gray-500 truncate mt-1" title="' + safeEscape(record.description || "") + '">' + safeEscape(record.description || "Property item") + '</p>' +
+                          '<p class="text-xs text-gray-400 mt-1">' + formatPersonnelEventDate(getPersonnelRecordDate(record)) + '</p>' +
+                          '<button type="button" class="mt-3 text-xs font-semibold text-blue-700 hover:text-blue-900" data-personnel-document-index="' + entry.index + '"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>Open ICS</button></div></article>';
+                      }).join("")
+                    : '<p class="text-sm text-gray-400 md:col-span-2">No issued ICS documents are available for this personnel.</p>';
+                }
+
+                if (activityEl) {
+                  activityEl.innerHTML = datedRecords.length
+                    ? datedRecords.map(function (record) {
+                        var pending = Boolean(record.isPendingIcs);
+                        var action = pending ? "Pending ICS identified for" : "ICS issued to";
+                        var detail = (record.description || "Property item") +
+                          (pending ? "" : " (ICS No. " + (record.icsNo || "—") + ")");
+                        return '<article class="border-l-2 ' + (pending ? 'border-amber-300' : 'border-blue-300') + ' pl-4 py-1">' +
+                          '<p class="text-sm font-semibold">' + safeEscape(action) + ' ' + safeEscape(window.activePersonnel ? window.activePersonnel.teacher_name : "personnel") + '</p>' +
+                          '<p class="text-xs text-gray-600 mt-1">' + safeEscape(detail) + '</p>' +
+                          '<p class="text-xs text-gray-400 mt-1">' + formatPersonnelEventDate(getPersonnelRecordDate(record)) + '</p></article>';
+                      }).join("")
+                    : '<p class="text-sm text-gray-400">No activity has been recorded for this personnel.</p>';
+                }
               }
 
               /* --- Exact Name Matching Engine for Accountable Person --- */
@@ -3004,7 +3026,7 @@
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
                 var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
                 try {
-                  var sel = "id,ics_no,entity_name,fund_cluster,received_from_name,received_from_position,received_from_date,received_by_name,received_by_position,received_by_date,ics_slip_items(id,line_no,asset_id,inventory_item_no,description_snapshot,additional_item,quantity,unit,unit_cost,total_cost,estimated_useful_life)";
+                  var sel = "id,ics_no,entity_name,fund_cluster,received_from_name,received_from_position,received_from_date,received_by_name,received_by_position,received_by_date,created_at,ics_slip_items(id,line_no,asset_id,inventory_item_no,description_snapshot,additional_item,quantity,unit,unit_cost,total_cost,estimated_useful_life)";
                   var res = await fetch(sUrl + "/rest/v1/ics_slips?select=" + encodeURIComponent(sel) + "&order=created_at.desc", { headers: sHeaders });
                   if (res.ok) {
                     var data = await res.json();
@@ -3034,7 +3056,8 @@
                           receivedFrom: header.received_from_name || "",
                           receivedFromPosition: header.received_from_position || "",
                           receivedByDate: header.received_by_date || "",
-                          receivedFromDate: header.received_from_date || ""
+                          receivedFromDate: header.received_from_date || "",
+                          createdAt: header.created_at || ""
                         });
                       });
                     });
@@ -3058,7 +3081,7 @@
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
                 var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
                 try {
-                  var res = await fetch(sUrl + "/rest/v1/assets?select=id,asset_id,item_brand_model,serial_no,accountable_person,semi_expandable_no,property_no,unit_value,total,unit_measurement,on_hand,status,date_issue,acquisition_date,additional_item,fund_cluster,created_at", { headers: sHeaders });
+                  var res = await fetch(sUrl + "/rest/v1/assets?select=id,asset_id,item_brand_model,serial_no,accountable_person,semi_expandable_no,property_no,unit_value,total,unit_measurement,on_hand,status,date_issue,acquisition_date,additional_item,fund_cluster,created_at,updated_at", { headers: sHeaders });
                   if (res.ok) {
                     var rows = await res.json();
                     var mappedAssets = rows.map(function(r) {
@@ -3078,6 +3101,8 @@
                         status: r.status,
                         dateIssue: r.date_issue,
                         acquisitionDate: r.acquisition_date,
+                        createdAt: r.created_at || "",
+                        updatedAt: r.updated_at || "",
                         additionalItem: r.additional_item || "",
                         fundCluster: r.fund_cluster || "01"
                       };
@@ -3334,9 +3359,6 @@
                 var hSub = document.getElementById("personnelHeaderSubtitle");
                 if (hTitle) hTitle.textContent = "Personnel Accountability";
                 if (hSub) hSub.textContent = "Manage personnel profiles and view their accountable school properties.";
-
-                var dropdown = document.getElementById("personnelSelectDropdown");
-                if (dropdown) dropdown.value = target.id;
 
                 renderPersonnelProfile(target);
               }
@@ -3608,6 +3630,7 @@
                 if (elUnserviceable) elUnserviceable.textContent = unserviceableCount;
                 if (summaryCountEl) summaryCountEl.textContent = totalCount + (totalCount === 1 ? " property" : " properties");
 
+                renderPersonnelAccountabilityTabs(records);
                 renderPersonnelPropertyTableRows();
               }
 
@@ -3682,7 +3705,7 @@
                   var itemNo = safeEscape(rec.inventoryItemNo || "—");
                   var desc = safeEscape(rec.description || "—");
                   var addItem = rec.additionalItem || (rec.rawAsset ? (rec.rawAsset.additionalItem || rec.rawAsset.additional_item) : "") || (rec.rawSlip ? rec.rawSlip.additionalItem : "");
-                  var addItemHtml = addItem ? '<div class="text-[11px] text-amber-700 font-medium bg-amber-50/90 px-1.5 py-0.5 rounded border border-amber-200/70 inline-flex items-center gap-1 mt-1 max-w-full truncate"><i class="fa-solid fa-puzzle-piece text-[9px] shrink-0"></i> <span class="truncate">' + safeEscape(addItem) + '</span></div>' : '';
+                  var addItemHtml = addItem ? '<div class="text-[11px] text-slate-500 font-normal mt-0.5 max-w-full truncate">' + safeEscape(addItem) + '</div>' : '';
                   var qty = rec.quantity || 1;
                   var unit = safeEscape(rec.unit || "unit");
                   var unitCost = formatPesoCurrency(rec.unitCost);
@@ -3931,17 +3954,6 @@
                   if (!res.ok) throw new Error("Failed to load personnel");
                   var rows = await res.json();
                   window.personnelList = sortPersonnelByLatest(rows || []);
-
-                  // Populate dropdown
-                  var dropdown = document.getElementById("personnelSelectDropdown");
-                  if (dropdown && window.personnelList.length > 0) {
-                    var optionsHtml = "";
-                    window.personnelList.forEach(function (t) {
-                      var sub = t.position || t.plantilla_position || t.school_level || "";
-                      optionsHtml += '<option value="' + t.id + '">' + safeEscape(t.teacher_name) + (sub ? ' (' + safeEscape(sub) + ')' : '') + '</option>';
-                    });
-                    dropdown.innerHTML = optionsHtml;
-                  }
 
                   // Pre-load latest slips, assets, and school details
                   await fetchIcsSlipsDirectly(true);
@@ -4268,17 +4280,6 @@
                   }
                   window.personnelList = sortPersonnelByLatest(window.personnelList);
                   personnelListCurrentPage = 1;
-
-                  // Update dropdown
-                  var dropdown = document.getElementById("personnelSelectDropdown");
-                  if (dropdown) {
-                    var sub = savedRow.position || savedRow.plantilla_position || savedRow.school_level || "";
-                    var newOpt = document.createElement("option");
-                    newOpt.value = savedRow.id;
-                    newOpt.textContent = savedRow.teacher_name + (sub ? " (" + sub + ")" : "");
-                    dropdown.insertBefore(newOpt, dropdown.firstChild);
-                    dropdown.value = savedRow.id;
-                  }
 
                   // Update teacher options for Inventory and Document modules
                   if (typeof loadTeacherOptions === "function") {
@@ -4815,16 +4816,6 @@
                   updatePersonnelStatCards();
                   renderPersonnelListTable();
 
-                  // Update dropdown option text
-                  var dropdown = document.getElementById("personnelSelectDropdown");
-                  if (dropdown) {
-                    var opt = dropdown.querySelector('option[value="' + id + '"]');
-                    if (opt) {
-                      var sub = savedRow.position || savedRow.plantilla_position || savedRow.school_level || "";
-                      opt.textContent = savedRow.teacher_name + (sub ? ' (' + sub + ')' : '');
-                    }
-                  }
-
                   closeEditPersonnelModal();
 
                   if (typeof showToast === "function") {
@@ -5055,31 +5046,14 @@
                   });
                 });
 
-                /* --- Dropdown selector change --- */
-                var dropdown = document.getElementById("personnelSelectDropdown");
-                if (dropdown) {
-                  dropdown.addEventListener("change", function () {
-                    var selectedId = Number(this.value);
-                    var matched = window.personnelList.find(function (t) { return Number(t.id) === selectedId; });
-                    if (matched) showPersonnelProfileView(matched);
-                  });
-                }
-
-                /* --- Global personnel search --- */
-                var globalSearch = document.getElementById("personnelGlobalSearch");
-                if (globalSearch) {
-                  globalSearch.addEventListener("input", function () {
-                    var q = this.value.toLowerCase().trim();
-                    if (!q || !window.personnelList.length) return;
-                    var found = window.personnelList.find(function (t) {
-                      return String(t.teacher_name || "").toLowerCase().includes(q) ||
-                        String(t.employee_id || "").toLowerCase().includes(q) ||
-                        String(t.position || "").toLowerCase().includes(q) ||
-                        String(t.grade_section || "").toLowerCase().includes(q);
-                    });
-                    if (found) {
-                      showPersonnelProfileView(found);
-                      if (dropdown) dropdown.value = found.id;
+                var documentsContent = document.getElementById("personnelDocumentsContent");
+                if (documentsContent) {
+                  documentsContent.addEventListener("click", function (event) {
+                    var button = event.target.closest("[data-personnel-document-index]");
+                    if (!button) return;
+                    var record = personnelPropertiesList[Number(button.dataset.personnelDocumentIndex)];
+                    if (record && record.rawSlip && typeof window.openInventoryCustodianSlipPdf === "function") {
+                      window.openInventoryCustodianSlipPdf(record.rawSlip);
                     }
                   });
                 }

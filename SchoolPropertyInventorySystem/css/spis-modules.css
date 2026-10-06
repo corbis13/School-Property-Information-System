@@ -3418,6 +3418,31 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   color: inherit;
 }
 
+.personnel-records-scroll {
+  max-height: min(460px, 55vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.personnel-compact-records {
+  gap: 0.25rem;
+  max-height: min(460px, 55vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.personnel-compact-records > article {
+  padding: 0.375rem;
+}
+
+.personnel-compact-records > article > div:first-child {
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.75rem;
+}
+
 /* ==========================================================================
    Mobile Action Buttons Alignment (New, Clear, Save in one row)
    ========================================================================== */

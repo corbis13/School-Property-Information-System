@@ -5398,7 +5398,8 @@ function mapInventoryCustodianSlipRows(rows) {
                 receivedFromPosition: header.received_from_position || "",
                 receivedByPosition: header.received_by_position || "",
                 receivedFromDate: header.received_from_date || "",
-                receivedByDate: header.received_by_date || ""
+                receivedByDate: header.received_by_date || "",
+                createdAt: header.created_at || ""
             }));
     });
 }
@@ -5410,6 +5411,7 @@ async function loadInventoryCustodianSlipsFromDatabase() {
         "id", "ics_no", "entity_name", "fund_cluster",
         "received_from_name", "received_from_position", "received_from_date",
         "received_by_name", "received_by_position", "received_by_date",
+        "created_at",
         "ics_slip_items(id,line_no,asset_id,inventory_item_no,description_snapshot,additional_item,quantity,unit,unit_cost,total_cost,estimated_useful_life)"
     ].join(",");
     const response = await fetch(`${supabaseUrl}/rest/v1/ics_slips?select=${encodeURIComponent(select)}&order=created_at.desc`, {
