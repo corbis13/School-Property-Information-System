@@ -436,16 +436,12 @@
   margin-bottom: 0;
 }
 
-.about-grid {
+.module-view[data-module="about"] .about-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .about-grid {
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  }
+  width: 100%;
+  align-items: stretch;
 }
 
 /* Settings Module Grid - Auto-fit Responsive Layout */
