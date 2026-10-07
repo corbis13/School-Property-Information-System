@@ -3585,6 +3585,25 @@ function showConfirmDialog({
     });
 }
 
+function toggleInventorySubmenu() {
+    const toggle = document.querySelector("[data-inventory-toggle]");
+    const submenu = document.getElementById("inventorySubmenu");
+    if (!toggle || !submenu) return;
+
+    const shouldOpen = submenu.classList.contains("hidden");
+    submenu.classList.toggle("hidden", !shouldOpen);
+    toggle.setAttribute("aria-expanded", String(shouldOpen));
+    toggle.querySelector(".inventory-nav-chevron")?.classList.toggle("rotate-180", shouldOpen);
+}
+
+document.addEventListener("click", (event) => {
+    const inventoryToggle = event.target.closest("[data-inventory-toggle]");
+    if (!inventoryToggle) return;
+
+    event.preventDefault();
+    toggleInventorySubmenu();
+});
+
 function showToast(message) {
     dom.toast.textContent = message;
     dom.toast.classList.add("show");
