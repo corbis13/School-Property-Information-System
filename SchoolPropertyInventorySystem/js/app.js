@@ -86,6 +86,8 @@ const dom = {
     status: document.querySelector("#status"),
     additionalItem: document.querySelector("#additionalItem"),
     remarks: document.querySelector("#remarks"),
+    supplierField: document.querySelector("#supplierField"),
+    supplier: document.querySelector("#supplier"),
     table: document.querySelector("#inventoryTable"),
     emptyState: document.querySelector("#emptyState"),
     pagination: document.querySelector("#inventoryPagination"),
@@ -1522,7 +1524,7 @@ async function loadItems() {
     setDatabaseStatus("Connecting to Supabase...", "Loading inventory records from the backend.");
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=id,asset_id,education_level,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,additional_item,remarks,created_at,updated_at`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=id,asset_id,education_level,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,additional_item,remarks,supplier,created_at,updated_at`, {
             headers: supabaseHeaders
         });
 
@@ -1558,6 +1560,7 @@ async function loadItems() {
             status: row.status || "",
             additionalItem: row.additional_item || row.additionalItem || "",
             remarks: row.remarks || "",
+            supplier: row.supplier || "",
             createdAt: row.created_at || row.createdAt || "",
             updatedAt: row.updated_at || row.updatedAt || ""
         }));
@@ -1647,6 +1650,7 @@ async function syncToSheet(action, item) {
         status: item.status,
         additional_item: item.additionalItem || "",
         remarks: item.remarks,
+        supplier: isTextbookType(item.inventoryType) ? item.supplier || "" : "",
         created_at: item.createdAt,
         updated_at: item.updatedAt
     };
@@ -1731,9 +1735,20 @@ function getFormData() {
         status: dom.status.value || "",
         additionalItem: dom.additionalItem.value.trim(),
         remarks: dom.remarks.value.trim(),
+        supplier: isTextbookType(dom.inventoryType.value) ? dom.supplier.value.trim() : "",
         createdAt: (existing && existing.createdAt) || now,
         updatedAt: now
     };
+}
+
+function isTextbookType(value) {
+    return String(value || "").trim().toLowerCase() === "textbook";
+}
+
+function updateSupplierFieldVisibility() {
+    const isTextbook = isTextbookType(dom.inventoryType.value);
+    dom.supplierField.hidden = !isTextbook;
+    if (!isTextbook) dom.supplier.value = "";
 }
 
 function normalizeAssetId(value, fallbackIndex = 1) {
@@ -1805,6 +1820,8 @@ function fillForm(item) {
     dom.educationLevel.value = item.educationLevel || "";
     dom.fundCluster.value = item.fundCluster;
     dom.inventoryType.value = item.inventoryType || "";
+    dom.supplier.value = item.supplier || "";
+    updateSupplierFieldVisibility();
     dom.propertyNo.value = item.propertyNo;
     ensureSelectOption(dom.itemClassification, item.itemClassification);
     dom.itemClassification.value = item.itemClassification;
@@ -1845,6 +1862,7 @@ function applySelectedTeacherDetails() {
 
 function resetForm() {
     dom.form.reset();
+    updateSupplierFieldVisibility();
     dom.editingId.value = "";
     dom.assetId.value = createId();
     dom.position.value = "";
@@ -3100,7 +3118,7 @@ function getFilteredItems() {
             item.inventoryType,
             item.propertyNo,
             item.itemClassification,
-            item.itemBrandModel,
+            item.itemBrandModel || item.item_brand_model || item.description || item.desc,
             item.serialNo,
             item.acquisitionDate,
             item.accountable,
@@ -3164,7 +3182,7 @@ function renderTable() {
             <td>${escapeHtml(item.propertyNo || item.assetId)}</td>
             <td>
                 <span class="item-title">
-                    <strong>${escapeHtml(item.itemBrandModel)}</strong>
+                    <strong>${escapeHtml(item.itemBrandModel || item.item_brand_model || item.description || item.desc || "")}</strong>
                 </span>
             </td>
             <td>${escapeHtml(item.serialNo || "-")}</td>
@@ -4921,6 +4939,7 @@ function wireEvents() {
     });
 
     dom.form.addEventListener("submit", handleSave);
+    dom.inventoryType.addEventListener("change", updateSupplierFieldVisibility);
     dom.table.addEventListener("click", handleTableClick);
     dom.pagination.addEventListener("click", (event) => {
         const button = event.target.closest("[data-page]");

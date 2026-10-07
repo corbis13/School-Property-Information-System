@@ -1050,14 +1050,14 @@
                             <input id="propertyNo" type="text" placeholder="e.g. PROP-2026-001" required>
                         </label>
                         <label>
-                            Item/Brand/Model
+                            Description
                             <input id="itemBrandModel" type="text" placeholder="e.g. Dell Latitude 5440 Laptop" required>
                         </label>
                     </div>
 
                     <div class="two-column">
                         <label>
-                            Item Classification
+                            Article
                             <div class="classification-controls" style="display:flex; gap:8px; align-items:center;">
                                 <select id="itemClassification" style="flex:1;">
                                     <option value="">Select classification</option>
@@ -1198,6 +1198,11 @@
                         <textarea id="remarks" class="large-remarks" rows="4" placeholder="Other details about the item..."></textarea>
                     </label>
 
+                    <label class="full-width" id="supplierField" hidden>
+                        Supplier
+                        <input id="supplier" type="text">
+                    </label>
+
                     <div class="inventory-actions-row form-actions-row">
                         <!-- New Button -->
                         <button class="button" id="newItemBtnInline" type="button" onclick="resetForm(); showSuccessModal('Ready for new asset!', 'New Asset');" title="New Asset">
@@ -1256,7 +1261,7 @@
                         <thead>
                             <tr>
                                 <th>Property No.</th>
-                                <th>Item/Brand/Model</th>
+                                <th>Description</th>
                                 <th>Serial No.</th>
                                 <th>Classification</th>
                                 <th>Accountable</th>
