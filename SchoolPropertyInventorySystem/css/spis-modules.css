@@ -101,7 +101,8 @@
 
   /* Nav: hide text labels only (not icon wrappers) */
   .app-sidebar.sidebar-collapsed .nav-item .nav-label,
-  .app-sidebar.sidebar-collapsed .nav-item .document-nav-chevron {
+  .app-sidebar.sidebar-collapsed .nav-item .document-nav-chevron,
+  .app-sidebar.sidebar-collapsed .nav-item .inventory-nav-chevron {
     display: none;
   }
 
@@ -128,6 +129,33 @@
 
   .app-sidebar.sidebar-collapsed .document-nav-parent > span.ml-3 {
     margin-left: 0;
+  }
+
+  /* Keep Inventory's nested icon wrapper centered in the collapsed rail */
+  .app-sidebar.sidebar-collapsed .inventory-nav-parent > span.flex {
+    flex: 0 0 auto;
+    justify-content: center;
+  }
+
+  /* Inventory submenu follows the same centered icon alignment */
+  .app-sidebar.sidebar-collapsed .inventory-submenu {
+    display: none;
+    padding-left: 0;
+    padding-top: 2px;
+  }
+
+  .app-sidebar.sidebar-collapsed .inventory-submenu:not(.hidden) {
+    display: block;
+  }
+
+  .app-sidebar.sidebar-collapsed .inventory-submenu .nav-item {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .app-sidebar.sidebar-collapsed .inventory-submenu .nav-label {
+    display: none;
   }
 
   /* Document submenu in collapsed mode: show inline below Document icon */
