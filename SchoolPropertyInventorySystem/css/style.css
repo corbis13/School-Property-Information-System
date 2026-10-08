@@ -1705,7 +1705,10 @@ body[data-theme="light"] .qr-summary-card p {
     width: 6%;
 }
 
-.physical-report-table .report-col-balance,
+.physical-report-table .report-col-balance {
+    width: 3%;
+}
+
 .physical-report-table .report-col-on-hand {
     width: 5%;
 }
@@ -1800,8 +1803,12 @@ body[data-theme="light"] .qr-summary-card p {
 .physical-report.pdf-export .physical-report-table th,
 .physical-report.pdf-export .physical-report-table td {
     padding: 1px 2px;
-    border: 0.25px solid rgba(17, 17, 17, 0.35);
+    border: 0.25px solid #ffffff;
     line-height: 1.05;
+}
+
+.physical-report.pdf-export .physical-report-table th {
+    border: 1px solid #000000;
 }
 
 .physical-report.pdf-export .physical-report-table th {

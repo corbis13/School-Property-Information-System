@@ -2817,6 +2817,11 @@ function renderRecentAssets() {
 
 
 
+function normalizeReportInventoryType(value) {
+    const normalized = String(value ?? "").trim();
+    return normalized && normalized.toLowerCase() !== "all" ? normalized : "";
+}
+
 function renderReports() {
     renderReportOptions();
     if (!dom.reportAsOf.value) {
@@ -2845,8 +2850,8 @@ function renderAllAssetsView() {
 }
 
 function getReportItems() {
-    const inventoryType = dom.reportInventoryType.value;
-    const fundCluster = dom.reportFundCluster.value;
+    const inventoryType = normalizeReportInventoryType(dom.reportInventoryType?.value);
+    const fundCluster = dom.reportFundCluster?.value || "";
 
     return items.filter((item) => {
         const matchesType = !inventoryType || (item.inventoryType || "") === inventoryType;
@@ -2862,14 +2867,15 @@ function formatReportDate(value) {
 }
 
 function renderReportOptions() {
-    const selectedType = dom.reportInventoryType.value;
-    const selectedFund = dom.reportFundCluster.value;
+    const selectedType = normalizeReportInventoryType(dom.reportInventoryType?.value);
+    const selectedFund = dom.reportFundCluster?.value || "";
     const types = [...new Set(items.map((item) => item.inventoryType).filter(Boolean))].sort();
     const funds = [...new Set(items.map((item) => item.fundCluster).filter(Boolean))].sort();
 
-    dom.reportInventoryType.innerHTML = `<option value="">All inventory types</option>${types.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+    dom.reportInventoryType.innerHTML = `<option value="all">All inventory types</option>${types.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
     dom.reportFundCluster.innerHTML = `<option value="">All fund clusters</option>${funds.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
-    dom.reportInventoryType.value = types.includes(selectedType) ? selectedType : "";
+    const matchingType = types.includes(selectedType) ? selectedType : "all";
+    dom.reportInventoryType.value = matchingType;
     dom.reportFundCluster.value = funds.includes(selectedFund) ? selectedFund : "";
 }
 
@@ -2877,11 +2883,20 @@ function reportCell(value, fallback = "") {
     return escapeHtml(value === 0 ? "0" : (value || fallback));
 }
 
+function getReportArticle(item) {
+    const classification = item && Object.prototype.hasOwnProperty.call(item, "item_classification")
+        ? item.item_classification
+        : item?.itemClassification;
+    return classification == null || String(classification).trim() === ""
+        ? "-"
+        : String(classification).trim();
+}
+
 function renderPhysicalCountReport() {
     if (!dom.physicalReport) return;
     const reportItems = getReportItems();
-    const inventoryType = dom.reportInventoryType.value || "ALL INVENTORY ITEMS";
-    const fundCluster = dom.reportFundCluster.value || "____________________________";
+    const inventoryType = normalizeReportInventoryType(dom.reportInventoryType?.value) || "ALL INVENTORY ITEMS";
+    const fundCluster = dom.reportFundCluster?.value || "____________________________";
     const signatories = [
         ["Certified Correct by:", dom.certifiedCorrectedBy?.value || ""],
         ["Approved by:", dom.approvedBy?.value || ""],
@@ -2922,7 +2937,7 @@ function renderPhysicalCountReport() {
                         <th rowspan="2">Unit of<br>Measure</th>
                         <th colspan="2">Amount</th>
                         <th rowspan="2">Date<br>Acquired<br><small>(YYYY-MM-DD)</small></th>
-                        <th rowspan="2">Balance Per<br>Card<br><small>(Quantity)</small></th>
+                        <th rowspan="2">Balance<br>Per<br>Card<br><small>(Quantity)</small></th>
                         <th rowspan="2">On Hand<br>Per Count<br><small>(Quantity)</small></th>
                         <th colspan="2">Shortage/Overage</th>
                         <th colspan="3">Remarks</th>
@@ -2940,7 +2955,7 @@ function renderPhysicalCountReport() {
                 <tbody>
                     ${reportItems.length ? reportItems.map((item) => `
                         <tr>
-                            <td>${reportCell(item.itemClassification || item.item_classification || item.article || "-")}</td>
+                            <td>${reportCell(getReportArticle(item))}</td>
                             <td>${reportCell(item.itemBrandModel)}</td>
                             <td>${reportCell(item.semiExpandableNo || item.propertyNo)}</td>
                             <td>${reportCell(item.unitMeasurement)}</td>

@@ -3090,7 +3090,7 @@
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
                 var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
                 try {
-                  var res = await fetch(sUrl + "/rest/v1/assets?select=id,asset_id,item_brand_model,serial_no,accountable_person,semi_expandable_no,property_no,unit_value,total,unit_measurement,on_hand,status,date_issue,acquisition_date,additional_item,fund_cluster,created_at,updated_at", { headers: sHeaders });
+                  var res = await fetch(sUrl + "/rest/v1/assets?select=id,asset_id,item_classification,item_brand_model,serial_no,accountable_person,semi_expandable_no,property_no,unit_value,total,unit_measurement,on_hand,status,date_issue,acquisition_date,additional_item,fund_cluster,created_at,updated_at", { headers: sHeaders });
                   if (res.ok) {
                     var rows = await res.json();
                     var mappedAssets = rows.map(function(r) {
@@ -3098,6 +3098,7 @@
                         id: r.id,
                         dbId: r.id,
                         assetId: r.asset_id,
+                        item_classification: r.item_classification || "",
                         itemBrandModel: r.item_brand_model,
                         serialNo: r.serial_no || "",
                         accountable: r.accountable_person,
@@ -5280,7 +5281,7 @@
                         <th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Unit of<br>Measure</th>
                         <th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Amount</th>
                         <th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:6%; color:#000000;">Date<br>Acquired<br><small style="font-size:6pt;">(YYYY-MM-DD)</small></th>
-                        <th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Balance Per<br>Card<br><small style="font-size:6pt;">(Quantity)</small></th>
+                        <th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:3%; color:#000000;">Balance<br>Per<br>Card<br><small style="font-size:6pt;">(Quantity)</small></th>
                         <th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">On Hand<br>Per Count<br><small style="font-size:6pt;">(Quantity)</small></th>
                         <th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Shortage/Overage</th>
                         <th colspan="3" style="border:1px solid #000000; padding:2px 4px; width:14%; color:#000000;">Remarks</th>
@@ -6384,7 +6385,11 @@
         const apprVal = appr && appr.value ? appr.value : "";
         const verVal = ver && ver.value ? ver.value : "";
 
-        const allSourceRows = (items && items.length > 0) ? items : OFFICIAL_TEMPLATE_ROWS;
+        const allSourceRows = (items && items.length > 0)
+            ? items
+            : (window.inventoryData && window.inventoryData.length > 0)
+                ? window.inventoryData
+                : OFFICIAL_TEMPLATE_ROWS;
         let rows = allSourceRows;
 
         if (sel !== "all" && sel !== "") {
@@ -6447,7 +6452,7 @@
                + '</td></tr>';
         } else {
             rows.forEach(function(item){
-                const art = item.itemClassification || item.item_classification || item.article || "-";
+                const art = getReportArticle(item);
                 const dsc = item.desc || item.itemBrandModel || item.description || "-";
                 const pno = item.propNo || item.semiExpandableNo || item.propertyNo || item.property_no || "-";
                 const uom = item.uom || item.unitMeasurement || item.unit_measurement || "";
@@ -6512,7 +6517,7 @@
             +       '<th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Unit of<br>Measure</th>'
             +       '<th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Amount</th>'
             +       '<th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:6%; color:#000000;">Date<br>Acquired<br><small style="font-size:6pt;">(YYYY-MM-DD)</small></th>'
-            +       '<th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Balance Per<br>Card<br><small style="font-size:6pt;">(Quantity)</small></th>'
+            +       '<th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:3%; color:#000000;">Balance<br>Per<br>Card<br><small style="font-size:6pt;">(Quantity)</small></th>'
             +       '<th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">On Hand<br>Per Count<br><small style="font-size:6pt;">(Quantity)</small></th>'
             +       '<th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Shortage/Overage</th>'
             +       '<th colspan="3" style="border:1px solid #000000; padding:2px 4px; width:14%; color:#000000;">Remarks</th>'
