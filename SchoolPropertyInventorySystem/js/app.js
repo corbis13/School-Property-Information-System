@@ -2966,54 +2966,41 @@ function renderPhysicalCountReport() {
     ];
 
     dom.physicalReport.innerHTML = `
-        <div class="physical-report-header">
-            <strong>REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY</strong>
-            <strong class="report-title-underline">${escapeHtml(inventoryType.toUpperCase())}</strong>
-            <span>(Type of Inventory Item)</span>
-            <span>As of <u>${formatReportDate(dom.reportAsOf.value)}</u></span>
-        </div>
-        <div class="report-fund-cluster"><strong>Fund Cluster :</strong> ${escapeHtml(fundCluster)}</div>
-        <div class="physical-report-table-wrap">
-            <table class="physical-report-table">
-                <colgroup>
-                    <col class="report-col-article">
-                    <col class="report-col-description">
-                    <col class="report-col-property-number">
-                    <col class="report-col-unit-measure">
-                    <col class="report-col-unit-value">
-                    <col class="report-col-total">
-                    <col class="report-col-date-acquired">
-                    <col class="report-col-balance">
-                    <col class="report-col-on-hand">
-                    <col class="report-col-shortage-quantity">
-                    <col class="report-col-shortage-value">
-                    <col class="report-col-accountable">
-                    <col class="report-col-location">
-                    <col class="report-col-status">
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th rowspan="2">Article</th>
-                        <th rowspan="2">Description</th>
-                        <th rowspan="2">Semi-Expandable<br>Property Number</th>
-                        <th rowspan="2">Unit of<br>Measure</th>
-                        <th colspan="2">Amount</th>
-                        <th rowspan="2">Date<br>Acquired<br><small>(YYYY-MM-DD)</small></th>
-                        <th rowspan="2">Balance<br>Per<br>Card<br><small>(Quantity)</small></th>
-                        <th rowspan="2">On Hand<br>Per Count<br><small>(Quantity)</small></th>
-                        <th colspan="2">Shortage/Overage</th>
-                        <th colspan="3">Remarks</th>
-                    </tr>
-                    <tr>
-                        <th>Unit Value</th>
-                        <th>Total</th>
-                        <th>Quantity</th>
-                        <th>Value</th>
-                        <th>Current Accountable Personnel</th>
-                        <th>Location</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
+        <div class="physical-report-paper" style="background:#ffffff; color:#000000; font-family:Arial,Helvetica,sans-serif; font-size:7.5pt; width:100%; box-sizing:border-box; padding:15px 5px 35px 5px;">
+            <div style="text-align:center; margin-bottom:12px; color:#000000;">
+                <div style="font-size:14pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; color:#000000;">REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY</div>
+                <div id="paperInventoryType" style="font-size:11pt; font-weight:bold; text-transform:uppercase; border-bottom:1.5px solid #000000; display:inline-block; padding-bottom:2px; letter-spacing:0.5px; margin-top:2px; color:#000000;">${escapeHtml(inventoryType.toUpperCase())}</div>
+                <div style="font-size:8pt; color:#000000; margin-top:1px;">(Type of Inventory Item)</div>
+                <div style="font-size:11pt; margin-top:6px; color:#000000;">As of <span id="paperAsOf" style="border-bottom:1.5px solid #000000; display:inline-block; padding-bottom:2px; color:#000000;">${formatReportDate(dom.reportAsOf?.value || "2026-09-01")}</span></div>
+            </div>
+            <div style="font-size:11pt; margin:8px 0 4px 0; font-weight:bold; color:#000000;">
+                Fund Cluster : <span id="paperFundCluster" style="border-bottom:1.5px solid #000000; display:inline-block; min-width:220px; padding:2px 8px 3px 8px; line-height:1.4; vertical-align:middle; color:#000000;">${fundCluster && fundCluster !== "____________________________" ? escapeHtml(fundCluster) : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"}</span>
+            </div>
+            <div style="overflow-x:auto; width:100%;">
+                <table style="width:100%; border-collapse:collapse; font-size:7pt; border:1px solid #000000; margin-top:4px; color:#000000; background:#ffffff;">
+                    <thead>
+                        <tr style="background:#d9d9d9; font-weight:bold; text-align:center; color:#000000;">
+                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:9%; color:#000000;">Article</th>
+                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:11%; color:#000000;">Description</th>
+                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:9%; color:#000000;">Semi-Expendable<br>Property Number</th>
+                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Unit of<br>Measure</th>
+                            <th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Amount</th>
+                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:6%; color:#000000;">Date<br>Acquired<br><small style="font-size:6pt;">(YYYY-MM-DD)</small></th>
+                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:3%; color:#000000;">Balance<br>Per<br>Card<br><small style="font-size:6pt;">(Quantity)</small></th>
+                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">On Hand<br>Per Count<br><small style="font-size:6pt;">(Quantity)</small></th>
+                            <th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Shortage/Overage</th>
+                            <th colspan="3" style="border:1px solid #000000; padding:2px 4px; width:14%; color:#000000;">Remarks</th>
+                        </tr>
+                        <tr style="background:#d9d9d9; font-weight:bold; text-align:center; color:#000000;">
+                            <th style="border:1px solid #000000; padding:2px 3px; width:4%; color:#000000;">Unit<br>Value</th>
+                            <th style="border:1px solid #000000; padding:2px 3px; width:4%; color:#000000;">Total</th>
+                            <th style="border:1px solid #000000; padding:2px 3px; width:4%; color:#000000;">Quantity</th>
+                            <th style="border:1px solid #000000; padding:2px 3px; width:4%; color:#000000;">Value</th>
+                            <th style="border:1px solid #000000; padding:2px 3px; width:8%; color:#000000;">Current Accountable<br>Personnel</th>
+                            <th style="border:1px solid #000000; padding:2px 3px; width:4%; color:#000000;">Location</th>
+                            <th style="border:1px solid #000000; padding:2px 3px; width:5%; color:#000000;">Status</th>
+                        </tr>
+                    </thead>
                 <tbody>
                     ${reportItems.length ? reportItems.map((item) => {
                         const articleVal = item.item_description || item.itemDescription || item.item_brand_model || item.itemBrandModel || item.article || "-";
@@ -3082,7 +3069,7 @@ async function generateReportPdf() {
 
     const offscreenContainer = document.createElement("div");
     offscreenContainer.style.position = "fixed";
-    offscreenContainer.style.left = "-9999px";
+    offscreenContainer.style.left = "0";
     offscreenContainer.style.top = "0";
     offscreenContainer.style.width = `${exportWidth}px`;
     offscreenContainer.style.minWidth = `${exportWidth}px`;
@@ -3091,6 +3078,8 @@ async function generateReportPdf() {
     offscreenContainer.style.padding = "0";
     offscreenContainer.style.margin = "0";
     offscreenContainer.style.zIndex = "-9999";
+    offscreenContainer.style.opacity = "1";
+    offscreenContainer.style.pointerEvents = "none";
     offscreenContainer.style.boxSizing = "border-box";
     offscreenContainer.style.overflow = "visible";
 
@@ -3098,44 +3087,149 @@ async function generateReportPdf() {
     clone.style.minWidth = "100%";
     clone.style.maxWidth = "100%";
     clone.style.boxSizing = "border-box";
-    clone.style.padding = "10px 6px 20px 6px";
+    clone.style.padding = "10px 8px 20px 8px";
     clone.style.background = "#ffffff";
     clone.style.color = "#000000";
 
-    // Format table in the PDF output: auto-adjust columns and table to fit content perfectly
+    // Ensure all wrapper divs around tables do not clip borders or overflow
+    clone.querySelectorAll("div").forEach((div) => {
+        if (div.querySelector("table")) {
+            div.style.overflow = "visible";
+            div.style.width = "100%";
+        }
+    });
+
+    // Ensure live metadata and header elements have crisp, explicit visible underlines
+    const rtInput = document.getElementById("reportType") || document.getElementById("reportInventoryType");
+    const fcInput = document.getElementById("reportFundCluster");
+    const asOfInput = document.getElementById("reportAsOf");
+
+    let invTypeLabel = "ALL INVENTORY ITEMS";
+    if (rtInput && rtInput.selectedIndex >= 0 && rtInput.options[rtInput.selectedIndex]) {
+        const selVal = rtInput.value;
+        const textVal = rtInput.options[rtInput.selectedIndex].text.trim().toUpperCase();
+        if (selVal && selVal !== "all" && !textVal.includes("ALL INVENTORY")) {
+            invTypeLabel = textVal;
+        }
+    }
+    const fundClusterVal = fcInput && fcInput.value.trim() ? fcInput.value.trim() : "";
+    const asOfFormatted = typeof formatReportDate === "function" ? formatReportDate(asOfInput?.value || "2026-09-01") : (asOfInput?.value || "September 1, 2026");
+
+    const cloneInvType = clone.querySelector("#paperInventoryType, .report-title-underline");
+    if (cloneInvType) {
+        cloneInvType.textContent = invTypeLabel;
+        cloneInvType.style.textDecoration = "none";
+        cloneInvType.style.borderBottom = "1.5px solid #000000";
+        cloneInvType.style.display = "inline-block";
+        cloneInvType.style.paddingBottom = "2px";
+        cloneInvType.style.fontWeight = "bold";
+        cloneInvType.style.fontSize = "11pt";
+        cloneInvType.style.color = "#000000";
+        cloneInvType.style.letterSpacing = "0.5px";
+    }
+
+    const cloneAsOf = clone.querySelector("#paperAsOf");
+    if (cloneAsOf) {
+        cloneAsOf.textContent = asOfFormatted;
+        cloneAsOf.style.textDecoration = "none";
+        cloneAsOf.style.borderBottom = "1.5px solid #000000";
+        cloneAsOf.style.display = "inline-block";
+        cloneAsOf.style.paddingBottom = "2px";
+        cloneAsOf.style.color = "#000000";
+    }
+
+    const cloneFundCluster = clone.querySelector("#paperFundCluster");
+    if (cloneFundCluster) {
+        cloneFundCluster.style.borderBottom = "1.5px solid #000000";
+        cloneFundCluster.style.display = "inline-block";
+        cloneFundCluster.style.minWidth = "220px";
+        cloneFundCluster.style.padding = "2px 8px 3px 8px";
+        cloneFundCluster.style.lineHeight = "1.4";
+        cloneFundCluster.style.verticalAlign = "middle";
+        cloneFundCluster.style.color = "#000000";
+        if (fundClusterVal) {
+            cloneFundCluster.textContent = fundClusterVal;
+        } else {
+            cloneFundCluster.innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+        }
+    }
+
+    // Format table in the PDF output: auto-adjust columns and table with solid, crisp borders
     const cloneTable = clone.querySelector("table");
     if (cloneTable) {
         cloneTable.style.width = "100%";
         cloneTable.style.minWidth = "100%";
         cloneTable.style.maxWidth = "100%";
         cloneTable.style.tableLayout = "auto";
-        cloneTable.style.borderCollapse = "collapse";
+        cloneTable.style.borderCollapse = "separate";
+        cloneTable.style.borderSpacing = "0";
+        cloneTable.style.borderTop = "1px solid #000000";
+        cloneTable.style.borderLeft = "1px solid #000000";
+        cloneTable.style.borderRight = "none";
+        cloneTable.style.borderBottom = "none";
         cloneTable.style.fontSize = "7pt";
         cloneTable.style.fontFamily = "Arial, Helvetica, sans-serif";
         cloneTable.style.color = "#000000";
         cloneTable.style.background = "#ffffff";
-        cloneTable.style.margin = "4px 0 0 0";
+        cloneTable.style.margin = "6px 0 0 0";
 
-        // Remove rigid inline percentage widths on <th> headers so the layout engine dynamically sizes columns to fit content
-        cloneTable.querySelectorAll("th").forEach((th) => {
-            th.style.width = "auto";
-            th.style.minWidth = "auto";
-            th.style.maxWidth = "none";
-            th.style.border = "1px solid #000000";
-            th.style.background = "#d9d9d9";
-            th.style.color = "#000000";
-            th.style.padding = "3px 4px";
-            th.style.textAlign = "center";
-            th.style.verticalAlign = "middle";
-            th.style.wordBreak = "break-word";
-            th.style.overflowWrap = "break-word";
-            th.style.lineHeight = "1.3";
-            th.style.height = "auto";
-        });
+        // Clean up and standardize thead structure: exactly 2 rows, clean rowspans, remove dummy tr
+        const thead = cloneTable.querySelector("thead");
+        if (thead) {
+            thead.style.background = "#d9d9d9";
+            // Remove any empty row in thead
+            thead.querySelectorAll("tr").forEach((tr) => {
+                if (tr.children.length === 0 || !tr.textContent.trim()) {
+                    tr.remove();
+                }
+            });
 
-        // Ensure all table cells have clean black borders, proper padding, and wrapping
-        cloneTable.querySelectorAll("td").forEach((td) => {
-            td.style.border = "1px solid #000000";
+            const headerRows = thead.querySelectorAll("tr");
+            if (headerRows.length >= 2) {
+                // Row 1: standalone columns get rowspan=2; grouped headers keep their colspans and NO rowspan
+                headerRows[0].querySelectorAll("th").forEach((th) => {
+                    const colspan = parseInt(th.getAttribute("colspan") || "1", 10);
+                    if (colspan > 1) {
+                        th.removeAttribute("rowspan");
+                    } else {
+                        th.setAttribute("rowspan", "2");
+                    }
+                });
+                // Row 2: sub-headers under Amount, Shortage/Overage, Remarks must have NO rowspan
+                headerRows[1].querySelectorAll("th").forEach((th) => {
+                    th.removeAttribute("rowspan");
+                });
+            }
+
+            thead.querySelectorAll("th").forEach((th) => {
+                th.style.width = "auto";
+                th.style.minWidth = "auto";
+                th.style.maxWidth = "none";
+                th.style.borderTop = "none";
+                th.style.borderLeft = "none";
+                th.style.borderRight = "1px solid #000000";
+                th.style.borderBottom = "1px solid #000000";
+                th.style.background = "#d9d9d9";
+                th.style.color = "#000000";
+                th.style.padding = "3px 4px";
+                th.style.textAlign = "center";
+                th.style.verticalAlign = "middle";
+                th.style.wordBreak = "break-word";
+                th.style.overflowWrap = "break-word";
+                th.style.lineHeight = "1.3";
+                th.style.fontWeight = "bold";
+                th.style.fontSize = "7pt";
+                th.style.height = "auto";
+                th.style.boxSizing = "border-box";
+            });
+        }
+
+        // Ensure all table data cells have clean black right & bottom borders, proper padding, and wrapping
+        cloneTable.querySelectorAll("tbody td").forEach((td) => {
+            td.style.borderTop = "none";
+            td.style.borderLeft = "none";
+            td.style.borderRight = "1px solid #000000";
+            td.style.borderBottom = "1px solid #000000";
             td.style.padding = "3px 4px";
             td.style.color = "#000000";
             td.style.verticalAlign = "middle";
@@ -3144,6 +3238,7 @@ async function generateReportPdf() {
             td.style.wordBreak = "break-word";
             td.style.overflowWrap = "break-word";
             td.style.height = "auto";
+            td.style.boxSizing = "border-box";
         });
 
         cloneTable.querySelectorAll("tr").forEach((tr) => {
@@ -3186,10 +3281,20 @@ async function generateReportPdf() {
         const ratio = imageWidth / canvas.width;
         const sourcePageHeight = Math.floor(contentHeight / ratio);
 
-        // Collect bounding boxes of all table rows and signature blocks from the clone to avoid slicing rows across pages
+        // Bounding boxes in canvas pixels
         const cloneRect = clone.getBoundingClientRect();
         const rHeight = cloneRect.height || 1;
-        const avoidElements = Array.from(clone.querySelectorAll("tr, .report-signatures, [style*='Certified Correct'], [style*='CERTIFIED CORRECT']"));
+        const theadEl = cloneTable ? cloneTable.querySelector("thead") : null;
+        let theadCanvasTop = 0;
+        let theadCanvasHeight = 0;
+        if (theadEl) {
+            const tr = theadEl.getBoundingClientRect();
+            theadCanvasTop = Math.round(((tr.top - cloneRect.top) / rHeight) * canvas.height);
+            theadCanvasHeight = Math.round((tr.height / rHeight) * canvas.height);
+        }
+
+        // Collect bounding boxes of all table rows and signature blocks to avoid slicing any element across pages
+        const avoidElements = Array.from(clone.querySelectorAll("tbody tr, .report-signatures, [style*='Certified Correct'], [style*='CERTIFIED CORRECT']"));
         const elementBoxes = avoidElements.map((el) => {
             const r = el.getBoundingClientRect();
             return {
@@ -3198,11 +3303,16 @@ async function generateReportPdf() {
             };
         });
 
-        // Precompute pagination slices so we know total pages and avoid splitting rows
+        // Compute slices: Page 1 fits from 0 up to sourcePageHeight.
+        // Continuation pages reserve theadCanvasHeight so the table header is repeated on every page!
         const slices = [];
         let sourceOffset = 0;
+        let pageIdx = 0;
         while (sourceOffset < canvas.height) {
-            let targetSliceHeight = Math.min(sourcePageHeight, canvas.height - sourceOffset);
+            const maxAllowed = pageIdx === 0
+                ? sourcePageHeight
+                : Math.max(100, sourcePageHeight - theadCanvasHeight);
+            let targetSliceHeight = Math.min(maxAllowed, canvas.height - sourceOffset);
             const cutoffPoint = sourceOffset + targetSliceHeight;
 
             if (cutoffPoint < canvas.height) {
@@ -3213,11 +3323,16 @@ async function generateReportPdf() {
             }
 
             if (targetSliceHeight <= 0) {
-                targetSliceHeight = Math.min(sourcePageHeight, canvas.height - sourceOffset);
+                targetSliceHeight = Math.min(maxAllowed, canvas.height - sourceOffset);
             }
 
-            slices.push({ offset: sourceOffset, height: targetSliceHeight });
+            slices.push({
+                offset: sourceOffset,
+                height: targetSliceHeight,
+                isContinuation: pageIdx > 0
+            });
             sourceOffset += targetSliceHeight;
+            pageIdx++;
         }
 
         const totalPages = slices.length || 1;
@@ -3225,6 +3340,39 @@ async function generateReportPdf() {
         slices.forEach((slice, idx) => {
             if (idx > 0) {
                 pdf.addPage([pageWidth, pageHeight], "landscape");
+            }
+
+            let currentY = marginY;
+
+            // On continuation pages (idx > 0), repeat the full table header so all column names and borders are visible
+            if (slice.isContinuation && theadCanvasHeight > 0) {
+                const theadCanvas = document.createElement("canvas");
+                theadCanvas.width = canvas.width;
+                theadCanvas.height = theadCanvasHeight;
+                const thCtx = theadCanvas.getContext("2d");
+                thCtx.drawImage(
+                    canvas,
+                    0,
+                    theadCanvasTop,
+                    canvas.width,
+                    theadCanvasHeight,
+                    0,
+                    0,
+                    canvas.width,
+                    theadCanvasHeight
+                );
+                const theadPdfHeight = theadCanvasHeight * ratio;
+                pdf.addImage(
+                    theadCanvas.toDataURL("image/png"),
+                    "PNG",
+                    marginX,
+                    currentY,
+                    imageWidth,
+                    theadPdfHeight,
+                    undefined,
+                    "FAST"
+                );
+                currentY += theadPdfHeight;
             }
 
             const pageCanvas = document.createElement("canvas");
@@ -3248,7 +3396,7 @@ async function generateReportPdf() {
                 pageCanvas.toDataURL("image/png"),
                 "PNG",
                 marginX,
-                marginY,
+                currentY,
                 imageWidth,
                 pageImageHeight,
                 undefined,
