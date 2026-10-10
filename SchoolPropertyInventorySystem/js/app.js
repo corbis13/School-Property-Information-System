@@ -3059,32 +3059,81 @@ async function generateReportPdf() {
         updateReportLiveMeta();
     }
 
-    const report = dom.physicalReport;
-    const previous = { overflow: report.style.overflow, maxHeight: report.style.maxHeight, width: report.style.width };
+    const report = dom.physicalReport || document.getElementById("physicalReport");
+    if (!report) {
+        showToast("Report container not found.");
+        return;
+    }
+
+    // 8.5 x 13 inches bond paper (Philippine legal / long bond paper) in landscape orientation
+    const pageWidth = 13.0; // inches
+    const pageHeight = 8.5;  // inches
+    const marginX = 0.35;    // left/right margin (in)
+    const marginY = 0.35;    // top/bottom margin (in)
+    const contentWidth = pageWidth - (marginX * 2);   // 12.3 inches
+    const contentHeight = pageHeight - (marginY * 2); // 7.8 inches
+
+    // Target render canvas width matching 13.0 inches at 96 DPI (1248px)
+    const targetRenderWidth = 1248;
+
+    const previous = {
+        overflow: report.style.overflow,
+        maxHeight: report.style.maxHeight,
+        width: report.style.width,
+        minWidth: report.style.minWidth,
+        maxWidth: report.style.maxWidth,
+        boxSizing: report.style.boxSizing
+    };
+
     report.classList.add("pdf-export");
     report.style.overflow = "visible";
     report.style.maxHeight = "none";
-    report.style.width = `${report.scrollWidth}px`;
+    report.style.width = `${targetRenderWidth}px`;
+    report.style.minWidth = `${targetRenderWidth}px`;
+    report.style.maxWidth = `${targetRenderWidth}px`;
+    report.style.boxSizing = "border-box";
+
+    const table = report.querySelector("table");
+    let prevTableLayout = "";
+    let prevTableWidth = "";
+    const ths = table ? Array.from(table.querySelectorAll("th")) : [];
+    const prevThWidths = ths.map((th) => th.style.width);
+
+    if (table) {
+        prevTableLayout = table.style.tableLayout;
+        prevTableWidth = table.style.width;
+        table.style.tableLayout = "auto";
+        table.style.width = "100%";
+        // Allow auto-adjust of columns by clearing rigid inline widths on headers
+        ths.forEach((th) => {
+            th.style.width = "auto";
+        });
+    }
 
     try {
-        const canvas = await window.html2canvas(report, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-        const { jsPDF } = window.jspdf;
-        const pageWidth = 13;
-        const pageHeight = 8.5;
-        const pageMargin = 0.2;
-        const bottomMargin = 0.8;
-        const contentWidth = pageWidth - (pageMargin * 2);
-        const contentHeight = pageHeight - pageMargin - bottomMargin;
-        const pdf = new jsPDF({ orientation: "landscape", unit: "in", format: [pageWidth, pageHeight] });
-        const imageWidth = contentWidth;
-        const imageHeight = (canvas.height * imageWidth) / canvas.width;
-        const sourcePageHeight = Math.floor((contentHeight * canvas.width) / imageWidth);
-        let sourceOffset = 0;
+        const canvas = await window.html2canvas(report, {
+            scale: 2,
+            backgroundColor: "#ffffff",
+            useCORS: true,
+            logging: false,
+            windowWidth: targetRenderWidth + 60
+        });
 
-        // Collect bounding boxes of all table rows and signature blocks in canvas coordinates to avoid slicing any row in half
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+            orientation: "landscape",
+            unit: "in",
+            format: [pageWidth, pageHeight]
+        });
+
+        const imageWidth = contentWidth;
+        const ratio = imageWidth / canvas.width;
+        const sourcePageHeight = Math.floor(contentHeight / ratio);
+
+        // Collect bounding boxes of all table rows and signature blocks to avoid slicing any element across pages
         const reportRect = report.getBoundingClientRect();
         const rHeight = reportRect.height || 1;
-        const avoidElements = Array.from(report.querySelectorAll("tr, .report-signatures, [style*='SIGNATURES']"));
+        const avoidElements = Array.from(report.querySelectorAll("tr, .report-signatures, [style*='Certified Correct'], [style*='CERTIFIED CORRECT']"));
         const elementBoxes = avoidElements.map((el) => {
             const r = el.getBoundingClientRect();
             return {
@@ -3093,13 +3142,13 @@ async function generateReportPdf() {
             };
         });
 
+        // Precompute pagination slices so we know total pages and avoid splitting rows
+        const slices = [];
+        let sourceOffset = 0;
         while (sourceOffset < canvas.height) {
-            if (sourceOffset > 0) pdf.addPage([pageWidth, pageHeight], "landscape");
-
             let targetSliceHeight = Math.min(sourcePageHeight, canvas.height - sourceOffset);
             const cutoffPoint = sourceOffset + targetSliceHeight;
 
-            // If cutoffPoint falls within content, ensure it does not split through any row or signatory element
             if (cutoffPoint < canvas.height) {
                 const splitItem = elementBoxes.find((b) => b.top < cutoffPoint && b.bottom > cutoffPoint);
                 if (splitItem && splitItem.top > sourceOffset) {
@@ -3107,41 +3156,85 @@ async function generateReportPdf() {
                 }
             }
 
-            const sliceHeight = targetSliceHeight;
-            const pageCanvas = document.createElement("canvas");
-            pageCanvas.width = canvas.width;
-            pageCanvas.height = sliceHeight;
-            pageCanvas.getContext("2d").drawImage(
-                canvas,
-                0,
-                sourceOffset,
-                canvas.width,
-                sliceHeight,
-                0,
-                0,
-                canvas.width,
-                sliceHeight
-            );
+            if (targetSliceHeight <= 0) {
+                targetSliceHeight = Math.min(sourcePageHeight, canvas.height - sourceOffset);
+            }
 
-            const pageImageHeight = (sliceHeight * imageWidth) / canvas.width;
-            pdf.addImage(pageCanvas.toDataURL("image/png"), "PNG", pageMargin, pageMargin, imageWidth, pageImageHeight);
-            pdf.setFillColor(255, 255, 255);
-            pdf.rect(0, pageHeight - bottomMargin, pageWidth, bottomMargin, "F");
-            sourceOffset += sliceHeight;
+            slices.push({ offset: sourceOffset, height: targetSliceHeight });
+            sourceOffset += targetSliceHeight;
         }
 
-        pdf.save(`physical-count-report-${dom.reportAsOf.value || "undated"}.pdf`);
-        showToast("PDF generated successfully.");
+        const totalPages = slices.length || 1;
+
+        slices.forEach((slice, idx) => {
+            if (idx > 0) {
+                pdf.addPage([pageWidth, pageHeight], "landscape");
+            }
+
+            const pageCanvas = document.createElement("canvas");
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = slice.height;
+            const ctx = pageCanvas.getContext("2d");
+            ctx.drawImage(
+                canvas,
+                0,
+                slice.offset,
+                canvas.width,
+                slice.height,
+                0,
+                0,
+                canvas.width,
+                slice.height
+            );
+
+            const pageImageHeight = slice.height * ratio;
+            pdf.addImage(
+                pageCanvas.toDataURL("image/png"),
+                "PNG",
+                marginX,
+                marginY,
+                imageWidth,
+                pageImageHeight,
+                undefined,
+                "FAST"
+            );
+
+            // Clean, professional running footer indicating 8.5 x 13 bond paper specification
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(8);
+            pdf.setTextColor(100, 100, 100);
+            pdf.text(
+                `Page ${idx + 1} of ${totalPages}  •  Report on the Physical Count of Semi-Expendable Property (8.5" × 13" Bond Paper)`,
+                pageWidth / 2,
+                pageHeight - 0.18,
+                { align: "center" }
+            );
+        });
+
+        const asOfVal = (dom.reportAsOf && dom.reportAsOf.value) || (document.getElementById("reportAsOf") && document.getElementById("reportAsOf").value) || "undated";
+        pdf.save(`physical-count-report-${asOfVal}.pdf`);
+        showToast("8.5 x 13 PDF generated successfully.");
     } catch (error) {
-        console.error(error);
+        console.error("PDF generation failed:", error);
         showToast("Unable to generate the PDF.");
     } finally {
+        if (table) {
+            table.style.tableLayout = prevTableLayout;
+            table.style.width = prevTableWidth;
+            ths.forEach((th, i) => {
+                th.style.width = prevThWidths[i] || "";
+            });
+        }
         report.style.overflow = previous.overflow;
         report.style.maxHeight = previous.maxHeight;
         report.style.width = previous.width;
+        report.style.minWidth = previous.minWidth;
+        report.style.maxWidth = previous.maxWidth;
+        report.style.boxSizing = previous.boxSizing;
         report.classList.remove("pdf-export");
     }
 }
+window.generateReportPdf = generateReportPdf;
 
 function parseMoney(value) {
     const number = Number(String(value || "").replace(/[^0-9.-]/g, ""));
