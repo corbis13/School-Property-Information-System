@@ -101,7 +101,8 @@
 
   /* Nav: hide text labels only (not icon wrappers) */
   .app-sidebar.sidebar-collapsed .nav-item .nav-label,
-  .app-sidebar.sidebar-collapsed .nav-item .document-nav-chevron {
+  .app-sidebar.sidebar-collapsed .nav-item .document-nav-chevron,
+  .app-sidebar.sidebar-collapsed .nav-item .inventory-nav-chevron {
     display: none;
   }
 
@@ -128,6 +129,33 @@
 
   .app-sidebar.sidebar-collapsed .document-nav-parent > span.ml-3 {
     margin-left: 0;
+  }
+
+  /* Keep Inventory's nested icon wrapper centered in the collapsed rail */
+  .app-sidebar.sidebar-collapsed .inventory-nav-parent > span.flex {
+    flex: 0 0 auto;
+    justify-content: center;
+  }
+
+  /* Inventory submenu follows the same centered icon alignment */
+  .app-sidebar.sidebar-collapsed .inventory-submenu {
+    display: none;
+    padding-left: 0;
+    padding-top: 2px;
+  }
+
+  .app-sidebar.sidebar-collapsed .inventory-submenu:not(.hidden) {
+    display: block;
+  }
+
+  .app-sidebar.sidebar-collapsed .inventory-submenu .nav-item {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .app-sidebar.sidebar-collapsed .inventory-submenu .nav-label {
+    display: none;
   }
 
   /* Document submenu in collapsed mode: show inline below Document icon */
@@ -2401,7 +2429,7 @@ body[data-theme="dark"] .qr-uiverse-btn p {
 .physical-report-table .report-col-unit-value      { width: 5% !important; }
 .physical-report-table .report-col-total           { width: 5% !important; }
 .physical-report-table .report-col-date-acquired   { width: 7% !important; }
-.physical-report-table .report-col-balance,
+.physical-report-table .report-col-balance         { width: 3% !important; }
 .physical-report-table .report-col-on-hand         { width: 5% !important; }
 .physical-report-table .report-col-shortage-quantity { width: 5% !important; }
 .physical-report-table .report-col-shortage-value   { width: 5% !important; }
@@ -2546,8 +2574,12 @@ body[data-theme="dark"] .qr-uiverse-btn p {
 .physical-report.pdf-export .physical-report-table th,
 .physical-report.pdf-export .physical-report-table td {
   padding: 1px 2px !important;
-  border: 0.25px solid rgba(17, 17, 17, 0.5) !important;
+  border: 0.25px solid #ffffff !important;
   line-height: 1.05 !important;
+}
+
+.physical-report.pdf-export .physical-report-table th {
+  border: 1px solid #000000 !important;
 }
 
 .physical-report.pdf-export .physical-report-table th {
@@ -3184,6 +3216,7 @@ body[data-theme="dark"] .top-nav-btn.active svg {
 }
 
 .pdf-export .physical-report-paper table th {
+  border: 1px solid #000000 !important;
   padding-top: 5px !important;
   padding-bottom: 7px !important;
   padding-left: 4px !important;

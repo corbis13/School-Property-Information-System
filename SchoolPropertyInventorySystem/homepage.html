@@ -175,12 +175,29 @@
               <span class="nav-label">Dashboard</span>
             </a>
 
-            <!-- Inventory -->
-            <a href="#" class="nav-item flex items-center space-x-3 px-3.5 py-2.5 text-slate-100 hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-view="inventory" data-tooltip="Inventory">
-              <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
-              <i data-lucide="box" class="w-5 h-5 text-slate-200 shrink-0"></i>
-              <span class="nav-label">Inventory</span>
-            </a>
+            <!-- Inventory and submodules -->
+            <div class="inventory-nav-group">
+              <button type="button" class="nav-item inventory-nav-parent flex items-center space-x-3 justify-between w-full px-3.5 py-2.5 text-slate-100 hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-inventory-toggle aria-expanded="false" aria-controls="inventorySubmenu" data-tooltip="Inventory">
+                <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+                <span class="flex items-center space-x-3 flex-1 text-left">
+                  <i data-lucide="box" class="w-5 h-5 text-slate-200 shrink-0"></i>
+                  <span class="nav-label">Inventory</span>
+                </span>
+                <i data-lucide="chevron-down" class="inventory-nav-chevron w-4 h-4 text-slate-300 transition-transform shrink-0"></i>
+              </button>
+              <div id="inventorySubmenu" class="inventory-submenu hidden pl-4 pt-1 space-y-1" aria-label="Inventory submenu">
+                <button type="button" class="nav-item nav-sub-item flex items-center space-x-3 w-full px-3.5 py-2.5 text-slate-100 hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-view="inventory" data-tooltip="Property">
+                  <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+                  <i data-lucide="archive" class="w-4 h-4 text-slate-200 shrink-0"></i>
+                  <span class="nav-label">Property</span>
+                </button>
+                <button type="button" class="nav-item nav-sub-item flex items-center space-x-3 w-full px-3.5 py-2.5 text-slate-100 hover:bg-white/10 rounded-lg text-sm font-medium transition-all group relative cursor-pointer" data-view="book-inventory" data-tooltip="Textbook">
+                  <span class="nav-indicator hidden absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#55a83b] rounded-r-md"></span>
+                  <i data-lucide="book-open" class="w-4 h-4 text-slate-200 shrink-0"></i>
+                  <span class="nav-label">Textbook</span>
+                </button>
+              </div>
+            </div>
 
             <!-- Document and submodules -->
             <div class="document-nav-group">
@@ -5291,7 +5308,7 @@
                         <th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Unit of<br>Measure</th>
                         <th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Amount</th>
                         <th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:6%; color:#000000;">Date<br>Acquired<br><small style="font-size:6pt;">(YYYY-MM-DD)</small></th>
-                        <th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Balance Per<br>Card<br><small style="font-size:6pt;">(Quantity)</small></th>
+                        <th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:3%; color:#000000;">Balance<br>Per<br>Card<br><small style="font-size:6pt;">(Quantity)</small></th>
                         <th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">On Hand<br>Per Count<br><small style="font-size:6pt;">(Quantity)</small></th>
                         <th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Shortage/Overage</th>
                         <th colspan="3" style="border:1px solid #000000; padding:2px 4px; width:14%; color:#000000;">Remarks</th>
@@ -6408,7 +6425,6 @@
             : (typeof items !== "undefined" && Array.isArray(items) && items.length > 0)
             ? items
             : OFFICIAL_TEMPLATE_ROWS;
-
         let rows = allSourceRows;
 
         if (sel !== "all" && sel !== "") {
@@ -6555,7 +6571,7 @@
             +       '<th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Unit of<br>Measure</th>'
             +       '<th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Amount</th>'
             +       '<th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:6%; color:#000000;">Date<br>Acquired<br><small style="font-size:6pt;">(YYYY-MM-DD)</small></th>'
-            +       '<th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Balance Per<br>Card<br><small style="font-size:6pt;">(Quantity)</small></th>'
+            +       '<th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:3%; color:#000000;">Balance<br>Per<br>Card<br><small style="font-size:6pt;">(Quantity)</small></th>'
             +       '<th rowspan="3" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">On Hand<br>Per Count<br><small style="font-size:6pt;">(Quantity)</small></th>'
             +       '<th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Shortage/Overage</th>'
             +       '<th colspan="3" style="border:1px solid #000000; padding:2px 4px; width:14%; color:#000000;">Remarks</th>'

@@ -2833,6 +2833,11 @@ function renderRecentAssets() {
 
 
 
+function normalizeReportInventoryType(value) {
+    const normalized = String(value ?? "").trim();
+    return normalized && normalized.toLowerCase() !== "all" ? normalized : "";
+}
+
 function renderReports() {
     renderReportOptions();
     if (!dom.reportAsOf.value) {
@@ -2940,11 +2945,20 @@ function reportCell(value, fallback = "") {
     return escapeHtml(value === 0 ? "0" : (value || fallback));
 }
 
+function getReportArticle(item) {
+    const classification = item && Object.prototype.hasOwnProperty.call(item, "item_classification")
+        ? item.item_classification
+        : item?.itemClassification;
+    return classification == null || String(classification).trim() === ""
+        ? "-"
+        : String(classification).trim();
+}
+
 function renderPhysicalCountReport() {
     if (!dom.physicalReport) return;
     const reportItems = getReportItems();
-    const inventoryType = dom.reportInventoryType.value || "ALL INVENTORY ITEMS";
-    const fundCluster = dom.reportFundCluster.value || "____________________________";
+    const inventoryType = normalizeReportInventoryType(dom.reportInventoryType?.value) || "ALL INVENTORY ITEMS";
+    const fundCluster = dom.reportFundCluster?.value || "____________________________";
     const signatories = [
         ["Certified Correct by:", dom.certifiedCorrectedBy?.value || ""],
         ["Approved by:", dom.approvedBy?.value || ""],
@@ -2985,7 +2999,7 @@ function renderPhysicalCountReport() {
                         <th rowspan="2">Unit of<br>Measure</th>
                         <th colspan="2">Amount</th>
                         <th rowspan="2">Date<br>Acquired<br><small>(YYYY-MM-DD)</small></th>
-                        <th rowspan="2">Balance Per<br>Card<br><small>(Quantity)</small></th>
+                        <th rowspan="2">Balance<br>Per<br>Card<br><small>(Quantity)</small></th>
                         <th rowspan="2">On Hand<br>Per Count<br><small>(Quantity)</small></th>
                         <th colspan="2">Shortage/Overage</th>
                         <th colspan="3">Remarks</th>
@@ -3672,6 +3686,25 @@ function showConfirmDialog({
         modal.addEventListener("click", onBackdrop);
     });
 }
+
+function toggleInventorySubmenu() {
+    const toggle = document.querySelector("[data-inventory-toggle]");
+    const submenu = document.getElementById("inventorySubmenu");
+    if (!toggle || !submenu) return;
+
+    const shouldOpen = submenu.classList.contains("hidden");
+    submenu.classList.toggle("hidden", !shouldOpen);
+    toggle.setAttribute("aria-expanded", String(shouldOpen));
+    toggle.querySelector(".inventory-nav-chevron")?.classList.toggle("rotate-180", shouldOpen);
+}
+
+document.addEventListener("click", (event) => {
+    const inventoryToggle = event.target.closest("[data-inventory-toggle]");
+    if (!inventoryToggle) return;
+
+    event.preventDefault();
+    toggleInventorySubmenu();
+});
 
 function showToast(message) {
     dom.toast.textContent = message;
