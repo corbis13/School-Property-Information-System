@@ -3073,50 +3073,106 @@ async function generateReportPdf() {
     const contentWidth = pageWidth - (marginX * 2);   // 12.3 inches
     const contentHeight = pageHeight - (marginY * 2); // 7.8 inches
 
-    // Target render canvas width matching 13.0 inches at 96 DPI (1248px)
-    const targetRenderWidth = 1248;
+    // Target render canvas width matching 13.0 inches landscape printable area at 96 DPI
+    const exportWidth = 1220;
 
-    const previous = {
-        overflow: report.style.overflow,
-        maxHeight: report.style.maxHeight,
-        width: report.style.width,
-        minWidth: report.style.minWidth,
-        maxWidth: report.style.maxWidth,
-        boxSizing: report.style.boxSizing
-    };
+    // Isolate PDF generation using an off-screen clone so the on-screen Inventory Document card view remains 100% untouched
+    const sourcePaper = report.querySelector(".physical-report-paper") || report;
+    const clone = sourcePaper.cloneNode(true);
 
-    report.classList.add("pdf-export");
-    report.style.overflow = "visible";
-    report.style.maxHeight = "none";
-    report.style.width = `${targetRenderWidth}px`;
-    report.style.minWidth = `${targetRenderWidth}px`;
-    report.style.maxWidth = `${targetRenderWidth}px`;
-    report.style.boxSizing = "border-box";
+    const offscreenContainer = document.createElement("div");
+    offscreenContainer.style.position = "fixed";
+    offscreenContainer.style.left = "-9999px";
+    offscreenContainer.style.top = "0";
+    offscreenContainer.style.width = `${exportWidth}px`;
+    offscreenContainer.style.minWidth = `${exportWidth}px`;
+    offscreenContainer.style.maxWidth = `${exportWidth}px`;
+    offscreenContainer.style.background = "#ffffff";
+    offscreenContainer.style.padding = "0";
+    offscreenContainer.style.margin = "0";
+    offscreenContainer.style.zIndex = "-9999";
+    offscreenContainer.style.boxSizing = "border-box";
+    offscreenContainer.style.overflow = "visible";
 
-    const table = report.querySelector("table");
-    let prevTableLayout = "";
-    let prevTableWidth = "";
-    const ths = table ? Array.from(table.querySelectorAll("th")) : [];
-    const prevThWidths = ths.map((th) => th.style.width);
+    clone.style.width = "100%";
+    clone.style.minWidth = "100%";
+    clone.style.maxWidth = "100%";
+    clone.style.boxSizing = "border-box";
+    clone.style.padding = "10px 6px 20px 6px";
+    clone.style.background = "#ffffff";
+    clone.style.color = "#000000";
 
-    if (table) {
-        prevTableLayout = table.style.tableLayout;
-        prevTableWidth = table.style.width;
-        table.style.tableLayout = "auto";
-        table.style.width = "100%";
-        // Allow auto-adjust of columns by clearing rigid inline widths on headers
-        ths.forEach((th) => {
+    // Format table in the PDF output: auto-adjust columns and table to fit content perfectly
+    const cloneTable = clone.querySelector("table");
+    if (cloneTable) {
+        cloneTable.style.width = "100%";
+        cloneTable.style.minWidth = "100%";
+        cloneTable.style.maxWidth = "100%";
+        cloneTable.style.tableLayout = "auto";
+        cloneTable.style.borderCollapse = "collapse";
+        cloneTable.style.fontSize = "7pt";
+        cloneTable.style.fontFamily = "Arial, Helvetica, sans-serif";
+        cloneTable.style.color = "#000000";
+        cloneTable.style.background = "#ffffff";
+        cloneTable.style.margin = "4px 0 0 0";
+
+        // Remove rigid inline percentage widths on <th> headers so the layout engine dynamically sizes columns to fit content
+        cloneTable.querySelectorAll("th").forEach((th) => {
             th.style.width = "auto";
+            th.style.minWidth = "auto";
+            th.style.maxWidth = "none";
+            th.style.border = "1px solid #000000";
+            th.style.background = "#d9d9d9";
+            th.style.color = "#000000";
+            th.style.padding = "3px 4px";
+            th.style.textAlign = "center";
+            th.style.verticalAlign = "middle";
+            th.style.wordBreak = "break-word";
+            th.style.overflowWrap = "break-word";
+            th.style.lineHeight = "1.3";
+            th.style.height = "auto";
+        });
+
+        // Ensure all table cells have clean black borders, proper padding, and wrapping
+        cloneTable.querySelectorAll("td").forEach((td) => {
+            td.style.border = "1px solid #000000";
+            td.style.padding = "3px 4px";
+            td.style.color = "#000000";
+            td.style.verticalAlign = "middle";
+            td.style.fontSize = "7pt";
+            td.style.lineHeight = "1.35";
+            td.style.wordBreak = "break-word";
+            td.style.overflowWrap = "break-word";
+            td.style.height = "auto";
+        });
+
+        cloneTable.querySelectorAll("tr").forEach((tr) => {
+            tr.style.height = "auto";
+            tr.style.background = "#ffffff";
         });
     }
 
+    // Ensure signatures in the PDF output are spaced cleanly across the width
+    const cloneSignatures = clone.querySelector(".report-signatures, [style*='SIGNATURES']") || clone.lastElementChild;
+    if (cloneSignatures) {
+        cloneSignatures.style.display = "flex";
+        cloneSignatures.style.justifyContent = "space-between";
+        cloneSignatures.style.gap = "20px";
+        cloneSignatures.style.marginTop = "28px";
+        cloneSignatures.style.fontSize = "7.5pt";
+        cloneSignatures.style.color = "#000000";
+    }
+
+    offscreenContainer.appendChild(clone);
+    document.body.appendChild(offscreenContainer);
+
     try {
-        const canvas = await window.html2canvas(report, {
+        const canvas = await window.html2canvas(clone, {
             scale: 2,
             backgroundColor: "#ffffff",
             useCORS: true,
             logging: false,
-            windowWidth: targetRenderWidth + 60
+            windowWidth: exportWidth + 60
         });
 
         const { jsPDF } = window.jspdf;
@@ -3130,15 +3186,15 @@ async function generateReportPdf() {
         const ratio = imageWidth / canvas.width;
         const sourcePageHeight = Math.floor(contentHeight / ratio);
 
-        // Collect bounding boxes of all table rows and signature blocks to avoid slicing any element across pages
-        const reportRect = report.getBoundingClientRect();
-        const rHeight = reportRect.height || 1;
-        const avoidElements = Array.from(report.querySelectorAll("tr, .report-signatures, [style*='Certified Correct'], [style*='CERTIFIED CORRECT']"));
+        // Collect bounding boxes of all table rows and signature blocks from the clone to avoid slicing rows across pages
+        const cloneRect = clone.getBoundingClientRect();
+        const rHeight = cloneRect.height || 1;
+        const avoidElements = Array.from(clone.querySelectorAll("tr, .report-signatures, [style*='Certified Correct'], [style*='CERTIFIED CORRECT']"));
         const elementBoxes = avoidElements.map((el) => {
             const r = el.getBoundingClientRect();
             return {
-                top: Math.round(((r.top - reportRect.top) / rHeight) * canvas.height),
-                bottom: Math.round(((r.bottom - reportRect.top) / rHeight) * canvas.height)
+                top: Math.round(((r.top - cloneRect.top) / rHeight) * canvas.height),
+                bottom: Math.round(((r.bottom - cloneRect.top) / rHeight) * canvas.height)
             };
         });
 
@@ -3199,7 +3255,7 @@ async function generateReportPdf() {
                 "FAST"
             );
 
-            // Clean, professional running footer indicating 8.5 x 13 bond paper specification
+            // Clean running footer indicating 8.5 x 13 bond paper specification
             pdf.setFont("helvetica", "normal");
             pdf.setFontSize(8);
             pdf.setTextColor(100, 100, 100);
@@ -3218,20 +3274,9 @@ async function generateReportPdf() {
         console.error("PDF generation failed:", error);
         showToast("Unable to generate the PDF.");
     } finally {
-        if (table) {
-            table.style.tableLayout = prevTableLayout;
-            table.style.width = prevTableWidth;
-            ths.forEach((th, i) => {
-                th.style.width = prevThWidths[i] || "";
-            });
+        if (offscreenContainer && offscreenContainer.parentNode) {
+            offscreenContainer.parentNode.removeChild(offscreenContainer);
         }
-        report.style.overflow = previous.overflow;
-        report.style.maxHeight = previous.maxHeight;
-        report.style.width = previous.width;
-        report.style.minWidth = previous.minWidth;
-        report.style.maxWidth = previous.maxWidth;
-        report.style.boxSizing = previous.boxSizing;
-        report.classList.remove("pdf-export");
     }
 }
 window.generateReportPdf = generateReportPdf;
