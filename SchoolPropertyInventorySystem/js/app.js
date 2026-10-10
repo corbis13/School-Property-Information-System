@@ -1540,7 +1540,12 @@ async function loadItems() {
             inventoryType: row.inventory_type || row.inventoryType || "",
             propertyNo: row.property_no || row.propertyNo || "",
             itemClassification: row.item_classification || row.itemClassification || "",
-            itemBrandModel: row.item_brand_model || row.itemBrandModel || "",
+            item_classification: row.item_classification || row.itemClassification || "",
+            itemBrandModel: row.item_brand_model || row.itemBrandModel || row.item_description || "",
+            item_brand_model: row.item_brand_model || row.itemBrandModel || row.item_description || "",
+            itemDescription: row.item_description || row.item_brand_model || row.itemBrandModel || "",
+            item_description: row.item_description || row.item_brand_model || row.itemBrandModel || "",
+            article: row.item_description || row.item_brand_model || row.itemBrandModel || "",
             serialNo: row.serial_no || row.serialNo || "",
             acquisitionDate: row.acquisition_date || row.acquisitionDate || "",
             accountable: row.accountable_person || row.accountable || "",
@@ -2938,10 +2943,17 @@ function renderPhysicalCountReport() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${reportItems.length ? reportItems.map((item) => `
+                    ${reportItems.length ? reportItems.map((item) => {
+                        const articleVal = item.item_description || item.itemDescription || item.item_brand_model || item.itemBrandModel || item.article || "-";
+                        const descVal = (item.itemClassification && item.itemClassification !== articleVal)
+                            ? item.itemClassification
+                            : (item.item_classification && item.item_classification !== articleVal)
+                            ? item.item_classification
+                            : (item.additionalItem || item.remarks || item.desc || item.description || "-");
+                        return `
                         <tr>
-                            <td>${reportCell(item.itemClassification || item.item_classification || item.article || "-")}</td>
-                            <td>${reportCell(item.itemBrandModel)}</td>
+                            <td>${reportCell(articleVal)}</td>
+                            <td>${reportCell(descVal)}</td>
                             <td>${reportCell(item.semiExpandableNo || item.propertyNo)}</td>
                             <td>${reportCell(item.unitMeasurement)}</td>
                             <td>${reportCell(item.unitValue ? Number(item.unitValue).toLocaleString("en-US", {minimumFractionDigits:2,maximumFractionDigits:2}) : "")}</td>
@@ -2955,7 +2967,7 @@ function renderPhysicalCountReport() {
                             <td>${reportCell(item.location)}</td>
                             <td>${reportCell(item.status)}</td>
                         </tr>
-                    `).join("") : `<tr><td colspan="14" class="report-empty-row">No matching inventory records</td></tr>`}
+                    `; }).join("") : `<tr><td colspan="14" class="report-empty-row">No matching inventory records</td></tr>`}
                 </tbody>
             </table>
         </div>
