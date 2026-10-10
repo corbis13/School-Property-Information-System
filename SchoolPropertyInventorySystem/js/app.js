@@ -4,6 +4,9 @@ const supabaseHeaders = {
     apikey: supabaseAnonKey,
     Authorization: `Bearer ${supabaseAnonKey}`
 };
+window.supabaseUrl = supabaseUrl;
+window.supabaseAnonKey = supabaseAnonKey;
+window.supabaseHeaders = supabaseHeaders;
 
 // Replace all direct Supabase interactions with server-side API calls
 // Example: Fetch data from server-side endpoint
@@ -1524,7 +1527,7 @@ async function loadItems() {
     setDatabaseStatus("Connecting to Supabase...", "Loading inventory records from the backend.");
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=id,asset_id,education_level,fund_cluster,inventory_type,property_no,item_classification,item_brand_model,serial_no,acquisition_date,accountable_person,school_level,semi_expandable_no,unit_value,total,unit_measurement,balance,on_hand,shortage_overage_qty,shortage_overage_value,location,mooe_month,mooe_year,date_issue,status,additional_item,remarks,supplier,created_at,updated_at`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/assets?select=*`, {
             headers: supabaseHeaders
         });
 
@@ -1538,6 +1541,7 @@ async function loadItems() {
             educationLevel: row.education_level || row.educationLevel || "",
             fundCluster: row.fund_cluster || row.fundCluster || "",
             inventoryType: row.inventory_type || row.inventoryType || "",
+            inventory_type: row.inventory_type || row.inventoryType || "",
             propertyNo: row.property_no || row.propertyNo || "",
             itemClassification: row.item_classification || row.itemClassification || "",
             item_classification: row.item_classification || row.itemClassification || "",
@@ -1572,6 +1576,10 @@ async function loadItems() {
 
         usingRemoteBackend = true;
         window.inventoryData = items;
+        window.items = items;
+        window.supabaseUrl = supabaseUrl;
+        window.supabaseAnonKey = supabaseAnonKey;
+        window.supabaseHeaders = supabaseHeaders;
         localStorage.setItem(storageKey, JSON.stringify(items));
         try {
             localStorage.setItem("accountablePersonReportEntries", JSON.stringify(getAccountablePersonEntries("all")));
@@ -1585,7 +1593,8 @@ async function loadItems() {
         setDatabaseStatus("Connected to Supabase.", `${items.length} records loaded from the backend.`);
         if (typeof loadReportInventoryTypeDropdown === "function") {
             try { loadReportInventoryTypeDropdown(); } catch(e) {}
-        } else if (typeof renderPhysicalCountReport === "function") {
+        }
+        if (typeof renderPhysicalCountReport === "function") {
             try { renderPhysicalCountReport(items); } catch(e) {}
         }
     } catch (error) {
@@ -1593,10 +1602,12 @@ async function loadItems() {
         items = fallbackItems();
         usingRemoteBackend = false;
         window.inventoryData = items;
+        window.items = items;
         setDatabaseStatus("Local fallback is active.", "Supabase is unavailable right now. Your latest local data is still available.");
         if (typeof loadReportInventoryTypeDropdown === "function") {
             try { loadReportInventoryTypeDropdown(); } catch(e) {}
-        } else if (typeof renderPhysicalCountReport === "function") {
+        }
+        if (typeof renderPhysicalCountReport === "function") {
             try { renderPhysicalCountReport(items); } catch(e) {}
         }
     }
@@ -2827,7 +2838,8 @@ function renderReports() {
     if (!dom.reportAsOf.value) {
         dom.reportAsOf.value = new Date().toISOString().slice(0, 10);
     }
-    renderPhysicalCountReport();
+    const activeItems = (items && items.length) ? items : (window.inventoryData || []);
+    renderPhysicalCountReport(activeItems);
     renderAllAssetsView();
     if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
 }
@@ -2835,7 +2847,8 @@ function renderReports() {
 function renderAllAssetsView() {
     if (!dom.allAssetsTable) return;
     const query = (dom.assetDatabaseSearch?.value || "").trim().toLowerCase();
-    const filteredItems = items.filter((item) => !query || Object.values(item).join(" ").toLowerCase().includes(query));
+    const sourceList = (items && items.length) ? items : (window.inventoryData || []);
+    const filteredItems = sourceList.filter((item) => !query || Object.values(item).join(" ").toLowerCase().includes(query));
     const fields = [
         "assetId", "educationLevel", "fundCluster", "inventoryType", "propertyNo", "itemClassification",
         "itemBrandModel", "serialNo", "acquisitionDate", "accountable", "schoolLevel", "semiExpandableNo",
@@ -2850,12 +2863,30 @@ function renderAllAssetsView() {
 }
 
 function getReportItems() {
-    const inventoryType = dom.reportInventoryType.value;
-    const fundCluster = dom.reportFundCluster.value;
+    const rawType = (dom.reportInventoryType?.value || "").trim();
+    const inventoryType = (rawType === "all" || rawType === "") ? "" : rawType;
+    const fundCluster = (dom.reportFundCluster?.value || "").trim();
+    const activeItems = (items && items.length) ? items : (window.inventoryData || []);
 
-    return items.filter((item) => {
-        const matchesType = !inventoryType || (item.inventoryType || "") === inventoryType;
-        const matchesFund = !fundCluster || (item.fundCluster || "") === fundCluster;
+    return activeItems.filter((item) => {
+        const itType = String(item.inventoryType || item.inventory_type || "").trim();
+        const itClass = String(item.itemClassification || item.item_classification || "").trim();
+        const itTypeClean = itType.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const itClassClean = itClass.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const targetClean = inventoryType.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+        let matchesType = true;
+        if (inventoryType) {
+            matchesType = itType.toLowerCase() === inventoryType.toLowerCase() ||
+                itType.toLowerCase().includes(inventoryType.toLowerCase()) ||
+                inventoryType.toLowerCase().includes(itType.toLowerCase()) ||
+                itClass.toLowerCase() === inventoryType.toLowerCase() ||
+                (itTypeClean && targetClean && (itTypeClean === targetClean || itTypeClean.includes(targetClean) || targetClean.includes(itTypeClean))) ||
+                (itClassClean && targetClean && (itClassClean === targetClean || itClassClean.includes(targetClean) || targetClean.includes(itClassClean))) ||
+                ((targetClean.includes("tex") || targetClean.includes("book")) && (itTypeClean.includes("tex") || itTypeClean.includes("book") || itClassClean.includes("tex") || itClassClean.includes("book")));
+        }
+
+        const matchesFund = !fundCluster || (item.fundCluster || item.fund_cluster || "").toLowerCase().includes(fundCluster.toLowerCase());
         return matchesType && matchesFund;
     });
 }
@@ -2867,15 +2898,42 @@ function formatReportDate(value) {
 }
 
 function renderReportOptions() {
-    const selectedType = dom.reportInventoryType.value;
-    const selectedFund = dom.reportFundCluster.value;
-    const types = [...new Set(items.map((item) => item.inventoryType).filter(Boolean))].sort();
-    const funds = [...new Set(items.map((item) => item.fundCluster).filter(Boolean))].sort();
+    const selectedType = dom.reportInventoryType ? dom.reportInventoryType.value : "";
+    const selectedFund = dom.reportFundCluster ? dom.reportFundCluster.value : "";
+    const activeItems = (items && items.length) ? items : (window.inventoryData || []);
+    const types = [...new Set(activeItems.map((item) => item.inventoryType || item.inventory_type).filter(Boolean))];
+    const funds = [...new Set(activeItems.map((item) => item.fundCluster || item.fund_cluster).filter(Boolean))];
 
-    dom.reportInventoryType.innerHTML = `<option value="">All inventory types</option>${types.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
-    dom.reportFundCluster.innerHTML = `<option value="">All fund clusters</option>${funds.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
-    dom.reportInventoryType.value = types.includes(selectedType) ? selectedType : "";
-    dom.reportFundCluster.value = funds.includes(selectedFund) ? selectedFund : "";
+    const standardTypes = [
+        "School Furnitures",
+        "Machinery and Equipment",
+        "DepEd Computerization Program / ICT",
+        "Science & Math Equipment",
+        "Textbook",
+        "Central Office Fund",
+        "Donation",
+        "School MOOE Fund",
+        "Division Office Fund",
+        "Other Property, Plant and Equipment"
+    ];
+    standardTypes.forEach((t) => {
+        if (!types.some((x) => x.toLowerCase() === t.toLowerCase())) types.push(t);
+    });
+    types.sort((a, b) => a.localeCompare(b));
+    funds.sort((a, b) => a.localeCompare(b));
+
+    if (dom.reportInventoryType) {
+        dom.reportInventoryType.innerHTML = `<option value="all">All inventory types</option>${types.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+        if (selectedType && selectedType !== "all" && types.some((t) => t.toLowerCase() === selectedType.toLowerCase())) {
+            dom.reportInventoryType.value = types.find((t) => t.toLowerCase() === selectedType.toLowerCase()) || selectedType;
+        } else {
+            dom.reportInventoryType.value = "all";
+        }
+    }
+    if (dom.reportFundCluster && dom.reportFundCluster.tagName === "SELECT") {
+        dom.reportFundCluster.innerHTML = `<option value="">All fund clusters</option>${funds.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
+        dom.reportFundCluster.value = funds.includes(selectedFund) ? selectedFund : "";
+    }
 }
 
 function reportCell(value, fallback = "") {

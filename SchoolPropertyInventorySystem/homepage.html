@@ -3090,7 +3090,7 @@
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
                 var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
                 try {
-                  var res = await fetch(sUrl + "/rest/v1/assets?select=id,asset_id,item_brand_model,serial_no,accountable_person,semi_expandable_no,property_no,unit_value,total,unit_measurement,on_hand,status,date_issue,acquisition_date,additional_item,fund_cluster,created_at,updated_at", { headers: sHeaders });
+                  var res = await fetch(sUrl + "/rest/v1/assets?select=*", { headers: sHeaders });
                   if (res.ok) {
                     var rows = await res.json();
                     var mappedAssets = rows.map(function(r) {
@@ -3098,7 +3098,15 @@
                         id: r.id,
                         dbId: r.id,
                         assetId: r.asset_id,
-                        itemBrandModel: r.item_brand_model,
+                        inventoryType: r.inventory_type || "",
+                        inventory_type: r.inventory_type || "",
+                        itemClassification: r.item_classification || "",
+                        item_classification: r.item_classification || "",
+                        itemBrandModel: r.item_brand_model || r.item_description || "",
+                        item_brand_model: r.item_brand_model || r.item_description || "",
+                        itemDescription: r.item_description || r.item_brand_model || "",
+                        item_description: r.item_description || r.item_brand_model || "",
+                        article: r.item_description || r.item_brand_model || "",
                         serialNo: r.serial_no || "",
                         accountable: r.accountable_person,
                         semiExpandableNo: r.semi_expandable_no,
@@ -3113,10 +3121,13 @@
                         createdAt: r.created_at || "",
                         updatedAt: r.updated_at || "",
                         additionalItem: r.additional_item || "",
+                        remarks: r.remarks || "",
+                        supplier: r.supplier || "",
                         fundCluster: r.fund_cluster || "01"
                       };
                     });
                     window.inventoryData = mappedAssets;
+                    window.items = mappedAssets;
                     if (typeof items !== "undefined" && Array.isArray(items)) {
                       mappedAssets.forEach(function(ma) {
                         var match = items.find(function(it) { return it.assetId === ma.assetId; });
@@ -6269,55 +6280,48 @@
         if (!rt) return;
 
         let dbTypes = [];
+        const sUrl = (typeof supabaseUrl !== "undefined" && supabaseUrl) || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+        const sKey = (typeof supabaseAnonKey !== "undefined" && supabaseAnonKey) || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+        const sHeaders = (typeof supabaseHeaders !== "undefined" && supabaseHeaders) || { apikey: sKey, Authorization: "Bearer " + sKey };
+
         try {
-            if (typeof supabaseUrl !== "undefined" && supabaseUrl && typeof supabaseHeaders !== "undefined") {
-                // 1. Try public.inventory_item table
-                try {
-                    const res = await fetch(`${supabaseUrl}/rest/v1/inventory_item?select=inventory_item_type`, {
-                        headers: supabaseHeaders
+            // 1. Try public.inventory_item table
+            try {
+                const res = await fetch(`${sUrl}/rest/v1/inventory_item?select=inventory_item_type`, {
+                    headers: sHeaders
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    (data || []).forEach(r => {
+                        const val = String(r.inventory_item_type || r.inventory_type || "").trim();
+                        if (val && !dbTypes.includes(val)) dbTypes.push(val);
                     });
-                    if (res.ok) {
-                        const data = await res.json();
-                        (data || []).forEach(r => {
-                            const val = String(r.inventory_item_type || r.inventory_type || "").trim();
-                            if (val && !dbTypes.includes(val)) dbTypes.push(val);
-                        });
-                    }
-                } catch(errItem) {}
+                }
+            } catch(errItem) {}
 
-                // 2. Try public.inventory_type table
-                try {
-                    const res2 = await fetch(`${supabaseUrl}/rest/v1/inventory_type?select=*`, {
-                        headers: supabaseHeaders
+            // 2. Try distinct inventory_type from assets table
+            try {
+                const resAssets = await fetch(`${sUrl}/rest/v1/assets?select=inventory_type`, {
+                    headers: sHeaders
+                });
+                if (resAssets.ok) {
+                    const assetData = await resAssets.json();
+                    (assetData || []).forEach(r => {
+                        const val = String(r.inventory_type || "").trim();
+                        if (val && !dbTypes.includes(val)) dbTypes.push(val);
                     });
-                    if (res2.ok) {
-                        const data2 = await res2.json();
-                        (data2 || []).forEach(r => {
-                            const val = String(r.inventory_type || r.inventory_item_type || r.type || r.name || "").trim();
-                            if (val && !dbTypes.includes(val)) dbTypes.push(val);
-                        });
-                    }
-                } catch(errType) {}
-
-                // 3. Try distinct inventory_type from assets table
-                try {
-                    const resAssets = await fetch(`${supabaseUrl}/rest/v1/assets?select=inventory_type`, {
-                        headers: supabaseHeaders
-                    });
-                    if (resAssets.ok) {
-                        const assetData = await resAssets.json();
-                        (assetData || []).forEach(r => {
-                            const val = String(r.inventory_type || "").trim();
-                            if (val && !dbTypes.includes(val)) dbTypes.push(val);
-                        });
-                    }
-                } catch(errAssets) {}
-            }
+                }
+            } catch(errAssets) {}
         } catch(e) {
             console.warn("Could not query inventory type tables from Supabase:", e);
         }
 
-        const sourceItems = (window.inventoryData && window.inventoryData.length) ? window.inventoryData : (typeof items !== "undefined" && items.length ? items : []);
+        const sourceItems = (window.inventoryData && window.inventoryData.length)
+            ? window.inventoryData
+            : (window.items && window.items.length)
+            ? window.items
+            : (typeof items !== "undefined" && items.length ? items : []);
+
         sourceItems.forEach(function(it) {
             const t = String(it.inventoryType || it.inventory_type || "").trim();
             if (t && !dbTypes.includes(t)) dbTypes.push(t);
@@ -6328,6 +6332,11 @@
             "Machinery and Equipment",
             "DepEd Computerization Program / ICT",
             "Science & Math Equipment",
+            "Textbook",
+            "Central Office Fund",
+            "Donation",
+            "School MOOE Fund",
+            "Division Office Fund",
             "Other Property, Plant and Equipment"
         ];
         defaultTypes.forEach(function(t) {
@@ -6354,7 +6363,14 @@
     }
 
     function filterReportByInventoryType(selectedType) {
-        renderPhysicalCountReport(window.inventoryData || (typeof items !== "undefined" ? items : []));
+        const source = (window.inventoryData && window.inventoryData.length)
+            ? window.inventoryData
+            : (window.items && window.items.length)
+            ? window.items
+            : (typeof items !== "undefined" && items && items.length)
+            ? items
+            : [];
+        renderPhysicalCountReport(source);
         updateReportLiveMeta();
     }
 
@@ -6383,42 +6399,64 @@
         const apprVal = appr && appr.value ? appr.value : "";
         const verVal = ver && ver.value ? ver.value : "";
 
-        const allSourceRows = (items && items.length > 0) ? items : OFFICIAL_TEMPLATE_ROWS;
+        const allSourceRows = (Array.isArray(items) && items.length > 0)
+            ? items
+            : (Array.isArray(window.inventoryData) && window.inventoryData.length > 0)
+            ? window.inventoryData
+            : (typeof window.items !== "undefined" && Array.isArray(window.items) && window.items.length > 0)
+            ? window.items
+            : (typeof items !== "undefined" && Array.isArray(items) && items.length > 0)
+            ? items
+            : OFFICIAL_TEMPLATE_ROWS;
+
         let rows = allSourceRows;
 
         if (sel !== "all" && sel !== "") {
-            const targetLower = sel.toLowerCase();
-            const targetTextLower = itl.toLowerCase();
+            const targetLower = sel.toLowerCase().trim();
+            const targetTextLower = itl.toLowerCase().trim();
+            const targetClean = targetLower.replace(/[^a-z0-9]/g, "");
+            const targetTextClean = targetTextLower.replace(/[^a-z0-9]/g, "");
 
             rows = allSourceRows.filter(function(it) {
                 const itType = String(it.inventoryType || it.inventory_type || "").toLowerCase().trim();
-                const itArticle = String(it.article || "").toLowerCase().trim();
+                const itTypeClean = itType.replace(/[^a-z0-9]/g, "");
+                const itArticle = String(it.item_description || it.itemDescription || it.item_brand_model || it.itemBrandModel || it.article || "").toLowerCase().trim();
                 const itClass = String(it.itemClassification || it.item_classification || "").toLowerCase().trim();
+                const itClassClean = itClass.replace(/[^a-z0-9]/g, "");
                 const itDesc = String(it.itemBrandModel || it.description || it.desc || "").toLowerCase().trim();
                 const itCategory = String(it.propertyCategory || it.category || "").toLowerCase().trim();
 
                 // 1. Direct exact or substring match against database inventory_type
                 if (itType && (itType === targetLower || itType.includes(targetLower) || targetLower.includes(itType))) return true;
                 if (itType && (itType === targetTextLower || itType.includes(targetTextLower) || targetTextLower.includes(itType))) return true;
+                if (itTypeClean && targetClean && (itTypeClean === targetClean || itTypeClean.includes(targetClean) || targetClean.includes(itTypeClean))) return true;
+                if (itTypeClean && targetTextClean && (itTypeClean === targetTextClean || itTypeClean.includes(targetTextClean) || targetTextClean.includes(itTypeClean))) return true;
 
                 // 2. Direct exact or substring match against article or classification
+                if (itClass && (itClass === targetLower || itClass.includes(targetLower) || targetLower.includes(itClass))) return true;
+                if (itClass && (itClass === targetTextLower || itClass.includes(targetTextLower) || targetTextLower.includes(itClass))) return true;
+                if (itClassClean && targetClean && (itClassClean === targetClean || itClassClean.includes(targetClean) || targetClean.includes(itClassClean))) return true;
                 if (itArticle && (itArticle === targetLower || itArticle.includes(targetLower) || targetLower.includes(itArticle))) return true;
                 if (itArticle && (itArticle === targetTextLower || itArticle.includes(targetTextLower) || targetTextLower.includes(itArticle))) return true;
-                if (itClass && (itClass === targetLower || itClass.includes(targetLower) || targetLower.includes(itClass))) return true;
+
+                // Special handling for Textbook / Texbook
+                if ((targetClean.includes("tex") || targetClean.includes("book")) && (itTypeClean.includes("tex") || itTypeClean.includes("book") || itClassClean.includes("tex") || itClassClean.includes("book") || itDesc.includes("book"))) {
+                    return true;
+                }
 
                 // 3. Keyword semantic category matching
-                if (targetLower.includes("furn") || targetTextLower.includes("furn")) {
+                if (targetClean.includes("furn") || targetTextClean.includes("furn")) {
                     return itType.includes("furn") || itArticle.includes("furn") || itClass.includes("furn")
                         || itDesc.includes("chair") || itDesc.includes("table") || itDesc.includes("desk")
                         || itDesc.includes("sofa") || itDesc.includes("bench") || itDesc.includes("cabinet")
                         || itDesc.includes("drawer") || itDesc.includes("shelf") || itCategory.includes("furn");
                 }
-                if (targetLower.includes("machin") || targetTextLower.includes("machin") || targetLower.includes("equip") || targetTextLower.includes("equip")) {
+                if (targetClean.includes("machin") || targetTextClean.includes("machin") || targetClean.includes("equip") || targetTextClean.includes("equip")) {
                     return itType.includes("machin") || itArticle.includes("machin") || itClass.includes("machin")
                         || itDesc.includes("fan") || itDesc.includes("aircon") || itDesc.includes("inverter")
                         || itDesc.includes("motor") || itDesc.includes("generator") || itDesc.includes("pump");
                 }
-                if (targetLower.includes("ict") || targetTextLower.includes("ict") || targetLower.includes("comp") || targetTextLower.includes("comp")) {
+                if (targetClean.includes("ict") || targetTextClean.includes("ict") || targetClean.includes("comp") || targetTextClean.includes("comp")) {
                     return itType.includes("ict") || itType.includes("comp") || itArticle.includes("ict")
                         || itArticle.includes("computer") || itClass.includes("ict") || itClass.includes("comp")
                         || itDesc.includes("laptop") || itDesc.includes("dell") || itDesc.includes("optiplex")
@@ -6427,7 +6465,7 @@
                         || itDesc.includes("switch") || itDesc.includes("tp-link") || itDesc.includes("tab")
                         || itDesc.includes("galaxy tab") || itDesc.includes("ups");
                 }
-                if (targetLower.includes("scien") || targetTextLower.includes("scien") || targetLower.includes("math") || targetTextLower.includes("math")) {
+                if (targetClean.includes("scien") || targetTextClean.includes("scien") || targetClean.includes("math") || targetTextClean.includes("math")) {
                     return itType.includes("scien") || itType.includes("math") || itArticle.includes("scien")
                         || itArticle.includes("math") || itClass.includes("scien") || itClass.includes("math")
                         || itDesc.includes("microscope") || itDesc.includes("whiteboard") || itDesc.includes("board")
