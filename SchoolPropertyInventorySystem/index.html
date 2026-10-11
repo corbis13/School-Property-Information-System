@@ -5957,7 +5957,7 @@
               </div>
               <div class="report-actions" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f1f5f9;">
                 <p class="text-xs text-slate-500 m-0">Selected signatories are automatically embedded in the report's certification block.</p>
-                <button class="primary-button generate-pdf-btn" type="button" id="generatePdfBtn" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; padding: 0.625rem 1.5rem; background: linear-gradient(135deg, #00335e 0%, #004c87 100%); color: #ffffff; border-radius: 0.5rem; box-shadow: 0 2px 6px rgba(0, 51, 94, 0.2); cursor: pointer;">
+                <button class="primary-button generate-pdf-btn" type="button" id="generatePdfBtn" onclick="generateReportPdf()" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; padding: 0.625rem 1.5rem; background: linear-gradient(135deg, #00335e 0%, #004c87 100%); color: #ffffff; border-radius: 0.5rem; box-shadow: 0 2px 6px rgba(0, 51, 94, 0.2); cursor: pointer;">
                   <i data-lucide="download" class="w-4 h-4 inline-block"></i>
                   Generate PDF
                 </button>
@@ -6178,13 +6178,70 @@
     </div>
   </div>
 
-    <!-- Toast Notification Container -->
+  <!-- ── PDF Generated & Saved Notice Modal ── -->
+  <div id="pdfGeneratedModal" class="success-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pdfGeneratedModalTitle" hidden style="z-index: 99999;">
+    <div class="success-modal-card" style="width: min(440px, calc(100vw - 32px)); padding: 32px 28px 24px;">
+      <div class="success-modal-icon-wrap" style="margin-bottom: 18px; width: 72px; height: 72px;">
+        <svg class="success-modal-check" viewBox="0 0 52 52" aria-hidden="true" style="width: 72px; height: 72px;">
+          <circle class="success-modal-circle" cx="26" cy="26" r="24" fill="none"/>
+          <path class="success-modal-tick" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M14 27l8 8 16-16"/>
+        </svg>
+      </div>
+      <h2 id="pdfGeneratedModalTitle" class="success-modal-title" style="font-size: 1.35rem; margin-bottom: 8px;">PDF Generated &amp; Saved!</h2>
+      <p id="pdfGeneratedModalMsg" class="success-modal-msg" style="font-size: 0.875rem; margin-bottom: 16px;">
+        The report has been successfully generated in <strong>8.5&quot; × 13&quot; Landscape</strong> layout, saved to local storage, and downloaded to your device.
+      </p>
+
+      <div style="background: rgba(15, 23, 42, 0.04); border: 1px solid rgba(15, 23, 42, 0.08); border-radius: 8px; padding: 12px 14px; text-align: left; margin-bottom: 20px; font-size: 0.8125rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; gap: 8px;">
+          <span style="opacity: 0.7;">File:</span>
+          <span id="pdfModalFileName" style="font-weight: 700; word-break: break-all; text-align: right;">physical-count-report.pdf</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+          <span style="opacity: 0.7;">Paper Layout:</span>
+          <span style="font-weight: 700;">8.5&quot; × 13&quot; Bond Paper (Landscape)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+          <span style="opacity: 0.7;">Local Storage:</span>
+          <span style="font-weight: 700; color: #10b981;">Saved</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="opacity: 0.7;">Download:</span>
+          <span style="font-weight: 700; color: #10b981;">Downloaded</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+        <button id="pdfModalOpenBtn" type="button" class="primary-button" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; font-weight: 700; font-size: 0.875rem; background: #00335e; color: #ffffff; border-radius: 6px; cursor: pointer; border: none;">
+          <svg style="width: 15px; height: 15px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          Open PDF
+        </button>
+        <button id="pdfModalDownloadBtn" type="button" class="secondary-button" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; font-weight: 600; font-size: 0.875rem; background: #e2e8f0; color: #0f172a; border-radius: 6px; cursor: pointer; border: none;">
+          <svg style="width: 15px; height: 15px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Download Again
+        </button>
+        <button id="pdfModalCloseBtn" type="button" style="display: inline-flex; align-items: center; padding: 9px 16px; font-weight: 600; font-size: 0.875rem; background: transparent; color: #64748b; border: 1px solid rgba(100, 116, 139, 0.3); border-radius: 6px; cursor: pointer;">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <!-- Core Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="js/html2canvas.min.js"></script>
+  <script src="js/jspdf.umd.min.js"></script>
+  <script>
+    if (!window.html2canvas) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>');
+    }
+    if (!window.jspdf && !window.jsPDF) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>');
+    }
+  </script>
   <script src="supabase-config.js?v=20260904"></script>
   <script src="js/app.js?v=20261010_v1"></script>
   <script>

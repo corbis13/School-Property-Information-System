@@ -3036,9 +3036,32 @@ function renderPhysicalCountReport() {
     `;
 }
 
+let isGeneratingReportPdf = false;
+
 async function generateReportPdf() {
-    if (!window.html2canvas || !window.jspdf?.jsPDF) {
-        showToast("PDF tools are still loading. Check your internet connection and try again.");
+    if (isGeneratingReportPdf) return;
+    isGeneratingReportPdf = true;
+
+    const allBtns = Array.from(document.querySelectorAll(".generate-pdf-btn, #generatePdfBtn"));
+    const originalBtnHtmls = allBtns.map((b) => b.innerHTML);
+
+    allBtns.forEach((b) => {
+        b.disabled = true;
+        b.style.pointerEvents = "none";
+        b.style.opacity = "0.75";
+        b.innerHTML = `<svg style="width:15px; height:15px; display:inline-block; vertical-align:middle; animation:spin 1s linear infinite; margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path></svg> Generating PDF...`;
+    });
+
+    const JsPdfConstructor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!window.html2canvas || !JsPdfConstructor) {
+        showToast("PDF tools are still loading. Please wait a moment and try again.");
+        allBtns.forEach((b, i) => {
+            b.disabled = false;
+            b.style.pointerEvents = "auto";
+            b.style.opacity = "1";
+            b.innerHTML = originalBtnHtmls[i] || "Generate PDF";
+        });
+        isGeneratingReportPdf = false;
         return;
     }
 
@@ -3055,10 +3078,10 @@ async function generateReportPdf() {
     // 8.5 x 13 inches bond paper (Philippine legal / long bond paper) in landscape orientation
     const pageWidth = 13.0; // inches
     const pageHeight = 8.5;  // inches
-    const marginX = 0.35;    // left/right margin (in)
-    const marginY = 0.35;    // top/bottom margin (in)
-    const contentWidth = pageWidth - (marginX * 2);   // 12.3 inches
-    const contentHeight = pageHeight - (marginY * 2); // 7.8 inches
+    const marginX = 0.40;    // left/right margin (in)
+    const marginY = 0.48;    // top/bottom margin (in) - provides generous padding on both top and bottom
+    const contentWidth = pageWidth - (marginX * 2);   // 12.2 inches
+    const contentHeight = pageHeight - (marginY * 2); // 7.54 inches
 
     // Target render canvas width matching 13.0 inches landscape printable area at 96 DPI
     const exportWidth = 1220;
@@ -3087,7 +3110,7 @@ async function generateReportPdf() {
     clone.style.minWidth = "100%";
     clone.style.maxWidth = "100%";
     clone.style.boxSizing = "border-box";
-    clone.style.padding = "10px 8px 20px 8px";
+    clone.style.padding = "24px 14px 28px 14px"; // Generous top and bottom padding
     clone.style.background = "#ffffff";
     clone.style.color = "#000000";
 
@@ -3099,7 +3122,27 @@ async function generateReportPdf() {
         }
     });
 
-    // Ensure live metadata and header elements have crisp, explicit visible underlines
+    // Format document header with explicit line spacing to prevent any overlapping
+    const headerSec = clone.querySelector("div[style*='text-align:center'], .report-header") || clone.firstElementChild;
+    if (headerSec) {
+        headerSec.style.textAlign = "center";
+        headerSec.style.marginBottom = "14px";
+        headerSec.style.paddingTop = "4px";
+        headerSec.style.color = "#000000";
+    }
+
+    const reportTitle = clone.querySelector("div[style*='14pt'], .report-title-main");
+    if (reportTitle) {
+        reportTitle.style.fontSize = "13.5pt";
+        reportTitle.style.fontWeight = "bold";
+        reportTitle.style.textTransform = "uppercase";
+        reportTitle.style.letterSpacing = "0.5px";
+        reportTitle.style.marginBottom = "6px";
+        reportTitle.style.lineHeight = "1.3";
+        reportTitle.style.color = "#000000";
+    }
+
+    // Ensure live metadata and header elements have crisp, explicit visible underlines with ample spacing
     const rtInput = document.getElementById("reportType") || document.getElementById("reportInventoryType");
     const fcInput = document.getElementById("reportFundCluster");
     const asOfInput = document.getElementById("reportAsOf");
@@ -3121,11 +3164,27 @@ async function generateReportPdf() {
         cloneInvType.style.textDecoration = "none";
         cloneInvType.style.borderBottom = "1.5px solid #000000";
         cloneInvType.style.display = "inline-block";
-        cloneInvType.style.paddingBottom = "2px";
+        cloneInvType.style.paddingBottom = "3px";
         cloneInvType.style.fontWeight = "bold";
         cloneInvType.style.fontSize = "11pt";
         cloneInvType.style.color = "#000000";
         cloneInvType.style.letterSpacing = "0.5px";
+        cloneInvType.style.marginBottom = "2px";
+    }
+
+    const cloneTypeLabel = clone.querySelector("div[style*='8pt'], .report-type-label");
+    if (cloneTypeLabel) {
+        cloneTypeLabel.style.fontSize = "8pt";
+        cloneTypeLabel.style.color = "#000000";
+        cloneTypeLabel.style.marginTop = "2px";
+        cloneTypeLabel.style.marginBottom = "6px";
+    }
+
+    const cloneAsOfContainer = clone.querySelector("div[style*='As of']");
+    if (cloneAsOfContainer) {
+        cloneAsOfContainer.style.fontSize = "10.5pt";
+        cloneAsOfContainer.style.marginTop = "6px";
+        cloneAsOfContainer.style.color = "#000000";
     }
 
     const cloneAsOf = clone.querySelector("#paperAsOf");
@@ -3136,6 +3195,14 @@ async function generateReportPdf() {
         cloneAsOf.style.display = "inline-block";
         cloneAsOf.style.paddingBottom = "2px";
         cloneAsOf.style.color = "#000000";
+    }
+
+    const cloneFundClusterContainer = clone.querySelector("div[style*='Fund Cluster']");
+    if (cloneFundClusterContainer) {
+        cloneFundClusterContainer.style.fontSize = "10.5pt";
+        cloneFundClusterContainer.style.margin = "12px 0 8px 0";
+        cloneFundClusterContainer.style.fontWeight = "bold";
+        cloneFundClusterContainer.style.color = "#000000";
     }
 
     const cloneFundCluster = clone.querySelector("#paperFundCluster");
@@ -3154,24 +3221,21 @@ async function generateReportPdf() {
         }
     }
 
-    // Format table in the PDF output: auto-adjust columns and table with solid, crisp borders
+    // Format table in the PDF output: auto-adjust columns and table with solid, crisp borders and zero overlapping
     const cloneTable = clone.querySelector("table");
     if (cloneTable) {
         cloneTable.style.width = "100%";
         cloneTable.style.minWidth = "100%";
         cloneTable.style.maxWidth = "100%";
         cloneTable.style.tableLayout = "auto";
-        cloneTable.style.borderCollapse = "separate";
+        cloneTable.style.borderCollapse = "collapse";
         cloneTable.style.borderSpacing = "0";
-        cloneTable.style.borderTop = "1px solid #000000";
-        cloneTable.style.borderLeft = "1px solid #000000";
-        cloneTable.style.borderRight = "none";
-        cloneTable.style.borderBottom = "none";
+        cloneTable.style.border = "1.5px solid #000000";
         cloneTable.style.fontSize = "7pt";
         cloneTable.style.fontFamily = "Arial, Helvetica, sans-serif";
         cloneTable.style.color = "#000000";
         cloneTable.style.background = "#ffffff";
-        cloneTable.style.margin = "6px 0 0 0";
+        cloneTable.style.margin = "8px 0 0 0";
 
         // Clean up and standardize thead structure: exactly 2 rows, clean rowspans, remove dummy tr
         const thead = cloneTable.querySelector("thead");
@@ -3186,6 +3250,8 @@ async function generateReportPdf() {
 
             const headerRows = thead.querySelectorAll("tr");
             if (headerRows.length >= 2) {
+                headerRows[0].style.height = "auto";
+                headerRows[1].style.height = "auto";
                 // Row 1: standalone columns get rowspan=2; grouped headers keep their colspans and NO rowspan
                 headerRows[0].querySelectorAll("th").forEach((th) => {
                     const colspan = parseInt(th.getAttribute("colspan") || "1", 10);
@@ -3202,42 +3268,31 @@ async function generateReportPdf() {
             }
 
             thead.querySelectorAll("th").forEach((th) => {
-                th.style.width = "auto";
-                th.style.minWidth = "auto";
-                th.style.maxWidth = "none";
-                th.style.borderTop = "none";
-                th.style.borderLeft = "none";
-                th.style.borderRight = "1px solid #000000";
-                th.style.borderBottom = "1px solid #000000";
+                th.style.border = "1px solid #000000";
                 th.style.background = "#d9d9d9";
                 th.style.color = "#000000";
-                th.style.padding = "3px 4px";
+                th.style.padding = "4px 3px";
                 th.style.textAlign = "center";
                 th.style.verticalAlign = "middle";
                 th.style.wordBreak = "break-word";
                 th.style.overflowWrap = "break-word";
-                th.style.lineHeight = "1.3";
+                th.style.lineHeight = "1.25";
                 th.style.fontWeight = "bold";
                 th.style.fontSize = "7pt";
-                th.style.height = "auto";
                 th.style.boxSizing = "border-box";
             });
         }
 
-        // Ensure all table data cells have clean black right & bottom borders, proper padding, and wrapping
+        // Ensure all table data cells have clean black borders, proper padding, and wrapping
         cloneTable.querySelectorAll("tbody td").forEach((td) => {
-            td.style.borderTop = "none";
-            td.style.borderLeft = "none";
-            td.style.borderRight = "1px solid #000000";
-            td.style.borderBottom = "1px solid #000000";
-            td.style.padding = "3px 4px";
+            td.style.border = "1px solid #000000";
+            td.style.padding = "4px 3px";
             td.style.color = "#000000";
             td.style.verticalAlign = "middle";
             td.style.fontSize = "7pt";
-            td.style.lineHeight = "1.35";
+            td.style.lineHeight = "1.3";
             td.style.wordBreak = "break-word";
             td.style.overflowWrap = "break-word";
-            td.style.height = "auto";
             td.style.boxSizing = "border-box";
         });
 
@@ -3254,6 +3309,7 @@ async function generateReportPdf() {
         cloneSignatures.style.justifyContent = "space-between";
         cloneSignatures.style.gap = "20px";
         cloneSignatures.style.marginTop = "28px";
+        cloneSignatures.style.marginBottom = "10px";
         cloneSignatures.style.fontSize = "7.5pt";
         cloneSignatures.style.color = "#000000";
     }
@@ -3270,8 +3326,7 @@ async function generateReportPdf() {
             windowWidth: exportWidth + 60
         });
 
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({
+        const pdf = new JsPdfConstructor({
             orientation: "landscape",
             unit: "in",
             format: [pageWidth, pageHeight]
@@ -3403,27 +3458,115 @@ async function generateReportPdf() {
                 "FAST"
             );
 
-            // Clean running footer indicating 8.5 x 13 bond paper specification
+            // Running page footer (page details only)
             pdf.setFont("helvetica", "normal");
-            pdf.setFontSize(8);
-            pdf.setTextColor(100, 100, 100);
+            pdf.setFontSize(8.5);
+            pdf.setTextColor(90, 90, 90);
             pdf.text(
-                `Page ${idx + 1} of ${totalPages}  •  Report on the Physical Count of Semi-Expendable Property (8.5" × 13" Bond Paper)`,
+                `Page ${idx + 1} of ${totalPages}`,
                 pageWidth / 2,
-                pageHeight - 0.18,
+                pageHeight - 0.25,
                 { align: "center" }
             );
         });
 
-        const asOfVal = (dom.reportAsOf && dom.reportAsOf.value) || (document.getElementById("reportAsOf") && document.getElementById("reportAsOf").value) || "undated";
-        pdf.save(`physical-count-report-${asOfVal}.pdf`);
-        showToast("8.5 x 13 PDF generated successfully.");
+        const asOfVal = (dom.reportAsOf && dom.reportAsOf.value) || (document.getElementById("reportAsOf") && document.getElementById("reportAsOf").value) || "2026-09-01";
+        const cleanAsOf = String(asOfVal).replace(/[^a-zA-Z0-9-_]/g, "-");
+        const fileName = `physical-count-report-${cleanAsOf}.pdf`;
+
+        // Save the output PDF in localStorage with 8.5x13 inches landscape layout
+        try {
+            const pdfDataUri = pdf.output("datauristring");
+            const reportPayload = {
+                fileName,
+                asOf: asOfVal,
+                paperSize: "8.5x13 inches",
+                orientation: "landscape",
+                pageWidthInches: pageWidth,
+                pageHeightInches: pageHeight,
+                totalPages,
+                generatedAt: new Date().toISOString(),
+                dataUri: pdfDataUri
+            };
+            localStorage.setItem("physicalCountReportPdf", JSON.stringify(reportPayload));
+            localStorage.setItem("lastGeneratedReportPdf", pdfDataUri);
+            localStorage.setItem("propertyInventoryReportPdf", pdfDataUri);
+        } catch (storageError) {
+            console.warn("Could not save full PDF dataUri to localStorage (storage quota):", storageError);
+            try {
+                localStorage.setItem("physicalCountReportPdf", JSON.stringify({
+                    fileName,
+                    asOf: asOfVal,
+                    paperSize: "8.5x13 inches",
+                    orientation: "landscape",
+                    pageWidthInches: pageWidth,
+                    pageHeightInches: pageHeight,
+                    totalPages,
+                    generatedAt: new Date().toISOString()
+                }));
+            } catch (fallbackError) {
+                console.warn("Could not save PDF metadata to localStorage:", fallbackError);
+            }
+        }
+
+        // Clean up any extra download button in the Report Signatories card if present
+        const directBtn = document.getElementById("directPdfDownloadBtn");
+        if (directBtn) {
+            directBtn.remove();
+        }
+
+        // Automatic local download to user's device
+        const pdfBlob = pdf.output("blob");
+        const blobUrl = URL.createObjectURL(pdfBlob);
+
+        const downloadLink = document.createElement("a");
+        downloadLink.href = blobUrl;
+        downloadLink.download = fileName;
+        downloadLink.setAttribute("download", fileName);
+        downloadLink.target = "_self";
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+
+        try {
+            pdf.save(fileName);
+        } catch (saveError) {
+            console.warn("jsPDF native save failed, relying on anchor download:", saveError);
+        }
+
+        // Auto-open the generated PDF in a new tab
+        try {
+            window.open(blobUrl, "_blank");
+        } catch (openErr) {
+            console.warn("Auto-opening PDF window blocked by browser popup settings:", openErr);
+        }
+
+        // Show notice popup modal that the PDF has already been generated and saved
+        showPdfGeneratedNoticeModal({ fileName, blobUrl, asOf: asOfVal });
+
+        showToast(`8.5" × 13" PDF generated, saved, and opened.`);
+
+        setTimeout(() => {
+            if (downloadLink.parentNode) {
+                downloadLink.parentNode.removeChild(downloadLink);
+            }
+        }, 120000);
     } catch (error) {
         console.error("PDF generation failed:", error);
-        showToast("Unable to generate the PDF.");
+        showToast("Unable to generate the PDF report.");
     } finally {
         if (offscreenContainer && offscreenContainer.parentNode) {
             offscreenContainer.parentNode.removeChild(offscreenContainer);
+        }
+        allBtns.forEach((b, i) => {
+            b.disabled = false;
+            b.style.pointerEvents = "auto";
+            b.style.opacity = "1";
+            b.innerHTML = originalBtnHtmls[i] || "Generate PDF";
+        });
+        isGeneratingReportPdf = false;
+        if (typeof lucide !== "undefined") {
+            lucide.createIcons();
         }
     }
 }
@@ -3903,6 +4046,74 @@ function showSuccessModal(message, title) {
     document.addEventListener("keydown", onEsc);
     modal.addEventListener("click", onBackdrop);
 }
+
+function showPdfGeneratedNoticeModal({ fileName, blobUrl, asOf } = {}) {
+    const modal = document.getElementById("pdfGeneratedModal");
+    if (!modal) {
+        showToast("PDF generated and saved successfully.");
+        return;
+    }
+
+    const fileNameEl = document.getElementById("pdfModalFileName");
+    if (fileNameEl) {
+        fileNameEl.textContent = fileName || "physical-count-report.pdf";
+    }
+
+    const openBtn = document.getElementById("pdfModalOpenBtn");
+    if (openBtn) {
+        openBtn.onclick = () => {
+            if (blobUrl) {
+                window.open(blobUrl, "_blank");
+            }
+        };
+    }
+
+    const downloadBtn = document.getElementById("pdfModalDownloadBtn");
+    if (downloadBtn) {
+        downloadBtn.onclick = () => {
+            if (blobUrl) {
+                const a = document.createElement("a");
+                a.href = blobUrl;
+                a.download = fileName || "physical-count-report.pdf";
+                a.style.display = "none";
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    if (a.parentNode) a.parentNode.removeChild(a);
+                }, 2000);
+            }
+        };
+    }
+
+    const closeBtn = document.getElementById("pdfModalCloseBtn");
+    function closeModal() {
+        modal.hidden = true;
+        document.removeEventListener("keydown", onEscNotice);
+        modal.removeEventListener("click", onBackdropNotice);
+    }
+
+    function onEscNotice(e) {
+        if (e.key === "Escape") closeModal();
+    }
+    function onBackdropNotice(e) {
+        if (e.target === modal) closeModal();
+    }
+
+    if (closeBtn) closeBtn.onclick = closeModal;
+    document.addEventListener("keydown", onEscNotice);
+    modal.addEventListener("click", onBackdropNotice);
+
+    // Re-trigger SVG check animation
+    const svgOld = modal.querySelector(".success-modal-check");
+    if (svgOld) {
+        const svgNew = svgOld.cloneNode(true);
+        svgOld.parentNode.replaceChild(svgNew, svgOld);
+    }
+
+    modal.hidden = false;
+    if (openBtn) openBtn.focus();
+}
+window.showPdfGeneratedNoticeModal = showPdfGeneratedNoticeModal;
 
 function showConfirmDialog({
     title = "Confirm Delete",
