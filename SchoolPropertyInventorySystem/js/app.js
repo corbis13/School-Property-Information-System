@@ -426,8 +426,23 @@ async function loadSignatoryOptions() {
         const currentValue = select.value;
         select.innerHTML = `<option value="">Select signatory</option>${signatoryOptions
             .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
-        if (signatoryOptions.includes(currentValue)) select.value = currentValue;
+        if (signatoryOptions.includes(currentValue)) {
+            select.value = currentValue;
+        }
     });
+
+    if (dom.certifiedCorrectedBy && !dom.certifiedCorrectedBy.value && signatoryOptions.length) {
+        const defCert = signatoryOptions.find((n) => n.includes("Cruz") || n.includes("Santos") || n.includes("Mendoza")) || signatoryOptions[0];
+        if (defCert) dom.certifiedCorrectedBy.value = defCert;
+    }
+    if (dom.approvedBy && !dom.approvedBy.value && signatoryOptions.length) {
+        const defAppr = signatoryOptions.find((n) => n.includes("Dela Cruz") || n.includes("Principal")) || signatoryOptions[0];
+        if (defAppr) dom.approvedBy.value = defAppr;
+    }
+    if (dom.verifiedBy && !dom.verifiedBy.value && signatoryOptions.length) {
+        const defVer = signatoryOptions.find((n) => n.includes("Reyes") || n.includes("Inspector")) || signatoryOptions[0];
+        if (defVer) dom.verifiedBy.value = defVer;
+    }
 
     populateIcsReceivedFromDropdown();
     populateIcsReceivedByDropdown();
@@ -2959,11 +2974,9 @@ function renderPhysicalCountReport() {
     const reportItems = getReportItems();
     const inventoryType = normalizeReportInventoryType(dom.reportInventoryType?.value) || "ALL INVENTORY ITEMS";
     const fundCluster = dom.reportFundCluster?.value || "____________________________";
-    const signatories = [
-        ["Certified Correct by:", dom.certifiedCorrectedBy?.value || ""],
-        ["Approved by:", dom.approvedBy?.value || ""],
-        ["Verified by:", dom.verifiedBy?.value || ""]
-    ];
+    const certVal = (dom.certifiedCorrectedBy?.value || document.getElementById("certifiedCorrectedBy")?.value || "").trim() || "Ana Patricia Cruz";
+    const apprVal = (dom.approvedBy?.value || document.getElementById("approvedBy")?.value || "").trim() || "Dr. Juan Dela Cruz";
+    const verVal = (dom.verifiedBy?.value || document.getElementById("verifiedBy")?.value || "").trim() || "Engr. Roberto Reyes";
 
     dom.physicalReport.innerHTML = `
         <div class="physical-report-paper" style="background:#ffffff; color:#000000; font-family:Arial,Helvetica,sans-serif; font-size:7.5pt; width:100%; box-sizing:border-box; padding:15px 2px 35px 2px;">
@@ -3053,8 +3066,31 @@ function renderPhysicalCountReport() {
                 </tbody>
             </table>
         </div>
-        <div class="report-signatures">
-            ${signatories.map(([label, value], index) => `<div><span>${label}</span><strong class="report-signatory-name">${reportCell(value, "")}</strong><i></i><small>${index === 0 ? "Signature over Printed Name of Inventory<br>Committee Chair and Members" : index === 1 ? "Signature over Printed Name of Head of<br>Agency/Entity or Authorized" : "Signature over Printed Name of COA Representative"}</small></div>`).join("")}
+        <div class="report-signatures report-signatures-wrap" style="display:flex; justify-content:space-between; gap:20px; margin-top:28px; font-size:7.5pt; color:#000000; width:100%; box-sizing:border-box;">
+            <div style="flex:1; text-align:center;">
+                <div style="font-size:7.5pt; margin-bottom:28px; text-align:left; font-weight:bold; color:#000000;">Certified Correct by:</div>
+                <div style="width:85%; min-width:180px; margin:0 auto; text-align:center;">
+                    <div id="paperCertifiedCorrect" class="report-signatory-name" style="font-weight:bold; font-size:9.5pt; margin-bottom:3px; min-height:16px; text-transform:uppercase; color:#000000; letter-spacing:0.3px; line-height:1.2;">${escapeHtml(certVal)}</div>
+                    <div style="border-top:1.5px solid #000000; margin:2px auto 4px auto; width:100%;"></div>
+                    <div style="font-size:7pt; color:#000000; line-height:1.3; text-align:center;">Signature over Printed Name of Inventory<br>Committee Chair and Members</div>
+                </div>
+            </div>
+            <div style="flex:1; text-align:center;">
+                <div style="font-size:7.5pt; margin-bottom:28px; text-align:left; font-weight:bold; color:#000000;">Approved by:</div>
+                <div style="width:85%; min-width:180px; margin:0 auto; text-align:center;">
+                    <div id="paperApprovedBy" class="report-signatory-name" style="font-weight:bold; font-size:9.5pt; margin-bottom:3px; min-height:16px; text-transform:uppercase; color:#000000; letter-spacing:0.3px; line-height:1.2;">${escapeHtml(apprVal)}</div>
+                    <div style="border-top:1.5px solid #000000; margin:2px auto 4px auto; width:100%;"></div>
+                    <div style="font-size:7pt; color:#000000; line-height:1.3; text-align:center;">Signature over Printed Name of Head of<br>Agency/Entity or Authorized</div>
+                </div>
+            </div>
+            <div style="flex:1; text-align:center;">
+                <div style="font-size:7.5pt; margin-bottom:28px; text-align:left; font-weight:bold; color:#000000;">Verified by:</div>
+                <div style="width:85%; min-width:180px; margin:0 auto; text-align:center;">
+                    <div id="paperVerifiedBy" class="report-signatory-name" style="font-weight:bold; font-size:9.5pt; margin-bottom:3px; min-height:16px; text-transform:uppercase; color:#000000; letter-spacing:0.3px; line-height:1.2;">${escapeHtml(verVal)}</div>
+                    <div style="border-top:1.5px solid #000000; margin:2px auto 4px auto; width:100%;"></div>
+                    <div style="font-size:7pt; color:#000000; line-height:1.3; text-align:center;">Signature over Printed Name of COA Representative</div>
+                </div>
+            </div>
         </div>
         </div>
     `;
@@ -3355,17 +3391,70 @@ async function generateReportPdf() {
         });
     }
 
-    // Ensure signatures in the PDF output are spaced cleanly across the width
-    const cloneSignatures = clone.querySelector(".report-signatures, [style*='SIGNATURES']") || clone.lastElementChild;
-    if (cloneSignatures) {
-        cloneSignatures.style.display = "flex";
-        cloneSignatures.style.justifyContent = "space-between";
-        cloneSignatures.style.gap = "20px";
-        cloneSignatures.style.marginTop = "28px";
-        cloneSignatures.style.marginBottom = "10px";
-        cloneSignatures.style.fontSize = "7.5pt";
-        cloneSignatures.style.color = "#000000";
+    // Ensure signatories in clone are explicitly updated with the current values selected in the UI
+    const certInput = document.getElementById("certifiedCorrectedBy") || (typeof dom !== "undefined" && dom.certifiedCorrectedBy);
+    const apprInput = document.getElementById("approvedBy") || (typeof dom !== "undefined" && dom.approvedBy);
+    const verInput = document.getElementById("verifiedBy") || (typeof dom !== "undefined" && dom.verifiedBy);
+
+    const certVal = (certInput && certInput.value ? certInput.value.trim() : "")
+        || (document.getElementById("paperCertifiedCorrect")?.textContent?.trim())
+        || "Ana Patricia Cruz";
+    const apprVal = (apprInput && apprInput.value ? apprInput.value.trim() : "")
+        || (document.getElementById("paperApprovedBy")?.textContent?.trim())
+        || "Dr. Juan Dela Cruz";
+    const verVal = (verInput && verInput.value ? verInput.value.trim() : "")
+        || (document.getElementById("paperVerifiedBy")?.textContent?.trim())
+        || "Engr. Roberto Reyes";
+
+    let cloneSignatures = clone.querySelector(".report-signatures, .report-signatures-wrap");
+    if (!cloneSignatures) {
+        cloneSignatures = Array.from(clone.querySelectorAll("div")).find(
+            (d) => d.textContent.includes("Certified Correct by:") && (d.children.length >= 3 || d.parentElement?.children.length >= 3)
+        );
     }
+
+    if (!cloneSignatures) {
+        cloneSignatures = document.createElement("div");
+        clone.appendChild(cloneSignatures);
+    }
+
+    cloneSignatures.className = "report-signatures report-signatures-wrap";
+    cloneSignatures.style.display = "flex";
+    cloneSignatures.style.justifyContent = "space-between";
+    cloneSignatures.style.gap = "20px";
+    cloneSignatures.style.marginTop = "28px";
+    cloneSignatures.style.marginBottom = "10px";
+    cloneSignatures.style.fontSize = "7.5pt";
+    cloneSignatures.style.color = "#000000";
+    cloneSignatures.style.width = "100%";
+    cloneSignatures.style.boxSizing = "border-box";
+    cloneSignatures.style.overflow = "visible";
+    cloneSignatures.innerHTML = `
+        <div style="flex:1; text-align:center;">
+            <div style="font-size:7.5pt; margin-bottom:28px; text-align:left; font-weight:bold; color:#000000;">Certified Correct by:</div>
+            <div style="width:85%; min-width:180px; margin:0 auto; text-align:center;">
+                <div id="paperCertifiedCorrect" class="report-signatory-name" style="font-weight:bold; font-size:9.5pt; margin-bottom:3px; min-height:16px; text-transform:uppercase; color:#000000; letter-spacing:0.3px; line-height:1.2; text-align:center;">${escapeHtml(certVal)}</div>
+                <div style="border-top:1.5px solid #000000; margin:2px auto 4px auto; width:100%;"></div>
+                <div style="font-size:7pt; color:#000000; line-height:1.3; text-align:center;">Signature over Printed Name of Inventory<br>Committee Chair and Members</div>
+            </div>
+        </div>
+        <div style="flex:1; text-align:center;">
+            <div style="font-size:7.5pt; margin-bottom:28px; text-align:left; font-weight:bold; color:#000000;">Approved by:</div>
+            <div style="width:85%; min-width:180px; margin:0 auto; text-align:center;">
+                <div id="paperApprovedBy" class="report-signatory-name" style="font-weight:bold; font-size:9.5pt; margin-bottom:3px; min-height:16px; text-transform:uppercase; color:#000000; letter-spacing:0.3px; line-height:1.2; text-align:center;">${escapeHtml(apprVal)}</div>
+                <div style="border-top:1.5px solid #000000; margin:2px auto 4px auto; width:100%;"></div>
+                <div style="font-size:7pt; color:#000000; line-height:1.3; text-align:center;">Signature over Printed Name of Head of<br>Agency/Entity or Authorized</div>
+            </div>
+        </div>
+        <div style="flex:1; text-align:center;">
+            <div style="font-size:7.5pt; margin-bottom:28px; text-align:left; font-weight:bold; color:#000000;">Verified by:</div>
+            <div style="width:85%; min-width:180px; margin:0 auto; text-align:center;">
+                <div id="paperVerifiedBy" class="report-signatory-name" style="font-weight:bold; font-size:9.5pt; margin-bottom:3px; min-height:16px; text-transform:uppercase; color:#000000; letter-spacing:0.3px; line-height:1.2; text-align:center;">${escapeHtml(verVal)}</div>
+                <div style="border-top:1.5px solid #000000; margin:2px auto 4px auto; width:100%;"></div>
+                <div style="font-size:7pt; color:#000000; line-height:1.3; text-align:center;">Signature over Printed Name of COA Representative</div>
+            </div>
+        </div>
+    `;
 
     offscreenContainer.appendChild(clone);
     document.body.appendChild(offscreenContainer);
@@ -3402,7 +3491,10 @@ async function generateReportPdf() {
         }
 
         // Collect bounding boxes of all table rows and signature blocks to avoid slicing any element across pages
-        const avoidElements = Array.from(clone.querySelectorAll("tbody tr, .report-signatures, [style*='Certified Correct'], [style*='CERTIFIED CORRECT']"));
+        const avoidElements = Array.from(clone.querySelectorAll("tbody tr, .report-signatures, .report-signatures-wrap, [style*='Certified Correct'], [style*='CERTIFIED CORRECT']"));
+        if (cloneSignatures && !avoidElements.includes(cloneSignatures)) {
+            avoidElements.push(cloneSignatures);
+        }
         const elementBoxes = avoidElements.map((el) => {
             const r = el.getBoundingClientRect();
             return {
@@ -3584,6 +3676,12 @@ async function generateReportPdf() {
         }
 
         showToast(`8.5" × 13" PDF generated and opened.`);
+        if (typeof showSuccessModal === "function") {
+            showSuccessModal(
+                `The 8.5" × 13" Physical Count Report PDF has been successfully generated and saved locally as "${fileName}".`,
+                "PDF Generated & Saved"
+            );
+        }
     } catch (error) {
         console.error("PDF generation failed:", error);
         if (pdfPreviewWindow) {
