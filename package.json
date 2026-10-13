@@ -14,5 +14,8 @@
     "cors": "^2.8.6",
     "express": "^4.21.2",
     "supabase-js": "^0.0.1-security"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0"
   }
 }

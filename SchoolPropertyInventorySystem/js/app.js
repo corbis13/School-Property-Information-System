@@ -2966,7 +2966,7 @@ function renderPhysicalCountReport() {
     ];
 
     dom.physicalReport.innerHTML = `
-        <div class="physical-report-paper" style="background:#ffffff; color:#000000; font-family:Arial,Helvetica,sans-serif; font-size:7.5pt; width:100%; box-sizing:border-box; padding:15px 5px 35px 5px;">
+        <div class="physical-report-paper" style="background:#ffffff; color:#000000; font-family:Arial,Helvetica,sans-serif; font-size:7.5pt; width:100%; box-sizing:border-box; padding:15px 2px 35px 2px;">
             <div style="text-align:center; margin-bottom:12px; color:#000000;">
                 <div style="font-size:14pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; color:#000000;">REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY</div>
                 <div id="paperInventoryType" style="font-size:11pt; font-weight:bold; text-transform:uppercase; border-bottom:1.5px solid #000000; display:inline-block; padding-bottom:2px; letter-spacing:0.5px; margin-top:2px; color:#000000;">${escapeHtml(inventoryType.toUpperCase())}</div>
@@ -2976,29 +2976,52 @@ function renderPhysicalCountReport() {
             <div style="font-size:11pt; margin:8px 0 4px 0; font-weight:bold; color:#000000;">
                 Fund Cluster : <span id="paperFundCluster" style="border-bottom:1.5px solid #000000; display:inline-block; min-width:220px; padding:2px 8px 3px 8px; line-height:1.4; vertical-align:middle; color:#000000;">${fundCluster && fundCluster !== "____________________________" ? escapeHtml(fundCluster) : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"}</span>
             </div>
-            <div style="overflow-x:auto; width:100%;">
-                <table style="width:100%; border-collapse:collapse; font-size:7pt; border:1px solid #000000; margin-top:4px; color:#000000; background:#ffffff;">
+            <div class="physical-report-table-wrap" style="overflow-x:auto; width:100%;">
+                <table class="physical-report-table" style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:7pt; border:1px solid #000000; margin-top:4px; color:#000000; background:#ffffff;">
+                    <colgroup>
+                        <col class="report-col-article" style="width:10%;">
+                        <col class="report-col-description" style="width:11%;">
+                        <col class="report-col-property-number" style="width:10.5%;">
+                        <col class="report-col-unit-measure" style="width:6%;">
+                        <col class="report-col-unit-value" style="width:5.15%;">
+                        <col class="report-col-total" style="width:5.15%;">
+                        <col class="report-col-date-acquired" style="width:6.4%;">
+                        <col class="report-col-balance" style="width:5.3%;">
+                        <col class="report-col-on-hand" style="width:5.4%;">
+                        <col class="report-col-shortage-quantity" style="width:5.3%;">
+                        <col class="report-col-shortage-value" style="width:5.7%;">
+                        <col class="report-col-accountable" style="width:11.4%;">
+                        <col class="report-col-location" style="width:6.2%;">
+                        <col class="report-col-status" style="width:6.5%;">
+                    </colgroup>
                     <thead>
                         <tr style="background:#d9d9d9; font-weight:bold; text-align:center; color:#000000;">
-                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:9%; color:#000000;">Article</th>
-                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:11%; color:#000000;">Description</th>
-                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:9%; color:#000000;">Semi-Expendable<br>Property Number</th>
-                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Unit of<br>Measure</th>
-                            <th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Amount</th>
-                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:6%; color:#000000;">Date<br>Acquired<br><small style="font-size:6pt;">(YYYY-MM-DD)</small></th>
-                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:3%; color:#000000;">Balance<br>Per<br>Card<br><small style="font-size:6pt;">(Quantity)</small></th>
-                            <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">On Hand<br>Per Count<br><small style="font-size:6pt;">(Quantity)</small></th>
-                            <th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Shortage/Overage</th>
-                            <th colspan="3" style="border:1px solid #000000; padding:2px 4px; width:14%; color:#000000;">Remarks</th>
+                            <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">Article</th>
+                            <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">Description</th>
+                            <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">Semi-Expendable<br>Property Number</th>
+                            <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">Unit of<br>Measure</th>
+                            <th colspan="2" style="border:1px solid #8a8a8a; padding:2px 3px; color:#000000; text-transform:uppercase;">Amount</th>
+                            <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">Date<br>Acquired</th>
+                            <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">Balance Per<br>Card<br><small style="font-size:6pt;">(Quantity)</small></th>
+                            <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">On Hand<br>Per Count<br><small style="font-size:6pt;">(Quantity)</small></th>
+                            <th colspan="2" style="border:1px solid #8a8a8a; padding:2px 3px; color:#000000; text-transform:uppercase;">Shortage/Overage</th>
+                            <th colspan="3" style="border:1px solid #8a8a8a; padding:2px 3px; color:#000000; text-transform:uppercase;">Remarks</th>
                         </tr>
                         <tr style="background:#d9d9d9; font-weight:bold; text-align:center; color:#000000;">
-                            <th style="border:1px solid #000000; padding:2px 3px; width:4%; color:#000000;">Unit<br>Value</th>
-                            <th style="border:1px solid #000000; padding:2px 3px; width:4%; color:#000000;">Total</th>
-                            <th style="border:1px solid #000000; padding:2px 3px; width:4%; color:#000000;">Quantity</th>
-                            <th style="border:1px solid #000000; padding:2px 3px; width:4%; color:#000000;">Value</th>
-                            <th style="border:1px solid #000000; padding:2px 3px; width:8%; color:#000000;">Current Accountable<br>Personnel</th>
-                            <th style="border:1px solid #000000; padding:2px 3px; width:4%; color:#000000;">Location</th>
-                            <th style="border:1px solid #000000; padding:2px 3px; width:5%; color:#000000;">Status</th>
+                            <th class="report-header-spacer" style="border:1px solid #8a8a8a; border-top:0; padding:0; color:transparent;">&nbsp;</th>
+                            <th class="report-header-spacer" style="border:1px solid #8a8a8a; border-top:0; padding:0; color:transparent;">&nbsp;</th>
+                            <th class="report-header-spacer" style="border:1px solid #8a8a8a; border-top:0; padding:0; color:transparent;">&nbsp;</th>
+                            <th class="report-header-spacer" style="border:1px solid #8a8a8a; border-top:0; padding:0; color:transparent;">&nbsp;</th>
+                            <th style="border:1px solid #8a8a8a; padding:2px 3px; color:#000000;">Unit<br>Value</th>
+                            <th style="border:1px solid #8a8a8a; padding:2px 3px; color:#000000;">Total</th>
+                            <th class="report-header-spacer" style="border:1px solid #8a8a8a; border-top:0; padding:0; color:transparent;">&nbsp;</th>
+                            <th class="report-header-spacer" style="border:1px solid #8a8a8a; border-top:0; padding:0; color:transparent;">&nbsp;</th>
+                            <th class="report-header-spacer" style="border:1px solid #8a8a8a; border-top:0; padding:0; color:transparent;">&nbsp;</th>
+                            <th style="border:1px solid #8a8a8a; padding:2px 3px; color:#000000;">Quantity</th>
+                            <th style="border:1px solid #8a8a8a; padding:2px 3px; color:#000000;">Value</th>
+                            <th style="border:1px solid #8a8a8a; padding:2px 3px; color:#000000;">Current Accountable<br>Personnel</th>
+                            <th style="border:1px solid #8a8a8a; padding:2px 3px; color:#000000;">Location</th>
+                            <th style="border:1px solid #8a8a8a; padding:2px 3px; color:#000000;">Status</th>
                         </tr>
                     </thead>
                 <tbody>
@@ -3033,6 +3056,7 @@ function renderPhysicalCountReport() {
         <div class="report-signatures">
             ${signatories.map(([label, value], index) => `<div><span>${label}</span><strong class="report-signatory-name">${reportCell(value, "")}</strong><i></i><small>${index === 0 ? "Signature over Printed Name of Inventory<br>Committee Chair and Members" : index === 1 ? "Signature over Printed Name of Head of<br>Agency/Entity or Authorized" : "Signature over Printed Name of COA Representative"}</small></div>`).join("")}
         </div>
+        </div>
     `;
 }
 
@@ -3052,9 +3076,18 @@ async function generateReportPdf() {
         b.innerHTML = `<svg style="width:15px; height:15px; display:inline-block; vertical-align:middle; animation:spin 1s linear infinite; margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path></svg> Generating PDF...`;
     });
 
+    const pdfPreviewWindow = window.open("about:blank", "_blank");
+    if (pdfPreviewWindow) {
+        pdfPreviewWindow.document.title = "Generating PDF...";
+        pdfPreviewWindow.document.body.innerHTML = '<p style="font: 16px Arial, sans-serif; margin: 24px;">Generating PDF, please wait...</p>';
+    }
+
     const JsPdfConstructor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
     if (!window.html2canvas || !JsPdfConstructor) {
         showToast("PDF tools are still loading. Please wait a moment and try again.");
+        if (pdfPreviewWindow) {
+            pdfPreviewWindow.close();
+        }
         allBtns.forEach((b, i) => {
             b.disabled = false;
             b.style.pointerEvents = "auto";
@@ -3072,15 +3105,25 @@ async function generateReportPdf() {
     const report = dom.physicalReport || document.getElementById("physicalReport");
     if (!report) {
         showToast("Report container not found.");
+        if (pdfPreviewWindow) {
+            pdfPreviewWindow.close();
+        }
+        allBtns.forEach((b, i) => {
+            b.disabled = false;
+            b.style.pointerEvents = "auto";
+            b.style.opacity = "1";
+            b.innerHTML = originalBtnHtmls[i] || "Generate PDF";
+        });
+        isGeneratingReportPdf = false;
         return;
     }
 
     // 8.5 x 13 inches bond paper (Philippine legal / long bond paper) in landscape orientation
     const pageWidth = 13.0; // inches
     const pageHeight = 8.5;  // inches
-    const marginX = 0.40;    // left/right margin (in)
+    const marginX = 0.25;    // left/right margin (in)
     const marginY = 0.48;    // top/bottom margin (in) - provides generous padding on both top and bottom
-    const contentWidth = pageWidth - (marginX * 2);   // 12.2 inches
+    const contentWidth = pageWidth - (marginX * 2);   // 12.5 inches
     const contentHeight = pageHeight - (marginY * 2); // 7.54 inches
 
     // Target render canvas width matching 13.0 inches landscape printable area at 96 DPI
@@ -3110,7 +3153,7 @@ async function generateReportPdf() {
     clone.style.minWidth = "100%";
     clone.style.maxWidth = "100%";
     clone.style.boxSizing = "border-box";
-    clone.style.padding = "24px 14px 28px 14px"; // Generous top and bottom padding
+    clone.style.padding = "24px 6px 28px 6px"; // Tight side padding gives the table more PDF width
     clone.style.background = "#ffffff";
     clone.style.color = "#000000";
 
@@ -3221,13 +3264,13 @@ async function generateReportPdf() {
         }
     }
 
-    // Format table in the PDF output: auto-adjust columns and table with solid, crisp borders and zero overlapping
+    // Format table in the PDF output with stable columns and enough header height.
     const cloneTable = clone.querySelector("table");
     if (cloneTable) {
         cloneTable.style.width = "100%";
         cloneTable.style.minWidth = "100%";
         cloneTable.style.maxWidth = "100%";
-        cloneTable.style.tableLayout = "auto";
+        cloneTable.style.tableLayout = "fixed";
         cloneTable.style.borderCollapse = "collapse";
         cloneTable.style.borderSpacing = "0";
         cloneTable.style.border = "1.5px solid #000000";
@@ -3250,36 +3293,47 @@ async function generateReportPdf() {
 
             const headerRows = thead.querySelectorAll("tr");
             if (headerRows.length >= 2) {
-                headerRows[0].style.height = "auto";
-                headerRows[1].style.height = "auto";
-                // Row 1: standalone columns get rowspan=2; grouped headers keep their colspans and NO rowspan
-                headerRows[0].querySelectorAll("th").forEach((th) => {
-                    const colspan = parseInt(th.getAttribute("colspan") || "1", 10);
-                    if (colspan > 1) {
-                        th.removeAttribute("rowspan");
-                    } else {
-                        th.setAttribute("rowspan", "2");
-                    }
-                });
-                // Row 2: sub-headers under Amount, Shortage/Overage, Remarks must have NO rowspan
-                headerRows[1].querySelectorAll("th").forEach((th) => {
-                    th.removeAttribute("rowspan");
-                });
+                headerRows[0].style.height = "38px";
+                headerRows[0].style.minHeight = "38px";
+                headerRows[0].style.background = "#d9d9d9";
+                headerRows[1].style.height = "28px";
+                headerRows[1].style.minHeight = "28px";
+                headerRows[1].style.background = "#d9d9d9";
+                // Keep the export header free of rowspan; html2canvas clips row-spanning
+                // header cells in this dense fixed-layout table.
+                thead.querySelectorAll("th").forEach((th) => th.removeAttribute("rowspan"));
             }
 
             thead.querySelectorAll("th").forEach((th) => {
                 th.style.border = "1px solid #000000";
                 th.style.background = "#d9d9d9";
                 th.style.color = "#000000";
-                th.style.padding = "4px 3px";
+                th.style.padding = "3px 3px";
                 th.style.textAlign = "center";
                 th.style.verticalAlign = "middle";
                 th.style.wordBreak = "break-word";
                 th.style.overflowWrap = "break-word";
-                th.style.lineHeight = "1.25";
+                th.style.lineHeight = "1.15";
                 th.style.fontWeight = "bold";
                 th.style.fontSize = "7pt";
                 th.style.boxSizing = "border-box";
+                th.style.whiteSpace = "normal";
+                if (th.classList.contains("report-standalone-th")) {
+                    th.style.borderBottom = "0";
+                }
+                if (th.classList.contains("report-header-spacer")) {
+                    th.style.borderTop = "0";
+                    th.style.padding = "0";
+                    th.style.color = "transparent";
+                    th.style.fontSize = "0";
+                    th.style.lineHeight = "0";
+                }
+            });
+            thead.querySelectorAll("th small").forEach((small) => {
+                small.style.display = "block";
+                small.style.fontSize = "6pt";
+                small.style.fontWeight = "normal";
+                small.style.lineHeight = "1";
             });
         }
 
@@ -3296,8 +3350,7 @@ async function generateReportPdf() {
             td.style.boxSizing = "border-box";
         });
 
-        cloneTable.querySelectorAll("tr").forEach((tr) => {
-            tr.style.height = "auto";
+        cloneTable.querySelectorAll("tbody tr").forEach((tr) => {
             tr.style.background = "#ffffff";
         });
     }
@@ -3515,44 +3568,27 @@ async function generateReportPdf() {
             directBtn.remove();
         }
 
-        // Automatic local download to user's device
+        // Create a blob URL for preview without triggering a local download prompt.
         const pdfBlob = pdf.output("blob");
         const blobUrl = URL.createObjectURL(pdfBlob);
 
-        const downloadLink = document.createElement("a");
-        downloadLink.href = blobUrl;
-        downloadLink.download = fileName;
-        downloadLink.setAttribute("download", fileName);
-        downloadLink.target = "_self";
-        downloadLink.style.display = "none";
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-
-        try {
-            pdf.save(fileName);
-        } catch (saveError) {
-            console.warn("jsPDF native save failed, relying on anchor download:", saveError);
-        }
-
-        // Auto-open the generated PDF in a new tab
-        try {
-            window.open(blobUrl, "_blank");
-        } catch (openErr) {
-            console.warn("Auto-opening PDF window blocked by browser popup settings:", openErr);
-        }
-
-        // Show notice popup modal that the PDF has already been generated and saved
-        showPdfGeneratedNoticeModal({ fileName, blobUrl, asOf: asOfVal });
-
-        showToast(`8.5" × 13" PDF generated, saved, and opened.`);
-
-        setTimeout(() => {
-            if (downloadLink.parentNode) {
-                downloadLink.parentNode.removeChild(downloadLink);
+        // Auto-open the generated PDF in the tab reserved by the user's click.
+        if (pdfPreviewWindow) {
+            pdfPreviewWindow.location.href = blobUrl;
+        } else {
+            try {
+                window.open(blobUrl, "_blank");
+            } catch (openErr) {
+                console.warn("Auto-opening PDF window blocked by browser popup settings:", openErr);
             }
-        }, 120000);
+        }
+
+        showToast(`8.5" × 13" PDF generated and opened.`);
     } catch (error) {
         console.error("PDF generation failed:", error);
+        if (pdfPreviewWindow) {
+            pdfPreviewWindow.close();
+        }
         showToast("Unable to generate the PDF report.");
     } finally {
         if (offscreenContainer && offscreenContainer.parentNode) {
