@@ -424,25 +424,14 @@ async function loadSignatoryOptions() {
     [dom.certifiedCorrectedBy, dom.approvedBy, dom.verifiedBy].forEach((select) => {
         if (!select) return;
         const currentValue = select.value;
-        select.innerHTML = `<option value="">Select signatory</option>${signatoryOptions
+        select.innerHTML = `<option value="" selected>Select signatory</option>${signatoryOptions
             .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
-        if (signatoryOptions.includes(currentValue)) {
+        if (currentValue && signatoryOptions.includes(currentValue)) {
             select.value = currentValue;
+        } else {
+            select.value = "";
         }
     });
-
-    if (dom.certifiedCorrectedBy && !dom.certifiedCorrectedBy.value && signatoryOptions.length) {
-        const defCert = signatoryOptions.find((n) => n.includes("Cruz") || n.includes("Santos") || n.includes("Mendoza")) || signatoryOptions[0];
-        if (defCert) dom.certifiedCorrectedBy.value = defCert;
-    }
-    if (dom.approvedBy && !dom.approvedBy.value && signatoryOptions.length) {
-        const defAppr = signatoryOptions.find((n) => n.includes("Dela Cruz") || n.includes("Principal")) || signatoryOptions[0];
-        if (defAppr) dom.approvedBy.value = defAppr;
-    }
-    if (dom.verifiedBy && !dom.verifiedBy.value && signatoryOptions.length) {
-        const defVer = signatoryOptions.find((n) => n.includes("Reyes") || n.includes("Inspector")) || signatoryOptions[0];
-        if (defVer) dom.verifiedBy.value = defVer;
-    }
 
     populateIcsReceivedFromDropdown();
     populateIcsReceivedByDropdown();
@@ -2974,9 +2963,9 @@ function renderPhysicalCountReport() {
     const reportItems = getReportItems();
     const inventoryType = normalizeReportInventoryType(dom.reportInventoryType?.value) || "ALL INVENTORY ITEMS";
     const fundCluster = dom.reportFundCluster?.value || "____________________________";
-    const certVal = (dom.certifiedCorrectedBy?.value || document.getElementById("certifiedCorrectedBy")?.value || "").trim() || "Ana Patricia Cruz";
-    const apprVal = (dom.approvedBy?.value || document.getElementById("approvedBy")?.value || "").trim() || "Dr. Juan Dela Cruz";
-    const verVal = (dom.verifiedBy?.value || document.getElementById("verifiedBy")?.value || "").trim() || "Engr. Roberto Reyes";
+    const certVal = (dom.certifiedCorrectedBy?.value || document.getElementById("certifiedCorrectedBy")?.value || "").trim();
+    const apprVal = (dom.approvedBy?.value || document.getElementById("approvedBy")?.value || "").trim();
+    const verVal = (dom.verifiedBy?.value || document.getElementById("verifiedBy")?.value || "").trim();
 
     dom.physicalReport.innerHTML = `
         <div class="physical-report-paper" style="background:#ffffff; color:#000000; font-family:Arial,Helvetica,sans-serif; font-size:7.5pt; width:100%; box-sizing:border-box; padding:15px 2px 35px 2px;">
@@ -3396,15 +3385,9 @@ async function generateReportPdf() {
     const apprInput = document.getElementById("approvedBy") || (typeof dom !== "undefined" && dom.approvedBy);
     const verInput = document.getElementById("verifiedBy") || (typeof dom !== "undefined" && dom.verifiedBy);
 
-    const certVal = (certInput && certInput.value ? certInput.value.trim() : "")
-        || (document.getElementById("paperCertifiedCorrect")?.textContent?.trim())
-        || "Ana Patricia Cruz";
-    const apprVal = (apprInput && apprInput.value ? apprInput.value.trim() : "")
-        || (document.getElementById("paperApprovedBy")?.textContent?.trim())
-        || "Dr. Juan Dela Cruz";
-    const verVal = (verInput && verInput.value ? verInput.value.trim() : "")
-        || (document.getElementById("paperVerifiedBy")?.textContent?.trim())
-        || "Engr. Roberto Reyes";
+    const certVal = (certInput && certInput.value ? certInput.value.trim() : "");
+    const apprVal = (apprInput && apprInput.value ? apprInput.value.trim() : "");
+    const verVal = (verInput && verInput.value ? verInput.value.trim() : "");
 
     let cloneSignatures = clone.querySelector(".report-signatures, .report-signatures-wrap");
     if (!cloneSignatures) {
