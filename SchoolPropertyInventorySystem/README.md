@@ -56,7 +56,7 @@ Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The scr
 ### Storage
 
 - `personnel-photos` (public bucket) – personnel profile photos uploaded as WebP from the Personnel profile card. The setup script adds public select/insert/update policies for this bucket.
-- `property-images` (public bucket) – up to 5 JPG, PNG, or WebP photos per asset, limited to 5 MB each. Photos and their primary-image metadata are managed from the Inventory Property Details form. Anyone with a photo URL can view its contents.
+- `property-images` (public bucket) – up to 5 JPG, PNG, or WebP photos per asset, limited to 3 MB each. Photos and their primary-image metadata are managed from the Inventory Property Details form. Anyone with a photo URL can view its contents.
 
 ### Expected tables
 

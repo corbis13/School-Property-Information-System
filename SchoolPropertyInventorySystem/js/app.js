@@ -191,7 +191,7 @@ let managedSignatories = [];
 let signatoryLoadFailed = false;
 const propertyImageBucket = "property-images";
 const propertyImageLimit = 5;
-const propertyImageMaxBytes = 5 * 1024 * 1024;
+const propertyImageMaxBytes = 3 * 1024 * 1024;
 const allowedPropertyImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const propertyImagesByAsset = new Map();
 let pendingPropertyImages = [];
@@ -2176,7 +2176,7 @@ function handlePropertyImageSelection(event) {
     if (invalidFile) {
         const reason = !allowedPropertyImageTypes.has(invalidFile.type)
             ? "Use JPG, PNG, or WebP images only."
-            : "Each image must be 5 MB or smaller.";
+            : "Each image must be 3 MB or smaller.";
         setPropertyImagesStatus(`${invalidFile.name}: ${reason}`, "error");
         event.target.value = "";
         return;

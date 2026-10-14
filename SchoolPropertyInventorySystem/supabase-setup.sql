@@ -552,7 +552,7 @@ values (
   'property-images',
   'property-images',
   true,
-  5242880,
+  3145728,
   array['image/jpeg', 'image/png', 'image/webp']::text[]
 )
 on conflict (id) do update
