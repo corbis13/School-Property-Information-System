@@ -6060,6 +6060,15 @@
                         </form>
                     </article>
 
+                    <article class="module-card settings-theme-card">
+                        <p class="eyebrow">Appearance</p>
+                        <h2>Theme</h2>
+                        <div class="theme-switcher" role="group" aria-label="Theme selection">
+                            <button class="theme-option active" type="button" data-theme-choice="dark">Dark</button>
+                            <button class="theme-option" type="button" data-theme-choice="light">Light</button>
+                        </div>
+                    </article>
+
                     <!-- Secondary Settings Column -->
                     <div class="settings-secondary-col">
                         <article class="module-card">
@@ -6084,14 +6093,6 @@
                             </form>
                             <p id="signatoryManagementStatus" class="text-xs font-semibold text-slate-500 mt-3" role="status" aria-live="polite">Loading signatories...</p>
                             <ul id="signatoriesList" class="space-y-2 mt-3" aria-label="Saved signatories"></ul>
-                        </article>
-                        <article class="module-card">
-                            <p class="eyebrow">Appearance</p>
-                            <h2>Theme</h2>
-                            <div class="theme-switcher" role="group" aria-label="Theme selection">
-                                <button class="theme-option active" type="button" data-theme-choice="dark">Dark</button>
-                                <button class="theme-option" type="button" data-theme-choice="light">Light</button>
-                            </div>
                         </article>
                     </div>
                 </section>
@@ -6160,16 +6161,27 @@
 
         <!-- Right: Nav Links -->
         <div class="flex items-center space-x-3 font-medium text-slate-400 shrink-0">
-          <a href="#" class="hover:text-white transition">Privacy Policy</a>
+          <a href="#" class="hover:text-white transition" data-footer-info="privacy">Privacy Policy</a>
           <span class="text-slate-600">|</span>
-          <a href="#" class="hover:text-white transition">Terms of Use</a>
+          <a href="#" class="hover:text-white transition" data-footer-info="terms">Terms of Use</a>
           <span class="text-slate-600">|</span>
-          <a href="#" class="hover:text-white transition">Help Center</a>
+          <a href="#" class="hover:text-white transition" data-footer-info="help">Help Center</a>
         </div>
 
       </footer>
 
     </div>
+  </div>
+
+  <div id="footerInfoModal" class="success-modal-overlay footer-info-overlay" role="dialog" aria-modal="true" aria-labelledby="footerInfoTitle" aria-describedby="footerInfoContent" hidden>
+    <article class="success-modal-card footer-info-card">
+      <header class="footer-info-header">
+        <h2 id="footerInfoTitle" class="success-modal-title"></h2>
+        <button type="button" id="footerInfoCloseBtn" class="footer-info-close" aria-label="Close dialog">&times;</button>
+      </header>
+      <div id="footerInfoContent" class="footer-info-content"></div>
+      <button type="button" id="footerInfoDoneBtn" class="primary-button footer-info-done">Close</button>
+    </article>
   </div>
 
   <!-- Initialize Lucide Icons -->

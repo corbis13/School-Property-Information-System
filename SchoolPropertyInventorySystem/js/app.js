@@ -5718,12 +5718,151 @@ function loadTheme() {
     applyTheme(localStorage.getItem(themeStorageKey) || "dark");
 }
 
+const footerInfoContent = {
+    privacy: {
+        title: "Privacy Policy",
+        sections: [
+            {
+                heading: "Information handled by SPIS",
+                paragraphs: ["SPIS stores school details, property and inventory records, personnel information, signatories, and any profile photos or documents entered or uploaded through the system."]
+            },
+            {
+                heading: "Where information is stored",
+                paragraphs: ["Records are saved to the configured Supabase project. Some preferences, cached records, and generated report data may also be stored in this browser. Downloaded files are saved wherever your browser stores downloads."]
+            },
+            {
+                heading: "Responsible use",
+                paragraphs: ["Only enter information needed for school property operations. Use the system on authorized devices, protect access to the device and database, and follow your school's records-retention and privacy requirements. Contact your system administrator to ask about access, correction, or removal of records."]
+            }
+        ]
+    },
+    terms: {
+        title: "Terms of Use",
+        sections: [
+            {
+                heading: "Authorized use",
+                paragraphs: ["Use SPIS for legitimate school property, inventory, personnel-accountability, document, and reporting work. You are responsible for keeping information you enter accurate and appropriately protected."]
+            },
+            {
+                heading: "Records and reports",
+                paragraphs: ["Review records and generated documents for accuracy before relying on or distributing them. SPIS supports record keeping; it does not replace required school or government approval, accounting, or records-management procedures."]
+            },
+            {
+                heading: "Data and availability",
+                paragraphs: ["Access depends on this browser and the configured database service. Maintain backups and retain official records according to your organization's procedures. Do not attempt to access data or system functions beyond your authorization."]
+            }
+        ]
+    },
+    help: {
+        title: "Help Center",
+        sections: [
+            {
+                heading: "Getting around",
+                bullets: [
+                    "Dashboard: review property totals, activity, and quick actions.",
+                    "Inventory: add, search, and update property records.",
+                    "Document: prepare and review ICS and RSPI records.",
+                    "QR Code: create and manage QR codes for inventory items.",
+                    "Personnel: manage personnel and accountability details.",
+                    "Report: choose report settings, signatories, and generate reports.",
+                    "Settings: manage school details, signatories, and the display theme."
+                ]
+            },
+            {
+                heading: "Need more help?",
+                paragraphs: ["For system support, contact the developer at"],
+                link: {
+                    label: "corbis.official@gmail.com",
+                    href: "mailto:corbis.official@gmail.com"
+                }
+            }
+        ]
+    }
+};
+
+function openFooterInfoDialog(section) {
+    const content = footerInfoContent[section];
+    const modal = document.getElementById("footerInfoModal");
+    const title = document.getElementById("footerInfoTitle");
+    const contentEl = document.getElementById("footerInfoContent");
+    const closeButton = document.getElementById("footerInfoCloseBtn");
+    const doneButton = document.getElementById("footerInfoDoneBtn");
+    if (!content || !modal || !title || !contentEl) return;
+
+    title.textContent = content.title;
+    contentEl.replaceChildren();
+    content.sections.forEach((sectionContent) => {
+        const sectionEl = document.createElement("section");
+        sectionEl.className = "footer-info-section";
+
+        const heading = document.createElement("h3");
+        heading.textContent = sectionContent.heading;
+        sectionEl.appendChild(heading);
+
+        (sectionContent.paragraphs || []).forEach((text) => {
+            const paragraph = document.createElement("p");
+            paragraph.textContent = text;
+            sectionEl.appendChild(paragraph);
+        });
+
+        if (sectionContent.bullets) {
+            const list = document.createElement("ul");
+            sectionContent.bullets.forEach((text) => {
+                const item = document.createElement("li");
+                item.textContent = text;
+                list.appendChild(item);
+            });
+            sectionEl.appendChild(list);
+        }
+
+        if (sectionContent.link) {
+            const link = document.createElement("a");
+            link.href = sectionContent.link.href;
+            link.textContent = sectionContent.link.label;
+            sectionEl.appendChild(link);
+        }
+
+        contentEl.appendChild(sectionEl);
+    });
+
+    function closeDialog() {
+        modal.hidden = true;
+        document.removeEventListener("keydown", handleKeydown);
+        modal.removeEventListener("click", handleBackdrop);
+        closeButton?.removeEventListener("click", closeDialog);
+        doneButton?.removeEventListener("click", closeDialog);
+        document.querySelector(`[data-footer-info="${section}"]`)?.focus();
+    }
+
+    function handleKeydown(event) {
+        if (event.key === "Escape") closeDialog();
+    }
+
+    function handleBackdrop(event) {
+        if (event.target === modal) closeDialog();
+    }
+
+    closeButton?.addEventListener("click", closeDialog);
+    doneButton?.addEventListener("click", closeDialog);
+    modal.addEventListener("click", handleBackdrop);
+    document.addEventListener("keydown", handleKeydown);
+    modal.hidden = false;
+    closeButton?.focus();
+}
+
 function wireEvents() {
     const sidebar = document.querySelector(".app-sidebar");
     const sidebarToggle = document.querySelector("#sidebarToggleBtn, button[aria-label='Toggle Sidebar']");
     const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
     const sidebarBackdrop = document.getElementById("sidebarBackdrop");
     const accountablePersonViewAll = document.getElementById("accountablePersonViewAll");
+
+    document.querySelectorAll("[data-footer-info]").forEach((link) => {
+        link.addEventListener("click", (event) => {
+            event.preventDefault();
+            openFooterInfoDialog(link.dataset.footerInfo);
+        });
+    });
 
     function openMobileSidebar() {
         sidebar?.classList.add("mobile-open");

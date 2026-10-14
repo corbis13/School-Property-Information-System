@@ -485,6 +485,21 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
   }
+
+  .settings-grid > .school-details-card {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .settings-grid > .settings-theme-card {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .settings-grid > .settings-secondary-col {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
 }
 
 .settings-secondary-col {
@@ -2819,7 +2834,8 @@ body[data-theme="dark"] .qr-uiverse-btn p {
 
 /* School Details Card in Settings Module */
 .school-details-card {
-  border-top: 3px solid #004c87;
+  border-top: 0;
+  box-shadow: none;
   width: 100%;
   max-width: 100%;
 }
@@ -2877,6 +2893,84 @@ body[data-theme="dark"] .qr-uiverse-btn p {
 }
 .success-modal-overlay[hidden] {
   display: none;
+}
+
+.footer-info-card {
+  width: min(640px, calc(100vw - 32px));
+  max-height: min(82vh, 760px);
+  overflow-y: auto;
+  padding: 24px;
+  text-align: left;
+}
+
+.footer-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.footer-info-header .success-modal-title {
+  margin: 0;
+}
+
+.footer-info-close {
+  flex: 0 0 auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #334155;
+  padding: 0.25rem 0.65rem;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.footer-info-content {
+  color: #475569;
+  line-height: 1.6;
+}
+
+.footer-info-section + .footer-info-section {
+  margin-top: 1rem;
+}
+
+.footer-info-section h3 {
+  margin: 0 0 0.35rem;
+  color: #00335e;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.footer-info-section p {
+  margin: 0.35rem 0;
+}
+
+.footer-info-section ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.footer-info-section li + li {
+  margin-top: 0.35rem;
+}
+
+.footer-info-section a {
+  color: #004c87;
+  text-decoration: underline;
+}
+
+.footer-info-done {
+  display: block;
+  margin: 1.25rem 0 0 auto;
+}
+
+body[data-theme="dark"] .footer-info-content {
+  color: #cbd5e1;
+}
+
+body[data-theme="dark"] .footer-info-section h3 {
+  color: #93c5fd;
 }
 @keyframes smOverlayIn {
   from { opacity: 0; }
