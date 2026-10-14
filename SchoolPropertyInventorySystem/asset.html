@@ -200,11 +200,28 @@
                     </div>
                 </dl>
             </section>
+
+            <section class="detail-card full-width-card asset-photos-card" aria-labelledby="assetPhotosHeading">
+                <div class="card-header">
+                    <i data-lucide="images" class="card-icon text-blue"></i>
+                    <h2 id="assetPhotosHeading">Property Photos</h2>
+                </div>
+                <p id="assetPhotosStatus" class="asset-photos-status" role="status" aria-live="polite">Loading property photos...</p>
+                <div id="assetPhotosGallery" class="asset-photos-gallery" aria-label="Property photo thumbnails"></div>
+            </section>
         </main>
     </div>
 
     <!-- Toast Notification -->
     <div id="assetToast" class="asset-toast" style="display: none;"></div>
+
+    <dialog id="assetPhotoDialog" class="asset-photo-dialog" aria-labelledby="assetPhotoDialogTitle">
+        <div class="asset-photo-dialog-header">
+            <h2 id="assetPhotoDialogTitle">Property Photo</h2>
+            <button id="assetPhotoDialogClose" class="asset-photo-dialog-close" type="button" aria-label="Close photo">×</button>
+        </div>
+        <img id="assetPhotoDialogImage" class="asset-photo-dialog-image" alt="">
+    </dialog>
 
     <script src="supabase-config.js?v=20260922"></script>
     <script src="js/asset.js?v=20260922"></script>

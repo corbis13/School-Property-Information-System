@@ -91,6 +91,9 @@ const dom = {
     remarks: document.querySelector("#remarks"),
     supplierField: document.querySelector("#supplierField"),
     supplier: document.querySelector("#supplier"),
+    propertyImagesInput: document.querySelector("#propertyImagesInput"),
+    propertyImagesPreview: document.querySelector("#propertyImagesPreview"),
+    propertyImagesStatus: document.querySelector("#propertyImagesStatus"),
     table: document.querySelector("#inventoryTable"),
     emptyState: document.querySelector("#emptyState"),
     pagination: document.querySelector("#inventoryPagination"),
@@ -186,6 +189,15 @@ let signatoryOptions = [];
 let signatoryEntries = [];
 let managedSignatories = [];
 let signatoryLoadFailed = false;
+const propertyImageBucket = "property-images";
+const propertyImageLimit = 5;
+const propertyImageMaxBytes = 5 * 1024 * 1024;
+const allowedPropertyImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const propertyImagesByAsset = new Map();
+let pendingPropertyImages = [];
+let removedPropertyImageIds = new Set();
+let primaryPropertyImageKey = "";
+let activePropertyImageAssetId = "";
 let canOpenClassificationModal = false;
 let canOpenStatusModal = false;
 let inventoryPage = 1;
@@ -1974,6 +1986,431 @@ function updateTotal() {
         : "";
 }
 
+function setPropertyImagesStatus(message, state = "") {
+    if (!dom.propertyImagesStatus) return;
+    dom.propertyImagesStatus.textContent = message;
+    if (state) dom.propertyImagesStatus.dataset.state = state;
+    else delete dom.propertyImagesStatus.dataset.state;
+}
+
+function getPropertyImageKey(image) {
+    return `existing:${image.id}`;
+}
+
+function getPropertyImagePublicUrl(filePath) {
+    const encodedPath = String(filePath || "").split("/").map(encodeURIComponent).join("/");
+    return `${supabaseUrl}/storage/v1/object/public/${propertyImageBucket}/${encodedPath}`;
+}
+
+async function fetchPropertyImageRows(assetId) {
+    const query = new URLSearchParams({
+        select: "id,asset_id,file_path,is_primary,created_at",
+        asset_id: `eq.${assetId}`,
+        order: "created_at.asc"
+    });
+    const response = await fetch(`${supabaseUrl}/rest/v1/asset_images?${query}`, {
+        headers: supabaseHeaders
+    });
+    if (!response.ok) {
+        throw new Error(`Unable to load property images (HTTP ${response.status}): ${await response.text()}`);
+    }
+    const rows = await response.json();
+    return rows.map((row) => ({
+        id: row.id,
+        assetId: row.asset_id,
+        filePath: row.file_path,
+        publicUrl: getPropertyImagePublicUrl(row.file_path),
+        isPrimary: Boolean(row.is_primary),
+        createdAt: row.created_at || ""
+    }));
+}
+
+function isPropertyImageTableUnavailable(error) {
+    const message = String(error && error.message ? error.message : error);
+    return message.includes("PGRST205") || message.includes("Could not find the table 'public.asset_images'");
+}
+
+function getVisiblePropertyImageCount() {
+    const existing = (propertyImagesByAsset.get(activePropertyImageAssetId) || [])
+        .filter((image) => !removedPropertyImageIds.has(String(image.id))).length;
+    return existing + pendingPropertyImages.length;
+}
+
+function renderPropertyImagePreviews() {
+    const container = dom.propertyImagesPreview;
+    if (!container) return;
+    container.replaceChildren();
+
+    const images = (propertyImagesByAsset.get(activePropertyImageAssetId) || [])
+        .filter((image) => !removedPropertyImageIds.has(String(image.id)))
+        .map((image) => ({
+            key: getPropertyImageKey(image),
+            name: image.filePath.split("/").pop(),
+            url: image.publicUrl,
+            isPending: false
+        }))
+        .concat(pendingPropertyImages.map((image) => ({
+            key: `pending:${image.key}`,
+            name: image.file.name,
+            url: image.previewUrl,
+            isPending: true
+        })));
+
+    if (!primaryPropertyImageKey && images.length) {
+        const markedPrimary = (propertyImagesByAsset.get(activePropertyImageAssetId) || [])
+            .find((image) => image.isPrimary && !removedPropertyImageIds.has(String(image.id)));
+        primaryPropertyImageKey = markedPrimary ? getPropertyImageKey(markedPrimary) : images[0].key;
+    }
+
+    images.forEach((image) => {
+        const card = document.createElement("article");
+        card.className = "property-image-preview-card";
+
+        const preview = document.createElement("img");
+        preview.src = image.url;
+        preview.alt = `Preview of ${image.name}`;
+        preview.loading = "lazy";
+
+        const name = document.createElement("p");
+        name.textContent = image.name;
+        name.title = image.name;
+
+        const actions = document.createElement("div");
+        actions.className = "property-image-preview-actions";
+
+        const primaryButton = document.createElement("button");
+        primaryButton.type = "button";
+        primaryButton.dataset.imageAction = "primary";
+        primaryButton.dataset.imageKey = image.key;
+        primaryButton.dataset.primary = String(primaryPropertyImageKey === image.key);
+        primaryButton.textContent = primaryPropertyImageKey === image.key ? "Primary" : "Set primary";
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.dataset.imageAction = "remove";
+        removeButton.dataset.imageKey = image.key;
+        removeButton.textContent = "Remove";
+
+        actions.append(primaryButton, removeButton);
+        card.append(preview, name, actions);
+        container.appendChild(card);
+    });
+
+    if (images.length) {
+        setPropertyImagesStatus(`${images.length} of ${propertyImageLimit} images selected. Changes upload when you save the asset.`);
+    } else if (!dom.propertyImagesStatus?.dataset.state) {
+        setPropertyImagesStatus("Images upload when you save the property record.");
+    }
+
+    if (dom.propertyImagesInput) {
+        dom.propertyImagesInput.disabled = getVisiblePropertyImageCount() >= propertyImageLimit;
+    }
+}
+
+function clearPropertyImageDraft() {
+    pendingPropertyImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+    pendingPropertyImages = [];
+    removedPropertyImageIds = new Set();
+    primaryPropertyImageKey = "";
+    activePropertyImageAssetId = "";
+    if (dom.propertyImagesInput) dom.propertyImagesInput.value = "";
+    setPropertyImagesStatus("Images upload when you save the property record.");
+    renderPropertyImagePreviews();
+}
+
+async function loadPropertyImages(assetId, forceRefresh = false) {
+    const normalizedAssetId = String(assetId || "").trim();
+    activePropertyImageAssetId = normalizedAssetId;
+    removedPropertyImageIds = new Set();
+    primaryPropertyImageKey = "";
+    pendingPropertyImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+    pendingPropertyImages = [];
+    if (dom.propertyImagesInput) dom.propertyImagesInput.value = "";
+
+    if (!normalizedAssetId) {
+        renderPropertyImagePreviews();
+        return;
+    }
+
+    if (!forceRefresh && propertyImagesByAsset.has(normalizedAssetId)) {
+        primaryPropertyImageKey = (propertyImagesByAsset.get(normalizedAssetId) || [])
+            .find((image) => image.isPrimary)
+            ? getPropertyImageKey(propertyImagesByAsset.get(normalizedAssetId).find((image) => image.isPrimary))
+            : "";
+        renderPropertyImagePreviews();
+        return;
+    }
+
+    setPropertyImagesStatus("Loading saved images...");
+    try {
+        const images = await fetchPropertyImageRows(normalizedAssetId);
+        propertyImagesByAsset.set(normalizedAssetId, images);
+        if (activePropertyImageAssetId === normalizedAssetId) {
+            const primary = images.find((image) => image.isPrimary);
+            primaryPropertyImageKey = primary ? getPropertyImageKey(primary) : "";
+            renderPropertyImagePreviews();
+        }
+    } catch (error) {
+        console.error(error);
+        if (activePropertyImageAssetId === normalizedAssetId) {
+            const message = isPropertyImageTableUnavailable(error)
+                ? "Supabase cannot find the asset_images table. Run the updated supabase-setup.sql, then reload this page."
+                : "Could not load this asset's photos. Check Supabase setup and try again.";
+            setPropertyImagesStatus(message, "error");
+        }
+    }
+}
+
+function handlePropertyImageSelection(event) {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const visibleCount = getVisiblePropertyImageCount();
+    if (visibleCount + files.length > propertyImageLimit) {
+        setPropertyImagesStatus(`Choose no more than ${propertyImageLimit - visibleCount} additional image(s).`, "error");
+        event.target.value = "";
+        return;
+    }
+
+    const invalidFile = files.find((file) => !allowedPropertyImageTypes.has(file.type) || file.size > propertyImageMaxBytes);
+    if (invalidFile) {
+        const reason = !allowedPropertyImageTypes.has(invalidFile.type)
+            ? "Use JPG, PNG, or WebP images only."
+            : "Each image must be 5 MB or smaller.";
+        setPropertyImagesStatus(`${invalidFile.name}: ${reason}`, "error");
+        event.target.value = "";
+        return;
+    }
+
+    files.forEach((file) => {
+        pendingPropertyImages.push({
+            key: crypto.randomUUID(),
+            file,
+            previewUrl: URL.createObjectURL(file)
+        });
+    });
+    if (!primaryPropertyImageKey && pendingPropertyImages.length) {
+        primaryPropertyImageKey = `pending:${pendingPropertyImages[0].key}`;
+    }
+    event.target.value = "";
+    renderPropertyImagePreviews();
+}
+
+function handlePropertyImagePreviewClick(event) {
+    const button = event.target.closest("button[data-image-action]");
+    if (!button) return;
+
+    const { imageAction, imageKey } = button.dataset;
+    if (imageAction === "primary") {
+        primaryPropertyImageKey = imageKey;
+        renderPropertyImagePreviews();
+        return;
+    }
+
+    if (imageAction !== "remove") return;
+    if (imageKey.startsWith("pending:")) {
+        const pendingKey = imageKey.slice("pending:".length);
+        const pending = pendingPropertyImages.find((image) => image.key === pendingKey);
+        if (pending) URL.revokeObjectURL(pending.previewUrl);
+        pendingPropertyImages = pendingPropertyImages.filter((image) => image.key !== pendingKey);
+    } else if (imageKey.startsWith("existing:")) {
+        removedPropertyImageIds.add(imageKey.slice("existing:".length));
+    }
+
+    if (primaryPropertyImageKey === imageKey) primaryPropertyImageKey = "";
+    renderPropertyImagePreviews();
+}
+
+function getStorageObjectUrl(filePath) {
+    const encodedPath = String(filePath || "").split("/").map(encodeURIComponent).join("/");
+    return `${supabaseUrl}/storage/v1/object/${propertyImageBucket}/${encodedPath}`;
+}
+
+async function removePropertyImageObjects(filePaths) {
+    if (!filePaths.length) return;
+    const response = await fetch(`${supabaseUrl}/storage/v1/object/${propertyImageBucket}`, {
+        method: "DELETE",
+        headers: {
+            ...supabaseHeaders,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ prefixes: filePaths })
+    });
+    if (!response.ok) {
+        throw new Error(`Unable to remove property image files (HTTP ${response.status}): ${await response.text()}`);
+    }
+}
+
+async function savePropertyImageChanges(assetId, changes) {
+    const existingImages = await fetchPropertyImageRows(assetId);
+    propertyImagesByAsset.set(assetId, existingImages);
+    const uploadedImages = [];
+    const pendingKeysToIds = new Map();
+    const removedImages = existingImages.filter((image) => changes.removedIds.has(String(image.id)));
+
+    try {
+        for (const pending of changes.pendingImages) {
+            const safeFileName = pending.file.name.normalize("NFKD").replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120) || "image";
+            const filePath = `${assetId}/${crypto.randomUUID()}-${safeFileName}`;
+            const uploadResponse = await fetch(getStorageObjectUrl(filePath), {
+                method: "POST",
+                headers: {
+                    ...supabaseHeaders,
+                    "Content-Type": pending.file.type,
+                    "x-upsert": "false"
+                },
+                body: pending.file
+            });
+            if (!uploadResponse.ok) {
+                throw new Error(`Unable to upload ${pending.file.name} (HTTP ${uploadResponse.status}): ${await uploadResponse.text()}`);
+            }
+
+            uploadedImages.push({ filePath, metadataId: null });
+            const metadataResponse = await fetch(`${supabaseUrl}/rest/v1/asset_images`, {
+                method: "POST",
+                headers: {
+                    ...supabaseHeaders,
+                    "Content-Type": "application/json",
+                    Prefer: "return=representation"
+                },
+                body: JSON.stringify([{
+                    asset_id: assetId,
+                    file_path: filePath,
+                    is_primary: false
+                }])
+            });
+            if (!metadataResponse.ok) {
+                throw new Error(`Image uploaded but its asset record could not be saved (HTTP ${metadataResponse.status}): ${await metadataResponse.text()}`);
+            }
+            const [metadata] = await metadataResponse.json();
+            uploadedImages[uploadedImages.length - 1].metadataId = metadata.id;
+            pendingKeysToIds.set(`pending:${pending.key}`, String(metadata.id));
+        }
+
+        const survivingImages = existingImages.filter((image) => !changes.removedIds.has(String(image.id)));
+        const newImages = uploadedImages.map((image) => ({
+            id: image.metadataId,
+            filePath: image.filePath
+        }));
+        const allImages = [...survivingImages, ...newImages];
+        const primaryId = changes.primaryKey.startsWith("pending:")
+            ? pendingKeysToIds.get(changes.primaryKey)
+            : changes.primaryKey.startsWith("existing:")
+                ? changes.primaryKey.slice("existing:".length)
+                : (allImages[0] ? String(allImages[0].id) : "");
+
+        if (allImages.length) {
+            const updateAllQuery = new URLSearchParams({ asset_id: `eq.${assetId}` });
+            const clearPrimaryResponse = await fetch(`${supabaseUrl}/rest/v1/asset_images?${updateAllQuery}`, {
+                method: "PATCH",
+                headers: {
+                    ...supabaseHeaders,
+                    "Content-Type": "application/json",
+                    Prefer: "return=minimal"
+                },
+                body: JSON.stringify({ is_primary: false })
+            });
+            if (!clearPrimaryResponse.ok) {
+                throw new Error(`Unable to update primary image (HTTP ${clearPrimaryResponse.status}): ${await clearPrimaryResponse.text()}`);
+            }
+
+            if (primaryId) {
+                const primaryQuery = new URLSearchParams({ id: `eq.${primaryId}` });
+                const setPrimaryResponse = await fetch(`${supabaseUrl}/rest/v1/asset_images?${primaryQuery}`, {
+                    method: "PATCH",
+                    headers: {
+                        ...supabaseHeaders,
+                        "Content-Type": "application/json",
+                        Prefer: "return=minimal"
+                    },
+                    body: JSON.stringify({ is_primary: true })
+                });
+                if (!setPrimaryResponse.ok) {
+                    throw new Error(`Unable to set the primary property image (HTTP ${setPrimaryResponse.status}): ${await setPrimaryResponse.text()}`);
+                }
+            }
+        }
+
+        if (removedImages.length) {
+            await removePropertyImageObjects(removedImages.map((image) => image.filePath));
+            const deleteQuery = new URLSearchParams({
+                asset_id: `eq.${assetId}`,
+                id: `in.(${removedImages.map((image) => image.id).join(",")})`
+            });
+            const deleteMetadataResponse = await fetch(`${supabaseUrl}/rest/v1/asset_images?${deleteQuery}`, {
+                method: "DELETE",
+                headers: supabaseHeaders
+            });
+            if (!deleteMetadataResponse.ok) {
+                throw new Error(`Image files removed, but their records could not be deleted (HTTP ${deleteMetadataResponse.status}): ${await deleteMetadataResponse.text()}`);
+            }
+        }
+
+        const updatedImages = allImages
+            .filter((image) => String(image.id) !== "")
+            .map((image) => ({
+                id: image.id,
+                assetId,
+                filePath: image.filePath,
+                publicUrl: getPropertyImagePublicUrl(image.filePath),
+                isPrimary: String(image.id) === String(primaryId),
+                createdAt: image.createdAt || ""
+            }));
+        propertyImagesByAsset.set(assetId, updatedImages);
+    } catch (error) {
+        if (uploadedImages.length) {
+            try {
+                const ids = uploadedImages.map((image) => image.metadataId).filter((id) => id != null);
+                if (ids.length) {
+                    const cleanupQuery = new URLSearchParams({ id: `in.(${ids.join(",")})` });
+                    const cleanupResponse = await fetch(`${supabaseUrl}/rest/v1/asset_images?${cleanupQuery}`, {
+                        method: "DELETE",
+                        headers: supabaseHeaders
+                    });
+                    if (!cleanupResponse.ok) throw new Error(`Unable to remove uploaded image metadata (HTTP ${cleanupResponse.status}).`);
+                }
+                await removePropertyImageObjects(uploadedImages.map((image) => image.filePath));
+            } catch (cleanupError) {
+                console.error("Failed to clean up partially uploaded property images:", cleanupError);
+            }
+        }
+        throw error;
+    }
+}
+
+async function removePropertyImagesForAsset(assetId) {
+    const query = new URLSearchParams({
+        select: "id,file_path",
+        asset_id: `eq.${assetId}`
+    });
+    const response = await fetch(`${supabaseUrl}/rest/v1/asset_images?${query}`, {
+        headers: supabaseHeaders
+    });
+    if (!response.ok) {
+        throw new Error(`Unable to check for property images before deleting the asset (HTTP ${response.status}): ${await response.text()}`);
+    }
+
+    const images = await response.json();
+    if (!images.length) {
+        propertyImagesByAsset.delete(assetId);
+        return;
+    }
+
+    await removePropertyImageObjects(images.map((image) => image.file_path));
+    const deleteQuery = new URLSearchParams({
+        asset_id: `eq.${assetId}`,
+        id: `in.(${images.map((image) => image.id).join(",")})`
+    });
+    const deleteResponse = await fetch(`${supabaseUrl}/rest/v1/asset_images?${deleteQuery}`, {
+        method: "DELETE",
+        headers: supabaseHeaders
+    });
+    if (!deleteResponse.ok) {
+        throw new Error(`Property image files were removed, but image records could not be deleted (HTTP ${deleteResponse.status}): ${await deleteResponse.text()}`);
+    }
+    propertyImagesByAsset.delete(assetId);
+}
+
 function getFormData() {
     const now = new Date().toISOString();
     const existing = items.find((item) => item.assetId === dom.editingId.value);
@@ -2084,6 +2521,7 @@ function getNextAssetId(items) {
 }
 
 function fillForm(item) {
+    clearPropertyImageDraft();
     dom.editingId.value = item.assetId;
     dom.assetId.value = item.assetId;
     ensureSelectOption(dom.educationLevel, item.educationLevel);
@@ -2121,6 +2559,7 @@ function fillForm(item) {
     dom.additionalItem.value = item.additionalItem || "";
     dom.remarks.value = item.remarks;
     dom.formTitle.textContent = "Edit Property Item";
+    void loadPropertyImages(item.assetId, true);
 }
 
 function applySelectedTeacherDetails() {
@@ -2132,6 +2571,7 @@ function applySelectedTeacherDetails() {
 
 function resetForm() {
     dom.form.reset();
+    clearPropertyImageDraft();
     updateSupplierFieldVisibility();
     dom.editingId.value = "";
     dom.assetId.value = createId();
@@ -5275,6 +5715,14 @@ async function generateInventoryCustodianSlip() {
 async function handleSave(event) {
     event.preventDefault();
     const data = getFormData();
+    const currentPrimaryImage = (propertyImagesByAsset.get(data.assetId) || []).find((image) => image.isPrimary);
+    const currentPrimaryKey = currentPrimaryImage ? getPropertyImageKey(currentPrimaryImage) : "";
+    const imageChanges = {
+        pendingImages: pendingPropertyImages.map((image) => ({ ...image })),
+        removedIds: new Set(removedPropertyImageIds),
+        primaryKey: primaryPropertyImageKey,
+        primaryChanged: primaryPropertyImageKey !== currentPrimaryKey
+    };
     const existingIndex = items.findIndex((item) => item.assetId === dom.editingId.value);
     const duplicate = items.some((item, index) => item.propertyNo === data.propertyNo && index !== existingIndex);
 
@@ -5294,10 +5742,25 @@ async function handleSave(event) {
     selectedId = data.assetId;
     saveLocal();
     renderApp();
-    resetForm();
+    const saveButton = document.getElementById("saveAssetBtn");
+    if (saveButton) saveButton.disabled = true;
 
     try {
         await syncToSheet(action, data);
+    } catch (error) {
+        console.error(error);
+        showToast("Saved locally. Supabase sync failed.");
+        setDatabaseStatus("Local fallback is active.", "The backend could not receive the latest change.");
+        if (saveButton) saveButton.disabled = false;
+        return;
+    }
+
+    try {
+        dom.editingId.value = data.assetId;
+        dom.assetId.value = data.assetId;
+        if (imageChanges.pendingImages.length || imageChanges.removedIds.size || imageChanges.primaryChanged) {
+            await savePropertyImageChanges(data.assetId, imageChanges);
+        }
         await loadItems();
         renderApp();
         if (typeof window.updatePersonnelStatCards === "function") {
@@ -5309,13 +5772,22 @@ async function handleSave(event) {
         if (window.activePersonnel && typeof window.renderPersonnelProperties === "function") {
             try { window.renderPersonnelProperties(window.activePersonnel); } catch (e) {}
         }
-        showSuccessModal(action === "update" ? "The asset record has been updated successfully." : "The asset has been saved and its QR code generated.");
     } catch (error) {
         console.error(error);
-        showToast("Saved locally. Supabase sync failed.");
-        setDatabaseStatus("Local fallback is active.", "The backend could not receive the latest change.");
+        if (isPropertyImageTableUnavailable(error)) {
+            const setupMessage = "Supabase cannot find public.asset_images. Run the updated SchoolPropertyInventorySystem/supabase-setup.sql in the Supabase SQL Editor, then reload the page and save the photo changes again.";
+            showToast("Asset saved. Run the updated Supabase setup SQL before saving photos.");
+            setDatabaseStatus("Property photo setup is incomplete.", setupMessage);
+        } else {
+            showToast("Asset saved, but its photo changes could not be completed. Check the database status for details, then retry.");
+            setDatabaseStatus("Asset saved with photo errors.", error.message || "One or more image changes failed.");
+        }
+        if (saveButton) saveButton.disabled = false;
+        return;
     }
 
+    resetForm();
+    if (saveButton) saveButton.disabled = false;
     showSuccessModal(action === "update" ? "Asset record updated successfully!" : "Asset saved successfully!");
 }
 
@@ -5340,6 +5812,15 @@ async function handleTableClick(event) {
     }
 
     if (button.dataset.action === "edit") {
+        if (pendingPropertyImages.length || removedPropertyImageIds.size) {
+            const discard = await showConfirmDialog({
+                title: "Discard Photo Changes?",
+                message: "This form has unsaved property photo changes. Discard them and edit another record?",
+                confirmText: "Discard",
+                cancelText: "Keep Editing"
+            });
+            if (!discard) return;
+        }
         selectedId = item.assetId;
         fillForm(item);
         renderQr();
@@ -5355,6 +5836,14 @@ async function handleTableClick(event) {
             cancelText: "Cancel"
         });
         if (!confirmed) return;
+
+        try {
+            await removePropertyImagesForAsset(item.assetId);
+        } catch (error) {
+            console.error(error);
+            showToast("Could not remove the asset's photos. The property record was not deleted.");
+            return;
+        }
 
         items = items.filter((entry) => entry.assetId !== item.assetId);
         selectedId = (items[0] && items[0].assetId) || null;
@@ -6042,6 +6531,8 @@ function wireEvents() {
     });
 
     dom.form.addEventListener("submit", handleSave);
+    dom.propertyImagesInput?.addEventListener("change", handlePropertyImageSelection);
+    dom.propertyImagesPreview?.addEventListener("click", handlePropertyImagePreviewClick);
     dom.inventoryType.addEventListener("change", updateSupplierFieldVisibility);
     dom.table.addEventListener("click", handleTableClick);
     dom.pagination.addEventListener("click", (event) => {

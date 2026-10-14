@@ -2743,6 +2743,113 @@ body[data-theme="light"] .asset-detail-row {
     width: 100%;
 }
 
+.asset-photos-status {
+    margin: 0 0 14px;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.asset-photos-status.is-error {
+    color: #b91c1c;
+}
+
+.asset-photos-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+}
+
+.asset-photo-thumbnail {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    border: 1px solid #dbe3ee;
+    border-radius: 10px;
+    background: #f1f5f9;
+    cursor: zoom-in;
+}
+
+.asset-photo-thumbnail img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 160ms ease;
+}
+
+.asset-photo-thumbnail:hover img,
+.asset-photo-thumbnail:focus-visible img {
+    transform: scale(1.04);
+}
+
+.asset-photo-primary-badge {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(0, 40, 77, 0.88);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.asset-photo-dialog {
+    width: min(92vw, 1100px);
+    max-width: 1100px;
+    max-height: 92vh;
+    padding: 14px;
+    overflow: auto;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.35);
+}
+
+.asset-photo-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.76);
+}
+
+.asset-photo-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.asset-photo-dialog-header h2 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.asset-photo-dialog-close {
+    display: inline-grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.asset-photo-dialog-image {
+    display: block;
+    width: 100%;
+    max-height: calc(92vh - 90px);
+    object-fit: contain;
+    border-radius: 8px;
+    background: #f1f5f9;
+}
+
 .detail-card.full-width-card .card-field-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));

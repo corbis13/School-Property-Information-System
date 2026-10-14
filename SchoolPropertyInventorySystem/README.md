@@ -51,15 +51,17 @@ To get started:
 2. Fill in your Supabase **Project URL** and **anon / public key** (Project Settings → API in the Supabase dashboard).
 3. Set `assetUrl` to the GitHub Pages URL of `asset.html` (used as the QR code payload).
 
-Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the `inventory_item`, `school_teacher`, and `signatories` lookup tables, configures public read/write policies for this no-login app, and creates the `personnel-photos` Storage bucket.
+Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the inventory and lookup tables (including the `asset_images` photo metadata table), configures public read/write policies for this no-login app, and creates the `personnel-photos` and `property-images` Storage buckets.
 
 ### Storage
 
 - `personnel-photos` (public bucket) – personnel profile photos uploaded as WebP from the Personnel profile card. The setup script adds public select/insert/update policies for this bucket.
+- `property-images` (public bucket) – up to 5 JPG, PNG, or WebP photos per asset, limited to 5 MB each. Photos and their primary-image metadata are managed from the Inventory Property Details form. Anyone with a photo URL can view its contents.
 
 ### Expected tables
 
 - assets
+- asset_images (property photo metadata; columns: `asset_id`, `file_path`, `is_primary`)
 - classifications
 - statuses (source for status options; column: `status_name`)
 - inventory_item (source for inventory item type options; column: `inventory_item_type`)

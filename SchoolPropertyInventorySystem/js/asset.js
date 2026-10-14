@@ -1,6 +1,9 @@
 // School Property Information System - Asset Detail Inspector
 const supabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
 const supabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+const propertyImageBucket = "property-images";
+let activePhotoAssetId = "";
+let photoLoadRequestId = 0;
 const supabaseHeaders = {
     apikey: supabaseAnonKey,
     Authorization: `Bearer ${supabaseAnonKey}`
@@ -87,6 +90,86 @@ function renderQrCode(item) {
         });
     } else {
         qrContainer.innerHTML = `<span style="font-size: 11px; color: #64748b;">${escapeHtml(item.propertyNo || item.assetId)}</span>`;
+    }
+}
+
+function getPropertyImageUrl(filePath) {
+    const encodedPath = String(filePath || "").split("/").map(encodeURIComponent).join("/");
+    return `${supabaseUrl}/storage/v1/object/public/${propertyImageBucket}/${encodedPath}`;
+}
+
+async function loadAssetPhotos(assetId) {
+    const normalizedAssetId = String(assetId || "").trim();
+    const status = document.getElementById("assetPhotosStatus");
+    const gallery = document.getElementById("assetPhotosGallery");
+    if (!status || !gallery) return;
+
+    activePhotoAssetId = normalizedAssetId;
+    const requestId = ++photoLoadRequestId;
+    gallery.replaceChildren();
+    status.classList.remove("is-error");
+    status.textContent = "Loading property photos...";
+
+    if (!normalizedAssetId) {
+        status.textContent = "No asset ID is available to load photos.";
+        return;
+    }
+
+    try {
+        const query = new URLSearchParams({
+            select: "file_path,is_primary",
+            asset_id: `eq.${normalizedAssetId}`,
+            order: "is_primary.desc,created_at.asc"
+        });
+        const response = await fetch(`${supabaseUrl}/rest/v1/asset_images?${query}`, {
+            headers: { ...supabaseHeaders, Accept: "application/json" }
+        });
+        if (!response.ok) {
+            const details = await response.text();
+            if (response.status === 404 && details.includes("PGRST205")) {
+                throw new Error("Photo metadata is not set up yet. Run the updated supabase-setup.sql file.");
+            }
+            throw new Error(`Unable to load photos (HTTP ${response.status}).`);
+        }
+
+        const images = await response.json();
+        if (activePhotoAssetId !== normalizedAssetId || requestId !== photoLoadRequestId) return;
+        if (!images.length) {
+            status.textContent = "No photos have been added to this property.";
+            return;
+        }
+
+        for (const image of images) {
+            const url = getPropertyImageUrl(image.file_path);
+            const button = document.createElement("button");
+            button.className = "asset-photo-thumbnail";
+            button.type = "button";
+            button.dataset.photoUrl = url;
+            button.dataset.photoAlt = image.is_primary ? "Primary property photo" : "Property photo";
+            button.setAttribute("aria-label", image.is_primary ? "View primary property photo" : "View property photo");
+
+            const thumbnail = document.createElement("img");
+            thumbnail.src = url;
+            thumbnail.alt = "";
+            thumbnail.loading = "lazy";
+            button.appendChild(thumbnail);
+
+            if (image.is_primary) {
+                const badge = document.createElement("span");
+                badge.className = "asset-photo-primary-badge";
+                badge.textContent = "Primary";
+                button.appendChild(badge);
+            }
+
+            gallery.appendChild(button);
+        }
+        status.textContent = `${images.length} ${images.length === 1 ? "photo" : "photos"} for this property. Select a thumbnail to view full size.`;
+    } catch (error) {
+        console.error("Unable to load property photos:", error);
+        if (activePhotoAssetId === normalizedAssetId && requestId === photoLoadRequestId) {
+            status.textContent = error.message || "Could not load property photos.";
+            status.classList.add("is-error");
+        }
     }
 }
 
@@ -179,6 +262,7 @@ function renderAsset(item) {
     setField("fieldShortageOverageQty", item.shortageOverageQty ?? item.shortage_overage_qty);
     setField("fieldShortageOverageValue", item.shortageOverageValue ? formatPeso(item.shortageOverageValue) : "--");
     setField("fieldRemarks", item.remarks, "No remarks provided.");
+    loadAssetPhotos(item.assetId);
 
     // Re-render Lucide icons
     if (window.lucide && typeof window.lucide.createIcons === "function") {
@@ -316,6 +400,40 @@ async function loadAsset() {
 }
 
 function initEventHandlers() {
+    const gallery = document.getElementById("assetPhotosGallery");
+    const photoDialog = document.getElementById("assetPhotoDialog");
+    const dialogImage = document.getElementById("assetPhotoDialogImage");
+    const closePhotoDialog = () => {
+        if (photoDialog && photoDialog.open) photoDialog.close();
+    };
+
+    if (gallery && photoDialog && dialogImage) {
+        gallery.addEventListener("click", (event) => {
+            const thumbnailButton = event.target.closest("button[data-photo-url]");
+            if (!thumbnailButton) return;
+
+            dialogImage.src = thumbnailButton.dataset.photoUrl || "";
+            dialogImage.alt = thumbnailButton.dataset.photoAlt || "Property photo";
+            photoDialog.showModal();
+        });
+
+        const closeButton = document.getElementById("assetPhotoDialogClose");
+        if (closeButton) closeButton.addEventListener("click", closePhotoDialog);
+        photoDialog.addEventListener("click", (event) => {
+            if (event.target === photoDialog) closePhotoDialog();
+        });
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && photoDialog.open) {
+                event.preventDefault();
+                closePhotoDialog();
+            }
+        });
+        photoDialog.addEventListener("close", () => {
+            dialogImage.removeAttribute("src");
+            dialogImage.alt = "";
+        });
+    }
+
     // Back Button / Close Window
     const backBtn = document.getElementById("backBtn") || document.getElementById("closeWindowBtn");
     if (backBtn) {

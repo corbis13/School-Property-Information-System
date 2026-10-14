@@ -1198,6 +1198,17 @@
                         <textarea id="remarks" class="large-remarks" rows="4" placeholder="Other details about the item..."></textarea>
                     </label>
 
+                    <section class="full-width property-images-field" aria-labelledby="propertyImagesHeading">
+                        <h3 id="propertyImagesHeading">Property Images</h3>
+                        <p class="property-images-help">Add up to 5 JPG, PNG, or WebP photos (5 MB each). Images are publicly viewable.</p>
+                        <label for="propertyImagesInput" class="property-images-upload">
+                            Select images
+                            <input id="propertyImagesInput" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+                        </label>
+                        <p id="propertyImagesStatus" class="property-images-status" role="status" aria-live="polite">Images upload when you save the property record.</p>
+                        <div id="propertyImagesPreview" class="property-images-preview" aria-label="Property image previews"></div>
+                    </section>
+
                     <label class="full-width" id="supplierField" hidden>
                         Supplier
                         <input id="supplier" type="text">
