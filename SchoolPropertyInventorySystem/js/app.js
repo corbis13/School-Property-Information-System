@@ -184,6 +184,7 @@ let statusOptions = [];
 let teacherOptions = [];
 let signatoryOptions = [];
 let signatoryEntries = [];
+let managedSignatories = [];
 let signatoryLoadFailed = false;
 let canOpenClassificationModal = false;
 let canOpenStatusModal = false;
@@ -378,22 +379,24 @@ async function loadTeacherOptions() {
 async function loadSignatoryOptions() {
     signatoryOptions = [];
     signatoryEntries = [];
+    managedSignatories = [];
     signatoryLoadFailed = false;
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/signatories?select=signatory,position`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/signatories?select=signatory,position&order=signatory.asc`, {
             headers: supabaseHeaders
         });
 
         if (!response.ok) throw new Error("Unable to load signatory options from Supabase.");
 
         const rows = await response.json();
-        signatoryEntries = (rows || [])
+        managedSignatories = (rows || [])
             .map((row) => ({
                 name: String(row.signatory || "").trim(),
                 position: String(row.position || "").trim()
             }))
             .filter((entry) => entry.name);
+        signatoryEntries = managedSignatories;
 
         signatoryOptions = [...new Set(signatoryEntries.map((entry) => entry.name))]
             .sort((first, second) => first.localeCompare(second, undefined, { sensitivity: "base" }));
@@ -401,6 +404,8 @@ async function loadSignatoryOptions() {
         console.error(error);
         signatoryLoadFailed = true;
     }
+
+    renderManagedSignatories();
 
     if (signatoryOptions.length === 0) {
         const defaultList = [
@@ -437,6 +442,251 @@ async function loadSignatoryOptions() {
     populateIcsReceivedByDropdown();
     if (typeof updateReportLiveMeta === "function") {
         updateReportLiveMeta();
+    }
+    if (typeof populateRspiSignatories === "function") {
+        populateRspiSignatories();
+    }
+}
+
+function renderManagedSignatories() {
+    const list = document.getElementById("signatoriesList");
+    const status = document.getElementById("signatoryManagementStatus");
+    if (!list || !status) return;
+
+    list.replaceChildren();
+    if (signatoryLoadFailed) {
+        status.textContent = "Unable to load signatories from the database.";
+        status.className = "text-xs font-semibold text-red-600 mt-3";
+        return;
+    }
+
+    status.textContent = managedSignatories.length
+        ? `${managedSignatories.length} ${managedSignatories.length === 1 ? "signatory" : "signatories"} saved`
+        : "No signatories saved yet.";
+    status.className = "text-xs font-semibold text-slate-500 mt-3";
+
+    managedSignatories.forEach((entry) => {
+        const row = document.createElement("li");
+        row.className = "flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2";
+
+        const name = document.createElement("span");
+        name.className = "min-w-0 break-words text-sm font-medium text-slate-700";
+        name.textContent = entry.position ? `${entry.name} — ${entry.position}` : entry.name;
+
+        const actions = document.createElement("div");
+        actions.className = "flex shrink-0 items-center gap-1";
+
+        const editButton = document.createElement("button");
+        editButton.type = "button";
+        editButton.className = "rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-[#004c87] hover:bg-blue-50";
+        editButton.dataset.editSignatory = entry.name;
+        editButton.setAttribute("aria-label", `Edit ${entry.name}`);
+        editButton.textContent = "Edit";
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "shrink-0 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50";
+        removeButton.dataset.deleteSignatory = entry.name;
+        removeButton.setAttribute("aria-label", `Remove ${entry.name}`);
+        removeButton.textContent = "Remove";
+
+        actions.append(editButton, removeButton);
+        row.append(name, actions);
+        list.appendChild(row);
+    });
+}
+
+function beginManagedSignatoryEdit(name) {
+    const entry = managedSignatories.find((signatory) => signatory.name === name);
+    const list = document.getElementById("signatoriesList");
+    if (!entry || !list) return;
+
+    const row = Array.from(list.children).find((item) => (
+        item.querySelector("[data-edit-signatory]")?.dataset.editSignatory === name
+    ));
+    if (!row) return;
+
+    row.replaceChildren();
+    row.className = "rounded-lg border border-slate-200 p-3";
+
+    const form = document.createElement("form");
+    form.className = "grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]";
+    form.dataset.signatoryEditForm = name;
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.required = true;
+    nameInput.maxLength = 160;
+    nameInput.value = entry.name;
+    nameInput.setAttribute("aria-label", "Signatory name");
+    nameInput.className = "w-full";
+
+    const positionInput = document.createElement("input");
+    positionInput.type = "text";
+    positionInput.maxLength = 160;
+    positionInput.value = entry.position || "";
+    positionInput.setAttribute("aria-label", "Position");
+    positionInput.className = "w-full";
+
+    const actions = document.createElement("div");
+    actions.className = "flex items-center gap-1";
+
+    const saveButton = document.createElement("button");
+    saveButton.type = "submit";
+    saveButton.className = "rounded-md px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50";
+    saveButton.textContent = "Save";
+
+    const cancelButton = document.createElement("button");
+    cancelButton.type = "button";
+    cancelButton.className = "rounded-md px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100";
+    cancelButton.dataset.cancelSignatoryEdit = "";
+    cancelButton.textContent = "Cancel";
+
+    actions.append(saveButton, cancelButton);
+    form.append(nameInput, positionInput, actions);
+    row.appendChild(form);
+    nameInput.focus();
+    nameInput.select();
+}
+
+async function saveManagedSignatoryEdit(form) {
+    if (!form.reportValidity()) return;
+
+    const originalName = form.dataset.signatoryEditForm;
+    const entry = managedSignatories.find((signatory) => signatory.name === originalName);
+    const status = document.getElementById("signatoryManagementStatus");
+    const nameInput = form.querySelector('input[aria-label="Signatory name"]');
+    const positionInput = form.querySelector('input[aria-label="Position"]');
+    const signatory = (nameInput?.value || "").trim();
+    const position = (positionInput?.value || "").trim();
+    if (!entry || !status || !signatory) return;
+
+    if (managedSignatories.some((item) => (
+        item.name !== originalName &&
+        item.name.localeCompare(signatory, undefined, { sensitivity: "base" }) === 0
+    ))) {
+        status.textContent = "That signatory is already saved.";
+        status.className = "text-xs font-semibold text-red-600 mt-3";
+        nameInput?.focus();
+        return;
+    }
+
+    const saveButton = form.querySelector('button[type="submit"]');
+    if (saveButton) saveButton.disabled = true;
+    status.textContent = "Updating signatory...";
+    status.className = "text-xs font-semibold text-slate-500 mt-3";
+
+    try {
+        const filters = new URLSearchParams({ signatory: `eq.${originalName}` });
+        const response = await fetch(`${supabaseUrl}/rest/v1/signatories?${filters.toString()}`, {
+            method: "PATCH",
+            headers: {
+                ...supabaseHeaders,
+                "Content-Type": "application/json",
+                Prefer: "return=minimal"
+            },
+            body: JSON.stringify({ signatory, position })
+        });
+        if (!response.ok) {
+            throw new Error(`Unable to update signatory (HTTP ${response.status}): ${await response.text()}`);
+        }
+
+        await loadSignatoryOptions();
+        if (!signatoryLoadFailed) {
+            status.textContent = "Signatory updated.";
+            status.className = "text-xs font-semibold text-green-600 mt-3";
+        }
+    } catch (error) {
+        console.error(error);
+        status.textContent = "Could not update signatory. Check database permissions and try again.";
+        status.className = "text-xs font-semibold text-red-600 mt-3";
+        if (saveButton) saveButton.disabled = false;
+    }
+}
+
+async function saveManagedSignatory(event) {
+    event.preventDefault();
+    const form = document.getElementById("signatoryManagementForm");
+    const input = document.getElementById("signatoryNameInput");
+    const positionInput = document.getElementById("signatoryPositionInput");
+    const button = document.getElementById("saveSignatoryBtn");
+    const status = document.getElementById("signatoryManagementStatus");
+    const signatory = (input?.value || "").trim();
+    const position = (positionInput?.value || "").trim();
+    if (!form || !input || !status || !form.reportValidity() || !signatory) return;
+
+    if (managedSignatories.some((entry) => entry.name.localeCompare(signatory, undefined, { sensitivity: "base" }) === 0)) {
+        status.textContent = "That signatory is already saved.";
+        status.className = "text-xs font-semibold text-red-600 mt-3";
+        input.focus();
+        return;
+    }
+
+    if (button) button.disabled = true;
+    status.textContent = "Saving signatory...";
+    status.className = "text-xs font-semibold text-slate-500 mt-3";
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/signatories`, {
+            method: "POST",
+            headers: {
+                ...supabaseHeaders,
+                "Content-Type": "application/json",
+                Prefer: "return=representation"
+            },
+            body: JSON.stringify([{ signatory, position }])
+        });
+        if (!response.ok) {
+            throw new Error(`Unable to save signatory (HTTP ${response.status}): ${await response.text()}`);
+        }
+
+        input.value = "";
+        if (positionInput) positionInput.value = "";
+        await loadSignatoryOptions();
+        if (!signatoryLoadFailed) {
+            status.textContent = "Signatory saved.";
+            status.className = "text-xs font-semibold text-green-600 mt-3";
+        }
+    } catch (error) {
+        console.error(error);
+        status.textContent = "Could not save signatory. Check database permissions and try again.";
+        status.className = "text-xs font-semibold text-red-600 mt-3";
+    } finally {
+        if (button) button.disabled = false;
+    }
+}
+
+async function removeManagedSignatory(name) {
+    const entry = managedSignatories.find((signatory) => signatory.name === name);
+    const status = document.getElementById("signatoryManagementStatus");
+    if (!entry || !status) return;
+
+    const confirmed = await showConfirmDialog({
+        title: "Remove Signatory",
+        message: `Remove ${entry.name} from the signatory list? Existing documents will not be changed.`,
+        confirmText: "Remove"
+    });
+    if (!confirmed) return;
+
+    status.textContent = "Removing signatory...";
+    status.className = "text-xs font-semibold text-slate-500 mt-3";
+    try {
+        const filters = new URLSearchParams({ signatory: `eq.${entry.name}` });
+        const response = await fetch(`${supabaseUrl}/rest/v1/signatories?${filters.toString()}`, {
+            method: "DELETE",
+            headers: supabaseHeaders
+        });
+        if (!response.ok) {
+            throw new Error(`Unable to remove signatory (HTTP ${response.status}): ${await response.text()}`);
+        }
+        await loadSignatoryOptions();
+        if (!signatoryLoadFailed) {
+            status.textContent = "Signatory removed.";
+            status.className = "text-xs font-semibold text-green-600 mt-3";
+        }
+    } catch (error) {
+        console.error(error);
+        status.textContent = "Could not remove signatory. Check database permissions and try again.";
+        status.className = "text-xs font-semibold text-red-600 mt-3";
     }
 }
 
@@ -3660,10 +3910,7 @@ async function generateReportPdf() {
 
         showToast(`8.5" × 13" PDF generated and opened.`);
         if (typeof showSuccessModal === "function") {
-            showSuccessModal(
-                `The 8.5" × 13" Physical Count Report PDF has been successfully generated and saved locally as "${fileName}".`,
-                "PDF Generated & Saved"
-            );
+            showSuccessModal("", "PDF Generated & Saved");
         }
     } catch (error) {
         console.error("PDF generation failed:", error);
@@ -4133,9 +4380,9 @@ function showSuccessModal(message, title) {
     const okBtn   = document.getElementById("successModalOkBtn");
     if (!modal) return;
 
-    // Set title and message
-    if (title   && titleEl) titleEl.textContent = title;
-    if (message && msgEl)   msgEl.textContent   = message;
+    // Set title and message. Allow an intentionally blank message to clear the prior text.
+    if (titleEl) titleEl.textContent = title || "Success";
+    if (msgEl) msgEl.textContent = message ?? "Record saved successfully!";
 
     // Re-trigger SVG stroke animations by cloning the SVG
     const svgOld = modal.querySelector(".success-modal-check");
@@ -5906,7 +6153,33 @@ function wireEvents() {
     const addNewSchoolBtn = document.getElementById("addNewSchoolBtn");
     const selectActiveSchoolBtn = document.getElementById("selectActiveSchoolBtn");
     const schoolLogoInput = document.getElementById("schoolLogoInput");
+    const signatoryManagementForm = document.getElementById("signatoryManagementForm");
+    const signatoriesList = document.getElementById("signatoriesList");
 
+    if (signatoryManagementForm) {
+        signatoryManagementForm.addEventListener("submit", saveManagedSignatory);
+    }
+    if (signatoriesList) {
+        signatoriesList.addEventListener("click", (event) => {
+            const editButton = event.target.closest("[data-edit-signatory]");
+            if (editButton) {
+                beginManagedSignatoryEdit(editButton.dataset.editSignatory);
+                return;
+            }
+            if (event.target.closest("[data-cancel-signatory-edit]")) {
+                renderManagedSignatories();
+                return;
+            }
+            const button = event.target.closest("[data-delete-signatory]");
+            if (button) removeManagedSignatory(button.dataset.deleteSignatory);
+        });
+        signatoriesList.addEventListener("submit", (event) => {
+            const form = event.target.closest("[data-signatory-edit-form]");
+            if (!form) return;
+            event.preventDefault();
+            saveManagedSignatoryEdit(form);
+        });
+    }
     if (schoolDetailsForm) {
         schoolDetailsForm.addEventListener("submit", saveSchoolDetails);
     }
