@@ -625,10 +625,8 @@
 
 body[data-theme="dark"] .property-images-field {
   border-color: #334155;
-  background: #0f172a;
 }
 
-body[data-theme="dark"] .property-images-field h3,
 body[data-theme="dark"] .property-image-preview-card p {
   color: #e2e8f0;
 }
@@ -3054,19 +3052,39 @@ body[data-theme="dark"] .qr-uiverse-btn p {
   margin: 0;
 }
 
+#footerInfoTitle {
+  color: #1e293b;
+}
+
 .footer-info-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
   border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border-radius: 50%;
+  background: #f1f5f9;
   color: #334155;
-  padding: 0.25rem 0.65rem;
-  font-size: 1.5rem;
-  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.footer-info-close:hover {
+  border-color: #00335e;
+  background: #00335e;
+  color: #ffffff;
+}
+
+.footer-info-close:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: 2px;
 }
 
 .footer-info-content {
-  color: #475569;
+  color: #334155;
   line-height: 1.6;
 }
 
@@ -3095,7 +3113,7 @@ body[data-theme="dark"] .qr-uiverse-btn p {
 }
 
 .footer-info-section a {
-  color: #004c87;
+  color: #00335e;
   text-decoration: underline;
 }
 
@@ -3104,13 +3122,6 @@ body[data-theme="dark"] .qr-uiverse-btn p {
   margin: 1.25rem 0 0 auto;
 }
 
-body[data-theme="dark"] .footer-info-content {
-  color: #cbd5e1;
-}
-
-body[data-theme="dark"] .footer-info-section h3 {
-  color: #93c5fd;
-}
 @keyframes smOverlayIn {
   from { opacity: 0; }
   to   { opacity: 1; }
