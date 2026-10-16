@@ -1746,7 +1746,7 @@
           =================================================== -->
           <div id="personnelListView" class="space-y-5">
             <!-- Summary Metric Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_3px_rgba(0,0,0,.04)] flex items-center justify-between">
                 <div>
                   <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Personnel</div>
@@ -1782,12 +1782,23 @@
 
               <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_3px_rgba(0,0,0,.04)] flex items-center justify-between">
                 <div>
-                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin & ALIVE</div>
-                  <div class="text-2xl font-bold text-amber-700 mt-1" id="personnelStatAdmin">0</div>
-                  <div class="text-[11px] text-gray-400 mt-0.5">Admin & COS Teachers</div>
+                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin</div>
+                  <div class="text-2xl font-bold text-purple-700 mt-1" id="personnelStatAdmin">0</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">School Administration</div>
+                </div>
+                <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-user-shield"></i>
+                </div>
+              </div>
+
+              <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_3px_rgba(0,0,0,.04)] flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">ALIVE</div>
+                  <div class="text-2xl font-bold text-amber-700 mt-1" id="personnelStatAlive">0</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">ALIVE / COS Teachers</div>
                 </div>
                 <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
-                  <i class="fa-solid fa-user-shield"></i>
+                  <i class="fa-solid fa-chalkboard-user"></i>
                 </div>
               </div>
             </div>
@@ -3330,6 +3341,7 @@
                 var elElem = document.getElementById("personnelStatElem");
                 var elSec = document.getElementById("personnelStatSec");
                 var elAdmin = document.getElementById("personnelStatAdmin");
+                var elAlive = document.getElementById("personnelStatAlive");
 
                 var total = list.length;
                 var elem = list.filter(function (t) {
@@ -3339,15 +3351,18 @@
                   var lvl = String(t.school_level || "").toLowerCase();
                   return lvl.includes("junior") || lvl.includes("senior") || lvl.includes("high");
                 }).length;
-                var adminAlive = list.filter(function (t) {
-                  var lvl = String(t.school_level || "").toLowerCase();
-                  return lvl.includes("admin") || lvl.includes("alive");
+                var admin = list.filter(function (t) {
+                  return String(t.school_level || "").toLowerCase().includes("admin");
+                }).length;
+                var alive = list.filter(function (t) {
+                  return String(t.school_level || "").toLowerCase().includes("alive");
                 }).length;
 
                 if (elTotal) elTotal.textContent = total;
                 if (elElem) elElem.textContent = elem;
                 if (elSec) elSec.textContent = sec;
-                if (elAdmin) elAdmin.textContent = adminAlive;
+                if (elAdmin) elAdmin.textContent = admin;
+                if (elAlive) elAlive.textContent = alive;
               }
 
               /* --- View Switching --- */

@@ -173,7 +173,12 @@ const dom = {
     addClassificationBtn: document.querySelector("#addClassificationBtn"),
     addStatusBtn: document.querySelector("#addStatusBtn"),
     deleteClassificationBtn: document.querySelector("#deleteClassificationBtn"),
-    deleteStatusBtn: document.querySelector("#deleteStatusBtn")
+    deleteStatusBtn: document.querySelector("#deleteStatusBtn"),
+    personnelStatTotal: document.querySelector("#personnelStatTotal"),
+    personnelStatElem: document.querySelector("#personnelStatElem"),
+    personnelStatSec: document.querySelector("#personnelStatSec"),
+    personnelStatAdmin: document.querySelector("#personnelStatAdmin"),
+    personnelStatAlive: document.querySelector("#personnelStatAlive")
 };
 
 const themeStorageKey = "spis-theme";
