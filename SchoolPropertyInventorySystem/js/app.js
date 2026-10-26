@@ -3723,12 +3723,8 @@ function renderPhysicalCountReport() {
                     </thead>
                 <tbody>
                     ${reportItems.length ? reportItems.map((item) => {
-                        const articleVal = item.item_description || item.itemDescription || item.item_brand_model || item.itemBrandModel || item.article || "-";
-                        const descVal = (item.itemClassification && item.itemClassification !== articleVal)
-                            ? item.itemClassification
-                            : (item.item_classification && item.item_classification !== articleVal)
-                            ? item.item_classification
-                            : (item.additionalItem || item.remarks || item.desc || item.description || "-");
+                        const articleVal = item.itemClassification || item.item_classification || item.classification || (item.article && item.article !== item.item_description ? item.article : "-");
+                        const descVal = item.item_description || item.itemDescription || item.item_brand_model || item.itemBrandModel || item.additionalItem || item.remarks || item.desc || item.description || (item.article !== articleVal ? item.article : "-");
                         return `
                         <tr>
                             <td>${reportCell(articleVal)}</td>
@@ -4355,7 +4351,7 @@ async function generateReportPdf() {
 
         showToast(`8.5" × 13" PDF generated and opened.`);
         if (typeof showSuccessModal === "function") {
-            showSuccessModal("", "PDF Generated & Saved");
+            showSuccessModal(`The 8.5" × 13" Physical Count Report PDF has been successfully generated and saved locally as "${fileName}".`, "PDF Generated & Saved");
         }
     } catch (error) {
         console.error("PDF generation failed:", error);
