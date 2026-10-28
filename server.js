@@ -9,53 +9,18 @@ const app = express();
 const PORT = 3000;
 
 // Serve SchoolPropertyInventorySystem as static directory
-app.use('/SchoolPropertyInventorySystem', express.static(path.join(__dirname, 'SchoolPropertyInventorySystem'), {
+const staticOptions = {
   setHeaders: (res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   }
-}));
+};
 
-// Redirect root to /SchoolPropertyInventorySystem/
-app.get('/', (req, res) => {
-  res.redirect(302, '/SchoolPropertyInventorySystem/');
-});
+app.use('/SchoolPropertyInventorySystem', express.static(path.join(__dirname, 'SchoolPropertyInventorySystem'), staticOptions));
+app.use(express.static(path.join(__dirname, 'SchoolPropertyInventorySystem'), staticOptions));
 
-// Redirect report pages if queried at root
-app.get(['/property-category-report', '/property-category-report.html', '/category-report', '/category-report.html'], (req, res) => {
-  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  res.redirect(302, `/SchoolPropertyInventorySystem/property-category-report.html${query}`);
-});
-
-app.get(['/maintenance-requests-report', '/maintenance-requests-report.html', '/maintenance-report', '/maintenance-report.html'], (req, res) => {
-  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  res.redirect(302, `/SchoolPropertyInventorySystem/maintenance-requests-report.html${query}`);
-});
-
-app.get(['/issuance-year-report', '/issuance-year-report.html'], (req, res) => {
-  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  res.redirect(302, `/SchoolPropertyInventorySystem/issuance-year-report.html${query}`);
-});
-
-app.get(['/acquisition-year-report', '/acquisition-year-report.html'], (req, res) => {
-  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  res.redirect(302, `/SchoolPropertyInventorySystem/acquisition-year-report.html${query}`);
-});
-
-app.get(['/accountable-person-report', '/accountable-person-report.html'], (req, res) => {
-  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  res.redirect(302, `/SchoolPropertyInventorySystem/accountable-person-report.html${query}`);
-});
-
-// Redirect /asset.html to /SchoolPropertyInventorySystem/asset.html if queried at root
-app.get('/asset.html', (req, res) => {
-  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  res.redirect(302, `/SchoolPropertyInventorySystem/asset.html${query}`);
-});
-
-// Redirect homepage aliases to main applet
-app.get(['/homepage', '/homepage.html', '/dashboard'], (req, res) => {
-  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  res.redirect(302, `/SchoolPropertyInventorySystem/index.html${query}`);
+// Serve root directly with SchoolPropertyInventorySystem/index.html
+app.get(['/', '/index.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'SchoolPropertyInventorySystem', 'index.html'));
 });
 
 // Dynamic supabase-config.js delivery
@@ -71,11 +36,37 @@ app.get(['/SchoolPropertyInventorySystem/supabase-config.js', '/supabase-config.
 };`);
 });
 
-// Serve any other root static files (such as images, icons, etc.)
-app.use(express.static(__dirname));
+// Report routes and direct pages
+app.get(['/property-category-report', '/property-category-report.html', '/category-report', '/category-report.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'SchoolPropertyInventorySystem', 'property-category-report.html'));
+});
+
+app.get(['/maintenance-requests-report', '/maintenance-requests-report.html', '/maintenance-report', '/maintenance-report.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'SchoolPropertyInventorySystem', 'maintenance-requests-report.html'));
+});
+
+app.get(['/issuance-year-report', '/issuance-year-report.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'SchoolPropertyInventorySystem', 'issuance-year-report.html'));
+});
+
+app.get(['/acquisition-year-report', '/acquisition-year-report.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'SchoolPropertyInventorySystem', 'acquisition-year-report.html'));
+});
+
+app.get(['/accountable-person-report', '/accountable-person-report.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'SchoolPropertyInventorySystem', 'accountable-person-report.html'));
+});
+
+app.get('/asset.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'SchoolPropertyInventorySystem', 'asset.html'));
+});
+
+app.get(['/homepage', '/homepage.html', '/dashboard'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'SchoolPropertyInventorySystem', 'index.html'));
+});
 
 // Fallback to SchoolPropertyInventorySystem/index.html
-app.get('/SchoolPropertyInventorySystem/*', (req, res) => {
+app.get(['/SchoolPropertyInventorySystem/*', '*'], (req, res) => {
   res.sendFile(path.join(__dirname, 'SchoolPropertyInventorySystem', 'index.html'));
 });
 

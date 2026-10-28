@@ -1416,6 +1416,36 @@ body[data-theme="dark"] #refreshSchoolDetailsBtn:hover {
   white-space: nowrap !important;
 }
 
+#propertyListPanel .inventory-refresh-btn {
+  min-height: 2.75rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: 0.625rem;
+  padding: 0 0.875rem;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  white-space: nowrap;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #00335e;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+#propertyListPanel .inventory-refresh-btn:hover {
+  background-color: #00335e;
+  color: #ffffff;
+  border-color: #00335e;
+}
+
+#propertyListPanel .inventory-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 640px) {
   .inventory-heading .filters {
     width: 100% !important;
@@ -1442,6 +1472,14 @@ body[data-theme="dark"] #refreshSchoolDetailsBtn:hover {
     min-width: 110px !important;
     width: auto !important;
     max-width: 140px !important;
+  }
+
+  #propertyListPanel .inventory-refresh-btn span {
+    display: none;
+  }
+
+  #propertyListPanel .inventory-refresh-btn {
+    padding: 0 0.625rem;
   }
 }
 

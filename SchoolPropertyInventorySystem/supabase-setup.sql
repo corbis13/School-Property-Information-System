@@ -403,67 +403,80 @@ create policy "Allow public RSPI report item access" on public.rspi_report_items
 -- attach the user's access token to the Authorization header on mutations.
 -- ============================================================================
 
--- assets: keep public read, restrict mutations to authenticated
+-- assets: grant read and write access to anon and authenticated
 drop policy if exists "Allow public insert access to assets" on public.assets;
 drop policy if exists "Allow public update access to assets" on public.assets;
 drop policy if exists "Allow public delete access to assets" on public.assets;
+drop policy if exists "Allow authenticated insert access to assets" on public.assets;
+drop policy if exists "Allow authenticated update access to assets" on public.assets;
+drop policy if exists "Allow authenticated delete access to assets" on public.assets;
 
-create policy "Allow authenticated insert access to assets" on public.assets
-  for insert to authenticated with check (true);
+create policy "Allow public insert access to assets" on public.assets
+  for insert to anon, authenticated with check (true);
 
-create policy "Allow authenticated update access to assets" on public.assets
-  for update to authenticated using (true) with check (true);
+create policy "Allow public update access to assets" on public.assets
+  for update to anon, authenticated using (true) with check (true);
 
-create policy "Allow authenticated delete access to assets" on public.assets
-  for delete to authenticated using (true);
+create policy "Allow public delete access to assets" on public.assets
+  for delete to anon, authenticated using (true);
 
--- classifications: keep public read, restrict mutations to authenticated
+-- classifications: grant read and write access to anon and authenticated
 drop policy if exists "Allow public insert access to classifications" on public.classifications;
 drop policy if exists "Allow public update access to classifications" on public.classifications;
 drop policy if exists "Allow public delete access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated insert access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated update access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated delete access to classifications" on public.classifications;
 
-create policy "Allow authenticated insert access to classifications" on public.classifications
-  for insert to authenticated with check (true);
+create policy "Allow public insert access to classifications" on public.classifications
+  for insert to anon, authenticated with check (true);
 
-create policy "Allow authenticated update access to classifications" on public.classifications
-  for update to authenticated using (true) with check (true);
+create policy "Allow public update access to classifications" on public.classifications
+  for update to anon, authenticated using (true) with check (true);
 
-create policy "Allow authenticated delete access to classifications" on public.classifications
-  for delete to authenticated using (true);
+create policy "Allow public delete access to classifications" on public.classifications
+  for delete to anon, authenticated using (true);
 
--- statuses: keep public read, restrict mutations to authenticated
+-- statuses: grant read and write access to anon and authenticated
 drop policy if exists "Allow public insert access to statuses" on public.statuses;
 drop policy if exists "Allow public update access to statuses" on public.statuses;
 drop policy if exists "Allow public delete access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated insert access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated update access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated delete access to statuses" on public.statuses;
 
-create policy "Allow authenticated insert access to statuses" on public.statuses
-  for insert to authenticated with check (true);
+create policy "Allow public insert access to statuses" on public.statuses
+  for insert to anon, authenticated with check (true);
 
-create policy "Allow authenticated update access to statuses" on public.statuses
-  for update to authenticated using (true) with check (true);
+create policy "Allow public update access to statuses" on public.statuses
+  for update to anon, authenticated using (true) with check (true);
 
-create policy "Allow authenticated delete access to statuses" on public.statuses
-  for delete to authenticated using (true);
+create policy "Allow public delete access to statuses" on public.statuses
+  for delete to anon, authenticated using (true);
 
--- ICS: keep public read, restrict mutations to authenticated
+-- ICS: grant read and write access to anon and authenticated
 drop policy if exists "Allow public ICS slip access" on public.ics_slips;
 drop policy if exists "Allow public ICS slip item access" on public.ics_slip_items;
+drop policy if exists "Allow authenticated ICS slip access" on public.ics_slips;
+drop policy if exists "Allow authenticated ICS slip item access" on public.ics_slip_items;
 
-create policy "Allow authenticated ICS slip access" on public.ics_slips
-  for all to authenticated using (true) with check (true);
+create policy "Allow public ICS slip access" on public.ics_slips
+  for all to anon, authenticated using (true) with check (true);
 
-create policy "Allow authenticated ICS slip item access" on public.ics_slip_items
-  for all to authenticated using (true) with check (true);
+create policy "Allow public ICS slip item access" on public.ics_slip_items
+  for all to anon, authenticated using (true) with check (true);
 
--- RSPI: keep public read, restrict mutations to authenticated
+-- RSPI: grant read and write access to anon and authenticated
 drop policy if exists "Allow public RSPI report access" on public.rspi_reports;
 drop policy if exists "Allow public RSPI report item access" on public.rspi_report_items;
+drop policy if exists "Allow authenticated RSPI report access" on public.rspi_reports;
+drop policy if exists "Allow authenticated RSPI report item access" on public.rspi_report_items;
 
-create policy "Allow authenticated RSPI report access" on public.rspi_reports
-  for all to authenticated using (true) with check (true);
+create policy "Allow public RSPI report access" on public.rspi_reports
+  for all to anon, authenticated using (true) with check (true);
 
-create policy "Allow authenticated RSPI report item access" on public.rspi_report_items
-  for all to authenticated using (true) with check (true);
+create policy "Allow public RSPI report item access" on public.rspi_report_items
+  for all to anon, authenticated using (true) with check (true);
 
 -- school_details table
 create table if not exists public.school_details (

@@ -291,31 +291,23 @@
         <div class="flex items-center space-x-3 sm:space-x-4">
           <!-- Notification Bell & Dropdown -->
           <div class="relative">
-            <button id="notifBellBtn" type="button" class="relative cursor-pointer p-2 text-slate-700 hover:text-[#00335e] hover:bg-slate-100 rounded-lg transition" title="Notifications" aria-label="Notifications" aria-expanded="false">
+            <button id="notifBellBtn" type="button" class="relative cursor-pointer p-2 text-slate-700 hover:text-[#00335e] hover:bg-slate-100 rounded-lg transition" title="System Alerts" aria-label="System Alerts" aria-expanded="false">
               <i data-lucide="bell" class="w-5 h-5 sm:w-6 sm:h-6"></i>
-              <span class="absolute top-1 right-1 bg-[#f59e0b] text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-white">
-                3
+              <span id="notifBadge" class="notif-badge absolute top-1 right-1 bg-[#f59e0b] text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-white">
+                0
               </span>
             </button>
             <!-- Dropdown Menu -->
-            <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
-              <div class="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">System Alerts</span>
-                <span class="text-[10px] font-bold text-[#55a83b] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">3 Alerts</span>
+            <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden text-left">
+              <div class="p-3 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">System Alerts</span>
+                  <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">Scanning...</span>
+                </div>
+                <button type="button" onclick="showModule('inventory'); if(window.closeDropdowns) window.closeDropdowns();" class="text-[10px] font-semibold text-[#004c87] hover:underline cursor-pointer">View All</button>
               </div>
-              <div class="divide-y divide-slate-100 max-h-64 overflow-y-auto">
-                <div class="p-3 hover:bg-slate-50 transition cursor-pointer text-xs" onclick="showModule('inventory')">
-                  <p class="font-bold text-slate-800">Physical Inventory Audit</p>
-                  <p class="text-slate-500 text-[11px]">Ready for annual verification</p>
-                </div>
-                <div class="p-3 hover:bg-slate-50 transition cursor-pointer text-xs" onclick="showModule('qr')">
-                  <p class="font-bold text-slate-800">Printable QR Stickers</p>
-                  <p class="text-slate-500 text-[11px]">DepEd QR labels ready for print</p>
-                </div>
-                <div class="p-3 hover:bg-slate-50 transition cursor-pointer text-xs" onclick="showModule('document')">
-                  <p class="font-bold text-slate-800">ICS Form Generated</p>
-                  <p class="text-slate-500 text-[11px]">Custodian slips cataloged</p>
-                </div>
+              <div class="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+                <div class="p-3 text-xs text-slate-500">Checking property records...</div>
               </div>
             </div>
           </div>
@@ -1264,6 +1256,10 @@
                         <select id="statusFilter">
                             <option value="All">All Status</option>
                         </select>
+                        <button id="refreshInventoryBtn" type="button" onclick="refreshInventoryCardManual()" title="Refresh Inventory Records" aria-label="Refresh Inventory Records" class="inventory-refresh-btn">
+                            <svg class="w-3.5 h-3.5 refresh-icon shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            <span>Refresh</span>
+                        </button>
                     </div>
                 </div>
 
@@ -5284,7 +5280,7 @@
               </article>
 
             <!-- CARD 2: INVENTORY DOCUMENT (RPCSP ALL INVENTORY ITEMS) -->
-            <article class="module-card report-content-card" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:0.75rem; padding:1.25rem; width:100%; box-sizing:border-box;">
+            <article class="module-card report-content-card" id="inventoryDocumentReportCard" style="background:#ffffff; border:1px solid #cbd5e1; border-radius:0.75rem; padding:1.25rem; width:100%; box-sizing:border-box;">
               <div class="section-heading" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid #e2e8f0; padding-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
                 <div>
                   <p class="eyebrow" style="font-size:0.75rem; font-weight:700; color:#55a83b; text-transform:uppercase; margin:0 0 0.25rem 0;">Inventory Document</p>

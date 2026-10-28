@@ -1954,13 +1954,20 @@ async function syncToSheet(action, item) {
 
     if (action === "delete") {
         const response = await fetch(`${supabaseUrl}/rest/v1/assets?asset_id=eq.${encodeURIComponent(item.assetId)}`, options);
-        if (!response.ok) throw new Error("Delete failed");
+        if (!response.ok) throw new Error("Delete failed with HTTP status " + response.status);
     } else if (action === "update") {
         const response = await fetch(`${supabaseUrl}/rest/v1/assets?asset_id=eq.${encodeURIComponent(item.assetId)}`, options);
-        if (!response.ok) throw new Error("Update failed");
+        if (!response.ok) throw new Error("Update failed with HTTP status " + response.status);
+        const updatedRows = await response.json().catch(() => []);
+        if (Array.isArray(updatedRows) && updatedRows.length === 0) {
+            throw new Error("Supabase RLS policy blocked the update (0 rows affected). You must run fix-rls-permissions.sql in Supabase SQL Editor to allow public updates.");
+        }
     } else {
         const response = await fetch(`${supabaseUrl}/rest/v1/assets`, options);
-        if (!response.ok) throw new Error("Create failed");
+        if (!response.ok) {
+            const errText = await response.text().catch(() => "");
+            throw new Error(`Create failed with HTTP status ${response.status}: ${errText}`);
+        }
     }
 
     setDatabaseStatus("Synced to Supabase.", "Changes were sent to the backend database.");
@@ -4430,6 +4437,9 @@ function getFilteredItems() {
 
     return sortItemsByNewest(items).filter((item) => {
         const itemStatus = getComputedStatus(item);
+        const accountableVal = String(item.accountable || "").trim();
+        const isUnassignedAccountable = !accountableVal || accountableVal === "-" || accountableVal.toLowerCase() === "unassigned" || accountableVal.toLowerCase() === "none";
+
         const searchable = [
             item.assetId,
             item.fundCluster,
@@ -4439,7 +4449,8 @@ function getFilteredItems() {
             item.itemBrandModel || item.item_brand_model || item.description || item.desc,
             item.serialNo,
             item.acquisitionDate,
-            item.accountable,
+            (isUnassignedAccountable ? "unassigned no-custodian unassigned-asset" : accountableVal),
+            ((!item.propertyNo || item.propertyNo === "-") && (!item.semiExpandableNo || item.semiExpandableNo === "-") ? "missing-property-number missing-prop-no" : ""),
             item.schoolLevel,
             item.dateIssue,
             item.status,
@@ -4495,7 +4506,15 @@ function renderTable() {
 
     visibleItems.forEach((item) => {
         const status = getComputedStatus(item);
+        const accountableVal = String(item.accountable || "").trim();
+        const isAccountableAssigned = Boolean(accountableVal && accountableVal !== "-" && accountableVal.toLowerCase() !== "unassigned" && accountableVal.toLowerCase() !== "none");
+        const isRecentlyUpdated = Boolean(window.recentlyUpdatedAssetId && item.assetId === window.recentlyUpdatedAssetId);
+
         const row = document.createElement("tr");
+        row.setAttribute("data-asset-id", item.assetId);
+        if (isRecentlyUpdated) {
+            row.classList.add("bg-emerald-50/80", "transition-colors", "duration-500");
+        }
         row.innerHTML = `
             <td>${escapeHtml(item.propertyNo || item.assetId)}</td>
             <td>
@@ -4505,7 +4524,14 @@ function renderTable() {
             </td>
             <td>${escapeHtml(item.serialNo || "-")}</td>
             <td>${escapeHtml(item.itemClassification || "-")}</td>
-            <td>${escapeHtml(item.accountable || "Unassigned")}</td>
+            <td>
+                ${isAccountableAssigned
+                    ? `<span class="inline-flex items-center gap-1.5 font-medium ${isRecentlyUpdated ? 'text-emerald-700 font-bold' : 'text-slate-800'}">
+                        <span>${escapeHtml(accountableVal)}</span>
+                        ${isRecentlyUpdated ? '<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">Updated</span>' : ''}
+                       </span>`
+                    : `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">Unassigned</span>`}
+            </td>
             <td><span class="badge" style="${getStatusBadgeStyles(status)}">${escapeHtml(status || "Unspecified")}</span></td>
             <td>
                 <div class="row-actions">
@@ -4793,6 +4819,321 @@ function setQrDetails(item) {
     });
 }
 
+function filterInventoryByAlert(filterType, filterValue, targetCardId = "propertyListPanel") {
+    if (typeof showModule === "function") {
+        showModule("inventory", targetCardId);
+    }
+
+    const statusSelect = document.getElementById("statusFilter") || (typeof dom !== "undefined" && dom.statusFilter);
+    const searchInput = document.getElementById("searchInput") || (typeof dom !== "undefined" && dom.searchInput);
+
+    if (filterType === "status") {
+        if (statusSelect) {
+            let matched = false;
+            for (let i = 0; i < statusSelect.options.length; i++) {
+                const opt = statusSelect.options[i];
+                if (opt.value.toLowerCase() === filterValue.toLowerCase() || opt.text.toLowerCase().includes(filterValue.toLowerCase())) {
+                    statusSelect.value = opt.value;
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                statusSelect.value = "All";
+                if (searchInput) searchInput.value = filterValue;
+            } else if (searchInput) {
+                searchInput.value = "";
+            }
+        } else if (searchInput) {
+            searchInput.value = filterValue;
+        }
+    } else if (filterType === "unassigned") {
+        if (statusSelect) statusSelect.value = "All";
+        if (searchInput) searchInput.value = "unassigned";
+    } else if (filterType === "missingNo") {
+        if (statusSelect) statusSelect.value = "All";
+        if (searchInput) searchInput.value = "missing-property-number";
+    } else if (filterType === "query") {
+        if (statusSelect) statusSelect.value = "All";
+        if (searchInput) searchInput.value = filterValue;
+    }
+
+    if (typeof inventoryPage !== "undefined") {
+        inventoryPage = 1;
+    }
+    if (typeof renderTable === "function") {
+        renderTable();
+    }
+    if (typeof window.closeDropdowns === "function") {
+        window.closeDropdowns();
+    }
+
+    // Smoothly scroll and highlight the target card (Property List / Inventory Records)
+    setTimeout(() => {
+        const targetEl = document.getElementById(targetCardId);
+        if (targetEl) {
+            targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+            targetEl.classList.add("ring-4", "ring-[#0284c7]/50", "transition-all", "duration-700");
+            setTimeout(() => {
+                targetEl.classList.remove("ring-4", "ring-[#0284c7]/50");
+            }, 2500);
+        }
+    }, 120);
+
+    const label = filterType === "status"
+        ? filterValue
+        : (filterType === "unassigned" ? "Unassigned Custodian" : (filterType === "missingNo" ? "Missing Property Numbers" : filterValue));
+    showToast(`Filtered Property List to ${label}`);
+}
+window.filterInventoryByAlert = filterInventoryByAlert;
+
+function refreshInventoryRecordsCard(highlightAssetId = null) {
+    if (typeof showModule === "function") {
+        showModule("inventory", "propertyListPanel");
+    }
+
+    setTimeout(() => {
+        const targetEl = document.getElementById("propertyListPanel");
+        if (targetEl) {
+            targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+            targetEl.classList.add("ring-4", "ring-emerald-500/50", "transition-all", "duration-500");
+            setTimeout(() => {
+                targetEl.classList.remove("ring-4", "ring-emerald-500/50");
+            }, 2500);
+        }
+
+        const targetId = highlightAssetId || window.recentlyUpdatedAssetId;
+        if (targetId) {
+            const row = document.querySelector(`tr[data-asset-id="${targetId}"]`);
+            if (row) {
+                row.classList.add("bg-emerald-100/70", "transition-colors", "duration-700");
+                setTimeout(() => {
+                    row.classList.remove("bg-emerald-100/70");
+                }, 3500);
+            }
+        }
+    }, 120);
+}
+window.refreshInventoryRecordsCard = refreshInventoryRecordsCard;
+
+async function refreshInventoryCardManual() {
+    const btn = document.getElementById("refreshInventoryBtn");
+    const icon = btn?.querySelector(".refresh-icon");
+    if (icon) icon.classList.add("animate-spin");
+    if (btn) btn.disabled = true;
+
+    try {
+        if (typeof loadItems === "function") {
+            await loadItems();
+        }
+        renderApp();
+        updateSystemAlerts();
+        refreshInventoryRecordsCard();
+        showToast("Inventory records card refreshed successfully.");
+    } catch (err) {
+        console.error("Manual inventory refresh error:", err);
+        renderApp();
+        showToast("Inventory refreshed from local storage.");
+    } finally {
+        if (icon) icon.classList.remove("animate-spin");
+        if (btn) btn.disabled = false;
+    }
+}
+window.refreshInventoryCardManual = refreshInventoryCardManual;
+
+function updateSystemAlerts() {
+    const notifBtn = document.getElementById("notifBellBtn");
+    const notifDropdown = document.getElementById("notifDropdown");
+    if (!notifBtn || !notifDropdown) return;
+
+    let notifBadge = notifBtn.querySelector(".notif-badge") || notifBtn.querySelector("span");
+
+    const currentItems = Array.isArray(items) && items.length ? items : (window.inventoryData || []);
+
+    const stolenItems = [];
+    const unserviceableItems = [];
+    const repairItems = [];
+    const unassignedItems = [];
+    const missingNumberItems = [];
+
+    currentItems.forEach((item) => {
+        const rawStatus = (typeof getComputedStatus === "function" ? getComputedStatus(item) : "") || item.status || "";
+        const statusLower = String(rawStatus).toLowerCase().trim();
+
+        // 1. Stolen or lost
+        if (statusLower.includes("stolen") || statusLower.includes("lost") || Number(item.shortageOverageQty) > 0) {
+            stolenItems.push(item);
+        }
+        // 2. Unserviceable or condemned
+        else if (statusLower.includes("unserviceable") || statusLower.includes("condemned") || statusLower.includes("damaged")) {
+            unserviceableItems.push(item);
+        }
+        // 3. For repair or maintenance
+        else if (statusLower.includes("repair") || statusLower.includes("maintenance")) {
+            repairItems.push(item);
+        }
+
+        // 4. Unassigned personnel
+        const accountable = String(item.accountable || item.accountable_person || "").trim();
+        if (!accountable || accountable === "-" || accountable.toLowerCase() === "unassigned" || accountable.toLowerCase() === "none") {
+            unassignedItems.push(item);
+        }
+
+        // 5. Missing property numbers
+        const propNo = String(item.propertyNo || "").trim();
+        const semiNo = String(item.semiExpandableNo || "").trim();
+        if ((!propNo || propNo === "-") && (!semiNo || semiNo === "-")) {
+            missingNumberItems.push(item);
+        }
+    });
+
+    const alerts = [];
+
+    if (stolenItems.length > 0) {
+        alerts.push({
+            id: 'stolen',
+            iconBg: 'bg-red-100 text-red-600',
+            icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+            title: 'Stolen / Missing Property',
+            badge: `${stolenItems.length} Critical`,
+            badgeClass: 'bg-red-50 text-red-700 border border-red-200',
+            desc: `${stolenItems.length} ${stolenItems.length === 1 ? 'record requires' : 'records require'} incident reporting`,
+            onClick: "filterInventoryByAlert('status', 'Stolen', 'propertyListPanel')"
+        });
+    }
+
+    if (unserviceableItems.length > 0) {
+        alerts.push({
+            id: 'unserviceable',
+            iconBg: 'bg-amber-100 text-amber-700',
+            icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>',
+            title: 'Unserviceable Equipment',
+            badge: `${unserviceableItems.length} Attention`,
+            badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200',
+            desc: `${unserviceableItems.length} ${unserviceableItems.length === 1 ? 'asset pending' : 'assets pending'} inspection or disposal`,
+            onClick: "filterInventoryByAlert('status', 'Unserviceable', 'propertyListPanel')"
+        });
+    }
+
+    if (repairItems.length > 0) {
+        alerts.push({
+            id: 'repair',
+            iconBg: 'bg-yellow-100 text-yellow-800',
+            icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>',
+            title: 'Under Repair / Maintenance',
+            badge: `${repairItems.length} Active`,
+            badgeClass: 'bg-yellow-50 text-yellow-800 border border-yellow-200',
+            desc: `${repairItems.length} ${repairItems.length === 1 ? 'equipment currently' : 'equipment currently'} undergoing repair`,
+            onClick: "filterInventoryByAlert('status', 'For Repair', 'propertyListPanel')"
+        });
+    }
+
+    if (unassignedItems.length > 0) {
+        alerts.push({
+            id: 'unassigned',
+            iconBg: 'bg-sky-100 text-sky-700',
+            icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
+            title: 'Unassigned Assets',
+            badge: `${unassignedItems.length} Notice`,
+            badgeClass: 'bg-sky-50 text-sky-700 border border-sky-200',
+            desc: `${unassignedItems.length} ${unassignedItems.length === 1 ? 'item lacks' : 'items lack'} an accountable custodian`,
+            onClick: "filterInventoryByAlert('unassigned', 'unassigned', 'propertyListPanel')"
+        });
+    }
+
+    if (missingNumberItems.length > 0) {
+        alerts.push({
+            id: 'missingNo',
+            iconBg: 'bg-indigo-100 text-indigo-700',
+            icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>',
+            title: 'Missing Property Number',
+            badge: `${missingNumberItems.length} Notice`,
+            badgeClass: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+            desc: `${missingNumberItems.length} ${missingNumberItems.length === 1 ? 'record needs' : 'records need'} Semi-Expendable/Property No.`,
+            onClick: "filterInventoryByAlert('missingNo', 'missing-property-number', 'propertyListPanel')"
+        });
+    }
+
+    // System reminders pointing to particular cards
+    alerts.push({
+        id: 'audit',
+        iconBg: 'bg-blue-100 text-blue-700',
+        icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+        title: 'Physical Inventory Audit',
+        badge: 'Annual Audit',
+        badgeClass: 'bg-blue-50 text-blue-700 border border-blue-200',
+        desc: 'Report on Physical Count (RPCPPE / RPCSP) ready',
+        onClick: "showModule('reports', 'inventoryDocumentReportCard'); if(window.closeDropdowns) window.closeDropdowns();"
+    });
+
+    alerts.push({
+        id: 'ics',
+        iconBg: 'bg-emerald-100 text-emerald-700',
+        icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+        title: 'Custodian Slips (ICS)',
+        badge: 'Verified',
+        badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+        desc: 'Custodian slips and issuance registry cataloged',
+        onClick: "showModule('document', 'savedDocumentsPanel'); if(window.closeDropdowns) window.closeDropdowns();"
+    });
+
+    const actionableCount = stolenItems.length + unserviceableItems.length + repairItems.length + unassignedItems.length + missingNumberItems.length;
+
+    // Update badge
+    if (notifBadge) {
+        notifBadge.classList.add("notif-badge");
+        if (actionableCount > 0) {
+            notifBadge.textContent = actionableCount > 99 ? '99+' : String(actionableCount);
+            notifBadge.style.display = 'flex';
+            if (stolenItems.length > 0) {
+                notifBadge.className = 'notif-badge absolute top-1 right-1 bg-red-600 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-white animate-pulse';
+            } else {
+                notifBadge.className = 'notif-badge absolute top-1 right-1 bg-[#f59e0b] text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-white';
+            }
+        } else {
+            notifBadge.textContent = '0';
+            notifBadge.style.display = 'flex';
+            notifBadge.className = 'notif-badge absolute top-1 right-1 bg-emerald-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-white';
+        }
+    }
+
+    // Render dropdown contents
+    notifDropdown.innerHTML = `
+        <div class="p-3 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">System Alerts</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${actionableCount > 0 ? (stolenItems.length > 0 ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-amber-100 text-amber-800 border border-amber-300') : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}">
+                    ${actionableCount > 0 ? `${actionableCount} Action Needed` : 'All Verified'}
+                </span>
+            </div>
+            <button type="button" onclick="showModule('inventory', 'propertyListPanel'); if(window.closeDropdowns) window.closeDropdowns();" class="text-[10px] font-semibold text-[#004c87] hover:underline cursor-pointer">View Property List</button>
+        </div>
+        <div class="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+            ${alerts.map(a => `
+                <div class="p-3 hover:bg-slate-50 transition cursor-pointer text-xs flex items-start gap-2.5 group" onclick="${a.onClick}">
+                    <div class="shrink-0 p-1.5 rounded-lg ${a.iconBg} mt-0.5">
+                        ${a.icon}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-1">
+                            <p class="font-bold text-slate-800 group-hover:text-[#00335e] transition truncate">${escapeHtml(a.title)}</p>
+                            ${a.badge ? `<span class="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded ${a.badgeClass}">${escapeHtml(a.badge)}</span>` : ''}
+                        </div>
+                        <p class="text-slate-500 text-[11px] leading-tight mt-0.5 truncate">${escapeHtml(a.desc)}</p>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="p-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Click any alert to jump to its card</span>
+            <button type="button" onclick="updateSystemAlerts(); showToast('Alerts refreshed');" class="text-[11px] font-semibold text-[#004c87] hover:underline flex items-center gap-1 cursor-pointer">
+                Refresh
+            </button>
+        </div>
+    `;
+}
+window.updateSystemAlerts = updateSystemAlerts;
+
 function renderApp() {
     items = sortItemsByNewest(items);
     selectedId = selectedId || (items[0] && items[0].assetId) || null;
@@ -4803,6 +5144,7 @@ function renderApp() {
     renderTable();
     renderQr();
     renderReports();
+    updateSystemAlerts();
 }
 
 function escapeHtml(value) {
@@ -4842,6 +5184,9 @@ function showSuccessModal(message, title) {
         if (msgEl)   msgEl.textContent   = "Record saved successfully!";
         document.removeEventListener("keydown", onEsc);
         modal.removeEventListener("click", onBackdrop);
+        if (typeof refreshInventoryRecordsCard === "function") {
+            refreshInventoryRecordsCard(window.recentlyUpdatedAssetId);
+        }
     }
 
     function onEsc(e) { if (e.key === "Escape") closeModal(); }
@@ -5725,6 +6070,11 @@ async function handleSave(event) {
         primaryChanged: primaryPropertyImageKey !== currentPrimaryKey
     };
     const existingIndex = items.findIndex((item) => item.assetId === dom.editingId.value);
+    const prevItem = existingIndex >= 0 ? { ...items[existingIndex] } : null;
+    const prevAccountable = String((prevItem && prevItem.accountable) || "").trim();
+    const wasUnassigned = !prevAccountable || prevAccountable === "-" || prevAccountable.toLowerCase() === "unassigned" || prevAccountable.toLowerCase() === "none";
+    const nowAccountable = String(data.accountable || "").trim();
+    const nowAssigned = Boolean(nowAccountable && nowAccountable !== "-" && nowAccountable.toLowerCase() !== "unassigned" && nowAccountable.toLowerCase() !== "none");
     const duplicate = items.some((item, index) => item.propertyNo === data.propertyNo && index !== existingIndex);
 
     if (data.propertyNo && duplicate) {
@@ -5746,24 +6096,45 @@ async function handleSave(event) {
     const saveButton = document.getElementById("saveAssetBtn");
     if (saveButton) saveButton.disabled = true;
 
+    let syncFailed = false;
+    let syncErrorMsg = "";
     try {
         await syncToSheet(action, data);
     } catch (error) {
-        console.error(error);
-        showToast("Saved locally. Supabase sync failed.");
-        setDatabaseStatus("Local fallback is active.", "The backend could not receive the latest change.");
-        if (saveButton) saveButton.disabled = false;
-        return;
+        console.error("Supabase sync failed:", error);
+        syncFailed = true;
+        syncErrorMsg = error.message || "Supabase write blocked";
+        setDatabaseStatus("Local fallback is active.", "Run fix-rls-permissions.sql in Supabase SQL editor to allow remote saving.");
     }
 
     try {
         dom.editingId.value = data.assetId;
         dom.assetId.value = data.assetId;
-        if (imageChanges.pendingImages.length || imageChanges.removedIds.size || imageChanges.primaryChanged) {
+        if (!syncFailed && (imageChanges.pendingImages.length || imageChanges.removedIds.size || imageChanges.primaryChanged)) {
             await savePropertyImageChanges(data.assetId, imageChanges);
         }
-        await loadItems();
+        if (!syncFailed) {
+            await loadItems();
+        }
+
+        // If the user was filtering for "unassigned" and this item has now been assigned:
+        // Clear the search input so the updated item remains visible in the refreshed Property List
+        const currentSearch = dom.searchInput ? dom.searchInput.value.trim().toLowerCase() : "";
+        if (currentSearch === "unassigned" && nowAssigned) {
+            dom.searchInput.value = "";
+        }
+
+        // Navigate pagination so the updated asset is displayed in the table
+        const currentFiltered = getFilteredItems();
+        const updatedIdx = currentFiltered.findIndex((it) => it.assetId === data.assetId);
+        if (updatedIdx >= 0) {
+            inventoryPage = Math.floor(updatedIdx / inventoryRowsPerPage) + 1;
+        }
+
+        window.recentlyUpdatedAssetId = data.assetId;
         renderApp();
+        updateSystemAlerts();
+
         if (typeof window.updatePersonnelStatCards === "function") {
             try { window.updatePersonnelStatCards(); } catch (e) {}
         }
@@ -5780,16 +6151,29 @@ async function handleSave(event) {
             showToast("Asset saved. Run the updated Supabase setup SQL before saving photos.");
             setDatabaseStatus("Property photo setup is incomplete.", setupMessage);
         } else {
-            showToast("Asset saved, but its photo changes could not be completed. Check the database status for details, then retry.");
-            setDatabaseStatus("Asset saved with photo errors.", error.message || "One or more image changes failed.");
+            showToast("Asset saved locally. Remote sync pending.");
+            setDatabaseStatus("Local fallback is active.", error.message || "One or more remote updates failed.");
         }
-        if (saveButton) saveButton.disabled = false;
-        return;
     }
 
     resetForm();
     if (saveButton) saveButton.disabled = false;
-    showSuccessModal(action === "update" ? "Asset record updated successfully!" : "Asset saved successfully!");
+
+    // Refresh and focus the Property List Inventory Records card to check updated status
+    refreshInventoryRecordsCard(data.assetId);
+
+    const successTitle = (wasUnassigned && nowAssigned) ? "Custodian Assigned" : (action === "update" ? "Asset Record Updated" : "Asset Saved");
+    let successMsg = "";
+    if (syncFailed) {
+        successMsg = (wasUnassigned && nowAssigned)
+            ? `Accountable custodian updated to "${nowAccountable}"! (Saved locally. To enable Supabase cloud sync, run fix-rls-permissions.sql in your Supabase SQL Editor).`
+            : `Asset record updated locally! (To enable Supabase cloud sync, run fix-rls-permissions.sql in your Supabase SQL Editor).`;
+    } else {
+        successMsg = (wasUnassigned && nowAssigned)
+            ? `Accountable custodian successfully updated to "${nowAccountable}"! The Property List: Inventory Records card has been refreshed.`
+            : (action === "update" ? "Asset record updated successfully! Inventory Records card refreshed." : "Asset saved successfully!");
+    }
+    showSuccessModal(successMsg, successTitle);
 }
 
 async function handleTableClick(event) {
@@ -6054,7 +6438,9 @@ function showModule(moduleName, targetId = "") {
         if (pModal) pModal.classList.add("hidden");
     }
 
-    const targetModuleView = (moduleName === "ics" || moduleName === "document-ics") ? "document" : moduleName;
+    const targetModuleView = (moduleName === "ics" || moduleName === "document-ics")
+        ? "document"
+        : (moduleName === "report" ? "reports" : moduleName);
 
     document.querySelector(".app-sidebar")?.classList.remove("mobile-open");
     document.getElementById("sidebarBackdrop")?.classList.add("hidden");
@@ -6067,7 +6453,9 @@ function showModule(moduleName, targetId = "") {
 
     // Synchronize Sidebar Nav Items
     document.querySelectorAll(".nav-item").forEach((item) => {
-        const isActive = item.dataset.view === moduleName || (targetModuleView === "document" && item.dataset.view === "ics");
+        const isActive = item.dataset.view === moduleName ||
+            item.dataset.view === targetModuleView ||
+            (targetModuleView === "document" && item.dataset.view === "ics");
         item.classList.toggle("active", isActive);
 
         const indicator = item.querySelector(".nav-indicator");
@@ -6136,7 +6524,7 @@ function showModule(moduleName, targetId = "") {
         loadRemoteQrDownloadHistory();
     }
 
-    if (moduleName === "reports") {
+    if (targetModuleView === "reports") {
         renderReports();
     }
 
@@ -6499,6 +6887,7 @@ function wireEvents() {
         notifBtn?.setAttribute("aria-expanded", "false");
         userBtn?.setAttribute("aria-expanded", "false");
     }
+    window.closeDropdowns = closeDropdowns;
 
     if (notifBtn && notifDropdown) {
         notifBtn.addEventListener("click", (e) => {
@@ -6507,6 +6896,9 @@ function wireEvents() {
             userBtn?.setAttribute("aria-expanded", "false");
             const isHidden = notifDropdown.classList.toggle("hidden");
             notifBtn.setAttribute("aria-expanded", String(!isHidden));
+            if (!isHidden && typeof updateSystemAlerts === "function") {
+                updateSystemAlerts();
+            }
         });
     }
 
