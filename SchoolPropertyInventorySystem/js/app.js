@@ -2803,7 +2803,9 @@ function renderStats() {
     dom.totalItems.textContent = items.length;
     renderIcsGeneratedCount();
     renderTotalRspiCount();
-    dom.repairItems.textContent = getRepairItemsCount();
+    if (dom.repairItems) {
+        dom.repairItems.textContent = getRepairItemsCount();
+    }
     if (dom.qrItems) {
         dom.qrItems.textContent = getQrDownloadCount();
     }

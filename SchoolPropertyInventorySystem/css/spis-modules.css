@@ -3640,6 +3640,13 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   --wc-accent-shadow: rgba(2, 132, 199, 0.3);
 }
 
+.witcher-card-personnel {
+  --wc-accent: #f29913;
+  --wc-magic-aura: rgba(242, 153, 19, 0.18);
+  --wc-corner-border: rgba(242, 153, 19, 0.45);
+  --wc-accent-shadow: rgba(242, 153, 19, 0.3);
+}
+
 .witcher-card-maintenance {
   --wc-accent: #f29913;
   --wc-magic-aura: rgba(242, 153, 19, 0.18);
