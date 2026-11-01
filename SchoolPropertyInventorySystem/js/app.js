@@ -2961,7 +2961,110 @@ function renderDashboard() {
     renderMiniDistributionChart(dom.dateIssueYearChart, dateIssueYearEntries);
     renderAccountableBarChart(accountableEntries);
     renderAccountablePersonCard(accountableEntries);
+    renderInventoryValueTrend();
     renderRecentAssets();
+}
+
+function renderInventoryValueTrend() {
+    const container = document.getElementById("inventoryValueTrendChart");
+    const totalEl = document.getElementById("inventoryValueTrendTotal");
+    if (!container) return;
+
+    const monthFilter = document.getElementById("inventoryValueTrendMonth");
+    const yearFilter = document.getElementById("inventoryValueTrendYear");
+    const monthlyValues = new Map();
+    items.forEach((item) => {
+        const dateValue = item.acquisitionDate || item.acquisition_date || "";
+        const date = new Date(dateValue);
+        if (!dateValue || Number.isNaN(date.getTime())) return;
+
+        const rawTotal = item.total;
+        const parsedTotal = rawTotal !== "" && rawTotal != null
+            ? Number(String(rawTotal).replace(/[^0-9.-]/g, ""))
+            : NaN;
+        const unitValue = Number(String(item.unitValue ?? item.unit_value ?? 0).replace(/[^0-9.-]/g, "")) || 0;
+        const quantity = Number(item.onHand ?? item.on_hand ?? item.balance ?? 1) || 1;
+        const value = Number.isFinite(parsedTotal) ? parsedTotal : unitValue * quantity;
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        monthlyValues.set(monthKey, (monthlyValues.get(monthKey) || 0) + value);
+    });
+
+    const allPoints = Array.from(monthlyValues, ([key, value]) => ({
+        key,
+        value,
+        date: new Date(`${key}-01T00:00:00`)
+    })).sort((a, b) => a.date - b.date);
+    if (yearFilter) {
+        const selectedYear = yearFilter.value;
+        const years = Array.from(new Set(allPoints.map((point) => String(point.date.getFullYear())))).sort();
+        yearFilter.innerHTML = '<option value="all">All years</option>' + years.map((year) => `<option value="${year}">${year}</option>`).join("");
+        yearFilter.value = years.includes(selectedYear) ? selectedYear : "all";
+        yearFilter.onchange = renderInventoryValueTrend;
+    }
+    if (monthFilter) monthFilter.onchange = renderInventoryValueTrend;
+
+    const selectedMonth = monthFilter ? monthFilter.value : "all";
+    const selectedYear = yearFilter ? yearFilter.value : "all";
+    const points = allPoints.filter((point) => {
+        const month = String(point.date.getMonth() + 1).padStart(2, "0");
+        return (selectedMonth === "all" || month === selectedMonth)
+            && (selectedYear === "all" || String(point.date.getFullYear()) === selectedYear);
+    });
+    const totalValue = points.reduce((sum, point) => sum + point.value, 0);
+    if (totalEl) totalEl.textContent = `₱${totalValue.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    if (!points.length) {
+        container.innerHTML = '<p class="text-sm text-slate-400 text-center py-16">No inventory records match the selected month and year.</p>';
+        return;
+    }
+
+    const width = Math.max(820, points.length * 58);
+    const height = 300;
+    const left = 76;
+    const right = width - 24;
+    const top = 20;
+    const bottom = 242;
+    const maxValue = Math.max(...points.map((point) => point.value), 1);
+    const chartPoints = points.map((point, index) => ({
+        ...point,
+        x: left + (index / Math.max(points.length - 1, 1)) * (right - left),
+        y: bottom - (point.value / maxValue) * (bottom - top)
+    }));
+    const smoothPath = chartPoints.map((point, index) => {
+        if (index === 0) return `M ${point.x} ${point.y}`;
+        const previous = chartPoints[index - 1];
+        const beforePrevious = chartPoints[index - 2] || previous;
+        const next = chartPoints[index + 1] || point;
+        const c1x = previous.x + (point.x - beforePrevious.x) / 6;
+        const c1y = previous.y + (point.y - beforePrevious.y) / 6;
+        const c2x = point.x - (next.x - previous.x) / 6;
+        const c2y = point.y - (next.y - previous.y) / 6;
+        return `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${point.x} ${point.y}`;
+    }).join(" ");
+    const areaPath = `${smoothPath} L ${right} ${bottom} L ${left} ${bottom} Z`;
+    const tickValues = [1, 0.75, 0.5, 0.25, 0];
+    const yAxis = tickValues.map((fraction) => {
+        const y = bottom - fraction * (bottom - top);
+        const value = maxValue * fraction;
+        const label = value >= 1000000 ? `₱${(value / 1000000).toFixed(1)}M` : value >= 1000 ? `₱${(value / 1000).toFixed(0)}K` : `₱${Math.round(value)}`;
+        return `<g><line x1="${left}" y1="${y}" x2="${right}" y2="${y}" stroke="#e8eef4" stroke-width="1"/><text x="${left - 10}" y="${y + 4}" text-anchor="end" fill="#334155" font-size="11" font-weight="600">${label}</text></g>`;
+    }).join("");
+    const labelStride = Math.max(1, Math.ceil(points.length / 12));
+    const xAxis = chartPoints.map((point, index) => {
+        if (index % labelStride !== 0 && index !== chartPoints.length - 1) return "";
+        const label = point.date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+        return `<text x="${point.x}" y="${bottom + 25}" text-anchor="middle" fill="#334155" font-size="11" font-weight="600">${escapeHtml(label)}</text>`;
+    }).join("");
+
+    container.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" class="block max-w-none" role="img" aria-label="Total inventory value by acquisition month">
+            <defs><linearGradient id="inventoryValueTrendFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#0284c7" stop-opacity="0.28"/><stop offset="100%" stop-color="#0284c7" stop-opacity="0.02"/></linearGradient></defs>
+            ${yAxis}
+            <path d="${areaPath}" fill="url(#inventoryValueTrendFill)"/>
+            <path d="${smoothPath}" fill="none" stroke="#0284c7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            ${chartPoints.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="3.5" fill="#0284c7" stroke="#fff" stroke-width="2"><title>${escapeHtml(point.date.toLocaleDateString("en-US", { month: "long", year: "numeric" }))}: ₱${point.value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</title></circle>`).join("")}
+            ${xAxis}
+        </svg>`;
 }
 
 function renderAcquisitionYearCard(entries) {
@@ -5117,6 +5220,99 @@ async function refreshInventoryCardManual() {
 }
 window.refreshInventoryCardManual = refreshInventoryCardManual;
 
+function getIgnoredSystemAlertIds() {
+    try {
+        const stored = JSON.parse(localStorage.getItem("ignoredSystemAlertIds") || "[]");
+        return new Set(Array.isArray(stored) ? stored : []);
+    } catch (_) {
+        return new Set();
+    }
+}
+
+function ensureSystemAlertsModal() {
+    let modal = document.getElementById("systemAlertsModal");
+    if (modal) return modal;
+
+    modal = document.createElement("div");
+    modal.id = "systemAlertsModal";
+    modal.className = "hidden fixed inset-0 z-[100] bg-slate-950/50 backdrop-blur-sm p-4 sm:p-6 flex items-center justify-center";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "systemAlertsModalTitle");
+    modal.innerHTML = `
+        <div class="w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200">
+            <div class="flex items-start justify-between gap-4 px-5 py-4 sm:px-6 border-b border-slate-100 bg-slate-50/80">
+                <div>
+                    <h2 id="systemAlertsModalTitle" class="text-lg font-extrabold text-[#00335e]">All System Alerts</h2>
+                    <p class="mt-1 text-xs text-slate-500">Review each alert or check Ignore to hide it from the notification list.</p>
+                </div>
+                <button type="button" data-close-system-alerts class="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-200/70 hover:text-slate-800" aria-label="Close alerts">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+            <div id="systemAlertsModalList" class="overflow-y-auto p-4 sm:p-5 space-y-2"></div>
+            <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/70 text-right">
+                <button type="button" data-close-system-alerts class="rounded-lg bg-[#00335e] px-4 py-2 text-xs font-bold text-white hover:bg-[#004c87]">Done</button>
+            </div>
+        </div>`;
+    modal.addEventListener("click", (event) => {
+        if (event.target === modal || event.target.closest("[data-close-system-alerts]")) closeSystemAlertsModal();
+    });
+    modal.addEventListener("change", (event) => {
+        const checkbox = event.target.closest("[data-ignore-system-alert]");
+        if (!checkbox) return;
+        const ignored = getIgnoredSystemAlertIds();
+        if (checkbox.checked) ignored.add(checkbox.dataset.ignoreSystemAlert);
+        else ignored.delete(checkbox.dataset.ignoreSystemAlert);
+        localStorage.setItem("ignoredSystemAlertIds", JSON.stringify(Array.from(ignored)));
+        updateSystemAlerts();
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeSystemAlertsModal();
+    });
+    document.body.appendChild(modal);
+    return modal;
+}
+
+function renderSystemAlertsModal(alerts, ignoredIds) {
+    const modal = ensureSystemAlertsModal();
+    const list = modal.querySelector("#systemAlertsModalList");
+    if (!list) return;
+    list.innerHTML = alerts.length ? alerts.map((alert) => `
+        <article class="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3.5 sm:p-4 hover:border-slate-300 transition">
+            <span class="mt-0.5 shrink-0 rounded-lg p-2 ${alert.iconBg}">${alert.icon}</span>
+            <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="text-sm font-bold text-slate-800">${escapeHtml(alert.title)}</h3>
+                    ${alert.badge ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${alert.badgeClass}">${escapeHtml(alert.badge)}</span>` : ""}
+                </div>
+                <p class="mt-1 text-xs leading-relaxed text-slate-500">${escapeHtml(alert.desc)}</p>
+            </div>
+            <label class="flex shrink-0 items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer">
+                <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-[#004c87] focus:ring-[#004c87]" data-ignore-system-alert="${escapeHtml(alert.id)}" ${ignoredIds.has(alert.id) ? "checked" : ""}>
+                <span>Ignore</span>
+            </label>
+        </article>`).join("") : '<p class="py-12 text-center text-sm text-slate-500">There are no current system alerts.</p>';
+    if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
+}
+
+function openSystemAlertsModal() {
+    updateSystemAlerts();
+    const modal = ensureSystemAlertsModal();
+    modal.classList.remove("hidden");
+    document.body.classList.add("overflow-hidden");
+    modal.querySelector("[data-close-system-alerts]")?.focus();
+}
+
+function closeSystemAlertsModal() {
+    const modal = document.getElementById("systemAlertsModal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    document.body.classList.remove("overflow-hidden");
+}
+window.openSystemAlertsModal = openSystemAlertsModal;
+window.closeSystemAlertsModal = closeSystemAlertsModal;
+
 function updateSystemAlerts() {
     const notifBtn = document.getElementById("notifBellBtn");
     const notifDropdown = document.getElementById("notifDropdown");
@@ -5253,7 +5449,19 @@ function updateSystemAlerts() {
         onClick: "showModule('document', 'savedDocumentsPanel'); if(window.closeDropdowns) window.closeDropdowns();"
     });
 
-    const actionableCount = stolenItems.length + unserviceableItems.length + repairItems.length + unassignedItems.length + missingNumberItems.length;
+    const ignoredAlertIds = getIgnoredSystemAlertIds();
+    const actionableCountsByAlert = {
+        stolen: stolenItems.length,
+        unserviceable: unserviceableItems.length,
+        repair: repairItems.length,
+        unassigned: unassignedItems.length,
+        missingNo: missingNumberItems.length
+    };
+    const activeAlerts = alerts.filter((alert) => !ignoredAlertIds.has(alert.id));
+    const actionableCount = Object.entries(actionableCountsByAlert).reduce((sum, [id, count]) => {
+        return sum + (ignoredAlertIds.has(id) ? 0 : count);
+    }, 0);
+    renderSystemAlertsModal(alerts, ignoredAlertIds);
 
     // Update badge
     if (notifBadge) {
@@ -5282,10 +5490,10 @@ function updateSystemAlerts() {
                     ${actionableCount > 0 ? `${actionableCount} Action Needed` : 'All Verified'}
                 </span>
             </div>
-            <button type="button" onclick="showModule('inventory', 'propertyListPanel'); if(window.closeDropdowns) window.closeDropdowns();" class="text-[10px] font-semibold text-[#004c87] hover:underline cursor-pointer">View Property List</button>
+            <button type="button" onclick="openSystemAlertsModal(); if(window.closeDropdowns) window.closeDropdowns();" class="text-[10px] font-semibold text-[#004c87] hover:underline cursor-pointer">View all</button>
         </div>
         <div class="divide-y divide-slate-100 max-h-72 overflow-y-auto">
-            ${alerts.map(a => `
+            ${activeAlerts.map(a => `
                 <div class="p-3 hover:bg-slate-50 transition cursor-pointer text-xs flex items-start gap-2.5 group" onclick="${a.onClick}">
                     <div class="shrink-0 p-1.5 rounded-lg ${a.iconBg} mt-0.5">
                         ${a.icon}
@@ -5301,7 +5509,7 @@ function updateSystemAlerts() {
             `).join('')}
         </div>
         <div class="p-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Click any alert to jump to its card</span>
+            <span>${activeAlerts.length ? "Click an alert to open the related view" : "All alerts are ignored"}</span>
             <button type="button" onclick="updateSystemAlerts(); showToast('Alerts refreshed');" class="text-[11px] font-semibold text-[#004c87] hover:underline flex items-center gap-1 cursor-pointer">
                 Refresh
             </button>

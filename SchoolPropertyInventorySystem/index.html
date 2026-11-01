@@ -574,23 +574,12 @@
               <!-- CARD 1: PROPERTY BY CATEGORY -->
               <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow flex flex-col justify-between">
                 <div>
-                  <!-- Header with Dropdown -->
-                  <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                  <div class="flex items-center justify-start mb-4 flex-wrap gap-2">
                     <div class="flex items-center space-x-2">
                       <span class="w-1.5 h-4 bg-[#004c87] rounded-full"></span>
                       <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">
                         PROPERTY BY CATEGORY
                       </h2>
-                    </div>
-                    <div class="relative shrink-0">
-                      <select id="propertyCategoryFilter" class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-3 pr-8 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
-                        <option value="all">All Items</option>
-                        <option value="buildings">Buildings</option>
-                        <option value="inventory">Inventory</option>
-                      </select>
-                      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-                        <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
-                      </div>
                     </div>
                   </div>
 
@@ -675,23 +664,12 @@
               <!-- CARD 2: MAINTENANCE REQUESTS -->
               <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow flex flex-col justify-between">
                 <div>
-                  <!-- Header with View All and Filter -->
                   <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center space-x-2">
                       <span class="w-1.5 h-4 bg-[#f29913] rounded-full"></span>
                       <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">
                         MAINTENANCE REQUESTS
                       </h2>
-                    </div>
-                    <div class="relative">
-                      <select id="maintenanceRequestsFilter" class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-3 pr-8 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
-                        <option value="all">All Items</option>
-                        <option value="buildings">Buildings</option>
-                        <option value="inventory">Inventory</option>
-                      </select>
-                      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-                        <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
-                      </div>
                     </div>
                   </div>
 
@@ -717,17 +695,10 @@
             <div class="bg-white rounded-xl p-5 border border-slate-200/80 card-shadow flex flex-col flex-1 justify-between">
 
               <!-- Header -->
-              <div class="flex items-center justify-between mb-5">
+              <div class="flex items-center justify-start mb-5">
                 <div class="flex items-center space-x-2">
                   <span class="w-1.5 h-4 bg-[#004c87] rounded-full"></span>
                   <h2 class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">ACCOUNTABLE PERSON</h2>
-                </div>
-                <div class="relative">
-                  <select id="accountablePersonFilter" class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-4 pr-9 py-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
-                    <option value="all">All Items</option>
-                    <option value="buildings">Buildings</option>
-                    <option value="inventory">Inventory</option>
-                  </select>
                 </div>
               </div>
 
@@ -791,15 +762,15 @@
                   <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-[#449e38] group-hover:translate-x-0.5 transition"></i>
                 </a>
 
-                <!-- Action 3: Report Maintenance -->
-                <a href="#" onclick="event.preventDefault();showModule('inventory')" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 hover:border-[#f29913] hover:bg-slate-50 transition group">
+                <!-- Action 3: Add Personnel -->
+                <a href="#" onclick="event.preventDefault();showModule('personnel')" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 hover:border-[#f29913] hover:bg-slate-50 transition group">
                   <div class="flex items-center space-x-3">
                     <div class="w-9 h-9 rounded-lg bg-[#f29913] text-white flex items-center justify-center shrink-0">
-                      <i data-lucide="wrench" class="w-5 h-5"></i>
+                      <i data-lucide="user-round-plus" class="w-5 h-5"></i>
                     </div>
                     <div>
-                      <p class="text-xs font-extrabold text-slate-800 group-hover:text-[#f29913] transition">Report Maintenance</p>
-                      <p class="text-[10px] text-slate-500 font-medium">Create a maintenance request</p>
+                      <p class="text-xs font-extrabold text-slate-800 group-hover:text-[#f29913] transition">Add Personnel</p>
+                      <p class="text-[10px] text-slate-500 font-medium">Open the Personnel module</p>
                     </div>
                   </div>
                   <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:text-[#f29913] group-hover:translate-x-0.5 transition"></i>
@@ -846,14 +817,14 @@
 
               <!-- SUB-CARD 1: SCHOOL LEVEL -->
               <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2.5">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                   <div class="flex items-center space-x-2">
                     <div class="w-6 h-6 rounded-md bg-[#004c87]/10 text-[#004c87] flex items-center justify-center">
                       <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
                     </div>
                     <span class="text-sm font-bold text-slate-800">School Level</span>
                   </div>
-                  <span id="schoolLevelTotal" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">0 items</span>
+                  <span id="schoolLevelTotal" class="shrink-0 whitespace-nowrap text-[11px] font-bold text-slate-400 uppercase tracking-wider">0 items</span>
                 </div>
                 <div id="schoolLevelContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <div class="bg-white border border-[#bfdbfe] rounded-lg p-2 text-center shadow-2xs">
@@ -884,13 +855,6 @@
                     </div>
                     <span class="text-xs font-bold text-slate-800">Acquisition Year</span>
                   </div>
-                  <div class="relative">
-                    <select id="acquisitionYearFilter" class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-3 pr-8 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
-                      <option value="all">All Items</option>
-                      <option value="buildings">Buildings</option>
-                      <option value="inventory">Inventory</option>
-                    </select>
-                  </div>
                 </div>
                 <div id="acquisitionYearContainer" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                   <p class="text-xs text-slate-400 py-2 text-center">Loading acquisition years...</p>
@@ -907,19 +871,12 @@
 
               <!-- SUB-CARD 3: ISSUANCE YEAR -->
               <div class="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2.5 flex flex-col">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-start">
                   <div class="flex items-center space-x-2">
                     <div class="w-6 h-6 rounded-md bg-[#449e38]/10 text-[#449e38] flex items-center justify-center">
                       <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>
                     </div>
                     <span class="text-xs font-bold text-slate-800">Issuance Year</span>
-                  </div>
-                  <div class="relative">
-                    <select id="issuanceYearFilter" class="appearance-none text-xs font-bold text-slate-700 bg-white hover:bg-slate-50/80 border border-slate-300 hover:border-slate-400 rounded-lg pl-3 pr-8 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#004c87]/20 focus:border-[#004c87] transition shadow-xs">
-                      <option value="all">All Items</option>
-                      <option value="buildings">Buildings</option>
-                      <option value="inventory">Inventory</option>
-                    </select>
                   </div>
                 </div>
                 <div id="issuanceYearContainer" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
@@ -940,6 +897,39 @@
           </div>
 
         </div>
+
+        <!-- MONTHLY INVENTORY VALUE TREND -->
+        <section class="mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 card-shadow full-width-card" aria-labelledby="inventoryValueTrendTitle">
+          <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-5 border-b border-slate-100 pb-5 mb-5">
+            <div class="flex items-start gap-3">
+              <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0284c7]/10 text-[#0284c7]">
+                <i data-lucide="chart-no-axes-combined" class="h-5 w-5"></i>
+              </span>
+              <div>
+                <h2 id="inventoryValueTrendTitle" class="text-base font-extrabold tracking-tight text-[#00335e]">Total School Assets</h2>
+                <p class="text-xs text-slate-500 mt-1">Monthly asset value based on acquisition date</p>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-end justify-start xl:justify-end gap-3 ml-auto">
+              <label class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Month
+                <select id="inventoryValueTrendMonth" class="block mt-1.5 min-w-32 normal-case tracking-normal text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20 focus:border-[#0284c7]">
+                  <option value="all">All months</option>
+                  <option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                </select>
+              </label>
+              <label class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Year
+                <select id="inventoryValueTrendYear" class="block mt-1.5 min-w-28 normal-case tracking-normal text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2.5 shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20 focus:border-[#0284c7]">
+                  <option value="all">All years</option>
+                </select>
+              </label>
+              <div class="min-w-36 rounded-xl bg-[#0284c7]/[0.06] border border-[#0284c7]/15 px-3.5 py-2">
+                <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Amount</span>
+                <span id="inventoryValueTrendTotal" class="block mt-0.5 text-base font-extrabold tabular-nums text-[#0284c7]">₱0.00</span>
+              </div>
+            </div>
+          </div>
+          <div id="inventoryValueTrendChart" class="w-full min-h-[280px] overflow-x-auto rounded-xl border border-slate-100 bg-slate-50/70 p-3 sm:p-4" role="img" aria-label="Monthly total inventory value trend"></div>
+        </section>
 
         <!-- MISSION & VALUES CARD -->
         <div class="mt-6 sm:mt-8 bg-[#ebf5fc] border border-[#d2e6f5] rounded-2xl px-6 py-3.5 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 w-full relative overflow-hidden card-shadow full-width-card">
