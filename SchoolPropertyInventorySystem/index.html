@@ -6337,8 +6337,10 @@
       var button = document.getElementById("googleLoginButton");
       var errorEl = document.getElementById("googleLoginError");
       var config = window.SUPABASE_CONFIG || {};
-      var authClient = window.supabase && typeof window.supabase.createClient === "function"
-        ? window.supabase.createClient(config.url, config.anonKey, { auth: { flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
+      var authUrl = config.url || window.supabaseUrl || "https://ouqgkytallctnptshefo.supabase.co";
+      var authAnonKey = config.anonKey || window.supabaseAnonKey || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+      var authClient = window.supabase && typeof window.supabase.createClient === "function" && authUrl && authAnonKey
+        ? window.supabase.createClient(authUrl, authAnonKey, { auth: { flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
         : null;
 
       window.SUPABASE_AUTH_CLIENT = authClient;
@@ -6356,7 +6358,7 @@
         if (window.supabaseHeaders) {
           window.supabaseHeaders.Authorization = session && session.access_token
             ? "Bearer " + session.access_token
-            : "Bearer " + (config.anonKey || window.supabaseAnonKey || "");
+            : "Bearer " + authAnonKey;
         }
         var user = session && session.user ? session.user : {};
         var displayName = user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name) || (user.email ? user.email.split("@")[0] : "Google User");

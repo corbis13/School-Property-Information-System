@@ -58,8 +58,12 @@ Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The scr
 The app now shows a Google-only sign-in screen. To enable OAuth:
 
 1. In Supabase Authentication settings, enable the Google provider and enter the Google OAuth client ID and secret.
-2. Add the app's current URL to Supabase's redirect URL allow list. The app uses the current page as the OAuth return URL, so allow both local and deployed URLs that users open.
-3. Configure the matching Supabase callback URL in the Google OAuth client.
+2. In Supabase Authentication → URL Configuration, set the Site URL to `https://corbis13.github.io/School-Property-Information-System/` and add these Redirect URLs:
+   - `http://localhost:3000/SchoolPropertyInventorySystem/**`
+   - `https://corbis13.github.io/School-Property-Information-System/SchoolPropertyInventorySystem/**`
+3. In the Google OAuth client, add this Authorized redirect URI (shown in Supabase's Google provider settings): `https://ouqgkytallctnptshefo.supabase.co/auth/v1/callback`.
+
+For GitHub Pages, publish the repository's `main` branch from the repository root in **Settings → Pages**. The root `index.html` forwards visitors to `SchoolPropertyInventorySystem/`. The app uses its public Supabase URL and publishable key as browser fallbacks, so it does not depend on the local Express server's generated, git-ignored `supabase-config.js` file. After pushing changes, wait for the Pages deployment to finish and reload the deployed URL.
 
 The Google client secret belongs in Supabase's dashboard; do not add it to this repository.
 
