@@ -1011,10 +1011,16 @@
                     <input type="hidden" id="editingId">
 
                     <div class="two-column">
+                        <input id="assetId" type="hidden">
                         <label>
-                            AssetID
-                            <input id="assetId" type="text" placeholder="e.g. AST-2026-001" readonly>
+                            Property Classification
+                            <select id="propertyClassification" required>
+                                <option value="">Select property classification</option>
+                                <option value="SEP">Semi-Expendable Property</option>
+                                <option value="PPE">Property Plant and Equipment</option>
+                            </select>
                         </label>
+                        <input id="propertyValue" type="hidden">
                         <label>
                             Education Level
                             <select id="educationLevel">
@@ -1025,21 +1031,25 @@
 
                     <div class="two-column">
                         <label>
-                            Fund Cluster
-                            <input id="fundCluster" type="text" placeholder="e.g. 01 Regular Agency Fund">
-                        </label>
-                        <label>
-                            Article
+                            Inventory Type
                             <select id="inventoryType">
                                 <option value="">Select item type</option>
                             </select>
+                        </label>
+                        <label>
+                            Fund Cluster
+                            <input id="fundCluster" type="text" placeholder="e.g. 01 Regular Agency Fund">
                         </label>
                     </div>
 
                     <div class="two-column">
                         <label>
-                            Property No.
-                            <input id="propertyNo" type="text" placeholder="e.g. PROP-2026-001" required>
+                            <span id="propertyNumberPlaceholderLabel">(<em>Select Property Classification to open</em>)</span>
+                            <input id="propertyNumberPlaceholder" type="text" placeholder="Select Property Classification" disabled>
+                            <span id="propertyNoLabel">Property No.</span>
+                            <input id="propertyNo" type="text" placeholder="e.g. PROP-2026-001" hidden>
+                            <span id="semiExpandableNoLabel" hidden>Semi-Expandable No.</span>
+                            <input id="semiExpandableNo" type="text" hidden>
                         </label>
                         <label>
                             Description
@@ -1083,56 +1093,49 @@
                             <input id="schoolLevel" type="text" placeholder="Auto-populates from selected teacher" readonly>
                         </label>
                         <label>
-                            Semi-Expandable No.
-                            <input id="semiExpandableNo" type="text">
+                            Acquisition Date
+                            <input id="acquisitionDate" type="date">
                         </label>
                     </div>
 
                     <div class="two-column">
-                        <label>
-                            Acquisition Date
-                            <input id="acquisitionDate" type="date">
-                        </label>
                         <label>
                             Unit Value
                             <input id="unitValue" type="number" min="0" step="0.01">
                         </label>
-                    </div>
-
-                    <div class="two-column">
                         <label>
                             Unit Measurement
                             <input id="unitMeasurement" type="text" placeholder="e.g. pcs">
                         </label>
+                    </div>
+
+                    <div class="two-column">
                         <label>
                             On Hand
                             <input id="onHand" type="number" min="0" step="0.01">
                         </label>
-                    </div>
-
-                    <div class="two-column">
                         <label>
                             Total
                             <input id="total" type="text" placeholder="0.00" readonly>
                         </label>
+                    </div>
+
+                    <div class="two-column">
                         <label>
                             Balance
                             <input id="balance" type="number" min="0" step="0.01">
                         </label>
-                    </div>
-
-                    <div class="two-column">
                         <label>
                             Shortage/Overage Quantity
                             <input id="shortageOverageQty" type="number" step="0.01">
                         </label>
+                    </div>
+
+                    <div class="two-column">
                         <label>
                             Shortage/Overage Value
                             <input id="shortageOverageValue" type="number" step="0.01">
                         </label>
-                    </div>
-
-                    <div class="two-column">
                         <label>
                             MOOE Month
                             <select id="mooeMonth">
@@ -1155,12 +1158,11 @@
                             MOOE Year
                             <input id="mooeYear" type="number" min="1900" max="2200" step="1">
                         </label>
+                        <label>
+                            Location
+                            <input id="location" type="text">
+                        </label>
                     </div>
-
-                    <label class="full-width">
-                        Location
-                        <input id="location" type="text">
-                    </label>
 
                     <div class="two-column">
                         <label>
@@ -6311,7 +6313,16 @@
     }
   </script>
   <script src="supabase-config.js?v=20260904"></script>
-  <script src="js/app.js?v=20261013_pdf_margin_v4"></script>
+  <div id="propertyClassificationWarningModal" class="property-warning-modal" hidden aria-hidden="true" role="alertdialog" aria-modal="true" aria-labelledby="propertyWarningTitle" aria-describedby="propertyWarningMessage">
+    <div class="property-warning-modal__card">
+      <div class="property-warning-modal__icon" aria-hidden="true">!</div>
+      <h2 id="propertyWarningTitle">Property Classification Notice</h2>
+      <p id="propertyWarningMessage"></p>
+      <button type="button" id="propertyWarningCloseBtn" class="property-warning-modal__button">OK</button>
+    </div>
+  </div>
+
+  <script src="js/app.js?v=20261101_property_warning_modal_v1"></script>
   <script>
     if (typeof lucide !== "undefined") { lucide.createIcons(); }
   </script>

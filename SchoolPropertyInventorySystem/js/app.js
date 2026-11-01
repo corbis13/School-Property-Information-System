@@ -64,6 +64,11 @@ const dom = {
     editingId: document.querySelector("#editingId"),
     educationLevel: document.querySelector("#educationLevel"),
     assetId: document.querySelector("#assetId"),
+    propertyClassification: document.querySelector("#propertyClassification"),
+    propertyValue: document.querySelector("#propertyValue"),
+    propertyClassificationWarningModal: document.querySelector("#propertyClassificationWarningModal"),
+    propertyWarningMessage: document.querySelector("#propertyWarningMessage"),
+    propertyWarningCloseBtn: document.querySelector("#propertyWarningCloseBtn"),
     fundCluster: document.querySelector("#fundCluster"),
     inventoryType: document.querySelector("#inventoryType"),
     propertyNo: document.querySelector("#propertyNo"),
@@ -1809,6 +1814,8 @@ async function loadItems() {
             id: row.id,
             dbId: row.id,
             assetId: row.asset_id || row.assetId || "",
+            propertyClassification: row.property_classification || row.propertyClassification || "",
+            propertyValue: row.property_value || row.propertyValue || "",
             educationLevel: row.education_level || row.educationLevel || "",
             fundCluster: row.fund_cluster || row.fundCluster || "",
             inventoryType: row.inventory_type || row.inventoryType || "",
@@ -1912,6 +1919,8 @@ async function syncToSheet(action, item) {
 
     const payload = {
         asset_id: item.assetId,
+        property_classification: item.propertyClassification || "",
+        property_value: item.propertyValue || "",
         education_level: item.educationLevel || "",
         fund_cluster: item.fundCluster,
         inventory_type: item.inventoryType || "",
@@ -2424,22 +2433,25 @@ async function removePropertyImagesForAsset(assetId) {
 }
 
 function getFormData() {
+    updatePropertyValueClassification();
     const now = new Date().toISOString();
     const existing = items.find((item) => item.assetId === dom.editingId.value);
 
     return {
         assetId: normalizeAssetId(dom.editingId.value || dom.assetId.value.trim() || createId()),
+        propertyClassification: dom.propertyClassification.value,
+        propertyValue: dom.propertyValue.value,
         educationLevel: dom.educationLevel.value.trim(),
         fundCluster: dom.fundCluster.value.trim(),
         inventoryType: dom.inventoryType.value.trim(),
-        propertyNo: dom.propertyNo.value.trim(),
+        propertyNo: dom.propertyClassification.value === "PPE" ? dom.propertyNo.value.trim() : "",
         itemClassification: dom.itemClassification.value.trim(),
         itemBrandModel: dom.itemBrandModel.value.trim(),
         serialNo: dom.serialNo.value.trim(),
         acquisitionDate: dom.acquisitionDate.value,
         accountable: dom.accountable.value.trim(),
         schoolLevel: dom.schoolLevel.value.trim(),
-        semiExpandableNo: dom.semiExpandableNo.value.trim(),
+        semiExpandableNo: dom.propertyClassification.value === "SEP" ? dom.semiExpandableNo.value.trim() : "",
         unitValue: dom.unitValue.value.trim(),
         total: dom.total.value.trim(),
         unitMeasurement: dom.unitMeasurement.value.trim(),
@@ -2536,6 +2548,10 @@ function fillForm(item) {
     clearPropertyImageDraft();
     dom.editingId.value = item.assetId;
     dom.assetId.value = item.assetId;
+    dom.propertyClassification.value = item.propertyClassification || "";
+    updatePropertyNumberFieldVisibility();
+    dom.propertyValue.value = item.propertyValue || "";
+    updatePropertyValueClassification();
     ensureSelectOption(dom.educationLevel, item.educationLevel);
     dom.educationLevel.value = item.educationLevel || "";
     dom.fundCluster.value = item.fundCluster;
@@ -2553,6 +2569,7 @@ function fillForm(item) {
     applySelectedTeacherDetails();
     dom.semiExpandableNo.value = item.semiExpandableNo || "";
     dom.unitValue.value = item.unitValue ?? "";
+    updatePropertyValueClassification();
     dom.unitMeasurement.value = item.unitMeasurement || "";
     dom.balance.value = item.balance ?? "";
     dom.onHand.value = item.onHand ?? "";
@@ -2581,10 +2598,67 @@ function applySelectedTeacherDetails() {
     dom.schoolLevel.value = (matchedTeacher && matchedTeacher.schoolLevel) || "";
 }
 
+function updatePropertyNumberFieldVisibility() {
+    const classification = dom.propertyClassification.value;
+    const isSep = classification === "SEP";
+    const isPpe = classification === "PPE";
+    document.getElementById("propertyNumberPlaceholderLabel").hidden = isSep || isPpe;
+    document.getElementById("propertyNumberPlaceholder").hidden = isSep || isPpe;
+    document.getElementById("semiExpandableNoLabel").hidden = !isSep;
+    document.getElementById("propertyNoLabel").hidden = !isPpe;
+    dom.semiExpandableNo.hidden = !isSep;
+    dom.propertyNo.hidden = !isPpe;
+    dom.semiExpandableNo.required = isSep;
+    dom.propertyNo.required = isPpe;
+}
+
+function updatePropertyValueClassification() {
+    const rawValue = dom.unitValue.value.trim();
+    const unitValue = rawValue === "" ? NaN : Number(rawValue);
+    if (!Number.isFinite(unitValue) || unitValue < 0) {
+        dom.propertyValue.value = "";
+        return;
+    }
+    if (unitValue <= 5000) {
+        dom.propertyValue.value = "Low-Value SE";
+    } else if (unitValue < 50000) {
+        dom.propertyValue.value = "High-Value SE";
+    } else {
+        dom.propertyValue.value = "PPE";
+    }
+}
+
+function notifyPropertyClassificationMismatch() {
+    updatePropertyValueClassification();
+    const propertyValue = dom.propertyValue.value;
+    const selectedClassification = dom.propertyClassification.value;
+    if (!propertyValue || !selectedClassification) return;
+
+    if (propertyValue === "PPE" && selectedClassification === "SEP") {
+        openPropertyClassificationWarning("₱50,000.00 is the PPE threshold. High-Value SE must be below ₱50,000.00 (up to ₱49,999.99). Please change the Property Classification to Property Plant and Equipment (PPE).");
+    } else if (propertyValue !== "PPE" && selectedClassification === "PPE") {
+        openPropertyClassificationWarning("Unit values below ₱50,000.00 should use Semi-Expendable Property. Please change the Property Classification to SEP.");
+    }
+}
+
+function openPropertyClassificationWarning(message) {
+    dom.propertyWarningMessage.textContent = message;
+    dom.propertyClassificationWarningModal.hidden = false;
+    dom.propertyClassificationWarningModal.setAttribute("aria-hidden", "false");
+    dom.propertyWarningCloseBtn.focus();
+}
+
+function closePropertyClassificationWarning() {
+    dom.propertyClassificationWarningModal.hidden = true;
+    dom.propertyClassificationWarningModal.setAttribute("aria-hidden", "true");
+    dom.propertyClassification.focus();
+}
+
 function resetForm() {
     dom.form.reset();
     clearPropertyImageDraft();
     updateSupplierFieldVisibility();
+    updatePropertyNumberFieldVisibility();
     dom.editingId.value = "";
     dom.assetId.value = createId();
     dom.position.value = "";
@@ -6927,6 +7001,17 @@ function wireEvents() {
     dom.propertyImagesInput?.addEventListener("change", handlePropertyImageSelection);
     dom.propertyImagesPreview?.addEventListener("click", handlePropertyImagePreviewClick);
     dom.inventoryType.addEventListener("change", updateSupplierFieldVisibility);
+    dom.propertyClassification.addEventListener("change", updatePropertyNumberFieldVisibility);
+    dom.propertyClassification.addEventListener("change", notifyPropertyClassificationMismatch);
+    dom.propertyWarningCloseBtn.addEventListener("click", closePropertyClassificationWarning);
+    dom.propertyClassificationWarningModal.addEventListener("click", (event) => {
+        if (event.target === dom.propertyClassificationWarningModal) closePropertyClassificationWarning();
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !dom.propertyClassificationWarningModal.hidden) {
+            closePropertyClassificationWarning();
+        }
+    });
     dom.table.addEventListener("click", handleTableClick);
     dom.pagination.addEventListener("click", (event) => {
         const button = event.target.closest("[data-page]");
@@ -6950,8 +7035,15 @@ function wireEvents() {
     });
     dom.resetFormBtn.addEventListener("click", resetForm);
     dom.accountable.addEventListener("change", applySelectedTeacherDetails);
-    dom.unitValue.addEventListener("input", updateTotal);
-    dom.unitValue.addEventListener("change", updateTotal);
+    dom.unitValue.addEventListener("input", () => {
+        updateTotal();
+        updatePropertyValueClassification();
+    });
+    dom.unitValue.addEventListener("change", () => {
+        updateTotal();
+        updatePropertyValueClassification();
+        notifyPropertyClassificationMismatch();
+    });
     dom.onHand.addEventListener("input", updateTotal);
     dom.onHand.addEventListener("change", updateTotal);
     dom.addClassificationBtn.addEventListener("click", () => {
