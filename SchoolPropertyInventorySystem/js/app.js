@@ -406,17 +406,23 @@ async function loadSignatoryOptions() {
     signatoryLoadFailed = false;
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/signatories?select=signatory,position&order=signatory.asc`, {
+        let response = await fetch(`${supabaseUrl}/rest/v1/signatories?select=signatory,position,assumption_date&order=signatory.asc`, {
             headers: supabaseHeaders
         });
 
+        if (!response.ok) {
+            response = await fetch(`${supabaseUrl}/rest/v1/signatories?select=signatory,position&order=signatory.asc`, {
+                headers: supabaseHeaders
+            });
+        }
         if (!response.ok) throw new Error("Unable to load signatory options from Supabase.");
 
         const rows = await response.json();
         managedSignatories = (rows || [])
             .map((row) => ({
                 name: String(row.signatory || "").trim(),
-                position: String(row.position || "").trim()
+                position: String(row.position || "").trim(),
+                assumptionDate: String(row.assumption_date || "").trim()
             }))
             .filter((entry) => entry.name);
         signatoryEntries = managedSignatories;
@@ -432,16 +438,16 @@ async function loadSignatoryOptions() {
 
     if (signatoryOptions.length === 0) {
         const defaultList = [
-            { name: "Dr. Juan Dela Cruz", position: "School Principal IV" },
-            { name: "Maria Santos", position: "School Property Custodian" },
-            { name: "Engr. Roberto Reyes", position: "Division Property Inspector" },
-            { name: "Ana Patricia Cruz", position: "Inventory Committee Chair" },
-            { name: "Mark Anthony Mendoza", position: "Supply Officer II" }
+            { name: "Dr. Juan Dela Cruz", position: "School Principal IV", assumptionDate: "" },
+            { name: "Maria Santos", position: "School Property Custodian", assumptionDate: "" },
+            { name: "Engr. Roberto Reyes", position: "Division Property Inspector", assumptionDate: "" },
+            { name: "Ana Patricia Cruz", position: "Inventory Committee Chair", assumptionDate: "" },
+            { name: "Mark Anthony Mendoza", position: "Supply Officer II", assumptionDate: "" }
         ];
         if (Array.isArray(teacherOptions) && teacherOptions.length) {
             teacherOptions.forEach((teacher) => {
                 if (teacher.name && !defaultList.some(e => e.name.toLowerCase() === teacher.name.toLowerCase())) {
-                    defaultList.push({ name: teacher.name, position: teacher.position || "Teacher" });
+                    defaultList.push({ name: teacher.name, position: teacher.position || "Teacher", assumptionDate: "" });
                 }
             });
         }
@@ -533,7 +539,7 @@ function beginManagedSignatoryEdit(name) {
     row.className = "rounded-lg border border-slate-200 p-3";
 
     const form = document.createElement("form");
-    form.className = "grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]";
+    form.className = "grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.8fr)_auto]";
     form.dataset.signatoryEditForm = name;
 
     const nameInput = document.createElement("input");
@@ -551,6 +557,12 @@ function beginManagedSignatoryEdit(name) {
     positionInput.setAttribute("aria-label", "Position");
     positionInput.className = "w-full";
 
+    const assumptionDateInput = document.createElement("input");
+    assumptionDateInput.type = "date";
+    assumptionDateInput.value = entry.assumptionDate || "";
+    assumptionDateInput.setAttribute("aria-label", "Date of Assumption");
+    assumptionDateInput.className = "w-full";
+
     const actions = document.createElement("div");
     actions.className = "flex items-center gap-1";
 
@@ -566,7 +578,7 @@ function beginManagedSignatoryEdit(name) {
     cancelButton.textContent = "Cancel";
 
     actions.append(saveButton, cancelButton);
-    form.append(nameInput, positionInput, actions);
+    form.append(nameInput, positionInput, assumptionDateInput, actions);
     row.appendChild(form);
     nameInput.focus();
     nameInput.select();
@@ -580,8 +592,10 @@ async function saveManagedSignatoryEdit(form) {
     const status = document.getElementById("signatoryManagementStatus");
     const nameInput = form.querySelector('input[aria-label="Signatory name"]');
     const positionInput = form.querySelector('input[aria-label="Position"]');
+    const assumptionDateInput = form.querySelector('input[aria-label="Date of Assumption"]');
     const signatory = (nameInput?.value || "").trim();
     const position = (positionInput?.value || "").trim();
+    const assumptionDate = (assumptionDateInput?.value || "").trim();
     if (!entry || !status || !signatory) return;
 
     if (managedSignatories.some((item) => (
@@ -608,7 +622,7 @@ async function saveManagedSignatoryEdit(form) {
                 "Content-Type": "application/json",
                 Prefer: "return=minimal"
             },
-            body: JSON.stringify({ signatory, position })
+            body: JSON.stringify({ signatory, position, assumption_date: assumptionDate || null })
         });
         if (!response.ok) {
             throw new Error(`Unable to update signatory (HTTP ${response.status}): ${await response.text()}`);
@@ -632,10 +646,12 @@ async function saveManagedSignatory(event) {
     const form = document.getElementById("signatoryManagementForm");
     const input = document.getElementById("signatoryNameInput");
     const positionInput = document.getElementById("signatoryPositionInput");
+    const assumptionDateInput = document.getElementById("signatoryAssumptionDateInput");
     const button = document.getElementById("saveSignatoryBtn");
     const status = document.getElementById("signatoryManagementStatus");
     const signatory = (input?.value || "").trim();
     const position = (positionInput?.value || "").trim();
+    const assumptionDate = (assumptionDateInput?.value || "").trim();
     if (!form || !input || !status || !form.reportValidity() || !signatory) return;
 
     if (managedSignatories.some((entry) => entry.name.localeCompare(signatory, undefined, { sensitivity: "base" }) === 0)) {
@@ -656,7 +672,7 @@ async function saveManagedSignatory(event) {
                 "Content-Type": "application/json",
                 Prefer: "return=representation"
             },
-            body: JSON.stringify([{ signatory, position }])
+            body: JSON.stringify([{ signatory, position, assumption_date: assumptionDate || null }])
         });
         if (!response.ok) {
             throw new Error(`Unable to save signatory (HTTP ${response.status}): ${await response.text()}`);
@@ -664,6 +680,7 @@ async function saveManagedSignatory(event) {
 
         input.value = "";
         if (positionInput) positionInput.value = "";
+        if (assumptionDateInput) assumptionDateInput.value = "";
         await loadSignatoryOptions();
         if (!signatoryLoadFailed) {
             status.textContent = "Signatory saved.";
@@ -1249,6 +1266,7 @@ function handleSelectActiveSchool() {
 
     // Update sidebar and mobile header info immediately
     updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
+    if (typeof updateReportLiveMeta === "function") updateReportLiveMeta();
     if (sidebarSchoolCard) {
         sidebarSchoolCard.style.display = "";
     }
@@ -1303,6 +1321,7 @@ async function loadSchoolDetails(forceRefresh = false) {
 
     // Update sidebar badges and logos immediately from active school
     updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
+    if (typeof updateReportLiveMeta === "function") updateReportLiveMeta();
     if (sidebarSchoolCard) sidebarSchoolCard.style.display = "";
 
     const logoImg = document.getElementById("sidebarSchoolLogo");
@@ -1377,6 +1396,7 @@ async function loadSchoolDetails(forceRefresh = false) {
                 localStorage.setItem("spis_active_school", JSON.stringify(activeSchoolRecord));
             } catch (e) {}
             updateSchoolDisplayBadges(activeSchoolRecord.school_name, activeSchoolRecord.school_id);
+            if (typeof updateReportLiveMeta === "function") updateReportLiveMeta();
 
             // Update target school
             let updatedTarget = null;
@@ -3772,6 +3792,17 @@ function reportCell(value, fallback = "") {
     return escapeHtml(value === 0 ? "0" : (value || fallback));
 }
 
+function getReportAccountabilityStatement() {
+    const selectedName = (dom.certifiedCorrectedBy?.value || document.getElementById("certifiedCorrectedBy")?.value || "").trim();
+    const signatory = signatoryEntries.find((entry) => entry.name === selectedName);
+    const name = signatory?.name || "____________________________";
+    const position = signatory?.position || "____________________________";
+    const schoolName = activeSchoolRecord?.school_name || "____________________________";
+    const rawDate = signatory?.assumptionDate || "";
+    const assumptionDate = rawDate ? formatReportDate(rawDate) : "________________";
+    return `For which ${name}, ${position}, ${schoolName} is accountable, having assumed such accountability on ${assumptionDate}.`;
+}
+
 function getReportArticle(item) {
     const classification = item && Object.prototype.hasOwnProperty.call(item, "item_classification")
         ? item.item_classification
@@ -3806,6 +3837,7 @@ function renderPhysicalCountReport() {
             <div style="font-size:11pt; margin:8px 0 4px 0; font-weight:bold; color:#000000;">
                 Fund Cluster : <span id="paperFundCluster" style="border-bottom:1.5px solid #000000; display:inline-block; min-width:220px; padding:2px 8px 3px 8px; line-height:1.4; vertical-align:middle; color:#000000;">${fundCluster && fundCluster !== "____________________________" ? escapeHtml(fundCluster) : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"}</span>
             </div>
+            <div id="paperAccountabilityStatement" style="font-size:9pt; margin:2px 0 8px; color:#000000;">${escapeHtml(getReportAccountabilityStatement())}</div>
             <div class="physical-report-table-wrap" style="overflow-x:auto; width:100%;">
                 <table class="physical-report-table" style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:7pt; border:1px solid #000000; margin-top:4px; color:#000000; background:#ffffff;">
                     <colgroup>
