@@ -129,6 +129,7 @@ const dom = {
     assetCount: document.querySelector("#assetCount"),
     assetDatabaseSearch: document.querySelector("#assetDatabaseSearch"),
     reportInventoryType: document.querySelector("#reportInventoryType, #reportType"),
+    reportPropertyClassification: document.querySelector("#reportPropertyClassification"),
     reportFundCluster: document.querySelector("#reportFundCluster"),
     reportAsOf: document.querySelector("#reportAsOf"),
     generatePdfBtn: document.querySelector("#generatePdfBtn"),
@@ -1869,6 +1870,7 @@ async function loadItems() {
             console.warn("Could not cache report entries:", e);
         }
         setDatabaseStatus("Connected to Supabase.", `${items.length} records loaded from the backend.`);
+        renderReportOptions();
         if (typeof loadReportInventoryTypeDropdown === "function") {
             try { loadReportInventoryTypeDropdown(); } catch(e) {}
         }
@@ -1882,6 +1884,7 @@ async function loadItems() {
         window.inventoryData = items;
         window.items = items;
         setDatabaseStatus("Local fallback is active.", "Supabase is unavailable right now. Your latest local data is still available.");
+        renderReportOptions();
         if (typeof loadReportInventoryTypeDropdown === "function") {
             try { loadReportInventoryTypeDropdown(); } catch(e) {}
         }
@@ -3640,6 +3643,11 @@ function normalizeReportInventoryType(value) {
     return normalized && normalized.toLowerCase() !== "all" ? normalized : "";
 }
 
+function isPpePropertyClassification(value) {
+    const normalized = String(value || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    return normalized === "PPE" || normalized === "PROPERTYPLANTANDEQUIPMENT";
+}
+
 function renderReports() {
     renderReportOptions();
     if (!dom.reportAsOf.value) {
@@ -3672,12 +3680,15 @@ function renderAllAssetsView() {
 function getReportItems() {
     const rawType = (dom.reportInventoryType?.value || "").trim();
     const inventoryType = (rawType === "all" || rawType === "") ? "" : rawType;
+    const rawPropertyClassification = (dom.reportPropertyClassification?.value || "").trim();
+    const propertyClassification = rawPropertyClassification.toLowerCase() === "all" ? "" : rawPropertyClassification;
     const fundCluster = (dom.reportFundCluster?.value || "").trim();
     const activeItems = (items && items.length) ? items : (window.inventoryData || []);
 
     return activeItems.filter((item) => {
         const itType = String(item.inventoryType || item.inventory_type || "").trim();
         const itClass = String(item.itemClassification || item.item_classification || "").trim();
+        const propertyClass = String(item.propertyClassification || item.property_classification || "").trim();
         const itTypeClean = itType.toLowerCase().replace(/[^a-z0-9]/g, "");
         const itClassClean = itClass.toLowerCase().replace(/[^a-z0-9]/g, "");
         const targetClean = inventoryType.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -3694,7 +3705,8 @@ function getReportItems() {
         }
 
         const matchesFund = !fundCluster || (item.fundCluster || item.fund_cluster || "").toLowerCase().includes(fundCluster.toLowerCase());
-        return matchesType && matchesFund;
+        const matchesPropertyClassification = !propertyClassification || propertyClass.toLowerCase() === propertyClassification.toLowerCase();
+        return matchesPropertyClassification && matchesType && matchesFund;
     });
 }
 
@@ -3706,9 +3718,11 @@ function formatReportDate(value) {
 
 function renderReportOptions() {
     const selectedType = dom.reportInventoryType ? dom.reportInventoryType.value : "";
+    const selectedPropertyClassification = dom.reportPropertyClassification ? dom.reportPropertyClassification.value : "all";
     const selectedFund = dom.reportFundCluster ? dom.reportFundCluster.value : "";
     const activeItems = (items && items.length) ? items : (window.inventoryData || []);
     const types = [...new Set(activeItems.map((item) => item.inventoryType || item.inventory_type).filter(Boolean))];
+    const propertyClassifications = [...new Set(activeItems.map((item) => item.propertyClassification || item.property_classification).map((value) => String(value || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     const funds = [...new Set(activeItems.map((item) => item.fundCluster || item.fund_cluster).filter(Boolean))];
 
     const standardTypes = [
@@ -3728,6 +3742,17 @@ function renderReportOptions() {
     });
     types.sort((a, b) => a.localeCompare(b));
     funds.sort((a, b) => a.localeCompare(b));
+
+    if (dom.reportPropertyClassification) {
+        const classificationLabels = {
+            SEP: "Semi-Expendable Property",
+            PPE: "Property Plant and Equipment"
+        };
+        dom.reportPropertyClassification.innerHTML = `<option value="all">All property classifications</option>${propertyClassifications.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(classificationLabels[value] || value)}</option>`).join("")}`;
+        dom.reportPropertyClassification.value = propertyClassifications.some((value) => value.toLowerCase() === String(selectedPropertyClassification || "all").toLowerCase())
+            ? propertyClassifications.find((value) => value.toLowerCase() === String(selectedPropertyClassification).toLowerCase())
+            : "all";
+    }
 
     if (dom.reportInventoryType) {
         dom.reportInventoryType.innerHTML = `<option value="all">All inventory types</option>${types.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
@@ -3759,6 +3784,11 @@ function getReportArticle(item) {
 function renderPhysicalCountReport() {
     if (!dom.physicalReport) return;
     const reportItems = getReportItems();
+    const selectedPropertyClassification = dom.reportPropertyClassification?.value || "";
+    const isPpeClassification = isPpePropertyClassification(selectedPropertyClassification);
+    const reportTitle = isPpeClassification
+        ? "REPORT ON THE PHYSICAL COUNT OF PROPERTY, PLANT AND EQUIPMENT"
+        : "REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY";
     const inventoryType = normalizeReportInventoryType(dom.reportInventoryType?.value) || "ALL INVENTORY ITEMS";
     const fundCluster = dom.reportFundCluster?.value || "____________________________";
     const certVal = (dom.certifiedCorrectedBy?.value || document.getElementById("certifiedCorrectedBy")?.value || "").trim();
@@ -3768,7 +3798,7 @@ function renderPhysicalCountReport() {
     dom.physicalReport.innerHTML = `
         <div class="physical-report-paper" style="background:#ffffff; color:#000000; font-family:Arial,Helvetica,sans-serif; font-size:7.5pt; width:100%; box-sizing:border-box; padding:15px 2px 35px 2px;">
             <div style="text-align:center; margin-bottom:12px; color:#000000;">
-                <div style="font-size:14pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; color:#000000;">REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY</div>
+                <div id="paperReportTitle" style="font-size:14pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; color:#000000;">${escapeHtml(reportTitle)}</div>
                 <div id="paperInventoryType" style="font-size:11pt; font-weight:bold; text-transform:uppercase; border-bottom:1.5px solid #000000; display:inline-block; padding-bottom:2px; letter-spacing:0.5px; margin-top:2px; color:#000000;">${escapeHtml(inventoryType.toUpperCase())}</div>
                 <div style="font-size:8pt; color:#000000; margin-top:1px;">(Type of Inventory Item)</div>
                 <div style="font-size:11pt; margin-top:6px; color:#000000;">As of <span id="paperAsOf" style="border-bottom:1.5px solid #000000; display:inline-block; padding-bottom:2px; color:#000000;">${formatReportDate(dom.reportAsOf?.value || "2026-09-01")}</span></div>
@@ -3798,7 +3828,7 @@ function renderPhysicalCountReport() {
                         <tr style="background:#d9d9d9; font-weight:bold; text-align:center; color:#000000;">
                             <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">Article</th>
                             <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">Description</th>
-                            <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">Semi-Expendable<br>Property Number</th>
+                            <th id="paperPropertyNumberHeading" class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">${isPpeClassification ? "Property Number" : "Semi-Expendable<br>Property Number"}</th>
                             <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">Unit of<br>Measure</th>
                             <th colspan="2" style="border:1px solid #8a8a8a; padding:2px 3px; color:#000000; text-transform:uppercase;">Amount</th>
                             <th class="report-standalone-th" style="border:1px solid #8a8a8a; border-bottom:0; padding:2px 4px; color:#000000;">Date<br>Acquired</th>
@@ -3951,6 +3981,18 @@ async function generateReportPdf() {
     // Isolate PDF generation using an off-screen clone so the on-screen Inventory Document card view remains 100% untouched
     const sourcePaper = report.querySelector(".physical-report-paper") || report;
     const clone = sourcePaper.cloneNode(true);
+    const pdfPropertyClassification = dom.reportPropertyClassification?.value || "";
+    const pdfReportTitle = isPpePropertyClassification(pdfPropertyClassification)
+        ? "REPORT ON THE PHYSICAL COUNT OF PROPERTY, PLANT AND EQUIPMENT"
+        : "REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY";
+    const clonedReportTitle = clone.querySelector("#paperReportTitle");
+    if (clonedReportTitle) clonedReportTitle.textContent = pdfReportTitle;
+    const clonedPropertyNumberHeading = clone.querySelector("#paperPropertyNumberHeading");
+    if (clonedPropertyNumberHeading) {
+        clonedPropertyNumberHeading.textContent = isPpePropertyClassification(pdfPropertyClassification)
+            ? "Property Number"
+            : "Semi-Expendable Property Number";
+    }
 
     const offscreenContainer = document.createElement("div");
     offscreenContainer.style.position = "fixed";
@@ -7216,17 +7258,23 @@ function wireEvents() {
     document.querySelectorAll(".generate-pdf-btn").forEach((btn) => {
         btn.addEventListener("click", generateReportPdf);
     });
-    [dom.reportInventoryType, dom.reportFundCluster, dom.reportAsOf, dom.certifiedCorrectedBy, dom.approvedBy, dom.verifiedBy].forEach((control) => {
+    [dom.reportPropertyClassification, dom.reportInventoryType, dom.reportFundCluster, dom.reportAsOf, dom.certifiedCorrectedBy, dom.approvedBy, dom.verifiedBy].forEach((control) => {
         if (control) {
             control.addEventListener("input", () => {
-                if (control === dom.reportInventoryType && typeof filterReportByInventoryType === "function") {
+                if (control === dom.reportPropertyClassification) {
+                    renderPhysicalCountReport();
+                    if (typeof updateReportLiveMeta === "function") updateReportLiveMeta();
+                } else if (control === dom.reportInventoryType && typeof filterReportByInventoryType === "function") {
                     filterReportByInventoryType(control.value);
                 } else if (typeof updateReportLiveMeta === "function") {
                     updateReportLiveMeta();
                 }
             });
             control.addEventListener("change", () => {
-                if (control === dom.reportInventoryType && typeof filterReportByInventoryType === "function") {
+                if (control === dom.reportPropertyClassification) {
+                    renderPhysicalCountReport();
+                    if (typeof updateReportLiveMeta === "function") updateReportLiveMeta();
+                } else if (control === dom.reportInventoryType && typeof filterReportByInventoryType === "function") {
                     filterReportByInventoryType(control.value);
                 } else if (typeof updateReportLiveMeta === "function") {
                     updateReportLiveMeta();
@@ -7698,12 +7746,25 @@ function updateInventoryCustodianSlipTotal() {
         : "";
 }
 
+function generateInventoryCustodianSlipNo() {
+    const year = new Date().getFullYear();
+    const usedNumbers = new Set(inventoryCustodianSlips.map((slip) => String(slip.icsNo || "").trim()));
+    let candidate = "";
+    let attempts = 0;
+    do {
+        candidate = `ICS-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
+        attempts++;
+    } while (usedNumbers.has(candidate) && attempts < 100);
+    return usedNumbers.has(candidate) ? `ICS-${year}-${Date.now()}` : candidate;
+}
+
 function resetInventoryCustodianSlipForm() {
     const form = document.querySelector("#icsSlipForm");
     if (!form) return;
 
     form.reset();
     document.querySelector("#icsEditingId").value = "";
+    document.querySelector("#icsNo").value = generateInventoryCustodianSlipNo();
     document.querySelector("#icsTotalCost").value = "";
     document.querySelector("#icsFormTitle").textContent = "Inventory Custodian Slip";
 
@@ -8394,6 +8455,8 @@ async function initInventoryCustodianSlipCrud() {
     populateIcsReceivedFromDropdown();
     populateIcsReceivedByDropdown();
     inventoryCustodianSlips = loadInventoryCustodianSlips();
+    const initialIcsNo = document.querySelector("#icsNo");
+    if (initialIcsNo && !initialIcsNo.value) initialIcsNo.value = generateInventoryCustodianSlipNo();
     renderIcsGeneratedCount();
     renderInventoryCustodianSlipTable();
     renderRecentAssets();

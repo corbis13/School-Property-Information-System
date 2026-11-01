@@ -5254,6 +5254,13 @@
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:0.875rem;">
+                  <div class="form-field-group">
+                    <label for="reportPropertyClassification" style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:0.35rem; color:#334155;">Property Classification</label>
+                    <select id="reportPropertyClassification" class="form-input" style="width:100%; padding:0.55rem 0.75rem; border:1px solid #cbd5e1; border-radius:0.375rem; box-sizing:border-box; background:#fff;">
+                      <option value="all" selected>All property classifications</option>
+                    </select>
+                  </div>
+
                   <!-- Field 1: Type of Inventory Item -->
                   <div class="form-field-group">
                     <label for="reportType" style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:0.35rem; color:#334155;">Type of Inventory Item</label>
@@ -5295,7 +5302,7 @@
 <div class="physical-report-paper" style="background:#ffffff; color:#000000; font-family:Arial,Helvetica,sans-serif; font-size:7.5pt; width:100%; box-sizing:border-box; padding:15px 5px 35px 5px;">
                 <!-- ════════════════ HEADER SECTION ════════════════ -->
                 <div style="text-align:center; margin-bottom:12px; color:#000000;">
-                  <div style="font-size:14pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; color:#000000;">REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY</div>
+                  <div id="paperReportTitle" style="font-size:14pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; color:#000000;">REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY</div>
                   <div id="paperInventoryType" style="font-size:11pt; font-weight:bold; text-transform:uppercase; border-bottom:1.5px solid #000000; display:inline-block; padding-bottom:2px; letter-spacing:0.5px; margin-top:2px; color:#000000;">SCHOOL FURNITURES</div>
                   <div style="font-size:8pt; color:#000000; margin-top:1px;">(Type of Inventory Item)</div>
                   <div style="font-size:11pt; margin-top:6px; color:#000000;">As of <span id="paperAsOf" style="border-bottom:1.5px solid #000000; display:inline-block; padding-bottom:2px; color:#000000;">September 1, 2026</span></div>
@@ -5311,7 +5318,7 @@
                       <tr style="background:#d9d9d9; font-weight:bold; text-align:center; color:#000000;">
                         <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:9%; color:#000000;">Article</th>
                         <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:11%; color:#000000;">Description</th>
-                        <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:9%; color:#000000;">Semi-Expendable<br>Property Number</th>
+                        <th id="paperPropertyNumberHeading" rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:9%; color:#000000;">Semi-Expendable<br>Property Number</th>
                         <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Unit of<br>Measure</th>
                         <th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Amount</th>
                         <th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:6%; color:#000000;">Date<br>Acquired<br><small style="font-size:6pt;">(YYYY-MM-DD)</small></th>
@@ -6322,7 +6329,7 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=20261101_property_warning_modal_v1"></script>
+  <script src="js/app.js?v=20261101_ppe_report_title_v4"></script>
   <script>
     if (typeof lucide !== "undefined") { lucide.createIcons(); }
   </script>
@@ -6372,7 +6379,19 @@
         const certVal = cert && cert.value ? cert.value.trim() : "";
         const apprVal = appr && appr.value ? appr.value.trim() : "";
         const verVal = ver && ver.value ? ver.value.trim() : "";
+        const propertyClassification = document.getElementById("reportPropertyClassification")?.value || "";
+        const propertyReportTitle = typeof isPpePropertyClassification === "function" && isPpePropertyClassification(propertyClassification)
+            ? "REPORT ON THE PHYSICAL COUNT OF PROPERTY, PLANT AND EQUIPMENT"
+            : "REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY";
 
+        const reportTitle = document.getElementById("paperReportTitle");
+        if (reportTitle) reportTitle.textContent = propertyReportTitle;
+        const propertyNumberHeading = document.getElementById("paperPropertyNumberHeading");
+        if (propertyNumberHeading) {
+            propertyNumberHeading.textContent = typeof isPpePropertyClassification === "function" && isPpePropertyClassification(propertyClassification)
+                ? "Property Number"
+                : "Semi-Expendable Property Number";
+        }
         const pit = document.getElementById("paperInventoryType");
         if (pit) pit.textContent = itl;
         const pfc = document.getElementById("paperFundCluster");
@@ -6680,7 +6699,7 @@
         rc.innerHTML = '<div class="physical-report-paper" style="background:#ffffff; color:#000000; font-family:Arial,Helvetica,sans-serif; font-size:7.5pt; width:100%; max-width:100%; box-sizing:border-box; padding:15px 5px 35px 5px;">'
             + '<!-- ════════════════ HEADER SECTION ════════════════ -->'
             + '<div style="text-align:center; margin-bottom:12px; color:#000000;">'
-            +   '<div style="font-size:14pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; color:#000000;">REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY</div>'
+            +   '<div id="paperReportTitle" style="font-size:14pt; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; color:#000000;">REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY</div>'
             +   '<div id="paperInventoryType" style="font-size:11pt; font-weight:bold; text-transform:uppercase; border-bottom:1.5px solid #000000; display:inline-block; padding-bottom:2px; letter-spacing:0.5px; margin-top:2px; color:#000000;">' + escapeHtml(itl) + '</div>'
             +   '<div style="font-size:8pt; color:#000000; margin-top:1px;">(Type of Inventory Item)</div>'
             +   '<div style="font-size:11pt; margin-top:6px; color:#000000;">As of <span id="paperAsOf" style="border-bottom:1.5px solid #000000; display:inline-block; padding-bottom:2px; color:#000000;">' + escapeHtml(asd) + '</span></div>'
@@ -6696,7 +6715,7 @@
             +     '<tr style="background:#d9d9d9; font-weight:bold; text-align:center; color:#000000;">'
             +       '<th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:9%; color:#000000;">Article</th>'
             +       '<th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:11%; color:#000000;">Description</th>'
-            +       '<th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:9%; color:#000000;">Semi-Expendable<br>Property Number</th>'
+            +       '<th id="paperPropertyNumberHeading" rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:9%; color:#000000;">Semi-Expendable<br>Property Number</th>'
             +       '<th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:5%; color:#000000;">Unit of<br>Measure</th>'
             +       '<th colspan="2" style="border:1px solid #000000; padding:2px 4px; width:8%; color:#000000;">Amount</th>'
             +       '<th rowspan="2" style="border:1px solid #000000; padding:2px 4px; width:6%; color:#000000;">Date<br>Acquired<br><small style="font-size:6pt;">(YYYY-MM-DD)</small></th>'
