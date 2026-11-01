@@ -801,6 +801,13 @@ input[readonly] {
   border-color: #e2e8f0;
 }
 
+#propertyNo:not([hidden]),
+#semiExpandableNo:not([hidden]) {
+  background-color: #ffffff !important;
+  color: #17202a !important;
+  border-color: #ccd6e3 !important;
+}
+
 textarea {
   resize: vertical;
   min-height: 85px;

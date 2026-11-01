@@ -1045,19 +1045,12 @@
                     <div class="two-column">
                         <label>
                             <span id="propertyNumberPlaceholderLabel">(<em>Select Property Classification to open</em>)</span>
-                            <input id="propertyNumberPlaceholder" type="text" placeholder="Select Property Classification" disabled>
+                            <input id="propertyNumberPlaceholder" type="text" placeholder="Select Property Classification" readonly>
                             <span id="propertyNoLabel">Property No.</span>
                             <input id="propertyNo" type="text" placeholder="e.g. PROP-2026-001" hidden>
                             <span id="semiExpandableNoLabel" hidden>Semi-Expandable No.</span>
                             <input id="semiExpandableNo" type="text" hidden>
                         </label>
-                        <label>
-                            Description
-                            <input id="itemBrandModel" type="text" placeholder="e.g. Dell Latitude 5440 Laptop" required>
-                        </label>
-                    </div>
-
-                    <div class="two-column">
                         <label>
                             Item Classification
                             <div class="classification-controls" style="display:flex; gap:8px; align-items:center;">
@@ -1067,6 +1060,13 @@
                                 <button class="ghost-button" id="addClassificationBtn" type="button" title="Add classification" aria-label="Add classification">+</button>
                                 <button class="ghost-button" id="deleteClassificationBtn" type="button" title="Delete selected classification" aria-label="Delete selected classification">-</button>
                             </div>
+                        </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label>
+                            Description
+                            <input id="itemBrandModel" type="text" placeholder="e.g. Dell Latitude 5440 Laptop" required>
                         </label>
                         <label>
                             Serial No.

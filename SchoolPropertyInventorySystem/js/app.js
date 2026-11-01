@@ -2700,6 +2700,28 @@ function getQrPayload(item) {
     return getAssetDetailUrl(assetId);
 }
 
+function createQrDataUrl(payload, size = 128) {
+    if (!window.QRCode || !payload) return "";
+    const container = document.createElement("div");
+    try {
+        new QRCode(container, {
+            text: String(payload),
+            width: size,
+            height: size,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        const canvas = container.querySelector("canvas");
+        if (canvas) return canvas.toDataURL("image/png");
+        const image = container.querySelector("img");
+        return image && image.src.startsWith("data:image/") ? image.src : "";
+    } catch (error) {
+        console.warn("Unable to generate the ICS item QR code.", error);
+        return "";
+    }
+}
+
 function getComputedStatus(item) {
     return item.status || "";
 }
@@ -5833,6 +5855,7 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
     const receivedByPosition = options.receivedByPosition || getSharedField(records, "receivedByPosition");
     const receivedFromDate = formatSlipDate(options.receivedFromDate || getSharedField(records, "receivedFromDate"));
     const receivedByDate = formatSlipDate(options.receivedByDate || getSharedField(records, "receivedByDate") || getSharedField(records, "dateIssue")) || formatSlipDate(new Date().toISOString());
+    const itemQrDataUrl = options.itemQrDataUrl || "";
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -5871,7 +5894,8 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
             width: 186mm;
             min-height: 277mm;
             margin: 0 auto;
-            padding: 0;
+            padding: 0 0 34mm;
+            position: relative;
         }
 
         .ics-header {
@@ -5997,6 +6021,33 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
             text-align: center;
         }
 
+        .ics-item-qr-box {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 29mm;
+            height: 33mm;
+            border: 1px solid #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1mm;
+            background: #ffffff;
+        }
+
+        .ics-item-qr-box img {
+            width: 25mm;
+            height: 25mm;
+            object-fit: contain;
+        }
+
+        .ics-item-qr-box span {
+            font-size: 7px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
         .no-print {
             position: fixed;
             top: 14px;
@@ -6031,7 +6082,7 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
 
             .ics-sheet {
                 width: 186mm;
-                min-height: auto;
+                min-height: 277mm;
             }
         }
     </style>
@@ -6108,6 +6159,7 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
                 <td class="date-line">${escapeHtml(receivedByDate)}<span class="caption">Date</span></td>
             </tr>
         </table>
+        ${itemQrDataUrl ? `<div class="ics-item-qr-box"><img src="${itemQrDataUrl}" alt="QR code for inventory item"><span>ITEM QR CODE</span></div>` : ""}
     </main>
 </body>
 </html>`;
@@ -6128,7 +6180,9 @@ async function generateInventoryCustodianSlip() {
     }
 
     slipWindow.document.open();
-    slipWindow.document.write(buildInventoryCustodianSlip(records, await getLogoDataUrl()));
+    const qrAsset = records.find((item) => item.assetId || item.asset_id);
+    const itemQrDataUrl = qrAsset ? createQrDataUrl(getQrPayload({ assetId: qrAsset.assetId || qrAsset.asset_id })) : "";
+    slipWindow.document.write(buildInventoryCustodianSlip(records, await getLogoDataUrl(), { itemQrDataUrl }));
     slipWindow.document.close();
 }
 
@@ -7871,7 +7925,7 @@ function populateIcsFieldsFromDescription(selectedAssetOverride = null) {
     }
 
     if (fundClusterEl && !fundClusterEl.value) fundClusterEl.value = selectedAsset.fundCluster || "";
-    if (inventoryItemNoEl) inventoryItemNoEl.value = selectedAsset.semiExpandableNo || "";
+    if (inventoryItemNoEl) inventoryItemNoEl.value = selectedAsset.propertyNo || selectedAsset.property_no || "";
     if (additionalItemEl) additionalItemEl.value = selectedAsset.additionalItem || "";
     if (unitEl) unitEl.value = selectedAsset.unitMeasurement || "";
     if (unitCostEl) unitCostEl.value = selectedAsset.unitValue ?? "";
@@ -8642,6 +8696,7 @@ async function openInventoryCustodianSlipPdf(slip) {
     drawTableHeader();
 
     const tableRows = [];
+    let qrAssetId = "";
     slipItems.forEach((item) => {
         const matchedAsset = (typeof items !== "undefined" && Array.isArray(items))
             ? items.find((a) =>
@@ -8654,6 +8709,10 @@ async function openInventoryCustodianSlipPdf(slip) {
                 (String(a.itemBrandModel || "").trim().toLowerCase() === String(item.description || "").trim().toLowerCase())
             )
             : null;
+
+        if (!qrAssetId) {
+            qrAssetId = String((matchedAsset && (matchedAsset.assetId || matchedAsset.asset_id)) || item.assetId || "").trim();
+        }
 
         // Resolve Serial No
         let serialNo = (matchedAsset && (matchedAsset.serialNo || matchedAsset.serial_no)) || item.serialNo || item.serial_no || "";
@@ -8792,7 +8851,7 @@ async function openInventoryCustodianSlipPdf(slip) {
 
     // Dynamically position signature section directly below the table
     y += 8;
-    if (y + 45 > pageHeight - marginY) {
+    if (y + 45 > pageHeight - marginY - 33) {
         pdf.addPage();
         y = marginY + 10;
     }
@@ -8815,6 +8874,20 @@ async function openInventoryCustodianSlipPdf(slip) {
     y += 5;
     pdf.text(`Date: ${headerSlip.receivedFromDate || "-"}`, marginX + signatureWidth / 2, y, { align: "center" });
     pdf.text(`Date: ${headerSlip.receivedByDate || "-"}`, rightSignatureX + signatureWidth / 2, y, { align: "center" });
+
+    const qrDataUrl = qrAssetId ? createQrDataUrl(getAssetDetailUrl(qrAssetId), 128) : "";
+    if (qrDataUrl) {
+        const qrBoxWidth = 29;
+        const qrBoxHeight = 33;
+        const qrBoxX = pageWidth - marginX - qrBoxWidth;
+        const qrBoxY = pageHeight - marginY - qrBoxHeight;
+        pdf.setDrawColor(0);
+        pdf.rect(qrBoxX, qrBoxY, qrBoxWidth, qrBoxHeight);
+        pdf.addImage(qrDataUrl, "PNG", qrBoxX + 2, qrBoxY + 1.5, 25, 25);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(6);
+        pdf.text("ITEM QR CODE", qrBoxX + qrBoxWidth / 2, qrBoxY + 30, { align: "center" });
+    }
 
     const fileName = `ICS-${String(headerSlip.icsNo || "document").replace(/[<>:"/\\|?*]+/g, "-")}.pdf`;
     const pdfUrl = URL.createObjectURL(pdf.output("blob"));
