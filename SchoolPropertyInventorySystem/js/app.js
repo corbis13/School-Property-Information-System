@@ -344,7 +344,7 @@ async function loadTeacherOptions() {
     teacherOptions = [];
 
     try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/school_teacher?select=teacher_name,position,school_level`, {
+        const response = await fetch(`${supabaseUrl}/rest/v1/school_teacher?select=teacher_name,plantilla_position,school_level`, {
             headers: supabaseHeaders
         });
 
@@ -354,7 +354,7 @@ async function loadTeacherOptions() {
         teacherOptions = (rows || [])
             .map((row) => ({
                 name: String(row.teacher_name || row.name || row.full_name || "").trim(),
-                position: String(row.position || row.teacher_position || "").trim(),
+                position: String(row.plantilla_position || "").trim(),
                 schoolLevel: String(row.school_level || row.schoolLevel || row.schoollevel || "").trim()
             }))
             .filter((row) => row.name)
@@ -3668,6 +3668,16 @@ function isPpePropertyClassification(value) {
     return normalized === "PPE" || normalized === "PROPERTYPLANTANDEQUIPMENT";
 }
 
+function getPhysicalCountReportTitle(value) {
+    const classification = String(value || "").trim().toLowerCase();
+    if (!classification || classification === "all" || classification === "all property classifications") {
+        return "REPORT ON THE PHYSICAL COUNT OF ALL PROPERTY";
+    }
+    return isPpePropertyClassification(value)
+        ? "REPORT ON THE PHYSICAL COUNT OF PROPERTY, PLANT AND EQUIPMENT"
+        : "REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY";
+}
+
 function renderReports() {
     renderReportOptions();
     if (!dom.reportAsOf.value) {
@@ -3817,9 +3827,7 @@ function renderPhysicalCountReport() {
     const reportItems = getReportItems();
     const selectedPropertyClassification = dom.reportPropertyClassification?.value || "";
     const isPpeClassification = isPpePropertyClassification(selectedPropertyClassification);
-    const reportTitle = isPpeClassification
-        ? "REPORT ON THE PHYSICAL COUNT OF PROPERTY, PLANT AND EQUIPMENT"
-        : "REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY";
+    const reportTitle = getPhysicalCountReportTitle(selectedPropertyClassification);
     const inventoryType = normalizeReportInventoryType(dom.reportInventoryType?.value) || "ALL INVENTORY ITEMS";
     const fundCluster = dom.reportFundCluster?.value || "____________________________";
     const certVal = (dom.certifiedCorrectedBy?.value || document.getElementById("certifiedCorrectedBy")?.value || "").trim();
@@ -4014,9 +4022,7 @@ async function generateReportPdf() {
     const sourcePaper = report.querySelector(".physical-report-paper") || report;
     const clone = sourcePaper.cloneNode(true);
     const pdfPropertyClassification = dom.reportPropertyClassification?.value || "";
-    const pdfReportTitle = isPpePropertyClassification(pdfPropertyClassification)
-        ? "REPORT ON THE PHYSICAL COUNT OF PROPERTY, PLANT AND EQUIPMENT"
-        : "REPORT ON THE PHYSICAL COUNT OF SEMI-EXPENDABLE PROPERTY";
+    const pdfReportTitle = getPhysicalCountReportTitle(pdfPropertyClassification);
     const clonedReportTitle = clone.querySelector("#paperReportTitle");
     if (clonedReportTitle) clonedReportTitle.textContent = pdfReportTitle;
     const clonedPropertyNumberHeading = clone.querySelector("#paperPropertyNumberHeading");
@@ -5354,7 +5360,7 @@ function showSuccessModal(message, title) {
         if (msgEl)   msgEl.textContent   = "Record saved successfully!";
         document.removeEventListener("keydown", onEsc);
         modal.removeEventListener("click", onBackdrop);
-        if (typeof refreshInventoryRecordsCard === "function") {
+        if (!["PDF Generated & Saved", "Personnel Added"].includes(title || "Success") && typeof refreshInventoryRecordsCard === "function") {
             refreshInventoryRecordsCard(window.recentlyUpdatedAssetId);
         }
     }
@@ -8335,7 +8341,7 @@ function editInventoryCustodianSlip(id) {
 
         slip.receivedByPosition = (activeT && (activeT.position || activeT.plantilla_position)) ||
                                   (matchedT && matchedT.position) ||
-                                  (personnelFromList && (personnelFromList.position || personnelFromList.plantilla_position)) ||
+                                  (personnelFromList && personnelFromList.plantilla_position) ||
                                   (matchedSig && matchedSig.position) ||
                                   "";
     }

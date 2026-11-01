@@ -66,7 +66,7 @@ Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The scr
 - statuses (source for status options; column: `status_name`)
 - inventory_item (source for inventory item type options; column: `inventory_item_type`)
 - education_level (source for education level options; column: `education_level`)
-- school_teacher (Personnel Accountability records; columns: `teacher_name`, `employee_id`, `position`, `plantilla_position`, `school_level`, `personnel_type`, `grade_section`, `email`, `phone`, `school_name`, `location`, `date_hired`, `employment_status`, `status`, `photo_url`)
+- school_teacher (Personnel Accountability records; columns: `teacher_name`, `first_name`, `middle_name`, `last_name`, `employee_id`, `item_no`, `phone`, `plantilla_position`, `school_level`, `personnel_type`, `grade_section`, `school_name`, `employment_status`, `birthday`, `original_appointment`, `date_of_last_promotion`, `status`, `photo_url`)
 - signatories (managed in Settings and used for report signatory options; columns: `signatory`, `position`, `assumption_date`)
 - ics_slips (Inventory Custodian Slip headers)
 - ics_slip_items (line items linked to slips; `asset_id` is filled when the item was picked from inventory)
