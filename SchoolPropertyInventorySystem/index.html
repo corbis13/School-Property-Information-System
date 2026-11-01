@@ -345,8 +345,9 @@
           <!-- User Profile Pill & Dropdown -->
           <div class="relative">
             <button id="userMenuBtn" type="button" class="flex items-center space-x-2 sm:space-x-2.5 pl-2 sm:pl-3 border-l border-slate-200 cursor-pointer group hover:opacity-90 transition focus:outline-none" aria-label="User Profile Menu" aria-expanded="false">
-              <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#00335e] text-white flex items-center justify-center shadow-sm">
-                <i data-lucide="user" class="w-4 h-4 sm:w-5 sm:h-5 text-white"></i>
+              <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#00335e] text-white flex items-center justify-center shadow-sm overflow-hidden">
+                <img id="googleAccountAvatarImage" class="hidden w-full h-full object-cover" alt="Google profile photo" referrerpolicy="no-referrer">
+                <i id="googleAccountAvatarFallback" data-lucide="user" class="w-4 h-4 sm:w-5 sm:h-5 text-white"></i>
               </div>
               <div class="text-left hidden sm:block">
                 <p id="googleAccountButtonName" class="text-xs font-extrabold text-slate-800 leading-tight group-hover:text-[#00335e] transition">Google User</p>
@@ -465,8 +466,8 @@
               <!-- Left Content -->
               <div class="p-7 sm:p-9 max-w-xl z-10 flex flex-col justify-center">
                 <p class="text-sm font-medium text-slate-600 mb-1">Welcome,</p>
-                <h1 class="text-3xl sm:text-4xl font-black text-[#002d54] tracking-tight mb-2">
-                  Janine Tuwahan!
+                <h1 id="welcomeAccountFirstName" class="text-3xl sm:text-4xl font-black text-[#002d54] tracking-tight mb-2">
+                  there!
                 </h1>
                 <p class="text-slate-600 text-sm font-medium leading-relaxed max-w-md">
                   You can manage and monitor all school properties in one centralized system.
@@ -6362,6 +6363,10 @@
         }
         var user = session && session.user ? session.user : {};
         var displayName = user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name) || (user.email ? user.email.split("@")[0] : "Google User");
+        var metadata = user.user_metadata || {};
+        var welcomeFirstName = metadata.given_name || metadata.first_name || displayName.trim().split(/\s+/)[0] || "there";
+        var welcomeNameElement = document.getElementById("welcomeAccountFirstName");
+        if (welcomeNameElement) welcomeNameElement.textContent = welcomeFirstName + "!";
         ["googleAccountButtonName", "googleAccountMenuName"].forEach(function (id) {
           var element = document.getElementById(id);
           if (element) element.textContent = displayName;
@@ -6370,6 +6375,43 @@
           var element = document.getElementById(id);
           if (element) element.textContent = user.email || "Signed in with Google";
         });
+        var avatarImage = document.getElementById("googleAccountAvatarImage");
+        var avatarFallback = document.getElementById("googleAccountAvatarFallback");
+        var googleIdentity = (user.identities || []).find(function (identity) {
+          return identity.provider === "google";
+        });
+        var identityData = googleIdentity && googleIdentity.identity_data || {};
+        var avatarUrl = metadata.picture || metadata.avatar_url || identityData.picture || identityData.avatar_url;
+        var safeAvatarUrl = typeof avatarUrl === "string" && /^https:\/\//i.test(avatarUrl) ? avatarUrl : "";
+        if (avatarImage && avatarFallback) {
+          avatarImage.onerror = function () {
+            avatarImage.classList.add("hidden");
+            avatarFallback.classList.remove("hidden");
+          };
+          if (safeAvatarUrl) {
+            avatarImage.src = safeAvatarUrl;
+            avatarImage.classList.remove("hidden");
+            avatarFallback.classList.add("hidden");
+          } else {
+            avatarImage.removeAttribute("src");
+            avatarImage.classList.add("hidden");
+            avatarFallback.classList.remove("hidden");
+            if (session && session.provider_token) {
+              fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                headers: { Authorization: "Bearer " + session.provider_token }
+              }).then(function (response) {
+                if (!response.ok) throw new Error("Google profile photo unavailable");
+                return response.json();
+              }).then(function (profile) {
+                if (profile.picture && window.SUPABASE_AUTH_SESSION === session) {
+                  avatarImage.src = profile.picture;
+                  avatarImage.classList.remove("hidden");
+                  avatarFallback.classList.add("hidden");
+                }
+              }).catch(function () {});
+            }
+          }
+        }
         if (gate) gate.classList.toggle("hidden", Boolean(session));
       }
 
@@ -6424,7 +6466,7 @@
         try {
           var result = await authClient.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: window.location.href.split("#")[0], queryParams: { prompt: "select_account" } }
+            options: { redirectTo: window.location.href.split("#")[0], scopes: "openid email profile", queryParams: { prompt: "select_account" } }
           });
           if (result.error) throw result.error;
         } catch (error) {
