@@ -3647,6 +3647,60 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   --wc-accent-shadow: rgba(242, 153, 19, 0.3);
 }
 
+/* Google-only sign-in screen */
+.spis-login-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  overflow-y: auto;
+  background: radial-gradient(ellipse at 16% 10%, rgba(61, 156, 221, 0.28), transparent 42%), linear-gradient(135deg, #001a30 0%, #00335e 55%, #004c87 100%);
+}
+.spis-login-layer.hidden { display: none; }
+.spis-login-panel { width: min(100%, 1000px); min-height: 570px; display: grid; grid-template-columns: 1.15fr 0.85fr; overflow: hidden; border: 1px solid rgba(255,255,255,.2); border-radius: 28px; background: rgba(255,255,255,.97); box-shadow: 0 32px 90px rgba(0, 12, 31, .4); }
+.spis-login-art { position: relative; display: flex; min-height: 450px; align-items: center; justify-content: center; overflow: hidden; padding: 2.5rem; background: linear-gradient(145deg, #eaf5ff, #d8eafb 58%, #eef7ff); perspective: 1000px; }
+.spis-login-copy { position: absolute; z-index: 2; top: 2.5rem; left: 2.5rem; right: 2.5rem; }
+.spis-login-copy h1 { margin: 0; color: #00335e; font-size: clamp(1.4rem, 2.7vw, 2rem); font-weight: 800; letter-spacing: -.04em; }
+.spis-login-copy p { margin: .65rem 0 0; max-width: 390px; color: #52677f; font-size: .9rem; line-height: 1.65; }
+.spis-login-scene { position: relative; width: 330px; height: 280px; margin-top: 5rem; transform-style: preserve-3d; animation: spis-login-float 6s ease-in-out infinite; }
+.spis-login-platform { position: absolute; left: 50%; bottom: 5px; width: 285px; height: 115px; border: 1px solid rgba(0,76,135,.2); border-radius: 22px; background: linear-gradient(145deg, rgba(255,255,255,.95), rgba(210,232,251,.9)); box-shadow: 0 24px 32px rgba(0,51,94,.15); transform: translateX(-50%) rotateX(62deg) rotateZ(-28deg); }
+.spis-login-box { position: absolute; z-index: 1; width: 92px; height: 102px; border-radius: 13px; background: linear-gradient(145deg, #fff, #dceafa); box-shadow: 12px 18px 25px rgba(0,51,94,.2), inset -8px -8px 15px rgba(0,76,135,.09); transform: rotateY(-25deg) rotateX(8deg) rotateZ(-9deg); }
+.spis-login-box::before { content: ""; position: absolute; top: 0; left: 15px; right: 15px; height: 10px; border-radius: 0 0 6px 6px; background: #f29913; opacity: .9; }
+.spis-login-box::after { content: ""; position: absolute; left: 18px; right: 18px; top: 38px; height: 24px; border: 2px solid rgba(0,76,135,.24); border-radius: 5px; }
+.spis-login-box.box-a { left: 60px; top: 102px; animation: spis-login-bob 4.8s ease-in-out infinite; }
+.spis-login-box.box-b { left: 164px; top: 76px; width: 83px; height: 91px; background: linear-gradient(145deg, #fff, #dff3ef); animation: spis-login-bob 5.5s ease-in-out -1.3s infinite; }
+.spis-login-box.box-b::before { background: #078f95; }
+.spis-login-box.box-c { left: 122px; top: 169px; width: 74px; height: 77px; background: linear-gradient(145deg, #fff, #fff0d8); animation: spis-login-bob 5s ease-in-out -2.1s infinite; }
+.spis-login-box.box-c::before { background: #0284c7; }
+.spis-login-orbit { position: absolute; inset: 36px 14px 8px; border: 1px solid rgba(2,132,199,.24); border-radius: 50%; transform: rotateX(67deg) rotateZ(-25deg); }
+.spis-login-form { display: flex; flex-direction: column; justify-content: center; padding: clamp(2rem, 5vw, 4rem); }
+.spis-login-form .brand-mark { color: #00335e; font-size: 1rem; font-weight: 900; letter-spacing: .12em; }
+.spis-login-form h2 { margin: 2.5rem 0 .5rem; color: #10213c; font-size: 1.8rem; font-weight: 800; letter-spacing: -.04em; }
+.spis-login-form .login-description { margin: 0 0 2rem; color: #64748b; font-size: .875rem; line-height: 1.6; }
+.spis-google-login { display: flex; align-items: center; justify-content: center; gap: .75rem; width: 100%; min-height: 52px; border: 1px solid #cbd5e1; border-radius: 12px; background: #fff; color: #1e293b; font-size: .875rem; font-weight: 700; box-shadow: 0 2px 5px rgba(15,23,42,.05); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.spis-google-login:hover { transform: translateY(-2px); border-color: #94a3b8; box-shadow: 0 8px 18px rgba(15,23,42,.1); }
+.spis-google-login:disabled { cursor: wait; opacity: .65; transform: none; }
+.spis-login-error { min-height: 1.25rem; margin-top: .85rem; color: #b91c1c; font-size: .75rem; line-height: 1.5; }
+.spis-login-footnote { margin-top: auto; padding-top: 2rem; color: #94a3b8; font-size: .7rem; line-height: 1.6; }
+@keyframes spis-login-float { 0%,100% { transform: translateY(0) rotateY(-5deg); } 50% { transform: translateY(-9px) rotateY(3deg); } }
+@keyframes spis-login-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+@media (max-width: 760px) {
+  .spis-login-panel { width: min(100%, 480px); min-height: 0; grid-template-columns: 1fr; }
+  .spis-login-art { min-height: 300px; padding: 1.5rem; }
+  .spis-login-copy { top: 1.5rem; left: 1.5rem; right: 1.5rem; }
+  .spis-login-copy h1 { font-size: 1.35rem; }
+  .spis-login-copy p { max-width: 300px; font-size: .75rem; }
+  .spis-login-scene { transform: scale(.72); margin-top: 5rem; margin-bottom: -2.5rem; }
+  .spis-login-form { padding: 1.75rem; }
+  .spis-login-form h2 { margin-top: 1.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spis-login-scene, .spis-login-box { animation: none !important; }
+}
+
 .witcher-card-maintenance {
   --wc-accent: #f29913;
   --wc-magic-aura: rgba(242, 153, 19, 0.18);

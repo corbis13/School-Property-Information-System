@@ -127,8 +127,38 @@
 </head>
 <body class="bg-[#f0f4f8] text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-green selection:text-white">
 
+  <!-- Google-only authentication gate -->
+  <div id="googleLoginGate" class="spis-login-layer" role="main" aria-label="Sign in to SPIS">
+    <section class="spis-login-panel">
+      <div class="spis-login-art" aria-hidden="true">
+        <div class="spis-login-copy">
+          <h1>Every school asset, accounted for.</h1>
+          <p>Keep your school property records organized, visible, and ready when you need them.</p>
+        </div>
+        <div class="spis-login-scene">
+          <div class="spis-login-orbit"></div>
+          <div class="spis-login-platform"></div>
+          <div class="spis-login-box box-a"></div>
+          <div class="spis-login-box box-b"></div>
+          <div class="spis-login-box box-c"></div>
+        </div>
+      </div>
+      <div class="spis-login-form">
+        <div class="brand-mark">SPIS <span class="text-[#0284c7]">/</span> SCHOOL PROPERTY</div>
+        <h2>Welcome back</h2>
+        <p class="login-description">Sign in with your Google account to continue to the School Property Information System.</p>
+        <button type="button" id="googleLoginButton" class="spis-google-login">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 48 48"><path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.8-.4-4.1H24v7.8h11a9.4 9.4 0 0 1-4.1 6.2v5.1h6.6c3.9-3.6 6.1-8.8 6.1-15Z"/><path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.6-5.1c-1.8 1.2-4.1 2-6.9 2-5.3 0-9.8-3.6-11.4-8.4H5.8v5.3A20 20 0 0 0 24 44Z"/><path fill="#FBBC05" d="M12.6 27.6a12 12 0 0 1 0-7.2v-5.3H5.8a20 20 0 0 0 0 17.8l6.8-5.3Z"/><path fill="#EA4335" d="M24 12c3 0 5.7 1 7.8 3.1l5.8-5.8C34.1 6 29.5 4 24 4A20 20 0 0 0 5.8 15.1l6.8 5.3C14.2 15.6 18.7 12 24 12Z"/></svg>
+          <span>Continue with Google</span>
+        </button>
+        <p id="googleLoginError" class="spis-login-error" aria-live="polite"></p>
+        <p class="spis-login-footnote">Use your authorized school Google account. Access is provided through Google sign-in.</p>
+      </div>
+    </section>
+  </div>
+
   <!-- Main Container -->
-  <div class="app-shell flex flex-1 min-h-screen overflow-hidden">
+  <div class="app-shell flex flex-1 min-h-screen overflow-hidden" inert aria-hidden="true">
     
     <!-- LEFT SIDEBAR -->
     <aside class="app-sidebar sidebar-bg text-white flex flex-col justify-between z-50 shadow-xl relative select-none">
@@ -319,17 +349,17 @@
                 <i data-lucide="user" class="w-4 h-4 sm:w-5 sm:h-5 text-white"></i>
               </div>
               <div class="text-left hidden sm:block">
-                <p class="text-xs font-extrabold text-slate-800 leading-tight group-hover:text-[#00335e] transition">Janine Tuwahan</p>
-                <p class="text-[10px] font-semibold text-slate-500 leading-tight">AO II / Custodian</p>
+                <p id="googleAccountButtonName" class="text-xs font-extrabold text-slate-800 leading-tight group-hover:text-[#00335e] transition">Google User</p>
+                <p id="googleAccountButtonEmail" class="text-[10px] font-semibold text-slate-500 leading-tight">Signed in with Google</p>
               </div>
               <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 group-hover:text-slate-800 transition"></i>
             </button>
             <!-- Dropdown Menu -->
             <div id="userDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden py-1">
               <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
-                <p class="text-xs font-bold text-slate-800">Janine Tuwahan</p>
-                <p class="text-[11px] text-slate-500">Administrative Officer II</p>
-                <span class="inline-block mt-1 text-[10px] font-semibold bg-[#00335e]/10 text-[#00335e] px-2 py-0.5 rounded">Property Custodian</span>
+                <p id="googleAccountMenuName" class="text-xs font-bold text-slate-800">Google User</p>
+                <p id="googleAccountMenuEmail" class="text-[11px] text-slate-500">Signed in with Google</p>
+                <span class="inline-block mt-1 text-[10px] font-semibold bg-[#0284c7]/10 text-[#0369a1] px-2 py-0.5 rounded">Google Account</span>
               </div>
               <a href="#" class="flex items-center space-x-2.5 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-[#00335e] transition" onclick="showModule('settings'); return false;">
                 <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i>
@@ -344,6 +374,10 @@
                 <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-400"></i>
                 <span>Return to Dashboard</span>
               </a>
+              <button id="googleSignOutButton" type="button" class="w-full flex items-center space-x-2.5 px-4 py-2.5 text-xs text-red-700 hover:bg-red-50 transition text-left">
+                <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i>
+                <span>Sign out</span>
+              </button>
             </div>
           </div>
         </div>
@@ -2974,7 +3008,7 @@
                 }
                 var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
-                var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
+                var sHeaders = { apikey: sKey, Authorization: "Bearer " + ((window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.access_token) || sKey) };
                 try {
                   var sel = "id,ics_no,entity_name,fund_cluster,received_from_name,received_from_position,received_from_date,received_by_name,received_by_position,received_by_date,created_at,ics_slip_items(id,line_no,asset_id,inventory_item_no,description_snapshot,additional_item,quantity,unit,unit_cost,total_cost,estimated_useful_life)";
                   var res = await fetch(sUrl + "/rest/v1/ics_slips?select=" + encodeURIComponent(sel) + "&order=created_at.desc", { headers: sHeaders });
@@ -3029,7 +3063,7 @@
                 }
                 var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
-                var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
+                var sHeaders = { apikey: sKey, Authorization: "Bearer " + ((window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.access_token) || sKey) };
                 try {
                   var res = await fetch(sUrl + "/rest/v1/assets?select=*", { headers: sHeaders });
                   if (res.ok) {
@@ -3902,9 +3936,13 @@
               };
 
               window.loadPersonnelFromDatabase = async function () {
+                var authSession = window.SUPABASE_AUTH_SESSION || (window.SUPABASE_AUTH_READY ? await window.SUPABASE_AUTH_READY : null);
+                if (!authSession) return;
+                window.SUPABASE_AUTH_SESSION = authSession;
+                if (window.supabaseHeaders) window.supabaseHeaders.Authorization = "Bearer " + authSession.access_token;
                 var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
-                var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
+                var sHeaders = { apikey: sKey, Authorization: "Bearer " + ((window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.access_token) || sKey) };
 
                 try {
                   var res = await fetch(sUrl + "/rest/v1/school_teacher?select=*&order=id.desc", { headers: sHeaders });
@@ -4010,7 +4048,7 @@
               async function loadSchoolDetailsOptions() {
                 var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
-                var sHeaders = { apikey: sKey, Authorization: "Bearer " + sKey };
+                var sHeaders = { apikey: sKey, Authorization: "Bearer " + ((window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.access_token) || sKey) };
 
                 var names = [];
                 try {
@@ -4157,7 +4195,7 @@
                         method: "POST",
                         headers: {
                           apikey: sKey,
-                          Authorization: "Bearer " + sKey,
+                          Authorization: "Bearer " + ((window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.access_token) || sKey),
                           "Content-Type": "image/webp",
                           "x-upsert": "true"
                         },
@@ -4238,7 +4276,7 @@
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
                 var sHeaders = {
                   apikey: sKey,
-                  Authorization: "Bearer " + sKey,
+                  Authorization: "Bearer " + ((window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.access_token) || sKey),
                   "Content-Type": "application/json",
                   "Prefer": "return=representation"
                 };
@@ -4778,7 +4816,7 @@
                 var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
                 var sHeaders = {
                   apikey: sKey,
-                  Authorization: "Bearer " + sKey,
+                  Authorization: "Bearer " + ((window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.access_token) || sKey),
                   "Content-Type": "application/json",
                   "Prefer": "return=representation"
                 };
@@ -4938,7 +4976,7 @@
                         method: "POST",
                         headers: {
                           apikey: sKey,
-                          Authorization: "Bearer " + sKey,
+                          Authorization: "Bearer " + ((window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.access_token) || sKey),
                           "Content-Type": "image/webp",
                           "x-upsert": "true"
                         },
@@ -4968,7 +5006,7 @@
                     method: "PATCH",
                     headers: {
                       apikey: sKey,
-                      Authorization: "Bearer " + sKey,
+                      Authorization: "Bearer " + ((window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.access_token) || sKey),
                       "Content-Type": "application/json",
                       "Prefer": "return=representation"
                     },
@@ -6292,6 +6330,108 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (function () {
+      var gate = document.getElementById("googleLoginGate");
+      var button = document.getElementById("googleLoginButton");
+      var errorEl = document.getElementById("googleLoginError");
+      var config = window.SUPABASE_CONFIG || {};
+      var authClient = window.supabase && typeof window.supabase.createClient === "function"
+        ? window.supabase.createClient(config.url, config.anonKey, { auth: { flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
+        : null;
+
+      window.SUPABASE_AUTH_CLIENT = authClient;
+      function isGoogleSession(session) {
+        return Boolean(session && session.user && (session.user.app_metadata?.provider === "google" || (session.user.identities || []).some(function (identity) { return identity.provider === "google"; })));
+      }
+      function applySession(session) {
+        session = isGoogleSession(session) ? session : null;
+        window.SUPABASE_AUTH_SESSION = session || null;
+        var appShell = document.querySelector(".app-shell");
+        if (appShell) {
+          appShell.inert = !Boolean(session);
+          appShell.setAttribute("aria-hidden", String(!session));
+        }
+        if (window.supabaseHeaders) {
+          window.supabaseHeaders.Authorization = session && session.access_token
+            ? "Bearer " + session.access_token
+            : "Bearer " + (config.anonKey || window.supabaseAnonKey || "");
+        }
+        var user = session && session.user ? session.user : {};
+        var displayName = user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name) || (user.email ? user.email.split("@")[0] : "Google User");
+        ["googleAccountButtonName", "googleAccountMenuName"].forEach(function (id) {
+          var element = document.getElementById(id);
+          if (element) element.textContent = displayName;
+        });
+        ["googleAccountButtonEmail", "googleAccountMenuEmail"].forEach(function (id) {
+          var element = document.getElementById(id);
+          if (element) element.textContent = user.email || "Signed in with Google";
+        });
+        if (gate) gate.classList.toggle("hidden", Boolean(session));
+      }
+
+      window.SUPABASE_AUTH_READY = authClient
+        ? authClient.auth.getSession().then(function (result) {
+            if (result.error) throw result.error;
+            var session = result.data.session;
+            if (session && !isGoogleSession(session)) {
+              return authClient.auth.signOut().then(function () { applySession(null); return null; });
+            }
+            applySession(session);
+            return session;
+          }).catch(function (error) {
+            if (errorEl) errorEl.textContent = error.message || "Could not verify your Google sign-in.";
+            applySession(null);
+            return null;
+          })
+        : Promise.resolve(null).then(function () {
+            if (errorEl) errorEl.textContent = "Google sign-in could not load. Check your connection and Supabase configuration.";
+            return null;
+          });
+
+      if (authClient) {
+        authClient.auth.onAuthStateChange(function (_event, session) {
+          applySession(session);
+          if (session && window.supabaseHeaders) window.supabaseHeaders.Authorization = "Bearer " + session.access_token;
+        });
+      }
+
+      var signOutButton = document.getElementById("googleSignOutButton");
+      if (signOutButton) signOutButton.addEventListener("click", async function () {
+        if (!authClient) return;
+        signOutButton.disabled = true;
+        try {
+          var result = await authClient.auth.signOut();
+          if (result.error) throw result.error;
+          applySession(null);
+          if (window.closeDropdowns) window.closeDropdowns();
+        } catch (error) {
+          if (typeof window.showToast === "function") window.showToast(error.message || "Sign out failed.");
+          signOutButton.disabled = false;
+        }
+      });
+
+      if (button) button.addEventListener("click", async function () {
+        if (!authClient) {
+          if (errorEl) errorEl.textContent = "Google sign-in is unavailable. Check your connection and Supabase configuration.";
+          return;
+        }
+        button.disabled = true;
+        if (errorEl) errorEl.textContent = "Connecting to Google…";
+        try {
+          var result = await authClient.auth.signInWithOAuth({
+            provider: "google",
+            options: { redirectTo: window.location.href.split("#")[0], queryParams: { prompt: "select_account" } }
+          });
+          if (result.error) throw result.error;
+        } catch (error) {
+          if (errorEl) errorEl.textContent = error.message || "Google sign-in could not be started.";
+          button.disabled = false;
+        }
+      });
+    })();
+  </script>
   <script src="js/app.js?v=20261101_all_property_heading_v1"></script>
   <script>
     if (typeof lucide !== "undefined") { lucide.createIcons(); }
@@ -6416,13 +6556,15 @@
     ];
 
     async function loadReportInventoryTypeDropdown() {
+        const authSession = window.SUPABASE_AUTH_SESSION || (window.SUPABASE_AUTH_READY ? await window.SUPABASE_AUTH_READY : null);
+        if (!authSession) return;
         const rt = document.getElementById("reportType") || document.getElementById("reportInventoryType");
         if (!rt) return;
 
         let dbTypes = [];
         const sUrl = (typeof supabaseUrl !== "undefined" && supabaseUrl) || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
         const sKey = (typeof supabaseAnonKey !== "undefined" && supabaseAnonKey) || (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
-        const sHeaders = (typeof supabaseHeaders !== "undefined" && supabaseHeaders) || { apikey: sKey, Authorization: "Bearer " + sKey };
+        const sHeaders = (typeof supabaseHeaders !== "undefined" && supabaseHeaders) || { apikey: sKey, Authorization: "Bearer " + ((window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.access_token) || sKey) };
 
         try {
             // 1. Try public.inventory_item table

@@ -7678,6 +7678,15 @@ function wireEvents() {
 }
 
 async function init() {
+    const authSession = window.SUPABASE_AUTH_READY ? await window.SUPABASE_AUTH_READY : null;
+    if (!authSession) {
+        document.getElementById("googleLoginGate")?.classList.remove("hidden");
+        return;
+    }
+    window.SUPABASE_AUTH_SESSION = authSession;
+    supabaseHeaders.Authorization = `Bearer ${authSession.access_token}`;
+    window.supabaseHeaders = supabaseHeaders;
+
     loadTheme();
     wireEvents();
     await loadItems();
@@ -10623,5 +10632,11 @@ function generateRspiPdf() {
 
 // Initialize RSPI CRUD
 if (!isRspiModuleInitialized) {
-    initRspiModule();
+    if (window.SUPABASE_AUTH_READY) {
+        window.SUPABASE_AUTH_READY.then((session) => {
+            if (session) initRspiModule();
+        });
+    } else {
+        initRspiModule();
+    }
 }

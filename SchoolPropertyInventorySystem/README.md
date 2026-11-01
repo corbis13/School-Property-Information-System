@@ -53,6 +53,16 @@ To get started:
 
 Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the inventory and lookup tables (including the `asset_images` photo metadata table), configures public read/write policies for this no-login app, and creates the `personnel-photos` and `property-images` Storage buckets.
 
+### Google sign-in
+
+The app now shows a Google-only sign-in screen. To enable OAuth:
+
+1. In Supabase Authentication settings, enable the Google provider and enter the Google OAuth client ID and secret.
+2. Add the app's current URL to Supabase's redirect URL allow list. The app uses the current page as the OAuth return URL, so allow both local and deployed URLs that users open.
+3. Configure the matching Supabase callback URL in the Google OAuth client.
+
+The Google client secret belongs in Supabase's dashboard; do not add it to this repository.
+
 ### Storage
 
 - `personnel-photos` (public bucket) – personnel profile photos uploaded as WebP from the Personnel profile card. The setup script adds public select/insert/update policies for this bucket.
@@ -95,7 +105,7 @@ QR scanning opens the asset detail page automatically. Keep the `assetUrl` value
 
 ## Security note
 
-This is a no-login client app, so the policies in [`supabase-setup.sql`](supabase-setup.sql) currently grant the public `anon` role full **read/write/delete** access to the inventory tables (required for the app to function without authentication). See the **Production hardening** section at the bottom of `supabase-setup.sql` for the recommended migration to `authenticated`-only mutations before a real deployment.
+The browser UI is now gated by Google sign-in and uses the user's Supabase access token for database requests. The existing policies in [`supabase-setup.sql`](supabase-setup.sql) still grant the public `anon` role read/write access, so the login screen alone does not prevent direct anonymous API access. Replace those policies with authenticated-only policies before relying on sign-in to protect database records.
 
 ## Legacy files
 
