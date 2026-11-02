@@ -1873,7 +1873,7 @@
                PERSONNEL PROFILE CARD
           =================================================== -->
           <section class="bg-white rounded-xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,.04)] p-5 lg:p-6 mb-4">
-            <div class="grid grid-cols-1 xl:grid-cols-[1fr_390px] gap-6">
+            <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px] gap-4">
 
               <!-- PERSON -->
               <div class="flex flex-col md:flex-row gap-5">
@@ -4379,13 +4379,9 @@
                 var fromDateEl = document.getElementById("modalIcsReceivedFromDate");
                 if (fromDateEl) fromDateEl.value = today;
 
-                // Auto-generate ICS No
+                // Leave ICS No blank for manual entry
                 var icsNoEl = document.getElementById("modalIcsNo");
-                if (icsNoEl) {
-                  var yr = new Date().getFullYear();
-                  var rnd = Math.floor(1000 + Math.random() * 9000);
-                  icsNoEl.value = "ICS-" + yr + "-" + rnd;
-                }
+                if (icsNoEl) icsNoEl.value = "";
 
                 // Entity Name
                 var entitySelect = document.getElementById("modalIcsEntityName");

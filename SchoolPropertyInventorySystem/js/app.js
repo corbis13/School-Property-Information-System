@@ -755,21 +755,13 @@ function populateIcsReceivedByDropdown() {
     if (!select) return;
 
     const currentValue = select.value;
-    const allNames = [...new Set([
-        ...teacherOptions.map((t) => t.name),
-        ...signatoryEntries.map((s) => s.name)
-    ].filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    const allNames = [...new Set(teacherOptions.map((teacher) => teacher.name).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 
     select.innerHTML = `<option value="">Select recipient</option>${allNames
         .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("")}`;
 
-    if (currentValue && !allNames.includes(currentValue)) {
-        const customOpt = document.createElement("option");
-        customOpt.value = currentValue;
-        customOpt.textContent = currentValue;
-        select.appendChild(customOpt);
-    }
-    if (currentValue) select.value = currentValue;
+    if (currentValue && allNames.includes(currentValue)) select.value = currentValue;
 }
 
 async function loadInventoryTypeOptions() {
@@ -8005,25 +7997,13 @@ function updateInventoryCustodianSlipTotal() {
         : "";
 }
 
-function generateInventoryCustodianSlipNo() {
-    const year = new Date().getFullYear();
-    const usedNumbers = new Set(inventoryCustodianSlips.map((slip) => String(slip.icsNo || "").trim()));
-    let candidate = "";
-    let attempts = 0;
-    do {
-        candidate = `ICS-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
-        attempts++;
-    } while (usedNumbers.has(candidate) && attempts < 100);
-    return usedNumbers.has(candidate) ? `ICS-${year}-${Date.now()}` : candidate;
-}
-
 function resetInventoryCustodianSlipForm() {
     const form = document.querySelector("#icsSlipForm");
     if (!form) return;
 
     form.reset();
     document.querySelector("#icsEditingId").value = "";
-    document.querySelector("#icsNo").value = generateInventoryCustodianSlipNo();
+    document.querySelector("#icsNo").value = "";
     document.querySelector("#icsTotalCost").value = "";
     document.querySelector("#icsFormTitle").textContent = "Inventory Custodian Slip";
 
@@ -8245,7 +8225,13 @@ function populateIcsFieldsFromDescription(selectedAssetOverride = null) {
     }
 
     if (fundClusterEl && !fundClusterEl.value) fundClusterEl.value = selectedAsset.fundCluster || "";
-    if (inventoryItemNoEl) inventoryItemNoEl.value = selectedAsset.propertyNo || selectedAsset.property_no || "";
+    if (inventoryItemNoEl) {
+        inventoryItemNoEl.value = selectedAsset.property_no
+            || selectedAsset.propertyNo
+            || selectedAsset.semi_expandable_no
+            || selectedAsset.semiExpandableNo
+            || "";
+    }
     if (additionalItemEl) additionalItemEl.value = selectedAsset.additionalItem || "";
     if (unitEl) unitEl.value = selectedAsset.unitMeasurement || "";
     if (unitCostEl) unitCostEl.value = selectedAsset.unitValue ?? "";
@@ -8599,7 +8585,7 @@ function editInventoryCustodianSlip(id) {
             if (matchedAsset) opt.dataset.assetId = matchedAsset.assetId;
             el.appendChild(opt);
         }
-        if ((elementId === "icsReceivedFrom" || elementId === "icsReceivedBy") && val) {
+        if (elementId === "icsReceivedFrom" && val) {
             const hasOption = Array.from(el.options).some((opt) => opt.value === val);
             if (!hasOption) {
                 const opt = document.createElement("option");
@@ -8715,7 +8701,7 @@ async function initInventoryCustodianSlipCrud() {
     populateIcsReceivedByDropdown();
     inventoryCustodianSlips = loadInventoryCustodianSlips();
     const initialIcsNo = document.querySelector("#icsNo");
-    if (initialIcsNo && !initialIcsNo.value) initialIcsNo.value = generateInventoryCustodianSlipNo();
+    if (initialIcsNo) initialIcsNo.value = "";
     renderIcsGeneratedCount();
     renderInventoryCustodianSlipTable();
     renderRecentAssets();
@@ -8758,13 +8744,7 @@ async function initInventoryCustodianSlipCrud() {
             const positionInput = document.querySelector("#icsReceivedByPosition");
             if (!positionInput) return;
             const matchedTeacher = teacherOptions.find((entry) => entry.name.toLowerCase() === selectedName.toLowerCase());
-            const matchedSignatory = signatoryEntries.find((entry) => entry.name.toLowerCase() === selectedName.toLowerCase());
-            const matchedPosition = (matchedTeacher && matchedTeacher.position) || (matchedSignatory && matchedSignatory.position) || "";
-            if (matchedPosition) {
-                positionInput.value = matchedPosition;
-            } else if (!selectedName) {
-                positionInput.value = "";
-            }
+            positionInput.value = (matchedTeacher && matchedTeacher.position) || "";
         });
     }
 
