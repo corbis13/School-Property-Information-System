@@ -897,6 +897,8 @@ async function loadStatusOptions() {
     return statusOptions;
 }
 
+const defaultIcsEntityName = "Basilan National High School - Night";
+
 async function loadSchoolNameOptions() {
     const entitySelect = document.querySelector("#icsEntityName");
     if (!entitySelect) return [];
@@ -924,6 +926,9 @@ async function loadSchoolNameOptions() {
     if (schoolNames.length === 0 && Array.isArray(allSchoolsList) && allSchoolsList.length > 0) {
         schoolNames = [...new Set(allSchoolsList.map((s) => String(s.school_name || "").trim()).filter(Boolean))];
     }
+    if (!schoolNames.includes(defaultIcsEntityName)) {
+        schoolNames.unshift(defaultIcsEntityName);
+    }
 
     entitySelect.innerHTML = '<option value="">Select school</option>';
     schoolNames.forEach((schoolName) => {
@@ -940,7 +945,7 @@ async function loadSchoolNameOptions() {
         entitySelect.appendChild(legacyOption);
     }
 
-    entitySelect.value = currentValue;
+    entitySelect.value = currentValue || defaultIcsEntityName;
 
     const rspiEntitySelect = document.querySelector("#rspiEntityName");
     if (rspiEntitySelect) {
@@ -5536,7 +5541,7 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
-function showSuccessModal(message, title) {
+function showSuccessModal(message, title, { refreshInventory = true } = {}) {
     const modal = document.getElementById("successModal");
     const titleEl = modal && modal.querySelector(".success-modal-title");
     const msgEl   = modal && modal.querySelector(".success-modal-msg");
@@ -5564,7 +5569,8 @@ function showSuccessModal(message, title) {
         if (msgEl)   msgEl.textContent   = "Record saved successfully!";
         document.removeEventListener("keydown", onEsc);
         modal.removeEventListener("click", onBackdrop);
-        if (!["PDF Generated & Saved", "Personnel Added"].includes(title || "Success") && typeof refreshInventoryRecordsCard === "function") {
+        const skipInventoryRefreshTitles = ["PDF Generated & Saved", "Personnel Added", "New ICS", "New RSPI", "Clear"];
+        if (refreshInventory && !skipInventoryRefreshTitles.includes(title || "Success") && typeof refreshInventoryRecordsCard === "function") {
             refreshInventoryRecordsCard(window.recentlyUpdatedAssetId);
         }
     }
@@ -8002,6 +8008,8 @@ function resetInventoryCustodianSlipForm() {
     if (!form) return;
 
     form.reset();
+    const entitySelect = document.querySelector("#icsEntityName");
+    if (entitySelect) entitySelect.value = defaultIcsEntityName;
     document.querySelector("#icsEditingId").value = "";
     document.querySelector("#icsNo").value = "";
     document.querySelector("#icsTotalCost").value = "";
@@ -8788,7 +8796,8 @@ async function initInventoryCustodianSlipCrud() {
 
         showSuccessModal(
             action === "update" ? "ICS record updated successfully!" : "ICS record saved successfully!",
-            "Success"
+            "Success",
+            { refreshInventory: false }
         );
     });
 
@@ -9308,7 +9317,7 @@ function mapRspiReportRows(rows) {
             return [{
                 id: `RSPI-${header.id}`,
                 dbReportId: header.id,
-                serialNo: header.serial_no || (header.id ? `RSPI-${String(header.id).padStart(4, "0")}` : ""),
+                serialNo: header.serial_no || "",
                 entityName: header.entity_name || "",
                 fundCluster: header.fund_cluster || "",
                 centerCode: header.responsibility_center_code || "",
@@ -9336,7 +9345,7 @@ function mapRspiReportRows(rows) {
                 lineNo: item.line_no,
                 entityName: header.entity_name || "",
                 fundCluster: header.fund_cluster || "",
-                serialNo: header.serial_no || (header.id ? `RSPI-${String(header.id).padStart(4, "0")}` : ""),
+                serialNo: header.serial_no || "",
                 centerCode: item.responsibility_center_code || header.responsibility_center_code || "",
                 description: item.description_snapshot || "",
                 additionalItem: items.find((asset) => {
@@ -9757,13 +9766,7 @@ function populateRspiSignatories() {
     const curCustodian = custodianSelect ? custodianSelect.value : "";
     const curAccounting = accountingSelect ? accountingSelect.value : "";
 
-    const list = [...(signatoryEntries || [])];
-    if (!list.some(s => (s.name || s.signatory || "").toLowerCase().includes("tuwahan"))) {
-        list.unshift({ name: "Janine Carlyle G. Tuwahan", position: "Administrative Officer II" });
-    }
-    if (!list.some(s => (s.name || s.signatory || "").toLowerCase().includes("avellana"))) {
-        list.push({ name: "Rodrigo A. Avellana, Jr.", position: "Designated Accounting Staff" });
-    }
+    const list = [...(managedSignatories || [])];
 
     const seen = new Set();
     const optionsHtml = ['<option value="">Select signatory</option>'];
@@ -9781,9 +9784,7 @@ function populateRspiSignatories() {
         if (curCustodian && Array.from(custodianSelect.options).some(o => o.value === curCustodian)) {
             custodianSelect.value = curCustodian;
         } else {
-            const def = Array.from(custodianSelect.options).find(o => o.value.toLowerCase().includes("tuwahan"));
-            if (def) custodianSelect.value = def.value;
-            else if (custodianSelect.options.length > 1) custodianSelect.selectedIndex = 1;
+            custodianSelect.value = "";
         }
     }
 
@@ -9792,10 +9793,7 @@ function populateRspiSignatories() {
         if (curAccounting && Array.from(accountingSelect.options).some(o => o.value === curAccounting)) {
             accountingSelect.value = curAccounting;
         } else {
-            const def = Array.from(accountingSelect.options).find(o => o.value.toLowerCase().includes("avellana"));
-            if (def) accountingSelect.value = def.value;
-            else if (accountingSelect.options.length > 2) accountingSelect.selectedIndex = 2;
-            else if (accountingSelect.options.length > 1) accountingSelect.selectedIndex = 1;
+            accountingSelect.value = "";
         }
     }
 }
@@ -9898,15 +9896,6 @@ function editRspiSlip(id) {
             opt.value = val;
             opt.textContent = val;
             el.appendChild(opt);
-        }
-        if ((elementId === "rspiCustodian" || elementId === "rspiAccountingStaff") && val) {
-            const hasOption = Array.from(el.options).some((opt) => opt.value === val);
-            if (!hasOption) {
-                const opt = document.createElement("option");
-                opt.value = val;
-                opt.textContent = val;
-                el.appendChild(opt);
-            }
         }
         el.value = val;
     });
@@ -10350,7 +10339,8 @@ async function saveRspiSlip(e) {
 
         showSuccessModal(
             action === "update" ? "RSPI record updated successfully in database!" : "RSPI record saved successfully in database!",
-            "Success"
+            "Success",
+            { refreshInventory: false }
         );
     } catch (error) {
         console.error("Error saving RSPI slip to database:", error);
@@ -10368,12 +10358,14 @@ async function saveRspiSlip(e) {
         if (errMsg.includes("42501") || errMsg.toLowerCase().includes("row-level security")) {
             showSuccessModal(
                 "Record saved to local storage, but saving to the Supabase database failed because the Row-Level Security (RLS) policy blocks anonymous inserts. Please run the provided RLS policy SQL in your Supabase SQL Editor.",
-                "Database Permission Notice"
+                "Database Permission Notice",
+                { refreshInventory: false }
             );
         } else {
             showSuccessModal(
                 "Record saved to local storage, but remote database save encountered an error: " + errMsg.slice(0, 150),
-                "Database Warning"
+                "Database Warning",
+                { refreshInventory: false }
             );
         }
     } finally {

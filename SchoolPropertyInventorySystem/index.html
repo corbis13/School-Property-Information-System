@@ -1437,8 +1437,8 @@
 
                         <div class="two-column">
                             <label>Entity Name
-                              <select id="icsEntityName" required>
-                                <option value="">Select school</option>
+                              <select id="icsEntityName" required disabled class="bg-slate-100">
+                                <option value="Basilan National High School - Night" selected>Basilan National High School - Night</option>
                               </select>
                             </label>
                             <label>Fund Cluster<input id="icsFundCluster" type="text" required readonly></label>
@@ -1478,25 +1478,31 @@
                           <label>Total Cost<input id="icsTotalCost" type="number" min="0" step="0.01" readonly></label>
                           <label>Estimated Useful Life<input id="icsEstimatedUsefulLife" type="text" placeholder="e.g. 5 years"></label>
                         </div>
-                        <div class="two-column">
-                            <label>Received From
-                                <select id="icsReceivedFrom">
-                                    <option value="">Select signatory</option>
-                                </select>
-                            </label>
-                            <label>From Position/Office<input id="icsReceivedFromPosition" type="text" readonly></label>
-                        </div>
-                        <div class="two-column">
-                            <label>Date Received From<input id="icsReceivedFromDate" type="date"></label>
-                            <label>Received By
-                                <select id="icsReceivedBy">
-                                    <option value="">Select recipient</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="two-column">
-                            <label>Recipient Position/Office<input id="icsReceivedByPosition" type="text" readonly></label>
-                            <label>Date Received By<input id="icsReceivedByDate" type="date"></label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <section class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                            <h3 class="text-sm font-bold text-[#00335e] mb-3">Issuer</h3>
+                            <div class="space-y-3">
+                                <label>Received From
+                                    <select id="icsReceivedFrom">
+                                        <option value="">Select signatory</option>
+                                    </select>
+                                </label>
+                                <label>Designation/Position<input id="icsReceivedFromPosition" type="text" readonly></label>
+                                <label>Date Received From<input id="icsReceivedFromDate" type="date"></label>
+                            </div>
+                        </section>
+                        <section class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                            <h3 class="text-sm font-bold text-[#00335e] mb-3">Recipient</h3>
+                            <div class="space-y-3">
+                                <label>Received By
+                                    <select id="icsReceivedBy">
+                                        <option value="">Select recipient</option>
+                                    </select>
+                                </label>
+                                <label>Designation/Position<input id="icsReceivedByPosition" type="text" readonly></label>
+                                <label>Date Received By<input id="icsReceivedByDate" type="date"></label>
+                            </div>
+                        </section>
                         </div>
                         <div class="form-actions-row">
                             <!-- New Button -->
@@ -1582,14 +1588,14 @@
 
               <div class="two-column">
                 <label>Entity Name
-                  <select id="rspiEntityName" required>
+                  <select id="rspiEntityName" required disabled class="bg-slate-100">
                     <option value="">Select school</option>
                   </select>
                 </label>
-                <label>Fund Cluster<input id="rspiFundCluster" type="text" required></label>
+                <label>Fund Cluster<input id="rspiFundCluster" type="text" required readonly class="bg-slate-100"></label>
               </div>
               <div class="two-column">
-                <label>Responsibility Center Code<input id="rspiCenterCode" type="text" placeholder="e.g. 500243"></label>
+                <label>Responsibility Center Code<input id="rspiCenterCode" type="text" placeholder="e.g. 500243" readonly class="bg-slate-100"></label>
                 <div class="ics-form-group">
                   <label for="rspiDescriptionSearch">Item Description</label>
                   <div class="ics-searchable-select" id="rspiSearchableSelect">
@@ -1627,20 +1633,25 @@
               </div>
               <div class="two-column">
                 <label>Date<input id="rspiDate" type="date" required></label>
-                <label>Property and/or Supply Custodian
-                  <select id="rspiCustodian">
-                    <option value="">Select signatory</option>
-                  </select>
-                </label>
               </div>
-              <div class="two-column">
-                <label>Designated Accounting Staff
-                  <select id="rspiAccountingStaff">
-                    <option value="">Select signatory</option>
-                  </select>
-                </label>
-                <label>Posting Date<input id="rspiPostedDate" type="date"></label>
-              </div>
+              <section class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4">
+                <h3 class="text-sm font-bold text-[#00335e] mb-3">Custodian & Posting</h3>
+                <div class="two-column">
+                  <label>Property and/or Supply Custodian
+                    <select id="rspiCustodian">
+                      <option value="">Select signatory</option>
+                    </select>
+                  </label>
+                  <label>Designated Accounting Staff
+                    <select id="rspiAccountingStaff">
+                      <option value="">Select signatory</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="two-column">
+                  <label>Posting Date<input id="rspiPostedDate" type="date"></label>
+                </div>
+              </section>
               <div class="form-actions-row">
                 <!-- New Button -->
                 <button class="button" id="rspiNewBtn" type="button" onclick="resetRspiSlipForm(); showSuccessModal('Ready for new RSPI!', 'New RSPI');" title="New RSPI">
@@ -2630,7 +2641,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                       <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalIcsQuantity">Quantity <span class="text-red-500">*</span></label>
-                        <input type="number" id="modalIcsQuantity" min="1" step="1" value="1" required
+                        <input type="number" id="modalIcsQuantity" min="1" step="1" required
                           class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
                       </div>
                       <div>
@@ -2645,7 +2656,7 @@
                       </div>
                       <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1" for="modalIcsEstimatedUsefulLife">Estimated Useful Life</label>
-                        <input type="text" id="modalIcsEstimatedUsefulLife" placeholder="e.g. 5 years" value="5 years"
+                        <input type="text" id="modalIcsEstimatedUsefulLife" placeholder="e.g. 5 years"
                           class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
                       </div>
                     </div>
@@ -2665,13 +2676,13 @@
                         <i class="fa-solid fa-arrow-up-from-bracket text-slate-400"></i> Received From (Issuer)
                       </div>
                       <div>
-                        <label class="block text-[11px] font-semibold text-slate-600 mb-1" for="modalIcsReceivedFrom">Signatory Name <span class="text-red-500">*</span></label>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1" for="modalIcsReceivedFrom">Issuer's Name <span class="text-red-500">*</span></label>
                         <select id="modalIcsReceivedFrom" required class="w-full h-[36px] px-2.5 rounded-lg border border-gray-300 text-xs outline-none focus:border-[#078f95] bg-white">
                           <option value="">Select signatory</option>
                         </select>
                       </div>
                       <div>
-                        <label class="block text-[11px] font-semibold text-slate-600 mb-1" for="modalIcsReceivedFromPosition">Position / Office</label>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1" for="modalIcsReceivedFromPosition">Designation/Position</label>
                         <input type="text" id="modalIcsReceivedFromPosition" readonly placeholder="Auto-filled from signatory"
                           class="w-full h-[36px] px-2.5 rounded-lg border border-gray-300 bg-slate-100 text-slate-600 text-xs outline-none" />
                       </div>
@@ -2685,15 +2696,17 @@
                     <!-- Received By (Recipient: Selected Personnel) -->
                     <div class="space-y-3 bg-[#eef7fa] p-3.5 rounded-lg border border-[#c4e2ea]">
                       <div class="font-semibold text-xs text-[#078f95] flex items-center gap-1.5 border-b border-[#c4e2ea] pb-2">
-                        <i class="fa-solid fa-user-check text-[#078f95]"></i> Received By (Selected Personnel)
+                        <i class="fa-solid fa-user-check text-[#078f95]"></i> Received By (Recipient)
                       </div>
                       <div>
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="modalIcsReceivedBy">Recipient Name <span class="text-red-500">*</span></label>
-                        <input type="text" id="modalIcsReceivedBy" required readonly
-                          class="w-full h-[36px] px-2.5 rounded-lg border border-[#a4d4e0] bg-white text-[#00335e] font-bold text-xs outline-none" />
+                        <select id="modalIcsReceivedBy" required disabled onchange="updateModalIcsRecipientPosition()"
+                          class="w-full h-[36px] px-2.5 rounded-lg border border-[#a4d4e0] bg-white text-[#00335e] font-bold text-xs outline-none">
+                          <option value="">Select personnel</option>
+                        </select>
                       </div>
                       <div>
-                        <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="modalIcsReceivedByPosition">Recipient Position / Office</label>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1" for="modalIcsReceivedByPosition">Designation/Position</label>
                         <input type="text" id="modalIcsReceivedByPosition" readonly
                           class="w-full h-[36px] px-2.5 rounded-lg border border-[#a4d4e0] bg-white text-slate-600 text-xs outline-none" />
                       </div>
@@ -4365,19 +4378,29 @@
                 var targetNameEl = document.getElementById("modalIcsTargetPersonnelName");
                 if (targetNameEl) targetNameEl.textContent = p.teacher_name || "Personnel";
 
-                // Pre-fill recipient with the selected personnel
+                // Recipient choices come only from personnel loaded from school_teacher.
                 var recByEl = document.getElementById("modalIcsReceivedBy");
-                if (recByEl) recByEl.value = p.teacher_name || "";
+                if (recByEl) {
+                  var teachers = Array.isArray(window.personnelList) ? window.personnelList : [];
+                  recByEl.innerHTML = '<option value="">Select personnel</option>' + teachers
+                    .filter(function (teacher) { return teacher && teacher.teacher_name; })
+                    .map(function (teacher) {
+                      return '<option value="' + safeEscape(teacher.teacher_name) + '" data-position="' + safeEscape(teacher.plantilla_position || '') + '">' + safeEscape(teacher.teacher_name) + '</option>';
+                    }).join("");
+                  recByEl.value = teachers.some(function (teacher) {
+                    return teacher && teacher.teacher_name === p.teacher_name;
+                  }) ? p.teacher_name : "";
+                  recByEl.disabled = true;
+                }
 
                 var recPosEl = document.getElementById("modalIcsReceivedByPosition");
-                if (recPosEl) recPosEl.value = p.plantilla_position || "";
+                if (recPosEl) recPosEl.value = recByEl && recByEl.value ? p.plantilla_position || "" : "";
 
-                var today = new Date().toISOString().slice(0, 10);
                 var recDateEl = document.getElementById("modalIcsReceivedByDate");
-                if (recDateEl) recDateEl.value = today;
+                if (recDateEl) recDateEl.value = "";
 
                 var fromDateEl = document.getElementById("modalIcsReceivedFromDate");
-                if (fromDateEl) fromDateEl.value = today;
+                if (fromDateEl) fromDateEl.value = "";
 
                 // Leave ICS No blank for manual entry
                 var icsNoEl = document.getElementById("modalIcsNo");
@@ -4404,9 +4427,11 @@
                 var srcFrom = document.getElementById("icsReceivedFrom");
                 if (fromSelect && srcFrom) {
                   fromSelect.innerHTML = srcFrom.innerHTML;
-                  if (fromSelect.options.length > 1) fromSelect.selectedIndex = 1;
+                  fromSelect.value = "";
                   updateModalIcsFromPosition();
                 }
+                var fromPosEl = document.getElementById("modalIcsReceivedFromPosition");
+                if (fromPosEl) fromPosEl.value = "";
 
                 // Reset item fields
                 modalIcsSelectedAsset = null;
@@ -4421,13 +4446,13 @@
                 var unitEl = document.getElementById("modalIcsUnit");
                 if (unitEl) unitEl.value = "";
                 var qtyEl = document.getElementById("modalIcsQuantity");
-                if (qtyEl) qtyEl.value = "1";
+                if (qtyEl) qtyEl.value = "";
                 var unitCostEl = document.getElementById("modalIcsUnitCost");
                 if (unitCostEl) unitCostEl.value = "";
                 var totalCostEl = document.getElementById("modalIcsTotalCost");
                 if (totalCostEl) totalCostEl.value = "";
                 var eulEl = document.getElementById("modalIcsEstimatedUsefulLife");
-                if (eulEl) eulEl.value = "5 years";
+                if (eulEl) eulEl.value = "";
 
                 populateModalIcsOptions("");
 
@@ -4475,6 +4500,14 @@
                 } else {
                   posInput.value = "";
                 }
+              }
+
+              function updateModalIcsRecipientPosition() {
+                var recipientSelect = document.getElementById("modalIcsReceivedBy");
+                var positionInput = document.getElementById("modalIcsReceivedByPosition");
+                if (!recipientSelect || !positionInput) return;
+                var selectedOption = recipientSelect.selectedOptions[0];
+                positionInput.value = selectedOption ? selectedOption.dataset.position || "" : "";
               }
 
               function updateModalIcsTotal() {
@@ -4689,7 +4722,7 @@
                   }
 
                   if (typeof showSuccessModal === "function") {
-                    showSuccessModal("Inventory Custodian Slip " + slip.icsNo + " created successfully for " + slip.receivedBy + "!", "ICS Issued");
+                  showSuccessModal("Inventory Custodian Slip " + slip.icsNo + " created successfully for " + slip.receivedBy + "!", "ICS Issued", { refreshInventory: false });
                   } else {
                     alert("ICS record created successfully!");
                   }
