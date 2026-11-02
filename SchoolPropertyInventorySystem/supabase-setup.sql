@@ -255,23 +255,47 @@ create policy "Allow authenticated update access to assets" on public.assets
 create policy "Allow authenticated delete access to assets" on public.assets
   for delete to authenticated using (true);
 
--- Public QR pages may verify an asset, but must not read the full inventory row.
+-- Public QR pages may verify an asset and see its valuation summary, but must not read the full inventory row.
+drop function if exists public.get_public_asset_qr(text);
 create or replace function public.get_public_asset_qr(asset_lookup text)
 returns table (
   asset_id text,
   property_no text,
+  semi_expandable_no text,
   inventory_type text,
   item_classification text,
   item_brand_model text,
-  status text
+  serial_no text,
+  acquisition_date text,
+  fund_cluster text,
+  unit_measurement text,
+  mooe_month text,
+  mooe_year numeric,
+  status text,
+  accountable_person text,
+  school_level text,
+  location text,
+  date_issue text,
+  unit_value numeric,
+  total numeric,
+  on_hand numeric,
+  balance numeric,
+  shortage_overage_qty numeric,
+  shortage_overage_value numeric,
+  remarks text
 )
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select a.asset_id, a.property_no, a.inventory_type,
-         a.item_classification, a.item_brand_model, a.status
+  select a.asset_id, a.property_no, a.semi_expandable_no, a.inventory_type,
+         a.item_classification, a.item_brand_model, a.serial_no,
+         a.acquisition_date, a.fund_cluster, a.unit_measurement,
+         a.mooe_month, a.mooe_year, a.status,
+         a.accountable_person, a.school_level, a.location, a.date_issue,
+         a.unit_value, a.total, a.on_hand, a.balance,
+         a.shortage_overage_qty, a.shortage_overage_value, a.remarks
   from public.assets as a
   where a.asset_id = asset_lookup or a.property_no = asset_lookup
   limit 1;
@@ -279,6 +303,15 @@ $$;
 
 revoke all on function public.get_public_asset_qr(text) from public;
 grant execute on function public.get_public_asset_qr(text) to anon, authenticated;
+
+drop policy if exists "Allow authenticated read access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated insert access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated update access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated delete access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated read access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated insert access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated update access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated delete access to statuses" on public.statuses;
 
 create policy "Allow authenticated read access to classifications" on public.classifications
   for select to authenticated using (true);

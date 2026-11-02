@@ -24,10 +24,10 @@ function escapeHtml(value) {
 }
 
 function formatPeso(value) {
-    if (value === "" || value === null || value === undefined) return "â‚±0.00";
+    if (value === "" || value === null || value === undefined) return "₱0.00";
     const num = Number(String(value).replace(/[^0-9.-]/g, ""));
     if (!Number.isFinite(num)) return String(value);
-    return "â‚±" + num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return "₱" + num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function showToast(text) {
@@ -208,7 +208,14 @@ function renderAsset(item) {
     if (heroDateIssue) heroDateIssue.textContent = item.dateIssue || item.date_issue || "Not Recorded";
 
     const heroTotalValue = document.getElementById("heroTotalValue");
-    if (heroTotalValue) heroTotalValue.textContent = formatPeso(item.total || (item.unitValue ? item.unitValue : 0));
+    const rawTotal = item.total ?? item.total_value;
+    const parsedTotal = rawTotal !== "" && rawTotal !== null && rawTotal !== undefined
+        ? Number(String(rawTotal).replace(/[^0-9.-]/g, ""))
+        : NaN;
+    const unitValue = Number(String(item.unitValue ?? item.unit_value ?? 0).replace(/[^0-9.-]/g, "")) || 0;
+    const quantity = Number(String(item.onHand ?? item.on_hand ?? 0).replace(/[^0-9.-]/g, "")) || 0;
+    const acquisitionValue = Number.isFinite(parsedTotal) ? parsedTotal : unitValue * quantity;
+    if (heroTotalValue) heroTotalValue.textContent = formatPeso(acquisitionValue);
 
     // Status Badge
     const heroStatusBadge = document.getElementById("heroStatusBadge");
@@ -221,6 +228,7 @@ function renderAsset(item) {
 
     // Embedded QR Code
     renderQrCode(item);
+    loadAssetPhotos(item.assetId);
 
     // Section 1: Property Identification
     const setField = (id, val, fallback = "--") => {
@@ -260,7 +268,10 @@ function renderAsset(item) {
     setField("fieldOnHand", item.onHand ?? item.on_hand);
     setField("fieldBalance", item.balance);
     setField("fieldShortageOverageQty", item.shortageOverageQty ?? item.shortage_overage_qty);
-    setField("fieldShortageOverageValue", item.shortageOverageValue ? formatPeso(item.shortageOverageValue) : "--");
+    const shortageOverageValue = item.shortageOverageValue ?? item.shortage_overage_value;
+    setField("fieldShortageOverageValue", shortageOverageValue !== "" && shortageOverageValue !== null && shortageOverageValue !== undefined
+        ? formatPeso(shortageOverageValue)
+        : "--");
     setField("fieldRemarks", item.remarks, "No remarks provided.");
 
     // Re-render Lucide icons
@@ -311,9 +322,27 @@ async function loadAsset() {
         renderAsset({
             assetId: row.asset_id || assetId,
             propertyNo: row.property_no || "",
+            semiExpandableNo: row.semi_expandable_no || "",
             inventoryType: row.inventory_type || "",
             itemClassification: row.item_classification || "",
             itemBrandModel: row.item_brand_model || "",
+            serialNo: row.serial_no || "",
+            acquisitionDate: row.acquisition_date || "",
+            fundCluster: row.fund_cluster || "",
+            unitMeasurement: row.unit_measurement || "",
+            mooeMonth: row.mooe_month || "",
+            mooeYear: row.mooe_year ?? "",
+            accountable: row.accountable_person || "",
+            schoolLevel: row.school_level || "",
+            location: row.location || "",
+            dateIssue: row.date_issue || "",
+            unitValue: row.unit_value ?? "",
+            total: row.total ?? "",
+            onHand: row.on_hand ?? "",
+            balance: row.balance ?? "",
+            shortageOverageQty: row.shortage_overage_qty ?? "",
+            shortageOverageValue: row.shortage_overage_value ?? "",
+            remarks: row.remarks || "",
             status: row.status || ""
         });
     } catch (error) {
