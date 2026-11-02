@@ -17,14 +17,13 @@
 
 ---
 
-## 🖥️ Application Preview
+## 🖥️ SPIS Dashboard
 
-SPIS provides a unified workspace for managing school property records, inventory, personnel, documents, and reports.
+<p align="center">
+  <img src="docs/screenshots/spis-dashboard.png" alt="SPIS application dashboard" width="100%" />
+</p>
 
-<!-- Add the actual dashboard screenshot to docs/screenshots/spis-dashboard.png to display it here. -->
-<!-- ![SPIS Dashboard](docs/screenshots/spis-dashboard.png) -->
-
-> Dashboard screenshot will be added to this section once the image is uploaded to the repository.
+<p align="center"><em>The School Property Information System dashboard</em></p>
 
 ## 📌 About SPIS
 
@@ -101,18 +100,20 @@ Database setup and configuration resources are available in the application dire
 
 ```text
 .
+├── docs/
+│   └── screenshots/
+│       └── spis-dashboard.png   # Application dashboard preview
 ├── SchoolPropertyInventorySystem/
-│   ├── images/                 # SPIS logo and application assets
-│   ├── css/                    # Stylesheets
-│   ├── js/                     # Frontend scripts
-│   ├── reports/                # Report pages and resources
-│   ├── index.html              # Application entry page
-│   ├── homepage.html            # Dashboard / homepage
-│   ├── server.js                # Application server
-│   └── supabase-setup.sql       # Database setup
+│   ├── images/                  # SPIS logo and application assets
+│   ├── css/                     # Stylesheets
+│   ├── js/                      # Frontend scripts
+│   ├── reports/                  # Report pages and resources
+│   ├── index.html               # Application entry page
+│   ├── homepage.html             # Dashboard / homepage
+│   ├── server.js                 # Application server
+│   └── supabase-setup.sql        # Database setup
 ├── .env.example
 ├── package.json
-├── package-lock.json
 └── README.md
 ```
 
@@ -121,7 +122,7 @@ Database setup and configuration resources are available in the application dire
 - [ ] Complete and refine property inventory workflows
 - [ ] Improve reporting and property document management
 - [ ] Strengthen authentication and Row Level Security
-- [ ] Add updated application screenshots and documentation
+- [x] Add SPIS dashboard screenshot to project documentation
 
 ## 🤝 Contributions & Feedback
 
