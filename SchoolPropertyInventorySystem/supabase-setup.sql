@@ -372,6 +372,8 @@ alter table public.ics_slip_items enable row level security;
 -- Authenticated policies keep all ICS document data behind Google sign-in.
 drop policy if exists "Allow public ICS slip access" on public.ics_slips;
 drop policy if exists "Allow public ICS slip item access" on public.ics_slip_items;
+drop policy if exists "Allow authenticated ICS slip access" on public.ics_slips;
+drop policy if exists "Allow authenticated ICS slip item access" on public.ics_slip_items;
 
 create policy "Allow authenticated ICS slip access" on public.ics_slips
   for all to authenticated using (true) with check (true);
@@ -444,6 +446,8 @@ alter table public.rspi_reports enable row level security;
 alter table public.rspi_report_items enable row level security;
 drop policy if exists "Allow public RSPI report access" on public.rspi_reports;
 drop policy if exists "Allow public RSPI report item access" on public.rspi_report_items;
+drop policy if exists "Allow authenticated RSPI report access" on public.rspi_reports;
+drop policy if exists "Allow authenticated RSPI report item access" on public.rspi_report_items;
 
 create policy "Allow authenticated RSPI report access" on public.rspi_reports
   for all to authenticated using (true) with check (true);
