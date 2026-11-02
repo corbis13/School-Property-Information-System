@@ -4787,6 +4787,7 @@ function renderTable() {
 
     visibleItems.forEach((item) => {
         const status = getComputedStatus(item);
+        const inventoryNumber = item.semiExpandableNo || item.semi_expandable_no || item.propertyNo || item.property_no || "-";
         const accountableVal = String(item.accountable || "").trim();
         const isAccountableAssigned = Boolean(accountableVal && accountableVal !== "-" && accountableVal.toLowerCase() !== "unassigned" && accountableVal.toLowerCase() !== "none");
         const isRecentlyUpdated = Boolean(window.recentlyUpdatedAssetId && item.assetId === window.recentlyUpdatedAssetId);
@@ -4797,7 +4798,7 @@ function renderTable() {
             row.classList.add("bg-emerald-50/80", "transition-colors", "duration-500");
         }
         row.innerHTML = `
-            <td>${escapeHtml(item.propertyNo || item.assetId)}</td>
+            <td>${escapeHtml(inventoryNumber)}</td>
             <td>
                 <span class="item-title">
                     <strong>${escapeHtml(item.itemBrandModel || item.item_brand_model || item.description || item.desc || "")}</strong>
