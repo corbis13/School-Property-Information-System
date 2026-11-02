@@ -109,9 +109,8 @@ QR scanning opens the asset detail page automatically. Keep the `assetUrl` value
 
 ## Security note
 
-The browser UI is now gated by Google sign-in and uses the user's Supabase access token for database requests. The existing policies in [`supabase-setup.sql`](supabase-setup.sql) still grant the public `anon` role read/write access, so the login screen alone does not prevent direct anonymous API access. Replace those policies with authenticated-only policies before relying on sign-in to protect database records.
+The browser UI is gated by Google sign-in and uses the user's Supabase access token for database requests. Run [`supabase-setup.sql`](supabase-setup.sql) in Supabase to apply the authenticated-only database policies and limited-field public QR lookup.
 
 ## Legacy files
 
-- `google-apps-script.gs` is the retired Google Sheets backend. The app now talks to Supabase directly; this file is kept for reference only and is not wired into the app.
 - `homepage.html` / `homepage.js` / `homepage.css` form a standalone dashboard that is not linked from the main app entry (`index.html`). It can be removed or promoted to a landing page.
