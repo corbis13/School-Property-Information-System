@@ -130,7 +130,7 @@ Suggestions, bug reports, and improvements are welcome. Please provide clear ste
 
 ## 📄 License
 
-A license has not yet been specified. All rights remain reserved unless a license is added to this repository.
+This project is licensed under the [MIT License](LICENSE). You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, subject to the license terms.
 
 ---
 
