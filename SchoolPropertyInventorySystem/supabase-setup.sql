@@ -78,6 +78,7 @@ create table if not exists public.school_teacher (
   employee_id         text unique,
   item_no             text,
   phone               text,
+  email               text,
   -- Position / assignment
   plantilla_position  text,
   school_level        text,
@@ -104,6 +105,7 @@ alter table if exists public.school_teacher add column if not exists middle_name
 alter table if exists public.school_teacher add column if not exists last_name           text;
 alter table if exists public.school_teacher add column if not exists item_no             text;
 alter table if exists public.school_teacher add column if not exists phone               text;
+alter table if exists public.school_teacher add column if not exists email               text;
 alter table if exists public.school_teacher add column if not exists plantilla_position text;
 alter table if exists public.school_teacher add column if not exists personnel_type     text;
 alter table if exists public.school_teacher add column if not exists school_name        text;
@@ -114,7 +116,6 @@ alter table if exists public.school_teacher add column if not exists date_of_las
 alter table if exists public.school_teacher add column if not exists status             text default 'Active';
 alter table if exists public.school_teacher add column if not exists photo_url          text;
 alter table if exists public.school_teacher
-  drop column if exists email,
   drop column if exists location,
   drop column if exists position;
 
