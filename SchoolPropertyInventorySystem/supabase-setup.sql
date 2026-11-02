@@ -144,36 +144,43 @@ alter table public.signatories enable row level security;
 alter table public.school_teacher enable row level security;
 
 drop policy if exists "Allow public read and write access to school_teacher" on public.school_teacher;
+drop policy if exists "Allow authenticated read and write access to school_teacher" on public.school_teacher;
 
-create policy "Allow public read and write access to school_teacher" on public.school_teacher
-  for all to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated read and write access to school_teacher" on public.school_teacher
+  for all to authenticated using (true) with check (true);
 
 drop policy if exists "Allow public read access to inventory item types" on public.inventory_item;
+drop policy if exists "Allow authenticated read access to inventory item types" on public.inventory_item;
 
-create policy "Allow public read access to inventory item types" on public.inventory_item
-  for select to anon, authenticated using (true);
+create policy "Allow authenticated read access to inventory item types" on public.inventory_item
+  for select to authenticated using (true);
 
 drop policy if exists "Allow public read access to education levels" on public.education_level;
+drop policy if exists "Allow authenticated read access to education levels" on public.education_level;
 
-create policy "Allow public read access to education levels" on public.education_level
-  for select to anon, authenticated using (true);
+create policy "Allow authenticated read access to education levels" on public.education_level
+  for select to authenticated using (true);
 
 drop policy if exists "Allow public read access to signatories" on public.signatories;
 drop policy if exists "Allow public insert access to signatories" on public.signatories;
 drop policy if exists "Allow public update access to signatories" on public.signatories;
 drop policy if exists "Allow public delete access to signatories" on public.signatories;
+drop policy if exists "Allow authenticated read access to signatories" on public.signatories;
+drop policy if exists "Allow authenticated insert access to signatories" on public.signatories;
+drop policy if exists "Allow authenticated update access to signatories" on public.signatories;
+drop policy if exists "Allow authenticated delete access to signatories" on public.signatories;
 
-create policy "Allow public read access to signatories" on public.signatories
-  for select to anon, authenticated using (true);
+create policy "Allow authenticated read access to signatories" on public.signatories
+  for select to authenticated using (true);
 
-create policy "Allow public insert access to signatories" on public.signatories
-  for insert to anon, authenticated with check (true);
+create policy "Allow authenticated insert access to signatories" on public.signatories
+  for insert to authenticated with check (true);
 
-create policy "Allow public update access to signatories" on public.signatories
-  for update to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated update access to signatories" on public.signatories
+  for update to authenticated using (true) with check (true);
 
-create policy "Allow public delete access to signatories" on public.signatories
-  for delete to anon, authenticated using (true);
+create policy "Allow authenticated delete access to signatories" on public.signatories
+  for delete to authenticated using (true);
 
 create unique index if not exists classifications_classification_name_key
   on public.classifications (classification_name);
@@ -196,66 +203,107 @@ drop policy if exists "Allow public read access to assets" on public.assets;
 drop policy if exists "Allow public insert access to assets" on public.assets;
 drop policy if exists "Allow public update access to assets" on public.assets;
 drop policy if exists "Allow public delete access to assets" on public.assets;
+drop policy if exists "Allow authenticated read access to assets" on public.assets;
+drop policy if exists "Allow authenticated insert access to assets" on public.assets;
+drop policy if exists "Allow authenticated update access to assets" on public.assets;
+drop policy if exists "Allow authenticated delete access to assets" on public.assets;
 drop policy if exists "Allow public read access to asset images" on public.asset_images;
 drop policy if exists "Allow public insert access to asset images" on public.asset_images;
 drop policy if exists "Allow public update access to asset images" on public.asset_images;
 drop policy if exists "Allow public delete access to asset images" on public.asset_images;
+drop policy if exists "Allow authenticated read access to asset images" on public.asset_images;
+drop policy if exists "Allow authenticated insert access to asset images" on public.asset_images;
+drop policy if exists "Allow authenticated update access to asset images" on public.asset_images;
+drop policy if exists "Allow authenticated delete access to asset images" on public.asset_images;
 drop policy if exists "Allow public read access to classifications" on public.classifications;
 drop policy if exists "Allow public insert access to classifications" on public.classifications;
 drop policy if exists "Allow public update access to classifications" on public.classifications;
 drop policy if exists "Allow public delete access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated read access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated insert access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated update access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated delete access to classifications" on public.classifications;
 drop policy if exists "Allow public read access to statuses" on public.statuses;
 drop policy if exists "Allow public insert access to statuses" on public.statuses;
 drop policy if exists "Allow public update access to statuses" on public.statuses;
 drop policy if exists "Allow public delete access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated read access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated insert access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated update access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated delete access to statuses" on public.statuses;
 
-create policy "Allow public read access to assets" on public.assets
-  for select using (true);
+create policy "Allow authenticated read access to assets" on public.assets
+  for select to authenticated using (true);
 
-create policy "Allow public insert access to assets" on public.assets
-  for insert to anon, authenticated with check (true);
+create policy "Allow authenticated insert access to assets" on public.assets
+  for insert to authenticated with check (true);
 
-create policy "Allow public read access to asset images" on public.asset_images
-  for select to anon, authenticated using (true);
+create policy "Allow authenticated read access to asset images" on public.asset_images
+  for select to authenticated using (true);
 
-create policy "Allow public insert access to asset images" on public.asset_images
-  for insert to anon, authenticated with check (true);
+create policy "Allow authenticated insert access to asset images" on public.asset_images
+  for insert to authenticated with check (true);
 
-create policy "Allow public update access to asset images" on public.asset_images
-  for update to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated update access to asset images" on public.asset_images
+  for update to authenticated using (true) with check (true);
 
-create policy "Allow public delete access to asset images" on public.asset_images
-  for delete to anon, authenticated using (true);
+create policy "Allow authenticated delete access to asset images" on public.asset_images
+  for delete to authenticated using (true);
 
-create policy "Allow public update access to assets" on public.assets
-  for update to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated update access to assets" on public.assets
+  for update to authenticated using (true) with check (true);
 
-create policy "Allow public delete access to assets" on public.assets
-  for delete to anon, authenticated using (true);
+create policy "Allow authenticated delete access to assets" on public.assets
+  for delete to authenticated using (true);
 
-create policy "Allow public read access to classifications" on public.classifications
-  for select using (true);
+-- Public QR pages may verify an asset, but must not read the full inventory row.
+create or replace function public.get_public_asset_qr(asset_lookup text)
+returns table (
+  asset_id text,
+  property_no text,
+  inventory_type text,
+  item_classification text,
+  item_brand_model text,
+  status text
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select a.asset_id, a.property_no, a.inventory_type,
+         a.item_classification, a.item_brand_model, a.status
+  from public.assets as a
+  where a.asset_id = asset_lookup or a.property_no = asset_lookup
+  limit 1;
+$$;
 
-create policy "Allow public insert access to classifications" on public.classifications
-  for insert to anon, authenticated with check (true);
+revoke all on function public.get_public_asset_qr(text) from public;
+grant execute on function public.get_public_asset_qr(text) to anon, authenticated;
 
-create policy "Allow public update access to classifications" on public.classifications
-  for update to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated read access to classifications" on public.classifications
+  for select to authenticated using (true);
 
-create policy "Allow public delete access to classifications" on public.classifications
-  for delete to anon, authenticated using (true);
+create policy "Allow authenticated insert access to classifications" on public.classifications
+  for insert to authenticated with check (true);
 
-create policy "Allow public read access to statuses" on public.statuses
-  for select using (true);
+create policy "Allow authenticated update access to classifications" on public.classifications
+  for update to authenticated using (true) with check (true);
 
-create policy "Allow public insert access to statuses" on public.statuses
-  for insert to anon, authenticated with check (true);
+create policy "Allow authenticated delete access to classifications" on public.classifications
+  for delete to authenticated using (true);
 
-create policy "Allow public update access to statuses" on public.statuses
-  for update to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated read access to statuses" on public.statuses
+  for select to authenticated using (true);
 
-create policy "Allow public delete access to statuses" on public.statuses
-  for delete to anon, authenticated using (true);
+create policy "Allow authenticated insert access to statuses" on public.statuses
+  for insert to authenticated with check (true);
+
+create policy "Allow authenticated update access to statuses" on public.statuses
+  for update to authenticated using (true) with check (true);
+
+create policy "Allow authenticated delete access to statuses" on public.statuses
+  for delete to authenticated using (true);
 
 -- Inventory Custodian Slip (ICS) document records.
 -- Keep these separate from assets: a slip is a historical custody document and can contain multiple assets.
@@ -321,15 +369,15 @@ create trigger set_ics_slip_items_updated_at
 -- before connecting the browser CRUD UI to these tables.
 alter table public.ics_slips enable row level security;
 alter table public.ics_slip_items enable row level security;
--- Temporary no-login app policies. Replace with authenticated, role-based policies before production use.
+-- Authenticated policies keep all ICS document data behind Google sign-in.
 drop policy if exists "Allow public ICS slip access" on public.ics_slips;
 drop policy if exists "Allow public ICS slip item access" on public.ics_slip_items;
 
-create policy "Allow public ICS slip access" on public.ics_slips
-  for all to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated ICS slip access" on public.ics_slips
+  for all to authenticated using (true) with check (true);
 
-create policy "Allow public ICS slip item access" on public.ics_slip_items
-  for all to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated ICS slip item access" on public.ics_slip_items
+  for all to authenticated using (true) with check (true);
 
 -- Report of Semi-Expendable Property Issued (RSPI) document records.
 -- A report header stores the input/base record. Its line items are snapshots of
@@ -397,29 +445,26 @@ alter table public.rspi_report_items enable row level security;
 drop policy if exists "Allow public RSPI report access" on public.rspi_reports;
 drop policy if exists "Allow public RSPI report item access" on public.rspi_report_items;
 
-create policy "Allow public RSPI report access" on public.rspi_reports
-  for all to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated RSPI report access" on public.rspi_reports
+  for all to authenticated using (true) with check (true);
 
-create policy "Allow public RSPI report item access" on public.rspi_report_items
-  for all to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated RSPI report item access" on public.rspi_report_items
+  for all to authenticated using (true) with check (true);
 
 -- ============================================================================
 -- PRODUCTION HARDENING
 -- ----------------------------------------------------------------------------
--- The policies above are intentionally permissive so the no-login app works out
--- of the box. Before deploying to a real environment, run the statements below
--- to switch to the recommended security baseline:
+-- Reapply the write policies so existing installations are hardened when this
+-- setup script is run again:
 --
---   * Public (anon) can only READ asset/lookup data (needed for the QR asset
---     detail page and public dashboard).
---   * All INSERT / UPDATE / DELETE operations require a signed-in user
---     (the `authenticated` role).
+--   * Public (anon) can only call the limited-field QR lookup function.
+--   * All other application data access requires a signed-in user.
 --
--- You must also enable Supabase Auth (e.g. email/password) and have the app
--- attach the user's access token to the Authorization header on mutations.
+-- Supabase Auth with Google sign-in is used by the app, which attaches the
+-- current user's access token to database and storage requests.
 -- ============================================================================
 
--- assets: grant read and write access to anon and authenticated
+-- assets: restrict writes to authenticated users
 drop policy if exists "Allow public insert access to assets" on public.assets;
 drop policy if exists "Allow public update access to assets" on public.assets;
 drop policy if exists "Allow public delete access to assets" on public.assets;
@@ -427,16 +472,16 @@ drop policy if exists "Allow authenticated insert access to assets" on public.as
 drop policy if exists "Allow authenticated update access to assets" on public.assets;
 drop policy if exists "Allow authenticated delete access to assets" on public.assets;
 
-create policy "Allow public insert access to assets" on public.assets
-  for insert to anon, authenticated with check (true);
+create policy "Allow authenticated insert access to assets" on public.assets
+  for insert to authenticated with check (true);
 
-create policy "Allow public update access to assets" on public.assets
-  for update to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated update access to assets" on public.assets
+  for update to authenticated using (true) with check (true);
 
-create policy "Allow public delete access to assets" on public.assets
-  for delete to anon, authenticated using (true);
+create policy "Allow authenticated delete access to assets" on public.assets
+  for delete to authenticated using (true);
 
--- classifications: grant read and write access to anon and authenticated
+-- classifications: restrict writes to authenticated users
 drop policy if exists "Allow public insert access to classifications" on public.classifications;
 drop policy if exists "Allow public update access to classifications" on public.classifications;
 drop policy if exists "Allow public delete access to classifications" on public.classifications;
@@ -444,16 +489,16 @@ drop policy if exists "Allow authenticated insert access to classifications" on 
 drop policy if exists "Allow authenticated update access to classifications" on public.classifications;
 drop policy if exists "Allow authenticated delete access to classifications" on public.classifications;
 
-create policy "Allow public insert access to classifications" on public.classifications
-  for insert to anon, authenticated with check (true);
+create policy "Allow authenticated insert access to classifications" on public.classifications
+  for insert to authenticated with check (true);
 
-create policy "Allow public update access to classifications" on public.classifications
-  for update to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated update access to classifications" on public.classifications
+  for update to authenticated using (true) with check (true);
 
-create policy "Allow public delete access to classifications" on public.classifications
-  for delete to anon, authenticated using (true);
+create policy "Allow authenticated delete access to classifications" on public.classifications
+  for delete to authenticated using (true);
 
--- statuses: grant read and write access to anon and authenticated
+-- statuses: restrict writes to authenticated users
 drop policy if exists "Allow public insert access to statuses" on public.statuses;
 drop policy if exists "Allow public update access to statuses" on public.statuses;
 drop policy if exists "Allow public delete access to statuses" on public.statuses;
@@ -461,38 +506,38 @@ drop policy if exists "Allow authenticated insert access to statuses" on public.
 drop policy if exists "Allow authenticated update access to statuses" on public.statuses;
 drop policy if exists "Allow authenticated delete access to statuses" on public.statuses;
 
-create policy "Allow public insert access to statuses" on public.statuses
-  for insert to anon, authenticated with check (true);
+create policy "Allow authenticated insert access to statuses" on public.statuses
+  for insert to authenticated with check (true);
 
-create policy "Allow public update access to statuses" on public.statuses
-  for update to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated update access to statuses" on public.statuses
+  for update to authenticated using (true) with check (true);
 
-create policy "Allow public delete access to statuses" on public.statuses
-  for delete to anon, authenticated using (true);
+create policy "Allow authenticated delete access to statuses" on public.statuses
+  for delete to authenticated using (true);
 
--- ICS: grant read and write access to anon and authenticated
+-- ICS: restrict writes to authenticated users
 drop policy if exists "Allow public ICS slip access" on public.ics_slips;
 drop policy if exists "Allow public ICS slip item access" on public.ics_slip_items;
 drop policy if exists "Allow authenticated ICS slip access" on public.ics_slips;
 drop policy if exists "Allow authenticated ICS slip item access" on public.ics_slip_items;
 
-create policy "Allow public ICS slip access" on public.ics_slips
-  for all to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated ICS slip access" on public.ics_slips
+  for all to authenticated using (true) with check (true);
 
-create policy "Allow public ICS slip item access" on public.ics_slip_items
-  for all to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated ICS slip item access" on public.ics_slip_items
+  for all to authenticated using (true) with check (true);
 
--- RSPI: grant read and write access to anon and authenticated
+-- RSPI: restrict writes to authenticated users
 drop policy if exists "Allow public RSPI report access" on public.rspi_reports;
 drop policy if exists "Allow public RSPI report item access" on public.rspi_report_items;
 drop policy if exists "Allow authenticated RSPI report access" on public.rspi_reports;
 drop policy if exists "Allow authenticated RSPI report item access" on public.rspi_report_items;
 
-create policy "Allow public RSPI report access" on public.rspi_reports
-  for all to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated RSPI report access" on public.rspi_reports
+  for all to authenticated using (true) with check (true);
 
-create policy "Allow public RSPI report item access" on public.rspi_report_items
-  for all to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated RSPI report item access" on public.rspi_report_items
+  for all to authenticated using (true) with check (true);
 
 -- school_details table
 create table if not exists public.school_details (
@@ -508,15 +553,18 @@ alter table public.school_details enable row level security;
 drop policy if exists "Allow public read access to school details" on public.school_details;
 drop policy if exists "Allow public insert access to school details" on public.school_details;
 drop policy if exists "Allow public update access to school details" on public.school_details;
+drop policy if exists "Allow authenticated read access to school details" on public.school_details;
+drop policy if exists "Allow authenticated insert access to school details" on public.school_details;
+drop policy if exists "Allow authenticated update access to school details" on public.school_details;
 
-create policy "Allow public read access to school details" on public.school_details
-  for select using (true);
+create policy "Allow authenticated read access to school details" on public.school_details
+  for select to authenticated using (true);
 
-create policy "Allow public insert access to school details" on public.school_details
-  for insert to anon, authenticated with check (true);
+create policy "Allow authenticated insert access to school details" on public.school_details
+  for insert to authenticated with check (true);
 
-create policy "Allow public update access to school details" on public.school_details
-  for update to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated update access to school details" on public.school_details
+  for update to authenticated using (true) with check (true);
 
 -- qr_download_history table
 create table if not exists public.qr_download_history (
@@ -535,15 +583,18 @@ alter table public.qr_download_history enable row level security;
 drop policy if exists "Allow public read access to qr_download_history" on public.qr_download_history;
 drop policy if exists "Allow public insert access to qr_download_history" on public.qr_download_history;
 drop policy if exists "Allow public update access to qr_download_history" on public.qr_download_history;
+drop policy if exists "Allow authenticated read access to qr_download_history" on public.qr_download_history;
+drop policy if exists "Allow authenticated insert access to qr_download_history" on public.qr_download_history;
+drop policy if exists "Allow authenticated update access to qr_download_history" on public.qr_download_history;
 
-create policy "Allow public read access to qr_download_history" on public.qr_download_history
-  for select using (true);
+create policy "Allow authenticated read access to qr_download_history" on public.qr_download_history
+  for select to authenticated using (true);
 
-create policy "Allow public insert access to qr_download_history" on public.qr_download_history
-  for insert to anon, authenticated with check (true);
+create policy "Allow authenticated insert access to qr_download_history" on public.qr_download_history
+  for insert to authenticated with check (true);
 
-create policy "Allow public update access to qr_download_history" on public.qr_download_history
-  for update to anon, authenticated using (true) with check (true);
+create policy "Allow authenticated update access to qr_download_history" on public.qr_download_history
+  for update to authenticated using (true) with check (true);
 
 -- =====================================================
 -- STORAGE SETUP: Personnel Profile Photos
@@ -561,16 +612,18 @@ using ( bucket_id = 'personnel-photos' );
 
 -- Public/anon upload access to personnel-photos
 drop policy if exists "Allow Public Upload personnel-photos" on storage.objects;
-create policy "Allow Public Upload personnel-photos"
+drop policy if exists "Allow Authenticated Upload personnel-photos" on storage.objects;
+create policy "Allow Authenticated Upload personnel-photos"
 on storage.objects for insert
-to anon, authenticated
+to authenticated
 with check ( bucket_id = 'personnel-photos' );
 
 -- Public/anon update access to personnel-photos
 drop policy if exists "Allow Public Update personnel-photos" on storage.objects;
-create policy "Allow Public Update personnel-photos"
+drop policy if exists "Allow Authenticated Update personnel-photos" on storage.objects;
+create policy "Allow Authenticated Update personnel-photos"
 on storage.objects for update
-to anon, authenticated
+to authenticated
 using ( bucket_id = 'personnel-photos' );
 
 -- =====================================================
@@ -595,15 +648,17 @@ on storage.objects for select
 using ( bucket_id = 'property-images' );
 
 drop policy if exists "Allow Public Upload property-images" on storage.objects;
-create policy "Allow Public Upload property-images"
+drop policy if exists "Allow Authenticated Upload property-images" on storage.objects;
+create policy "Allow Authenticated Upload property-images"
 on storage.objects for insert
-to anon, authenticated
+to authenticated
 with check ( bucket_id = 'property-images' );
 
 drop policy if exists "Allow Public Delete property-images" on storage.objects;
-create policy "Allow Public Delete property-images"
+drop policy if exists "Allow Authenticated Delete property-images" on storage.objects;
+create policy "Allow Authenticated Delete property-images"
 on storage.objects for delete
-to anon, authenticated
+to authenticated
 using ( bucket_id = 'property-images' );
 
 notify pgrst, 'reload schema';

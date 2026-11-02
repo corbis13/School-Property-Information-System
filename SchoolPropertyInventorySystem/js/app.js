@@ -1534,7 +1534,8 @@ async function saveSchoolDetails(e) {
             const uploadResp = await fetch(uploadEndpoint, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${window.SUPABASE_AUTH_SESSION?.access_token || ''}`
                 },
                 body: JSON.stringify({ fileName, dataUrl })
             });

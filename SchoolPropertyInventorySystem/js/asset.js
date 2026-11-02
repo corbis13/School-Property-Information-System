@@ -24,10 +24,10 @@ function escapeHtml(value) {
 }
 
 function formatPeso(value) {
-    if (value === "" || value === null || value === undefined) return "₱0.00";
+    if (value === "" || value === null || value === undefined) return "â‚±0.00";
     const num = Number(String(value).replace(/[^0-9.-]/g, ""));
     if (!Number.isFinite(num)) return String(value);
-    return "₱" + num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return "â‚±" + num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function showToast(text) {
@@ -262,7 +262,6 @@ function renderAsset(item) {
     setField("fieldShortageOverageQty", item.shortageOverageQty ?? item.shortage_overage_qty);
     setField("fieldShortageOverageValue", item.shortageOverageValue ? formatPeso(item.shortageOverageValue) : "--");
     setField("fieldRemarks", item.remarks, "No remarks provided.");
-    loadAssetPhotos(item.assetId);
 
     // Re-render Lucide icons
     if (window.lucide && typeof window.lucide.createIcons === "function") {
@@ -284,118 +283,42 @@ function renderError(message) {
     if (grid) grid.style.opacity = "0.4";
 }
 
-function findLocalAsset(assetId) {
-    const needle = String(assetId || "").trim().toLowerCase();
-    if (!needle) return null;
-
-    // Check opener first if available
-    try {
-        if (window.opener && Array.isArray(window.opener.items)) {
-            const found = window.opener.items.find(
-                (i) => String(i.assetId || "").trim().toLowerCase() === needle ||
-                       String(i.propertyNo || "").trim().toLowerCase() === needle
-            );
-            if (found) return found;
-        }
-    } catch {
-        // cross-origin opener access blocked
-    }
-
-    // Check localStorage items keys
-    const storageKeys = ["propertyInventoryItems", "spis_inventory_items"];
-    for (const key of storageKeys) {
-        try {
-            const raw = localStorage.getItem(key);
-            if (!raw) continue;
-            const list = JSON.parse(raw);
-            if (Array.isArray(list)) {
-                const found = list.find(
-                    (i) => String(i.assetId || "").trim().toLowerCase() === needle ||
-                           String(i.propertyNo || "").trim().toLowerCase() === needle
-                );
-                if (found) return found;
-            }
-        } catch {
-            // parse error
-        }
-    }
-
-    return null;
-}
-
 async function loadAsset() {
     const assetId = String(parseQueryParam("assetId") || "").trim();
-
     if (!assetId) {
         renderError("No Asset ID was specified in the URL. Please provide ?assetId=ASTXXXXXX to inspect an inventory record.");
         return;
     }
-
-    // Step 1: Check instant local fallback
-    const localItem = findLocalAsset(assetId);
-    if (localItem) {
-        renderAsset(localItem);
-    }
-
-    // Step 2: Fetch latest from Supabase if configured
     if (!supabaseUrl || !supabaseAnonKey) {
-        if (!localItem) {
-            renderError("Database credentials not configured and item was not found in local cache.");
-        }
+        renderError("Database credentials are not configured.");
         return;
     }
 
     try {
-        const queryUrl = `${supabaseUrl}/rest/v1/assets?select=*&or=(asset_id.eq.${encodeURIComponent(assetId)},property_no.eq.${encodeURIComponent(assetId)})&limit=1`;
-        const response = await fetch(queryUrl, {
-            headers: {
-                ...supabaseHeaders,
-                Accept: "application/json"
-            }
+        const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_public_asset_qr`, {
+            method: "POST",
+            headers: { ...supabaseHeaders, Accept: "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify({ asset_lookup: assetId })
         });
+        if (!response.ok) throw new Error(`Unable to retrieve the public asset summary (HTTP ${response.status}).`);
 
-        if (response.ok) {
-            const rows = await response.json();
-            const remoteItem = rows && rows[0];
-            if (remoteItem) {
-                renderAsset({
-                    assetId: remoteItem.asset_id || remoteItem.assetId || assetId,
-                    fundCluster: remoteItem.fund_cluster || remoteItem.fundCluster || "",
-                    inventoryType: remoteItem.inventory_type || remoteItem.inventoryType || "",
-                    propertyNo: remoteItem.property_no || remoteItem.propertyNo || "",
-                    itemClassification: remoteItem.item_classification || remoteItem.itemClassification || "",
-                    itemBrandModel: remoteItem.item_brand_model || remoteItem.itemBrandModel || "",
-                    serialNo: remoteItem.serial_no || remoteItem.serialNo || "",
-                    acquisitionDate: remoteItem.acquisition_date || remoteItem.acquisitionDate || "",
-                    accountable: remoteItem.accountable_person || remoteItem.accountable || "",
-                    schoolLevel: remoteItem.school_level || remoteItem.schoolLevel || "",
-                    semiExpandableNo: remoteItem.semi_expandable_no || remoteItem.semiExpandableNo || "",
-                    unitValue: remoteItem.unit_value ?? remoteItem.unitValue ?? "",
-                    total: remoteItem.total ?? "",
-                    unitMeasurement: remoteItem.unit_measurement || remoteItem.unitMeasurement || "",
-                    balance: remoteItem.balance ?? "",
-                    onHand: remoteItem.on_hand ?? remoteItem.onHand ?? "",
-                    shortageOverageQty: remoteItem.shortage_overage_qty ?? remoteItem.shortageOverageQty ?? "",
-                    shortageOverageValue: remoteItem.shortage_overage_value ?? remoteItem.shortageOverageValue ?? "",
-                    location: remoteItem.location || "",
-                    mooeMonth: remoteItem.mooe_month ?? remoteItem.mooeMonth ?? "",
-                    mooeYear: remoteItem.mooe_year ?? remoteItem.mooeYear ?? "",
-                    dateIssue: remoteItem.date_issue || remoteItem.dateIssue || "",
-                    status: remoteItem.status || "",
-                    remarks: remoteItem.remarks || ""
-                });
-                return;
-            }
-        }
-
-        if (!localItem) {
+        const rows = await response.json();
+        const row = rows && rows[0];
+        if (!row) {
             renderError(`Asset record "${assetId}" was not found in the inventory database.`);
+            return;
         }
-    } catch (err) {
-        console.warn("Could not retrieve remote asset:", err);
-        if (!localItem) {
-            renderError(`Unable to reach the property database for Asset ID: ${assetId}. Check your connection and try again.`);
-        }
+        renderAsset({
+            assetId: row.asset_id || assetId,
+            propertyNo: row.property_no || "",
+            inventoryType: row.inventory_type || "",
+            itemClassification: row.item_classification || "",
+            itemBrandModel: row.item_brand_model || "",
+            status: row.status || ""
+        });
+    } catch (error) {
+        console.warn("Could not retrieve public asset summary:", error);
+        renderError(error.message || `Unable to reach the property database for Asset ID: ${assetId}. Check your connection and try again.`);
     }
 }
 

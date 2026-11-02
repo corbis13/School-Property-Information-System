@@ -1,7 +1,8 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import * as fs from 'fs';
+import { randomUUID } from 'crypto';
+import { promises as fs } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,69 +22,54 @@ app.get('/', (req, res) => {
 // URL that can be stored in `school_logo_url`.
 // ------------------------------------------------------------
 // Primary endpoint (root) – used when the app is served from the project root
-app.post('/upload-logo', express.json({ limit: '20mb' }), (req, res) => {
-    console.log('🔧 /upload-logo called');
-    const { fileName, dataUrl } = req.body;
-    console.log('Received fileName:', fileName);
-    if (!fileName || !dataUrl) {
-        console.warn('Missing fileName or dataUrl');
-        return res.status(400).json({ error: 'Missing fileName or dataUrl' });
-    }
-    // Expect format: data:image/png;base64,AAA...
-    const matches = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
-    if (!matches) {
-        console.warn('Invalid data URL format');
-        return res.status(400).json({ error: 'Invalid data URL format' });
-    }
-    const [, mime, base64] = matches;
-    const buffer = Buffer.from(base64, 'base64');
-    // __dirname already points to the "SchoolPropertyInventorySystem" directory,
-    // so we only need to append the "images" subfolder.
-    const imagesDir = path.join(__dirname, 'images');
-    try {
-        fs.mkdirSync(imagesDir, { recursive: true });
-        const filePath = path.join(imagesDir, fileName);
-        console.log('Saving logo to', filePath);
-        fs.writeFileSync(filePath, buffer);
-        const urlPath = `/SchoolPropertyInventorySystem/images/${fileName}`;
-        console.log('✅ Logo saved, URL:', urlPath);
-        return res.json({ url: urlPath });
-    } catch (e) {
-        console.error('Failed to save uploaded logo:', e);
-        return res.status(500).json({ error: 'Failed to save file' });
-    }
-});
+const supabaseUrl = process.env.SUPABASE_URL || 'https://ouqgkytallctnptshefo.supabase.co';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS';
 
-// Alias endpoint when the app is accessed via the "/SchoolPropertyInventorySystem" prefix.
-app.post('/SchoolPropertyInventorySystem/upload-logo', express.json({ limit: '20mb' }), (req, res) => {
-    console.log('🔧 /SchoolPropertyInventorySystem/upload-logo called (alias)');
-    // Reuse the same handler logic by delegating to the original route handler
-    // Express does not allow calling a route directly, so we copy the implementation.
-    const { fileName, dataUrl } = req.body;
-    if (!fileName || !dataUrl) {
-        return res.status(400).json({ error: 'Missing fileName or dataUrl' });
-    }
-    const matches = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
-    if (!matches) {
-        return res.status(400).json({ error: 'Invalid data URL format' });
-    }
-    const [, mime, base64] = matches;
-    const buffer = Buffer.from(base64, 'base64');
-    const imagesDir = path.join(__dirname, 'images');
-    try {
-        fs.mkdirSync(imagesDir, { recursive: true });
-        const filePath = path.join(imagesDir, fileName);
-        console.log('Saving logo to', filePath);
-        fs.writeFileSync(filePath, buffer);
-        const urlPath = `/SchoolPropertyInventorySystem/images/${fileName}`;
-        console.log('✅ Logo saved, URL:', urlPath);
-        return res.json({ url: urlPath });
-    } catch (e) {
-        console.error('Failed to save uploaded logo (alias):', e);
-        return res.status(500).json({ error: 'Failed to save file' });
-    }
-});
+async function uploadLogo(req, res) {
+  const token = (req.get('authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign-in required' });
 
+  try {
+    const authResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${token}` }
+    });
+    if (!authResponse.ok) return res.status(401).json({ error: 'Sign-in required' });
+  } catch {
+    return res.status(503).json({ error: 'Unable to verify sign-in' });
+  }
+
+  const dataUrl = req.body?.dataUrl;
+  const match = typeof dataUrl === 'string'
+    ? dataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/)
+    : null;
+  if (!match) return res.status(400).json({ error: 'A PNG, JPEG, or WebP image is required' });
+
+  const [, mime, base64] = match;
+  const buffer = Buffer.from(base64, 'base64');
+  if (!buffer.length || buffer.length > 512 * 1024 || buffer.toString('base64') !== base64) {
+    return res.status(400).json({ error: 'Image must be smaller than 512 KB' });
+  }
+  const validSignature = mime === 'image/png'
+    ? buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+    : mime === 'image/jpeg'
+      ? buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff
+      : buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP';
+  if (!validSignature) return res.status(400).json({ error: 'Image content does not match its type' });
+
+  const extension = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[mime];
+  const fileName = `${randomUUID()}.${extension}`;
+  const imagesDir = path.join(__dirname, 'images');
+  try {
+    await fs.mkdir(imagesDir, { recursive: true });
+    await fs.writeFile(path.join(imagesDir, fileName), buffer, { flag: 'wx' });
+    return res.json({ url: `/SchoolPropertyInventorySystem/images/${fileName}` });
+  } catch (error) {
+    console.error('Failed to save uploaded logo:', error);
+    return res.status(500).json({ error: 'Failed to save file' });
+  }
+}
+
+app.post(['/upload-logo', '/SchoolPropertyInventorySystem/upload-logo'], express.json({ limit: '700kb' }), uploadLogo);
 app.get(['/property-category-report', '/property-category-report.html', '/category-report', '/category-report.html'], (req, res) => {
   const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
   res.redirect(302, `/SchoolPropertyInventorySystem/property-category-report.html${query}`);
