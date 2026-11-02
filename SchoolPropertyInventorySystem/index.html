@@ -1921,10 +1921,6 @@
                       <p id="personnelCardSchool" class="text-sm text-[#253852]">GERAS Integrated School</p>
                     </div>
 
-                    <div class="flex items-start gap-3">
-                      <i class="fa-solid fa-book-open text-[#607086] mt-1 w-4"></i>
-                      <p id="personnelCardGradeSection" class="text-sm text-[#253852]">Admin Department</p>
-                    </div>
 
                     <div class="flex items-start gap-3">
                       <i class="fa-solid fa-users text-[#607086] mt-1 w-4"></i>
@@ -2279,11 +2275,6 @@
                         <option value="Admin">Admin</option>
                       </select>
                     </div>
-                    <div class="sm:col-span-2">
-                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="editGradeSection">Grade & Section / Advisory</label>
-                      <input type="text" id="editGradeSection" placeholder="e.g. Grade 6 – Adviser"
-                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
-                    </div>
                   </div>
                 </div>
 
@@ -2467,11 +2458,6 @@
                         <option value="Senior High">Senior High</option>
                         <option value="Admin">Admin</option>
                       </select>
-                    </div>
-                    <div class="sm:col-span-2">
-                      <label class="block text-xs font-semibold text-slate-700 mb-1" for="addGradeSection">Grade & Section / Advisory</label>
-                      <input type="text" id="addGradeSection" placeholder="e.g. Grade 5 – Emerald"
-                        class="w-full h-[38px] px-3 rounded-lg border border-gray-300 text-sm outline-none focus:ring-2 focus:ring-[#078f95]/20 focus:border-[#078f95]" />
                     </div>
                   </div>
                 </div>
@@ -2822,9 +2808,6 @@
                 // Details Grid
                 var schoolEl = document.getElementById("personnelCardSchool");
                 if (schoolEl) schoolEl.textContent = teacher.school_name || "GERAS Integrated School";
-
-                var gradeEl = document.getElementById("personnelCardGradeSection");
-                if (gradeEl) gradeEl.textContent = teacher.grade_section || (teacher.school_level ? teacher.school_level + " Department" : "—");
 
                 var typeEl = document.getElementById("personnelCardType");
                 if (typeEl) typeEl.textContent = teacher.personnel_type || "Teaching Personnel";
@@ -3445,7 +3428,6 @@
                     t.employee_id,
                     t.plantilla_position,
                     t.school_level,
-                    t.grade_section,
                   ].some(function (f) {
                     return String(f || "").toLowerCase().includes(q);
                   });
@@ -3507,7 +3489,6 @@
                         avatarHtml +
                         '<div class="min-w-0">' +
                           '<div class="font-bold text-[#10213c] text-sm hover:text-[#078f95] transition truncate">' + safeEscape(t.teacher_name) + '</div>' +
-                          (t.grade_section ? '<div class="text-[11px] text-gray-400 truncate">' + safeEscape(t.grade_section) + '</div>' : '') +
                         '</div>' +
                       '</div>' +
                     '</td>' +
@@ -4014,7 +3995,6 @@
                 document.getElementById("editPlantillaPosition").value = p.plantilla_position || "";
                 document.getElementById("editPersonnelType").value = p.personnel_type || "Teaching Personnel";
                 document.getElementById("editSchoolLevel").value = p.school_level || "";
-                document.getElementById("editGradeSection").value = p.grade_section || "";
                 var currentSchool = p.school_name || "";
                 populateSchoolDetailsDropdown("editSchoolName", window.schoolDetailsOptions, currentSchool);
                 document.getElementById("editEmploymentStatus").value = p.employment_status || "Permanent";
@@ -4145,7 +4125,6 @@
                 setVal("addPlantillaPosition", "");
                 setVal("addPersonnelType", "Teaching Personnel");
                 setVal("addSchoolLevel", "");
-                setVal("addGradeSection", "");
                 populateSchoolDetailsDropdown("addSchoolName", window.schoolDetailsOptions, "");
                 setVal("addEmploymentStatus", "Permanent");
                 setVal("addBirthday", "");
@@ -4265,7 +4244,6 @@
                   plantilla_position: (document.getElementById("addPlantillaPosition") ? document.getElementById("addPlantillaPosition").value.trim() : "") || null,
                   personnel_type: (document.getElementById("addPersonnelType") ? document.getElementById("addPersonnelType").value.trim() : "Teaching Personnel") || "Teaching Personnel",
                   school_level: (document.getElementById("addSchoolLevel") ? document.getElementById("addSchoolLevel").value.trim() : "") || null,
-                  grade_section: (document.getElementById("addGradeSection") ? document.getElementById("addGradeSection").value.trim() : "") || null,
                   school_name: (document.getElementById("addSchoolName") ? document.getElementById("addSchoolName").value.trim() : "") || null,
                   employment_status: (document.getElementById("addEmploymentStatus") ? document.getElementById("addEmploymentStatus").value.trim() : "Permanent") || "Permanent",
                   birthday: (document.getElementById("addBirthday") ? document.getElementById("addBirthday").value : "") || null,
@@ -4805,7 +4783,6 @@
                   plantilla_position: document.getElementById("editPlantillaPosition").value.trim() || null,
                   personnel_type: document.getElementById("editPersonnelType").value.trim() || null,
                   school_level: document.getElementById("editSchoolLevel").value.trim() || null,
-                  grade_section: document.getElementById("editGradeSection").value.trim() || null,
                   school_name: document.getElementById("editSchoolName").value.trim() || null,
                   employment_status: document.getElementById("editEmploymentStatus").value.trim() || null,
                   birthday: document.getElementById("editBirthday").value || null,

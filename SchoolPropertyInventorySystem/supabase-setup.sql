@@ -82,7 +82,6 @@ create table if not exists public.school_teacher (
   plantilla_position  text,
   school_level        text,
   personnel_type      text,           -- e.g. "Teaching Personnel", "Non-Teaching"
-  grade_section       text,           -- e.g. "Grade 6 – Adviser"
   -- School assignment
   school_name         text,
   -- Employment details
@@ -107,7 +106,6 @@ alter table if exists public.school_teacher add column if not exists item_no    
 alter table if exists public.school_teacher add column if not exists phone               text;
 alter table if exists public.school_teacher add column if not exists plantilla_position text;
 alter table if exists public.school_teacher add column if not exists personnel_type     text;
-alter table if exists public.school_teacher add column if not exists grade_section      text;
 alter table if exists public.school_teacher add column if not exists school_name        text;
 alter table if exists public.school_teacher add column if not exists employment_status  text;
 alter table if exists public.school_teacher add column if not exists birthday            date;
