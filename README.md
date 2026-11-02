@@ -45,7 +45,7 @@ The **School Property Information System (SPIS)** is a web-based application des
 - **Frontend:** HTML, CSS, JavaScript
 - **Server:** Node.js, Express
 - **Database / Backend services:** Supabase
-- **Additional integration:** Google Apps Script
+
 
 ## 🚀 Getting Started
 
