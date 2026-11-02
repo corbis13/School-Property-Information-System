@@ -1,77 +1,60 @@
 <div align="center">
 
-# School Property Information System
+<img src="SchoolPropertyInventorySystem/images/spis_town.png" alt="SPIS Logo" width="180" />
 
-### SPIS
+# School Property Information System (SPIS)
 
-A web-based platform for organizing, monitoring, and managing school properties, inventory records, and property-related reports.
+### A centralized platform for school property and inventory management
 
 <p>
-  <img alt="Project status" src="https://img.shields.io/badge/status-in%20development-blue" />
-  <img alt="Platform" src="https://img.shields.io/badge/platform-web%20application-0A7EA4" />
-  <img alt="Database" src="https://img.shields.io/badge/database-Supabase-3ECF8E" />
-  <img alt="License" src="https://img.shields.io/badge/license-not%20specified-lightgrey" />
+  <img src="https://img.shields.io/badge/status-active%20development-blue?style=for-the-badge" alt="Status" />
+  <img src="https://img.shields.io/badge/platform-web%20application-0A7EA4?style=for-the-badge" alt="Platform" />
+  <img src="https://img.shields.io/badge/database-Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
+  <img src="https://img.shields.io/badge/runtime-Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
 </p>
 
 </div>
 
 ---
 
-## Overview
+## 🖥️ Application Preview
 
-The **School Property Information System (SPIS)** is designed to support the recording, tracking, and reporting of school properties through a centralized web application. It aims to make property information easier to maintain, retrieve, and monitor.
+SPIS provides a unified workspace for managing school property records, inventory, personnel, documents, and reports.
 
-> **Project status:** This project is under active development. Features, workflows, and deployment configuration may change.
+<!-- Add the actual dashboard screenshot to docs/screenshots/spis-dashboard.png to display it here. -->
+<!-- ![SPIS Dashboard](docs/screenshots/spis-dashboard.png) -->
 
-## Key Modules
+> Dashboard screenshot will be added to this section once the image is uploaded to the repository.
 
-The repository includes application pages and supporting code for:
+## 📌 About SPIS
 
-- **Dashboard and Homepage** – central entry point for the application.
-- **Property / Asset Records** – manage school asset information.
-- **Reports** – includes acquisition-year, issuance-year, property-category, and maintenance-request report pages.
-- **Supabase Integration** – database setup scripts and example client configuration.
-- **Server** – Node.js and Express application entry point.
+The **School Property Information System (SPIS)** is a web-based application designed to help schools organize, monitor, and manage property information in one centralized system. It supports property recordkeeping and related inventory workflows, with reporting and document tools for easier information retrieval.
 
-## Technology
+## ✨ Key Modules
 
-| Component | Technology |
+| Module | Description |
 |---|---|
-| Frontend | HTML, CSS, JavaScript |
-| Server | Node.js, Express |
-| Database services | Supabase |
-| Additional integration | Google Apps Script |
+| **Dashboard** | Overview of property records, inventory activity, and summary information |
+| **Inventory** | Register and manage school property and asset records |
+| **Documents** | Access property-related forms and documents |
+| **QR Code** | QR code generation and property identification |
+| **Personnel** | Manage personnel records associated with property accountability |
+| **Reports** | Generate property and inventory reports |
 
-## Repository Structure
+## 🧰 Technology Stack
 
-```text
-.
-├── SchoolPropertyInventorySystem/
-│   ├── index.html
-│   ├── homepage.html
-│   ├── asset.html
-│   ├── css/
-│   ├── js/
-│   ├── images/
-│   ├── reports/
-│   ├── server.js
-│   ├── supabase-setup.sql
-│   ├── supabase-config.example.js
-│   └── README.md
-├── .env.example
-├── package.json
-├── package-lock.json
-├── server.js
-└── README.md
-```
+- **Frontend:** HTML, CSS, JavaScript
+- **Server:** Node.js, Express
+- **Database / Backend services:** Supabase
+- **Additional integration:** Google Apps Script
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (LTS recommended)
-- npm (included with Node.js)
-- A [Supabase](https://supabase.com/) project with the required database configured
+- npm
+- A configured [Supabase](https://supabase.com/) project
 
 ### 1. Clone the repository
 
@@ -88,62 +71,65 @@ npm install
 
 ### 3. Configure environment variables
 
-Copy `.env.example` to `.env` and provide the values for your environment.
+Copy `.env.example` to `.env` and configure the values required by your local setup.
 
 ```env
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-Do not commit real credentials, service-role keys, or other secrets. Keep local environment files private.
+**Security:** Never commit real credentials, Supabase service-role keys, or secrets. Keep private environment files out of version control.
 
-### 4. Start the application
+### 4. Run the application
 
 ```bash
 npm run dev
 ```
 
-Open the local address printed by the server in your terminal.
+Use the local URL shown in your terminal.
 
-## Database Setup
+## 🗄️ Database Setup
 
-Database setup resources are located in `SchoolPropertyInventorySystem/`:
+Database setup and configuration resources are available in the application directory. Review the SQL scripts and Row Level Security (RLS) policies before applying them to your Supabase project.
 
-- `supabase-setup.sql` – database schema and setup SQL.
-- `supabase-config.example.js` – example client configuration.
-- `supabase-sample-data.json` – sample data for development or testing.
-- `fix-rls-permissions.sql` – supplementary RLS permission adjustments.
+- Apply only the SQL appropriate for your environment.
+- Enable and test RLS on tables exposed through the API.
+- Follow least-privilege access policies.
+- Never expose a service-role key in browser-side code.
 
-Review SQL scripts and Row Level Security (RLS) policies in your own Supabase project before applying them. Use least-privilege policies and never expose a Supabase service-role key in browser code.
+## 📂 Project Structure
 
-## Development Commands
+```text
+.
+├── SchoolPropertyInventorySystem/
+│   ├── images/                 # SPIS logo and application assets
+│   ├── css/                    # Stylesheets
+│   ├── js/                     # Frontend scripts
+│   ├── reports/                # Report pages and resources
+│   ├── index.html              # Application entry page
+│   ├── homepage.html            # Dashboard / homepage
+│   ├── server.js                # Application server
+│   └── supabase-setup.sql       # Database setup
+├── .env.example
+├── package.json
+├── package-lock.json
+└── README.md
+```
 
-| Command | Description |
-|---|---|
-| `npm install` | Install project dependencies |
-| `npm run dev` | Start the development server |
-| `npm start` | Start the application |
-| `npm run lint` | Run the configured Node.js syntax check |
+## 🛣️ Roadmap
 
-## Screenshots
+- [ ] Complete and refine property inventory workflows
+- [ ] Improve reporting and property document management
+- [ ] Strengthen authentication and Row Level Security
+- [ ] Add updated application screenshots and documentation
 
-Add current screenshots of the SPIS interface here to help users understand the application.
+## 🤝 Contributions & Feedback
 
-Suggested screenshots:
-- Dashboard
-- Property and asset records
-- Inventory reports
-- Property document workflows
+Suggestions, bug reports, and improvements are welcome. Please provide clear steps to reproduce issues and describe expected behavior.
 
-Place image files in a dedicated documentation folder (for example, `docs/screenshots/`) and link them here when available.
+## 📄 License
 
-## Contributing
-
-Contributions, bug reports, and suggestions are welcome. Please describe the issue, steps to reproduce it, and the expected result when submitting a report.
-
-## License
-
-No license has been specified yet. Unless a license is added to this repository, the default copyright rules apply and reuse is not automatically permitted.
+A license has not yet been specified. All rights remain reserved unless a license is added to this repository.
 
 ---
 
@@ -151,6 +137,6 @@ No license has been specified yet. Unless a license is added to this repository,
 
 **School Property Information System (SPIS)**
 
-*Improving the organization and management of school property information.*
+*Organizing school property information—one system at a time.*
 
 </div>
