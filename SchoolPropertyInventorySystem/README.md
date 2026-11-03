@@ -79,7 +79,6 @@ The Google client secret belongs in Supabase's dashboard; do not add it to this 
 - classifications
 - statuses (source for status options; column: `status_name`)
 - inventory_item (source for inventory item type options; column: `inventory_item_type`)
-- education_level (source for education level options; column: `education_level`)
 - school_teacher (Personnel Accountability records; columns: `teacher_name`, `first_name`, `middle_name`, `last_name`, `employee_id`, `item_no`, `phone`, `email`, `plantilla_position`, `school_level`, `personnel_type`, `school_name`, `employment_status`, `birthday`, `original_appointment`, `date_of_last_promotion`, `status`, `photo_url`)
 - signatories (managed in Settings and used for report signatory options; columns: `signatory`, `position`, `assumption_date`)
 - ics_slips (Inventory Custodian Slip headers)
@@ -89,8 +88,10 @@ The Google client secret belongs in Supabase's dashboard; do not add it to this 
 
 ### Expected asset columns
 
+The Inventory form's School Level is populated from the selected accountable person's `school_teacher.school_level` and saved to `assets.school_level`.
+
 ```text
-asset_id, property_classification, property_value, education_level, fund_cluster, inventory_type, property_no, item_classification, item_brand_model, serial_no, acquisition_date, accountable_person, school_level, semi_expandable_no, unit_value, total, unit_measurement, balance, on_hand, shortage_overage_qty, shortage_overage_value, location, mooe_month, mooe_year, date_issue, status, additional_item, remarks, created_at, updated_at
+asset_id, property_classification, property_value, fund_cluster, inventory_type, property_no, item_classification, item_brand_model, serial_no, acquisition_date, accountable_person, school_level, semi_expandable_no, unit_value, total, unit_measurement, balance, on_hand, shortage_overage_qty, shortage_overage_value, location, mooe_month, mooe_year, date_issue, status, additional_item, remarks, created_at, updated_at
 ```
 
 ### Expected classification columns

@@ -26,7 +26,6 @@ async function fetchDataFromServer() {
 const seedItems = [
     {
         assetId: "AST000001",
-        educationLevel: "Elementary",
         fundCluster: "01",
         propertyNo: "PROP-2026-001",
         itemClassification: "Computer Equipment",
@@ -42,7 +41,6 @@ const seedItems = [
     },
     {
         assetId: "AST000002",
-        educationLevel: "Elementary",
         fundCluster: "01",
         propertyNo: "PROP-2026-002",
         itemClassification: "Office Equipment",
@@ -62,7 +60,6 @@ const dom = {
     form: document.querySelector("#itemForm"),
     formTitle: document.querySelector("#formTitle"),
     editingId: document.querySelector("#editingId"),
-    educationLevel: document.querySelector("#educationLevel"),
     assetId: document.querySelector("#assetId"),
     propertyClassification: document.querySelector("#propertyClassification"),
     propertyValue: document.querySelector("#propertyValue"),
@@ -807,47 +804,6 @@ async function loadInventoryTypeOptions() {
     if (typeof loadReportInventoryTypeDropdown === "function") {
         try { loadReportInventoryTypeDropdown(); } catch (e) {}
     }
-}
-
-async function loadEducationLevelOptions() {
-    const currentValue = dom.educationLevel.value.trim();
-    let values = [];
-
-    try {
-        const response = await fetch(`${supabaseUrl}/rest/v1/education_level?select=education_level`, {
-            headers: supabaseHeaders
-        });
-
-        if (!response.ok) throw new Error("Unable to load education level options from Supabase.");
-
-        const rows = await response.json();
-        values = [...new Set((rows || [])
-            .map((row) => String(row.education_level || "").trim())
-            .filter(Boolean))]
-            .sort((first, second) => first.localeCompare(second, undefined, { sensitivity: "base" }));
-    } catch (error) {
-        console.error(error);
-    }
-
-    if (currentValue && !values.includes(currentValue)) {
-        values.unshift(currentValue);
-    }
-
-    dom.educationLevel.innerHTML = "";
-
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "Select education level";
-    dom.educationLevel.appendChild(placeholder);
-
-    values.forEach((value) => {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = value;
-        dom.educationLevel.appendChild(option);
-    });
-
-    dom.educationLevel.value = currentValue;
 }
 
 function populateStatusFilterOptions(options) {
@@ -1835,7 +1791,6 @@ async function loadItems() {
             assetId: row.asset_id || row.assetId || "",
             propertyClassification: row.property_classification || row.propertyClassification || "",
             propertyValue: row.property_value || row.propertyValue || "",
-            educationLevel: row.education_level || row.educationLevel || "",
             fundCluster: row.fund_cluster || row.fundCluster || "",
             inventoryType: row.inventory_type || row.inventoryType || "",
             inventory_type: row.inventory_type || row.inventoryType || "",
@@ -1942,7 +1897,6 @@ async function syncToSheet(action, item) {
         asset_id: item.assetId,
         property_classification: item.propertyClassification || "",
         property_value: item.propertyValue || "",
-        education_level: item.educationLevel || "",
         fund_cluster: item.fundCluster,
         inventory_type: item.inventoryType || "",
         property_no: item.propertyNo,
@@ -2457,12 +2411,16 @@ function getFormData() {
     updatePropertyValueClassification();
     const now = new Date().toISOString();
     const existing = items.find((item) => item.assetId === dom.editingId.value);
+    const selectedAccountable = dom.accountable.value.trim();
+    const matchedTeacher = teacherOptions.find((teacher) =>
+        String(teacher.name || "").trim().toLowerCase() === selectedAccountable.toLowerCase()
+    );
+    const selectedSchoolLevel = String((matchedTeacher && matchedTeacher.schoolLevel) || dom.schoolLevel.value || "").trim();
 
     return {
         assetId: normalizeAssetId(dom.editingId.value || dom.assetId.value.trim() || createId()),
         propertyClassification: dom.propertyClassification.value,
         propertyValue: dom.propertyValue.value,
-        educationLevel: dom.educationLevel.value.trim(),
         fundCluster: dom.fundCluster.value.trim(),
         inventoryType: dom.inventoryType.value.trim(),
         propertyNo: dom.propertyClassification.value === "PPE" ? dom.propertyNo.value.trim() : "",
@@ -2471,7 +2429,7 @@ function getFormData() {
         serialNo: dom.serialNo.value.trim(),
         acquisitionDate: dom.acquisitionDate.value,
         accountable: dom.accountable.value.trim(),
-        schoolLevel: dom.schoolLevel.value.trim(),
+        schoolLevel: selectedSchoolLevel,
         semiExpandableNo: dom.propertyClassification.value === "SEP" ? dom.semiExpandableNo.value.trim() : "",
         unitValue: dom.unitValue.value.trim(),
         total: dom.total.value.trim(),
@@ -2573,8 +2531,6 @@ function fillForm(item) {
     updatePropertyNumberFieldVisibility();
     dom.propertyValue.value = item.propertyValue || "";
     updatePropertyValueClassification();
-    ensureSelectOption(dom.educationLevel, item.educationLevel);
-    dom.educationLevel.value = item.educationLevel || "";
     dom.fundCluster.value = item.fundCluster;
     dom.inventoryType.value = item.inventoryType || "";
     dom.supplier.value = item.supplier || "";
@@ -3798,7 +3754,7 @@ function renderAllAssetsView() {
     const sourceList = (items && items.length) ? items : (window.inventoryData || []);
     const filteredItems = sourceList.filter((item) => !query || Object.values(item).join(" ").toLowerCase().includes(query));
     const fields = [
-        "assetId", "educationLevel", "fundCluster", "inventoryType", "propertyNo", "itemClassification",
+        "assetId", "fundCluster", "inventoryType", "propertyNo", "itemClassification",
         "itemBrandModel", "serialNo", "acquisitionDate", "accountable", "schoolLevel", "semiExpandableNo",
         "unitValue", "total", "unitMeasurement", "balance", "onHand", "shortageOverageQty", "shortageOverageValue",
         "location", "mooeMonth", "mooeYear", "dateIssue", "status", "additionalItem", "remarks"
@@ -7693,7 +7649,6 @@ async function init() {
     await loadTeacherOptions();
     await loadSignatoryOptions();
     await loadInventoryTypeOptions();
-    await loadEducationLevelOptions();
     await loadClassificationOptions();
     await loadStatusOptions();
     await loadSchoolNameOptions();

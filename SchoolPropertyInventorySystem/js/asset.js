@@ -199,7 +199,7 @@ function renderAsset(item) {
     if (heroAccountable) heroAccountable.textContent = item.accountable || item.accountablePerson || "Unassigned";
 
     const heroSchoolLevel = document.getElementById("heroSchoolLevel");
-    if (heroSchoolLevel) heroSchoolLevel.textContent = item.schoolLevel || item.schoollevel || "General";
+    if (heroSchoolLevel) heroSchoolLevel.textContent = item.schoolLevel || item.schoollevel || "--";
 
     const heroLocation = document.getElementById("heroLocation");
     if (heroLocation) heroLocation.textContent = item.location || "Unspecified Location";
@@ -246,7 +246,7 @@ function renderAsset(item) {
 
     // Section 2: Custody & Location
     setField("fieldAccountable", item.accountable || item.accountablePerson, "Unassigned");
-    setField("fieldSchoolLevel", item.schoolLevel || item.schoollevel, "General");
+    setField("fieldSchoolLevel", item.schoolLevel || item.schoollevel, "--");
     setField("fieldLocation", item.location, "Unspecified");
     setField("fieldDateIssue", item.dateIssue || item.date_issue, "Not Recorded");
 

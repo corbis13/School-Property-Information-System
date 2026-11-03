@@ -2,7 +2,6 @@
   "assets": [
     {
       "asset_id": "AST000001",
-      "education_level": "Elementary",
       "fund_cluster": "01",
       "property_no": "PROP-2026-001",
       "item_classification": "Computer Equipment",
@@ -23,17 +22,6 @@
     },
     {
       "classification_name": "Office Equipment"
-    }
-  ],
-  "education_level": [
-    {
-      "education_level": "Elementary"
-    },
-    {
-      "education_level": "Junior High School"
-    },
-    {
-      "education_level": "Senior High School"
     }
   ]
 }

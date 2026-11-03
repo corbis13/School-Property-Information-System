@@ -1013,29 +1013,20 @@
                                 <option value="PPE">Property Plant and Equipment</option>
                             </select>
                         </label>
-                        <input id="propertyValue" type="hidden">
-                        <label>
-                            Education Level
-                            <select id="educationLevel">
-                                <option value="">Select education level</option>
-                            </select>
-                        </label>
-                    </div>
-
-                    <div class="two-column">
                         <label>
                             Inventory Type
                             <select id="inventoryType">
                                 <option value="">Select item type</option>
                             </select>
                         </label>
+                        <input id="propertyValue" type="hidden">
+                    </div>
+
+                    <div class="two-column">
                         <label>
                             Fund Cluster
                             <input id="fundCluster" type="text" placeholder="e.g. 01 Regular Agency Fund">
                         </label>
-                    </div>
-
-                    <div class="two-column">
                         <label>
                             <span id="propertyNumberPlaceholderLabel">(<em>Select Property Classification to open</em>)</span>
                             <input id="propertyNumberPlaceholder" type="text" placeholder="Select Property Classification" readonly>
@@ -1044,6 +1035,16 @@
                             <span id="semiExpandableNoLabel" hidden>Semi-Expandable No.</span>
                             <input id="semiExpandableNo" type="text" hidden>
                         </label>
+                    </div>
+
+                    <div class="two-column">
+                        <label style="grid-column: 1 / -1;">
+                            Description
+                            <input id="itemBrandModel" type="text" placeholder="e.g. Dell Latitude 5440 Laptop" required>
+                        </label>
+                    </div>
+
+                    <div class="two-column">
                         <label>
                             Item Classification
                             <div class="classification-controls" style="display:flex; gap:8px; align-items:center;">
@@ -1053,13 +1054,6 @@
                                 <button class="ghost-button" id="addClassificationBtn" type="button" title="Add classification" aria-label="Add classification">+</button>
                                 <button class="ghost-button" id="deleteClassificationBtn" type="button" title="Delete selected classification" aria-label="Delete selected classification">-</button>
                             </div>
-                        </label>
-                    </div>
-
-                    <div class="two-column">
-                        <label>
-                            Description
-                            <input id="itemBrandModel" type="text" placeholder="e.g. Dell Latitude 5440 Laptop" required>
                         </label>
                         <label>
                             Serial No.
