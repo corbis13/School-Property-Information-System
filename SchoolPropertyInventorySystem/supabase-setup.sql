@@ -422,6 +422,54 @@ create policy "Allow authenticated ICS slip access" on public.ics_slips
 create policy "Allow authenticated ICS slip item access" on public.ics_slip_items
   for all to authenticated using (true) with check (true);
 
+-- Public ICS QR pages can read one slip by its printed ICS No. without opening
+-- general access to either ICS table. The returned fields are limited to the
+-- values printed on the slip and its item rows.
+drop function if exists public.get_public_ics_slip(text);
+create or replace function public.get_public_ics_slip(ics_lookup text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $
+  select jsonb_build_object(
+    'ics_no', slip.ics_no,
+    'entity_name', slip.entity_name,
+    'fund_cluster', slip.fund_cluster,
+    'received_from_name', slip.received_from_name,
+    'received_from_position', slip.received_from_position,
+    'received_from_date', slip.received_from_date,
+    'received_by_name', slip.received_by_name,
+    'received_by_position', slip.received_by_position,
+    'received_by_date', slip.received_by_date,
+    'items', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'line_no', item.line_no,
+        'quantity', item.quantity,
+        'unit', item.unit,
+        'unit_cost', item.unit_cost,
+        'total_cost', item.total_cost,
+        'description', item.description_snapshot,
+        'inventory_item_no', item.inventory_item_no,
+        'estimated_useful_life', item.estimated_useful_life,
+        'serial_no', asset.serial_no,
+        'additional_item', asset.additional_item,
+        'acquisition_date', asset.acquisition_date
+      ) order by item.line_no)
+      from public.ics_slip_items as item
+      left join public.assets as asset on asset.id = item.asset_id
+      where item.ics_slip_id = slip.id
+    ), '[]'::jsonb)
+  )
+  from public.ics_slips as slip
+  where lower(trim(slip.ics_no)) = lower(trim(ics_lookup))
+  limit 1;
+$;
+
+revoke all on function public.get_public_ics_slip(text) from public;
+grant execute on function public.get_public_ics_slip(text) to anon, authenticated;
+
 -- Report of Semi-Expendable Property Issued (RSPI) document records.
 -- A report header stores the input/base record. Its line items are snapshots of
 -- the source ICS items so an issued RSPI remains reproducible after ICS changes.
