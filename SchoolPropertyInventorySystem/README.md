@@ -88,7 +88,7 @@ The Google client secret belongs in Supabase's dashboard; do not add it to this 
 
 ### Expected asset columns
 
-The Inventory form's School Level is populated from the selected accountable person's `school_teacher.school_level` and saved to `assets.school_level`.
+The Inventory form's School Level and Position are populated from the selected accountable person's `school_teacher.school_level` and `school_teacher.plantilla_position`, then saved to `assets.school_level` and `assets.plantilla_position`.
 
 ```text
 asset_id, property_classification, property_value, fund_cluster, inventory_type, property_no, item_classification, item_brand_model, serial_no, acquisition_date, accountable_person, plantilla_position, school_level, semi_expandable_no, unit_value, total, unit_measurement, balance, on_hand, shortage_overage_qty, shortage_overage_value, location, mooe_month, mooe_year, date_issue, status, additional_item, remarks, created_at, updated_at
@@ -107,6 +107,8 @@ The QR payload encodes the GitHub Pages asset detail URL:
 `https://corbis13.github.io/School-Property-Information-System/SchoolPropertyInventorySystem/asset.html?assetId=AST000001`
 
 QR scanning opens the asset detail page automatically. Keep the `assetUrl` value in `supabase-config.js` pointed at the GitHub Pages deployment.
+
+The asset hero card reads Accountable Person, Position/Designation, School Level, and Assigned Location from `get_public_asset_qr`, which selects those values from `assets`. The lookup returns `assets.plantilla_position` for the Position/Designation card. After applying changes to this lookup, run `supabase-setup.sql`; it recreates the function and notifies PostgREST to reload its schema. The setup script also fills blank asset designations from the matched accountable person's `school_teacher.plantilla_position` for existing records.
 
 ## Security note
 
