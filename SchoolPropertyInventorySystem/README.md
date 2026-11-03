@@ -85,6 +85,9 @@ The Google client secret belongs in Supabase's dashboard; do not add it to this 
 - ics_slip_items (line items linked to slips; `asset_id` is filled when the item was picked from inventory)
 - rspi_reports (Report of Semi-Expendable Property Issued base records)
 - rspi_report_items (saved item snapshots linked to RSPI records and source ICS items)
+- qr_download_history (QR download snapshots; includes `asset_id`, `inventory_item_no`, `property_no`, `item_brand_model`, `download_count`, and timestamps)
+
+QR Download History displays the asset's inventory item number from `inventory_item_no`, falling back to `property_no` or `semi_expandable_no` when needed. The history table stores that value in its `inventory_item_no` snapshot column; the Asset ID remains only the record key.
 
 ### Expected asset columns
 

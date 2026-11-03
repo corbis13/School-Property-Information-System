@@ -2906,6 +2906,10 @@ body[data-theme="light"] .asset-detail-row {
     min-width: 0;
 }
 
+.asset-details-grid .field-row[hidden] {
+    display: none !important;
+}
+
 .field-row:nth-child(even) {
     background: #f8fafc;
 }

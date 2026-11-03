@@ -1796,6 +1796,7 @@ async function loadItems() {
             fundCluster: row.fund_cluster || row.fundCluster || "",
             inventoryType: row.inventory_type || row.inventoryType || "",
             inventory_type: row.inventory_type || row.inventoryType || "",
+            inventoryItemNo: row.inventory_item_no || row.inventoryItemNo || "",
             propertyNo: row.property_no || row.propertyNo || "",
             itemClassification: row.item_classification || row.itemClassification || "",
             item_classification: row.item_classification || row.itemClassification || "",
@@ -4864,6 +4865,31 @@ function renderQr() {
 
 }
 
+function getAssetInventoryItemNo(item) {
+    if (!item) return "";
+    const assetId = String(item.assetId || item.asset_id || "").trim();
+    const candidates = [
+        item.inventoryItemNo,
+        item.inventory_item_no,
+        item.propertyNo,
+        item.property_no,
+        item.semiExpandableNo,
+        item.semi_expandable_no
+    ];
+    return String(candidates.find((value) => {
+        const normalized = String(value || "").trim();
+        return normalized && normalized !== assetId;
+    }) || "").trim();
+}
+
+function getQrHistoryInventoryItemNo(entry) {
+    const savedNumber = String(entry.inventoryItemNo || entry.inventory_item_no || entry.propertyNo || entry.property_no || "").trim();
+    if (savedNumber && savedNumber !== String(entry.assetId || entry.asset_id || "").trim()) return savedNumber;
+    const assetId = entry.assetId || entry.asset_id;
+    const asset = (Array.isArray(items) ? items : []).find((item) => String(item.assetId || item.asset_id || "") === String(assetId || ""));
+    return getAssetInventoryItemNo(asset);
+}
+
 function loadQrDownloadHistory() {
     try {
         const stored = JSON.parse(localStorage.getItem(qrDownloadHistoryStorageKey) || "[]");
@@ -4884,33 +4910,19 @@ async function loadRemoteQrDownloadHistory() {
             if (Array.isArray(rows)) {
                 const remoteHistoryMap = new Map();
                 rows.forEach((r) => {
+                    const remoteItemNo = String(r.inventory_item_no || r.property_no || "").trim();
+                    const inventoryItemNo = remoteItemNo && remoteItemNo !== String(r.asset_id || "").trim() ? remoteItemNo : "";
                     remoteHistoryMap.set(r.asset_id, {
                         assetId: r.asset_id,
-                        propertyNo: r.property_no || r.asset_id,
+                        inventoryItemNo,
+                        propertyNo: inventoryItemNo,
                         itemBrandModel: r.item_brand_model || "",
                         downloadedAt: r.downloaded_at || r.created_at,
                         count: Number(r.download_count) || 1
                     });
                 });
 
-                // Merge local entries into remote map if local is newer or has higher count
-                qrDownloadHistory.forEach((local) => {
-                    const remote = remoteHistoryMap.get(local.assetId);
-                    if (!remote) {
-                        remoteHistoryMap.set(local.assetId, local);
-                    } else {
-                        const higherCount = Math.max(Number(local.count || 1), Number(remote.count || 1));
-                        const newerDate = new Date(local.downloadedAt) > new Date(remote.downloadedAt) ? local.downloadedAt : remote.downloadedAt;
-                        remoteHistoryMap.set(local.assetId, {
-                            ...remote,
-                            count: higherCount,
-                            downloadedAt: newerDate,
-                            propertyNo: local.propertyNo || remote.propertyNo,
-                            itemBrandModel: local.itemBrandModel || remote.itemBrandModel
-                        });
-                    }
-                });
-
+                // Supabase is authoritative when reachable; an empty result clears deleted local entries.
                 qrDownloadHistory = Array.from(remoteHistoryMap.values());
                 saveQrDownloadHistory();
                 renderQrDownloadHistory();
@@ -4935,17 +4947,20 @@ async function recordQrDownload(item) {
     if (!item || !item.assetId) return;
     const existing = qrDownloadHistory.find((entry) => entry.assetId === item.assetId);
     const downloadedAt = new Date().toISOString();
+    const inventoryItemNo = getAssetInventoryItemNo(item);
 
     if (existing) {
-        existing.propertyNo = item.propertyNo || item.assetId;
-        existing.itemBrandModel = item.itemBrandModel || item.propertyNo || item.assetId;
+        existing.inventoryItemNo = inventoryItemNo;
+        existing.propertyNo = inventoryItemNo;
+        existing.itemBrandModel = item.itemBrandModel || inventoryItemNo || "";
         existing.downloadedAt = downloadedAt;
         existing.count = Number(existing.count || 0) + 1;
     } else {
         qrDownloadHistory.push({
             assetId: item.assetId,
-            propertyNo: item.propertyNo || item.assetId,
-            itemBrandModel: item.itemBrandModel || item.propertyNo || item.assetId,
+            inventoryItemNo,
+            propertyNo: inventoryItemNo,
+            itemBrandModel: item.itemBrandModel || inventoryItemNo || "",
             downloadedAt,
             count: 1
         });
@@ -4958,8 +4973,9 @@ async function recordQrDownload(item) {
         try {
             const payload = {
                 asset_id: item.assetId,
-                property_no: item.propertyNo || item.assetId,
-                item_brand_model: item.itemBrandModel || item.propertyNo || item.assetId,
+                inventory_item_no: inventoryItemNo || null,
+                property_no: inventoryItemNo || null,
+                item_brand_model: item.itemBrandModel || inventoryItemNo || null,
                 download_count: existing ? existing.count : 1,
                 downloaded_at: downloadedAt,
                 updated_at: downloadedAt
@@ -5019,7 +5035,7 @@ function renderQrDownloadHistory() {
 
     if (query) {
         entries = entries.filter((entry) => {
-            const propertyNo = String(entry.propertyNo || entry.assetId || "").toLowerCase();
+            const propertyNo = getQrHistoryInventoryItemNo(entry).toLowerCase();
             const item = String(entry.itemBrandModel || "").toLowerCase();
             return propertyNo.includes(query) || item.includes(query);
         });
@@ -5031,8 +5047,8 @@ function renderQrDownloadHistory() {
     const pageEntries = entries.slice(startIndex, startIndex + qrHistoryPageSize);
 
     dom.qrHistoryTable.innerHTML = pageEntries.map((entry) => `
-        <tr class="qr-history-row clickable-row" data-asset-id="${escapeHtml(entry.assetId)}" data-property-no="${escapeHtml(entry.propertyNo || entry.assetId)}" data-item-brand-model="${escapeHtml(entry.itemBrandModel || "")}" title="Click to open QR preview">
-            <td>${escapeHtml(entry.propertyNo || entry.assetId)}</td>
+        <tr class="qr-history-row clickable-row" data-asset-id="${escapeHtml(entry.assetId)}" data-property-no="${escapeHtml(getQrHistoryInventoryItemNo(entry))}" data-item-brand-model="${escapeHtml(entry.itemBrandModel || "")}" title="Click to open QR preview">
+            <td>${escapeHtml(getQrHistoryInventoryItemNo(entry) || "—")}</td>
             <td>${escapeHtml(entry.itemBrandModel || "Unspecified")}</td>
             <td>${escapeHtml(formatQrDownloadDate(entry.downloadedAt))}</td>
             <td><strong>${Number(entry.count || 0)}</strong></td>
@@ -5057,7 +5073,7 @@ function formatQrDownloadDate(value) {
 
 function setQrDetails(item) {
     const details = item
-        ? [item.itemClassification || "Unspecified", item.propertyNo || item.assetId, item.accountable || "Unassigned", item.serialNo || "Not specified"]
+        ? [item.itemClassification || "Unspecified", getAssetInventoryItemNo(item) || "—", item.accountable || "Unassigned", item.serialNo || "Not specified"]
         : ["-", "-", "-", "-"];
 
     dom.qrDetails.querySelectorAll("dd").forEach((node, index) => {
@@ -7905,15 +7921,106 @@ async function requestInventoryCustodianSlipDatabase(path, options = {}) {
 }
 
 async function saveInventoryCustodianSlipToDatabase(action, slip) {
-    const sameSlipRows = inventoryCustodianSlips.filter((entry) => entry.dbSlipId && entry.icsNo === slip.icsNo);
-    let slipId = slip.dbSlipId || sameSlipRows[0]?.dbSlipId;
     const headerPayload = getInventoryCustodianSlipHeaderPayload(slip);
 
+    if (action === "update" && slip.dbItemId && slip.dbSlipId) {
+        const previousSlip = inventoryCustodianSlips.find((entry) => String(entry.dbItemId) === String(slip.dbItemId));
+        const previousIcsNo = String(previousSlip && previousSlip.icsNo || "").trim().toLocaleLowerCase();
+        const updatedIcsNo = String(slip.icsNo || "").trim().toLocaleLowerCase();
+        const siblingRows = inventoryCustodianSlips.filter((entry) =>
+            String(entry.dbSlipId) === String(slip.dbSlipId) && String(entry.dbItemId) !== String(slip.dbItemId)
+        );
+
+        // ICS No. belongs to the slip header. If one line's number changes,
+        // move that line to a separate header so sibling lines keep the old number.
+        if (previousSlip && previousIcsNo !== updatedIcsNo) {
+            const targetNoRows = inventoryCustodianSlips.filter((entry) =>
+                entry.dbSlipId &&
+                String(entry.dbSlipId) !== String(slip.dbSlipId) &&
+                String(entry.icsNo || "").trim().toLocaleLowerCase() === updatedIcsNo
+            );
+            let destinationSlipId = targetNoRows[0]?.dbSlipId || null;
+            let destinationLineNo = destinationSlipId
+                ? Math.max(0, ...targetNoRows
+                    .filter((entry) => String(entry.dbSlipId) === String(destinationSlipId))
+                    .map((entry) => Number(entry.lineNo) || 0)) + 1
+                : 1;
+            let createdDestinationHeader = false;
+
+            if (!destinationSlipId && updatedIcsNo) {
+                const existingHeadersResponse = await requestInventoryCustodianSlipDatabase(
+                    `ics_slips?select=id&ics_no=eq.${encodeURIComponent(String(slip.icsNo || "").trim())}`
+                );
+                const existingHeaders = await existingHeadersResponse.json();
+                destinationSlipId = existingHeaders[0]?.id || null;
+                if (destinationSlipId) {
+                    const destinationItemsResponse = await requestInventoryCustodianSlipDatabase(
+                        `ics_slip_items?select=line_no&ics_slip_id=eq.${encodeURIComponent(destinationSlipId)}&order=line_no.desc&limit=1`
+                    );
+                    const destinationItems = await destinationItemsResponse.json();
+                    destinationLineNo = (Number(destinationItems[0]?.line_no) || 0) + 1;
+                }
+            }
+
+            if (!destinationSlipId && siblingRows.length > 0) {
+                const headerResponse = await requestInventoryCustodianSlipDatabase("ics_slips", {
+                    method: "POST",
+                    body: JSON.stringify(headerPayload)
+                });
+                const headerRows = await headerResponse.json();
+                destinationSlipId = headerRows[0]?.id || null;
+                if (!destinationSlipId) throw new Error("A separate ICS header could not be created for the edited item.");
+                createdDestinationHeader = true;
+            }
+
+            if (destinationSlipId) {
+                try {
+                    const movedItemResponse = await requestInventoryCustodianSlipDatabase(`ics_slip_items?id=eq.${encodeURIComponent(slip.dbItemId)}`, {
+                        method: "PATCH",
+                        body: JSON.stringify(getInventoryCustodianSlipItemPayload(slip, destinationSlipId, destinationLineNo))
+                    });
+                    const movedItems = await movedItemResponse.json();
+                    if (!Array.isArray(movedItems) || movedItems.length === 0) {
+                        throw new Error("Supabase did not update the selected ICS item.");
+                    }
+                } catch (error) {
+                    if (createdDestinationHeader) {
+                        try {
+                            await requestInventoryCustodianSlipDatabase(`ics_slips?id=eq.${encodeURIComponent(destinationSlipId)}`, { method: "DELETE" });
+                        } catch (cleanupError) {
+                            console.warn("Could not remove the unused ICS header after a failed line update:", cleanupError);
+                        }
+                    }
+                    throw error;
+                }
+
+                if (siblingRows.length === 0) {
+                    try {
+                        await requestInventoryCustodianSlipDatabase(`ics_slips?id=eq.${encodeURIComponent(slip.dbSlipId)}`, { method: "DELETE" });
+                    } catch (cleanupError) {
+                        console.warn("Could not remove the empty previous ICS header:", cleanupError);
+                    }
+                }
+                return;
+            }
+        }
+    }
+
+    const targetIcsNo = String(slip.icsNo || "").trim().toLocaleLowerCase();
+    const sameSlipRows = targetIcsNo
+        ? inventoryCustodianSlips.filter((entry) => entry.dbSlipId && String(entry.icsNo || "").trim().toLocaleLowerCase() === targetIcsNo)
+        : [];
+    let slipId = slip.dbSlipId || sameSlipRows[0]?.dbSlipId;
+
     if (slipId) {
-        await requestInventoryCustodianSlipDatabase(`ics_slips?id=eq.${encodeURIComponent(slipId)}`, {
+        const headerUpdateResponse = await requestInventoryCustodianSlipDatabase(`ics_slips?id=eq.${encodeURIComponent(slipId)}`, {
             method: "PATCH",
             body: JSON.stringify(headerPayload)
         });
+        const updatedHeaders = await headerUpdateResponse.json();
+        if (!Array.isArray(updatedHeaders) || updatedHeaders.length === 0) {
+            throw new Error("Supabase did not update the ICS header.");
+        }
     } else {
         const response = await requestInventoryCustodianSlipDatabase("ics_slips", {
             method: "POST",
@@ -7925,16 +8032,24 @@ async function saveInventoryCustodianSlipToDatabase(action, slip) {
     }
 
     if (action === "update" && slip.dbItemId) {
-        await requestInventoryCustodianSlipDatabase(`ics_slip_items?id=eq.${encodeURIComponent(slip.dbItemId)}`, {
+        const itemUpdateResponse = await requestInventoryCustodianSlipDatabase(`ics_slip_items?id=eq.${encodeURIComponent(slip.dbItemId)}`, {
             method: "PATCH",
             body: JSON.stringify(getInventoryCustodianSlipItemPayload(slip, slipId, slip.lineNo || 1))
         });
+        const updatedItems = await itemUpdateResponse.json();
+        if (!Array.isArray(updatedItems) || updatedItems.length === 0) {
+            throw new Error("Supabase did not update the selected ICS item.");
+        }
     } else {
         const lineNo = Math.max(0, ...sameSlipRows.map((entry) => Number(entry.lineNo) || 0)) + 1;
-        await requestInventoryCustodianSlipDatabase("ics_slip_items", {
+        const itemInsertResponse = await requestInventoryCustodianSlipDatabase("ics_slip_items", {
             method: "POST",
             body: JSON.stringify(getInventoryCustodianSlipItemPayload(slip, slipId, lineNo))
         });
+        const insertedItems = await itemInsertResponse.json();
+        if (!Array.isArray(insertedItems) || insertedItems.length === 0) {
+            throw new Error("Supabase did not create the ICS item.");
+        }
     }
 }
 
@@ -8738,6 +8853,7 @@ async function initInventoryCustodianSlipCrud() {
         const existingIndex = inventoryCustodianSlips.findIndex((entry) => entry.id === slip.id);
         const action = existingIndex >= 0 ? "update" : "create";
 
+        let saveSucceeded = false;
         try {
             if (hasInventoryCustodianSlipRemoteDatabase()) {
                 const existing = existingIndex >= 0 ? inventoryCustodianSlips[existingIndex] : null;
@@ -8758,11 +8874,14 @@ async function initInventoryCustodianSlipCrud() {
             await updateAssetAccountablePersonFromIcs(slip);
 
             resetInventoryCustodianSlipForm();
+            saveSucceeded = true;
         } catch (error) {
             console.error(error);
             setDatabaseStatus("Local fallback is active.", "The backend could not receive the latest change.");
+            showToast(`Could not save the ICS record: ${error.message || "Please check the database connection."}`);
         }
 
+        if (!saveSucceeded) return;
         showSuccessModal(
             action === "update" ? "ICS record updated successfully!" : "ICS record saved successfully!",
             "Success",
