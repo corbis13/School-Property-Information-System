@@ -1,21 +1,24 @@
 const icsSupabaseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
 const icsSupabaseAnonKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
 
-function setIcsText(id, value, fallback = "â€”") {
+function setIcsText(id, value, fallback = "—") {
     const element = document.getElementById(id);
     if (element) element.textContent = value == null || String(value).trim() === "" ? fallback : String(value);
 }
 
 function formatIcsPublicAmount(value) {
-    if (value == null || value === "") return "â€”";
-    const amount = Number(value);
-    return Number.isFinite(amount)
-        ? `â‚±${amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        : String(value);
+    if (value == null || value === "") return "—";
+    const original = String(value).trim();
+    const isParenthesizedNegative = /^\(.*\)$/.test(original);
+    const numericText = original.replace(/,/g, "").replace(/[^0-9.-]/g, "");
+    const amount = Number(numericText);
+    if (!numericText || !Number.isFinite(amount)) return "—";
+    const normalizedAmount = isParenthesizedNegative ? -Math.abs(amount) : amount;
+    return normalizedAmount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function formatIcsPublicDate(value) {
-    if (!value) return "â€”";
+    if (!value) return "—";
     const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
     return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" });
 }
@@ -26,15 +29,15 @@ function renderPublicIcsSlip(slip) {
     setIcsText("fundCluster", slip.fund_cluster);
     setIcsText("icsNo", slip.ics_no);
     setIcsText("receivedFrom", slip.received_from_name, "Signature over printed name");
-    setIcsText("receivedFromDetails", [slip.received_from_position, slip.received_from_date ? `Date: ${formatIcsPublicDate(slip.received_from_date)}` : ""].filter(Boolean).join(" Â· "));
+    setIcsText("receivedFromDetails", [slip.received_from_position, slip.received_from_date ? `Date: ${formatIcsPublicDate(slip.received_from_date)}` : ""].filter(Boolean).join(" · "));
     setIcsText("receivedBy", slip.received_by_name, "Signature over printed name");
-    setIcsText("receivedByDetails", [slip.received_by_position, slip.received_by_date ? `Date: ${formatIcsPublicDate(slip.received_by_date)}` : ""].filter(Boolean).join(" Â· "));
+    setIcsText("receivedByDetails", [slip.received_by_position, slip.received_by_date ? `Date: ${formatIcsPublicDate(slip.received_by_date)}` : ""].filter(Boolean).join(" · "));
 
     const tbody = document.getElementById("itemRows");
     tbody.replaceChildren();
     (Array.isArray(slip.items) ? slip.items : []).forEach((item) => {
         const row = document.createElement("tr");
-        const values = [item.quantity ?? "â€”", item.unit || "â€”", formatIcsPublicAmount(item.unit_cost), formatIcsPublicAmount(item.total_cost)];
+        const values = [item.quantity ?? "—", item.unit || "—", formatIcsPublicAmount(item.unit_cost), formatIcsPublicAmount(item.total_cost)];
         values.forEach((value, index) => {
             const cell = document.createElement("td");
             cell.textContent = String(value);
@@ -44,7 +47,7 @@ function renderPublicIcsSlip(slip) {
 
         const description = document.createElement("td");
         description.className = "description";
-        description.appendChild(document.createTextNode(item.description || "â€”"));
+        description.appendChild(document.createTextNode(item.description || "—"));
         const detailLines = [
             item.serial_no ? `Serial No.: ${item.serial_no}` : "",
             item.additional_item ? `Additional Item: ${item.additional_item}` : "",
@@ -57,7 +60,7 @@ function renderPublicIcsSlip(slip) {
         }
         row.appendChild(description);
 
-        [item.inventory_item_no || "â€”", item.estimated_useful_life || "â€”"].forEach((value) => {
+        [item.inventory_item_no || "—", item.estimated_useful_life || "—"].forEach((value) => {
             const cell = document.createElement("td");
             cell.textContent = String(value);
             row.appendChild(cell);
@@ -100,4 +103,3 @@ async function loadPublicIcsSlip() {
 }
 
 loadPublicIcsSlip();
-
