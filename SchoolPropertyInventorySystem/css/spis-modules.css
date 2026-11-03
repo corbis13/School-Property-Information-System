@@ -1359,6 +1359,21 @@ body[data-theme="dark"] #refreshSchoolDetailsBtn:hover {
   max-width: 100%;
 }
 
+.inventory-number-ics-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.inventory-number-ics-indicator input[type="checkbox"] {
+  width: 0.8rem;
+  height: 0.8rem;
+  margin: 0;
+  accent-color: #15803d;
+  cursor: default;
+}
+
 .inventory-heading .filters {
   display: flex !important;
   flex-direction: row !important;
@@ -4190,6 +4205,25 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   font-weight: 600;
   color: #059669;
   white-space: nowrap;
+}
+
+.ics-issued-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border: 1px solid #bbf7d0;
+  border-radius: 9999px;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.ics-issued-indicator span {
+  font-size: 0.75rem;
 }
 
 .ics-option-no-results {

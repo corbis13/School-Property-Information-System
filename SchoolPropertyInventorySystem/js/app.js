@@ -4736,6 +4736,25 @@ function getStatusBadgeStyles(status) {
     return `--badge-color:${match.color};--badge-background:${match.background};--badge-border:${match.border};`;
 }
 
+function hasIssuedInventoryCustodianSlip(item) {
+    if (!item) return false;
+    const assetIds = new Set([item.assetId, item.asset_id, item.id, item.dbId].map((value) => String(value || "").trim()).filter(Boolean));
+    const primaryAssetId = String(item.assetId || item.asset_id || "").trim().toLocaleLowerCase();
+    const itemNumbers = new Set([
+        getAssetInventoryItemNo(item),
+        item.propertyNo || item.property_no,
+        item.semiExpandableNo || item.semi_expandable_no
+    ].map((value) => String(value || "").trim().toLocaleLowerCase()).filter((value) => value && value !== primaryAssetId));
+    const slips = Array.isArray(inventoryCustodianSlips) ? inventoryCustodianSlips : [];
+
+    return slips.some((slip) => {
+        const slipAssetId = String(slip.assetId || slip.dbAssetId || "").trim();
+        if (slipAssetId && assetIds.has(slipAssetId)) return true;
+        const slipItemNo = String(slip.inventoryItemNo || "").trim().toLocaleLowerCase();
+        return Boolean(slipItemNo && itemNumbers.has(slipItemNo));
+    });
+}
+
 function renderTable() {
     const filteredItems = getFilteredItems();
     const totalPages = Math.max(1, Math.ceil(filteredItems.length / inventoryRowsPerPage));
@@ -4753,6 +4772,7 @@ function renderTable() {
     visibleItems.forEach((item) => {
         const status = getComputedStatus(item);
         const inventoryNumber = item.semiExpandableNo || item.semi_expandable_no || item.propertyNo || item.property_no || "-";
+        const isIssuedOnIcs = hasIssuedInventoryCustodianSlip(item);
         const accountableVal = String(item.accountable || "").trim();
         const isAccountableAssigned = Boolean(accountableVal && accountableVal !== "-" && accountableVal.toLowerCase() !== "unassigned" && accountableVal.toLowerCase() !== "none");
         const isRecentlyUpdated = Boolean(window.recentlyUpdatedAssetId && item.assetId === window.recentlyUpdatedAssetId);
@@ -4763,7 +4783,7 @@ function renderTable() {
             row.classList.add("bg-emerald-50/80", "transition-colors", "duration-500");
         }
         row.innerHTML = `
-            <td>${escapeHtml(inventoryNumber)}</td>
+            <td><span class="inventory-number-ics-indicator"><input type="checkbox" aria-label="${isIssuedOnIcs ? "Issued on an ICS" : "Not issued on an ICS"}" title="${isIssuedOnIcs ? "Issued on an ICS" : "Not issued on an ICS"}" disabled ${isIssuedOnIcs ? "checked" : ""}><span>${escapeHtml(inventoryNumber)}</span></span></td>
             <td>
                 <span class="item-title">
                     <strong>${escapeHtml(item.itemBrandModel || item.item_brand_model || item.description || item.desc || "")}</strong>
@@ -7890,6 +7910,8 @@ async function loadInventoryCustodianSlipsFromDatabase() {
     inventoryCustodianSlips = dedupeInventoryCustodianSlips(mapInventoryCustodianSlipRows(await response.json()));
     window.inventoryCustodianSlips = inventoryCustodianSlips;
     saveInventoryCustodianSlips();
+    renderTable();
+    populateIcsDescriptionDropdown(document.querySelector("#icsDescription")?.value || "");
     if (window.activePersonnel && typeof window.renderPersonnelProfile === "function") {
         window.renderPersonnelProfile(window.activePersonnel);
     }
@@ -8220,12 +8242,12 @@ function populateIcsDescriptionDropdown(selectedValue = "") {
             return {
                 description,
                 assetId: item.assetId,
-                semiExpandableNo: item.semiExpandableNo || "",
-                unitValue: item.unitValue ?? ""
+                inventoryItemNo: getAssetInventoryItemNo(item),
+                unitValue: item.unitValue ?? "",
+                hasIssuedIcs: hasIssuedInventoryCustodianSlip(item)
             };
         })
         .filter((entry) => entry.description)
-        .filter((entry, index, entries) => entries.findIndex((candidate) => candidate.description === entry.description) === index)
         .sort((first, second) => first.description.localeCompare(second.description, undefined, { sensitivity: "base" }));
 
     if (descriptionSelect) {
@@ -8244,8 +8266,9 @@ function populateIcsDescriptionDropdown(selectedValue = "") {
             <div class="ics-option-item" data-value="${escapeHtml(entry.description)}" data-text="${escapeHtml(entry.description)}" data-asset-id="${escapeHtml(entry.assetId)}">
                 <div class="ics-option-main">
                     <span class="ics-option-title">${escapeHtml(entry.description)}</span>
-                    ${entry.semiExpandableNo ? `<span class="ics-option-subtitle">Item No: ${escapeHtml(entry.semiExpandableNo)}</span>` : ""}
+                    ${entry.inventoryItemNo ? `<span class="ics-option-subtitle">Item No: ${escapeHtml(entry.inventoryItemNo)}</span>` : ""}
                 </div>
+                ${entry.hasIssuedIcs ? '<span class="ics-issued-indicator" title="This inventory record has an ICS"><span aria-hidden="true">✓</span> ICS generated</span>' : ""}
                 ${entry.unitValue ? `<span class="ics-option-cost">${formatCurrency(entry.unitValue)}</span>` : ""}
             </div>
         `).join("");
@@ -8869,6 +8892,8 @@ async function initInventoryCustodianSlipCrud() {
             renderIcsGeneratedCount();
             renderInventoryCustodianSlipTable();
             renderRecentAssets();
+            renderTable();
+            populateIcsDescriptionDropdown(document.querySelector("#icsDescription")?.value || "");
 
             // Synchronize Person Accountable in Inventory Module with the new "Received by"
             await updateAssetAccountablePersonFromIcs(slip);
@@ -9012,7 +9037,7 @@ async function openInventoryCustodianSlipPdf(slip) {
     const pdf = new JsPdf({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = 210;
     const pageHeight = 297;
-    const marginX = 13; // left & right margin in mm  ← change this to adjust left/right margins
+    const marginX = 6;  // equal left and right margin in mm
     const marginY = 8;  // top margin in mm            ← change this to adjust top margin
 
     // ── Font sizes (pt) ─────────────────────────────────────────────────────
@@ -9025,7 +9050,7 @@ async function openInventoryCustodianSlipPdf(slip) {
     // ────────────────────────────────────────────────────────────────────────
 
     // Column ratios follow the uploaded ICS.xlsx template (A:H), including its merged Description field.
-    const columns = [14, 13, 22, 22, 68, 30, 20];
+    const columns = [12, 15, 22, 22, 75, 30, 20];
     const formatAmount = (value) => {
         if (value === "" || value === null || value === undefined) return "";
         const num = Number(String(value).replace(/[^0-9.-]/g, ""));
@@ -9072,7 +9097,7 @@ async function openInventoryCustodianSlipPdf(slip) {
         const fullHeight = headerHeight + subHeaderHeight;
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(fontTableHeader);
-        [["Quantity", columns[0]], ["Unit", columns[1]]].forEach(([label, width]) => {
+        [["Qty", columns[0]], ["Unit", columns[1]]].forEach(([label, width]) => {
             pdf.rect(x, y, width, fullHeight);
             pdf.text(label, x + width / 2, y + fullHeight / 2 + 1.5, { align: "center" });
             x += width;
