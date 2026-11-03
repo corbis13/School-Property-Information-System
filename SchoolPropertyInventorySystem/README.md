@@ -111,11 +111,13 @@ The QR payload encodes the GitHub Pages asset detail URL:
 
 QR scanning opens the asset detail page automatically. Keep the `assetUrl` value in `supabase-config.js` pointed at the GitHub Pages deployment.
 
+The QR code on a generated ICS PDF opens the public, read-only `ics-view.html` page for that slip's ICS No. Its Supabase `get_public_ics_slip` function returns only that slip's printed header and line-item fields; it does not grant anonymous table access. Run `supabase-setup.sql` to create or refresh this function.
+
 The asset hero card reads Accountable Person, Position/Designation, School Level, and Assigned Location from `get_public_asset_qr`, which selects those values from `assets`. The lookup returns `assets.plantilla_position` for the Position/Designation card. After applying changes to this lookup, run `supabase-setup.sql`; it recreates the function and notifies PostgREST to reload its schema. The setup script also fills blank asset designations from the matched accountable person's `school_teacher.plantilla_position` for existing records.
 
 ## Security note
 
-The browser UI is gated by Google sign-in and uses the user's Supabase access token for database requests. Run [`supabase-setup.sql`](supabase-setup.sql) in Supabase to apply the authenticated-only database policies and limited-field public QR lookup.
+The browser UI is gated by Google sign-in and uses the user's Supabase access token for database requests. Run [`supabase-setup.sql`](supabase-setup.sql) in Supabase to apply the authenticated-only database policies and limited-field public QR lookups for individual assets and ICS slips.
 
 ## Legacy files
 
