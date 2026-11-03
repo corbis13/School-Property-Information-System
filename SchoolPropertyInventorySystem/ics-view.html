@@ -6,42 +6,53 @@
   <meta name="theme-color" content="#00335e">
   <title>Inventory Custodian Slip | SPIS</title>
   <style>
-    :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; color: #172033; background: #eef3f8; }
+    :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; color: #172033; background: #edf2f7; }
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 28px 16px; }
-    main { width: min(1100px, 100%); margin: 0 auto; }
-    .paper { background: #fff; border: 1px solid #dbe3ec; border-radius: 14px; box-shadow: 0 12px 32px #102b4614; padding: 28px; }
-    .brand { color: #52657a; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-    h1 { margin: 7px 0 22px; color: #00335e; font-size: clamp(22px, 4vw, 30px); }
-    .metadata { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
-    .meta-card { border: 1px solid #dbe3ec; border-radius: 8px; padding: 12px; min-width: 0; }
-    .label { display: block; margin-bottom: 5px; color: #607184; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-    .value { overflow-wrap: anywhere; font-size: 14px; font-weight: 600; }
-    .table-wrap { overflow-x: auto; border: 1px solid #dbe3ec; border-radius: 8px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { border-bottom: 1px solid #e4eaf0; padding: 10px 9px; text-align: left; vertical-align: top; }
-    th { background: #f3f7fb; color: #30465c; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
-    tr:last-child td { border-bottom: 0; }
-    .numeric { text-align: right; white-space: nowrap; }
-    .description { min-width: 210px; }
-    .description small { display: block; margin-top: 5px; color: #536477; white-space: pre-line; }
-    .signatories { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; }
-    .signatory { border: 1px solid #dbe3ec; border-radius: 8px; padding: 14px; min-height: 100px; }
-    .signatory strong { display: block; margin-top: 18px; }
-    .signatory small { display: block; margin-top: 5px; color: #536477; }
-    .state { padding: 38px 14px; text-align: center; color: #536477; }
+    body { margin: 0; padding: 36px 18px; background: radial-gradient(circle at 12% 0%, #dce9f5 0, transparent 32rem), #edf2f7; }
+    main { width: min(1180px, 100%); margin: 0 auto; }
+    .paper { position: relative; overflow: hidden; background: #fff; border: 1px solid #d7e0e9; border-radius: 16px; box-shadow: 0 20px 55px #1535531a, 0 3px 10px #1535530b; padding: 34px; }
+    .paper::before { position: absolute; inset: 0 0 auto; height: 6px; background: linear-gradient(90deg, #00335e, #087d91 65%, #75b6a3); content: ""; }
+    .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+    .brand { color: #62758a; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 8px 0 0; color: #07365d; font-size: clamp(24px, 4vw, 32px); letter-spacing: -.025em; }
+    .document-badge { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; margin-top: 4px; padding: 9px 12px; border: 1px solid #c8ddeb; border-radius: 999px; background: #f2f8fc; color: #164568; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .document-badge::before { width: 7px; height: 7px; border-radius: 50%; background: #168478; content: ""; }
+    .metadata { display: grid; grid-template-columns: 1.35fr .8fr 1fr; gap: 12px; margin-bottom: 22px; }
+    .meta-card { min-width: 0; padding: 15px 16px; border: 1px solid #dce5ed; border-radius: 10px; background: linear-gradient(180deg, #fff, #fbfdff); box-shadow: 0 2px 5px #18385208; }
+    .label { display: block; margin-bottom: 7px; color: #65788d; font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    .value { overflow-wrap: anywhere; color: #182d42; font-size: 14px; font-weight: 700; line-height: 1.45; }
+    .table-wrap { overflow-x: auto; border: 1px solid #d7e0e9; border-radius: 10px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+    th, td { border-bottom: 1px solid #e5ebf0; padding: 11px 10px; text-align: left; vertical-align: top; }
+    th { background: #07365d; color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .055em; text-transform: uppercase; white-space: nowrap; }
+    th:first-child { border-radius: 8px 0 0; }
+    th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) { background: #f7fafc; }
+    tbody tr:hover { background: #eff6fa; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .numeric { color: #173b5a; font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; white-space: nowrap; }
+    .description { min-width: 220px; color: #1c2e40; font-weight: 600; }
+    .description small { display: block; margin-top: 6px; color: #62758a; font-size: 11px; font-weight: 400; line-height: 1.55; white-space: pre-line; }
+    .signatories { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+    .signatory { min-height: 112px; padding: 16px 18px; border: 1px solid #dce5ed; border-radius: 10px; background: #fbfdff; }
+    .signatory strong { display: block; min-height: 19px; margin-top: 22px; padding-top: 9px; border-top: 1px solid #9aaabd; color: #1b3043; font-size: 13px; }
+    .signatory small { display: block; margin-top: 6px; color: #65788d; font-size: 11px; line-height: 1.5; }
+    .state { padding: 54px 18px; color: #53677b; font-size: 14px; font-weight: 600; text-align: center; }
     .state.error { color: #9f2630; }
-    @media (max-width: 680px) { body { padding: 14px 8px; } .paper { padding: 18px 12px; } .metadata { grid-template-columns: 1fr 1fr; } .signatories { grid-template-columns: 1fr; } }
-    @media print { :root { background: #fff; } body { padding: 0; } main { width: 100%; } .paper { border: 0; border-radius: 0; box-shadow: none; padding: 0; } }
+    @media (max-width: 760px) { body { padding: 18px 10px; } .paper { padding: 26px 18px; } .metadata { grid-template-columns: 1fr 1fr; } .metadata .meta-card:first-child { grid-column: 1 / -1; } }
+    @media (max-width: 540px) { .card-header { flex-direction: column; gap: 12px; } .document-badge { margin: 0; } .metadata { grid-template-columns: 1fr; } .metadata .meta-card:first-child { grid-column: auto; } .signatories { grid-template-columns: 1fr; } .paper { padding: 23px 14px; } }
+    @media print { :root { background: #fff; } body { padding: 0; background: #fff; } main { width: 100%; } .paper { border: 0; border-radius: 0; box-shadow: none; padding: 8mm; } .paper::before { display: none; } tbody tr:hover { background: transparent; } }
   </style>
 </head>
 <body>
   <main>
     <section class="paper" aria-live="polite">
-      <div id="loadingState" class="state">Loading Inventory Custodian Slipâ€¦</div>
+      <div id="loadingState" class="state">Loading Inventory Custodian Slip…</div>
       <div id="icsContent" hidden>
-        <div class="brand">School Property Information System</div>
-        <h1>Inventory Custodian Slip</h1>
+        <header class="card-header">
+          <div><div class="brand">School Property Information System</div><h1>Inventory Custodian Slip</h1></div>
+          <span class="document-badge">Official Record</span>
+        </header>
         <section class="metadata" aria-label="Slip details">
           <div class="meta-card"><span class="label">Entity Name</span><span class="value" id="entityName"></span></div>
           <div class="meta-card"><span class="label">Fund Cluster</span><span class="value" id="fundCluster"></span></div>
@@ -61,7 +72,6 @@
     </section>
   </main>
   <script src="supabase-config.js?v=20260922"></script>
-  <script src="js/ics-view.js?v=20261103"></script>
+  <script src="js/ics-view.js?v=20261103_2"></script>
 </body>
 </html>
-
