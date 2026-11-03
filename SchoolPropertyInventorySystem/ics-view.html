@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#00335e">
+  <title>Inventory Custodian Slip | SPIS</title>
+  <style>
+    :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; color: #172033; background: #eef3f8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 28px 16px; }
+    main { width: min(1100px, 100%); margin: 0 auto; }
+    .paper { background: #fff; border: 1px solid #dbe3ec; border-radius: 14px; box-shadow: 0 12px 32px #102b4614; padding: 28px; }
+    .brand { color: #52657a; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 7px 0 22px; color: #00335e; font-size: clamp(22px, 4vw, 30px); }
+    .metadata { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .meta-card { border: 1px solid #dbe3ec; border-radius: 8px; padding: 12px; min-width: 0; }
+    .label { display: block; margin-bottom: 5px; color: #607184; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .value { overflow-wrap: anywhere; font-size: 14px; font-weight: 600; }
+    .table-wrap { overflow-x: auto; border: 1px solid #dbe3ec; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid #e4eaf0; padding: 10px 9px; text-align: left; vertical-align: top; }
+    th { background: #f3f7fb; color: #30465c; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+    tr:last-child td { border-bottom: 0; }
+    .numeric { text-align: right; white-space: nowrap; }
+    .description { min-width: 210px; }
+    .description small { display: block; margin-top: 5px; color: #536477; white-space: pre-line; }
+    .signatories { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; }
+    .signatory { border: 1px solid #dbe3ec; border-radius: 8px; padding: 14px; min-height: 100px; }
+    .signatory strong { display: block; margin-top: 18px; }
+    .signatory small { display: block; margin-top: 5px; color: #536477; }
+    .state { padding: 38px 14px; text-align: center; color: #536477; }
+    .state.error { color: #9f2630; }
+    @media (max-width: 680px) { body { padding: 14px 8px; } .paper { padding: 18px 12px; } .metadata { grid-template-columns: 1fr 1fr; } .signatories { grid-template-columns: 1fr; } }
+    @media print { :root { background: #fff; } body { padding: 0; } main { width: 100%; } .paper { border: 0; border-radius: 0; box-shadow: none; padding: 0; } }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="paper" aria-live="polite">
+      <div id="loadingState" class="state">Loading Inventory Custodian Slipâ€¦</div>
+      <div id="icsContent" hidden>
+        <div class="brand">School Property Information System</div>
+        <h1>Inventory Custodian Slip</h1>
+        <section class="metadata" aria-label="Slip details">
+          <div class="meta-card"><span class="label">Entity Name</span><span class="value" id="entityName"></span></div>
+          <div class="meta-card"><span class="label">Fund Cluster</span><span class="value" id="fundCluster"></span></div>
+          <div class="meta-card"><span class="label">ICS No.</span><span class="value" id="icsNo"></span></div>
+        </section>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Qty</th><th>Unit</th><th>Unit Cost</th><th>Total Cost</th><th>Description</th><th>Inventory Item No.</th><th>Estimated Useful Life</th></tr></thead>
+            <tbody id="itemRows"></tbody>
+          </table>
+        </div>
+        <section class="signatories" aria-label="Received from and received by">
+          <div class="signatory"><span class="label">Received From</span><strong id="receivedFrom"></strong><small id="receivedFromDetails"></small></div>
+          <div class="signatory"><span class="label">Received By</span><strong id="receivedBy"></strong><small id="receivedByDetails"></small></div>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script src="supabase-config.js?v=20260922"></script>
+  <script src="js/ics-view.js?v=20261103"></script>
+</body>
+</html>
+
