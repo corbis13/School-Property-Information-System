@@ -198,6 +198,9 @@ function renderAsset(item) {
     const heroAccountable = document.getElementById("heroAccountable");
     if (heroAccountable) heroAccountable.textContent = item.accountable || item.accountablePerson || "Unassigned";
 
+    const heroPlantillaPosition = document.getElementById("heroPlantillaPosition");
+    if (heroPlantillaPosition) heroPlantillaPosition.textContent = item.plantillaPosition || item.plantilla_position || "--";
+
     const heroSchoolLevel = document.getElementById("heroSchoolLevel");
     if (heroSchoolLevel) heroSchoolLevel.textContent = item.schoolLevel || item.schoollevel || "--";
 
@@ -333,6 +336,7 @@ async function loadAsset() {
             mooeMonth: row.mooe_month || "",
             mooeYear: row.mooe_year ?? "",
             accountable: row.accountable_person || "",
+            plantillaPosition: row.plantilla_position || "",
             schoolLevel: row.school_level || "",
             location: row.location || "",
             dateIssue: row.date_issue || "",

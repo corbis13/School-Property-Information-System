@@ -91,7 +91,7 @@ The Google client secret belongs in Supabase's dashboard; do not add it to this 
 The Inventory form's School Level is populated from the selected accountable person's `school_teacher.school_level` and saved to `assets.school_level`.
 
 ```text
-asset_id, property_classification, property_value, fund_cluster, inventory_type, property_no, item_classification, item_brand_model, serial_no, acquisition_date, accountable_person, school_level, semi_expandable_no, unit_value, total, unit_measurement, balance, on_hand, shortage_overage_qty, shortage_overage_value, location, mooe_month, mooe_year, date_issue, status, additional_item, remarks, created_at, updated_at
+asset_id, property_classification, property_value, fund_cluster, inventory_type, property_no, item_classification, item_brand_model, serial_no, acquisition_date, accountable_person, plantilla_position, school_level, semi_expandable_no, unit_value, total, unit_measurement, balance, on_hand, shortage_overage_qty, shortage_overage_value, location, mooe_month, mooe_year, date_issue, status, additional_item, remarks, created_at, updated_at
 ```
 
 ### Expected classification columns

@@ -75,6 +75,7 @@ const dom = {
     acquisitionDate: document.querySelector("#acquisitionDate"),
     accountable: document.querySelector("#accountable"),
     position: document.querySelector("#position"),
+    plantillaPosition: document.querySelector("#plantillaPosition"),
     schoolLevel: document.querySelector("#schoolLevel"),
     semiExpandableNo: document.querySelector("#semiExpandableNo"),
     unitValue: document.querySelector("#unitValue"),
@@ -352,6 +353,7 @@ async function loadTeacherOptions() {
             .map((row) => ({
                 name: String(row.teacher_name || row.name || row.full_name || "").trim(),
                 position: String(row.plantilla_position || "").trim(),
+                plantillaPosition: String(row.plantilla_position || "").trim(),
                 schoolLevel: String(row.school_level || row.schoolLevel || row.schoollevel || "").trim()
             }))
             .filter((row) => row.name)
@@ -1805,6 +1807,7 @@ async function loadItems() {
             serialNo: row.serial_no || row.serialNo || "",
             acquisitionDate: row.acquisition_date || row.acquisitionDate || "",
             accountable: row.accountable_person || row.accountable || "",
+            plantillaPosition: row.plantilla_position || row.plantillaPosition || "",
             schoolLevel: row.school_level || row.schoolLevel || row.schoollevel || "",
             semiExpandableNo: row.semi_expandable_no || row.semiExpandableNo || "",
             unitValue: row.unit_value ?? row.unitValue ?? "",
@@ -1905,6 +1908,7 @@ async function syncToSheet(action, item) {
         serial_no: item.serialNo,
         acquisition_date: item.acquisitionDate,
         accountable_person: item.accountable,
+        plantilla_position: item.plantillaPosition || "",
         school_level: item.schoolLevel || "",
         semi_expandable_no: item.semiExpandableNo || "",
         unit_value: item.unitValue === "" ? null : item.unitValue,
@@ -2429,6 +2433,7 @@ function getFormData() {
         serialNo: dom.serialNo.value.trim(),
         acquisitionDate: dom.acquisitionDate.value,
         accountable: dom.accountable.value.trim(),
+        plantillaPosition: String((matchedTeacher && (matchedTeacher.plantillaPosition || matchedTeacher.position)) || dom.plantillaPosition.value || "").trim(),
         schoolLevel: selectedSchoolLevel,
         semiExpandableNo: dom.propertyClassification.value === "SEP" ? dom.semiExpandableNo.value.trim() : "",
         unitValue: dom.unitValue.value.trim(),
@@ -2544,6 +2549,7 @@ function fillForm(item) {
     ensureSelectOption(dom.accountable, item.accountable);
     dom.accountable.value = item.accountable;
     applySelectedTeacherDetails();
+    dom.plantillaPosition.value = item.plantillaPosition || dom.plantillaPosition.value || "";
     dom.semiExpandableNo.value = item.semiExpandableNo || "";
     dom.unitValue.value = item.unitValue ?? "";
     updatePropertyValueClassification();
@@ -2572,6 +2578,7 @@ function applySelectedTeacherDetails() {
     const selectedTeacher = dom.accountable.value.trim();
     const matchedTeacher = teacherOptions.find((teacher) => teacher.name.toLowerCase() === selectedTeacher.toLowerCase());
     dom.position.value = (matchedTeacher && matchedTeacher.position) || "";
+    dom.plantillaPosition.value = (matchedTeacher && (matchedTeacher.plantillaPosition || matchedTeacher.position)) || "";
     dom.schoolLevel.value = (matchedTeacher && matchedTeacher.schoolLevel) || "";
 }
 

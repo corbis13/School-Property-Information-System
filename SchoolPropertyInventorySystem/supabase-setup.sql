@@ -13,6 +13,7 @@ create table if not exists public.assets (
   serial_no text,
   acquisition_date text,
   accountable_person text,
+  plantilla_position text,
   school_level text,
   semi_expandable_no text,
   unit_value numeric check (unit_value is null or unit_value >= 0),
@@ -34,6 +35,7 @@ create table if not exists public.assets (
 
 alter table public.assets add column if not exists property_classification text;
 alter table public.assets add column if not exists property_value text;
+alter table public.assets add column if not exists plantilla_position text;
 alter table public.assets add column if not exists additional_item text;
 
 create table if not exists public.asset_images (
@@ -258,6 +260,7 @@ returns table (
   mooe_year numeric,
   status text,
   accountable_person text,
+  plantilla_position text,
   school_level text,
   location text,
   date_issue text,
@@ -278,7 +281,7 @@ as $$
          a.item_classification, a.item_brand_model, a.serial_no,
          a.acquisition_date, a.fund_cluster, a.unit_measurement,
          a.mooe_month, a.mooe_year, a.status,
-         a.accountable_person, a.school_level, a.location, a.date_issue,
+         a.accountable_person, a.plantilla_position, a.school_level, a.location, a.date_issue,
          a.unit_value, a.total, a.on_hand, a.balance,
          a.shortage_overage_qty, a.shortage_overage_value, a.remarks
   from public.assets as a
