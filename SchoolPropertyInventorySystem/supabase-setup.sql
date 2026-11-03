@@ -467,9 +467,6 @@ as $$
   limit 1;
 $$;
 
-revoke all on function public.get_public_ics_slip(text) from public;
-grant execute on function public.get_public_ics_slip(text) to anon, authenticated;
-
 -- Report of Semi-Expendable Property Issued (RSPI) document records.
 -- A report header stores the input/base record. Its line items are snapshots of
 -- the source ICS items so an issued RSPI remains reproducible after ICS changes.

@@ -464,6 +464,12 @@
   margin-bottom: 0;
 }
 
+#savedDocumentsPanel #icsSlipSearchInput,
+#savedRspiDocumentsPanel #rspiSlipSearchInput {
+  width: min(460px, 55vw);
+  max-width: 100%;
+}
+
 .module-view[data-module="about"] .about-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
