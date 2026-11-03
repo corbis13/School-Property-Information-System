@@ -3099,6 +3099,8 @@
                         unitValue: r.unit_value,
                         total: r.total,
                         unitMeasurement: r.unit_measurement,
+                        estimatedUsefulLife: r.est_useful_life || "",
+                        est_useful_life: r.est_useful_life || "",
                         onHand: r.on_hand,
                         status: r.status,
                         dateIssue: r.date_issue,
@@ -3423,6 +3425,30 @@
               window.recordPersonnelUpdateTime = recordPersonnelUpdateTime;
               window.sortPersonnelByLatest = sortPersonnelByLatest;
 
+              function formatPersonnelDirectoryName(personnel) {
+                var firstName = String(personnel.first_name || "").trim();
+                var middleName = String(personnel.middle_name || "").trim();
+                var lastName = String(personnel.last_name || "").trim();
+
+                if (!firstName || !lastName) {
+                  var parts = String(personnel.teacher_name || "").trim().split(/\s+/).filter(Boolean);
+                  if (parts.length > 1) {
+                    var legacyLastName = parts.pop();
+                    var possibleMiddleInitial = parts.length > 1 ? parts[parts.length - 1] : "";
+                    if (!middleName && /^[A-Za-z]\.?$/.test(possibleMiddleInitial)) {
+                      middleName = parts.pop();
+                    }
+                    if (!firstName) firstName = parts.join(" ");
+                    if (!lastName) lastName = legacyLastName;
+                  }
+                }
+
+                if (!firstName || !lastName) return String(personnel.teacher_name || "").trim().toLocaleUpperCase();
+
+                var middleInitial = middleName ? middleName.charAt(0).toLocaleUpperCase() + "." : "";
+                return lastName.toLocaleUpperCase() + ", " + [firstName.toLocaleUpperCase(), middleInitial].filter(Boolean).join(" ");
+              }
+
               /* --- Directory List Table Rendering --- */
               function renderPersonnelListTable() {
                 var tbody = document.getElementById("personnelListTableBody");
@@ -3451,6 +3477,7 @@
                   if (!q) return true;
                   return [
                     t.teacher_name,
+                    formatPersonnelDirectoryName(t),
                     t.employee_id,
                     t.email,
                     t.plantilla_position,
@@ -3460,7 +3487,7 @@
                   });
                 });
                 personnelListFiltered.sort(function (a, b) {
-                  return String(a.teacher_name || "").localeCompare(String(b.teacher_name || ""), undefined, { sensitivity: "base" });
+                  return formatPersonnelDirectoryName(a).localeCompare(formatPersonnelDirectoryName(b), undefined, { sensitivity: "base" });
                 });
 
                 if (personnelListFiltered.length === 0) {
@@ -3515,7 +3542,7 @@
                       '<div class="flex items-center gap-3">' +
                         avatarHtml +
                         '<div class="min-w-0">' +
-                          '<div class="font-bold text-[#10213c] text-sm hover:text-[#078f95] transition truncate">' + safeEscape(t.teacher_name) + '</div>' +
+                          '<div class="font-bold text-[#10213c] text-sm hover:text-[#078f95] transition truncate">' + safeEscape(formatPersonnelDirectoryName(t)) + '</div>' +
                         '</div>' +
                       '</div>' +
                     '</td>' +
@@ -4330,6 +4357,7 @@
                   renderPersonnelListTable();
 
                   closeAddPersonnelModal();
+                  if (typeof showPersonnelListView === "function") showPersonnelListView();
 
                   if (typeof showSuccessModal === "function") {
                     showSuccessModal("Personnel " + savedRow.teacher_name + " was successfully added to the directory.", "Personnel Added");
@@ -4879,6 +4907,7 @@
                   renderPersonnelListTable();
 
                   closeEditPersonnelModal();
+                  if (typeof showPersonnelListView === "function") showPersonnelListView();
 
                   if (typeof showToast === "function") {
                     showToast("Personnel profile updated successfully.");

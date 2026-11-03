@@ -1806,6 +1806,7 @@ async function loadItems() {
             article: row.item_description || row.item_brand_model || row.itemBrandModel || "",
             serialNo: row.serial_no || row.serialNo || "",
             acquisitionDate: row.acquisition_date || row.acquisitionDate || "",
+            estimatedUsefulLife: row.est_useful_life ?? row.estimatedUsefulLife ?? "",
             accountable: row.accountable_person || row.accountable || "",
             plantillaPosition: row.plantilla_position || row.plantillaPosition || "",
             schoolLevel: row.school_level || row.schoolLevel || row.schoollevel || "",
@@ -1907,6 +1908,7 @@ async function syncToSheet(action, item) {
         item_brand_model: item.itemBrandModel,
         serial_no: item.serialNo,
         acquisition_date: item.acquisitionDate,
+        est_useful_life: item.estimatedUsefulLife || null,
         accountable_person: item.accountable,
         plantilla_position: item.plantillaPosition || "",
         school_level: item.schoolLevel || "",
@@ -2432,6 +2434,7 @@ function getFormData() {
         itemBrandModel: dom.itemBrandModel.value.trim(),
         serialNo: dom.serialNo.value.trim(),
         acquisitionDate: dom.acquisitionDate.value,
+        estimatedUsefulLife: (existing && (existing.estimatedUsefulLife ?? existing.est_useful_life)) || "",
         accountable: dom.accountable.value.trim(),
         plantillaPosition: String((matchedTeacher && (matchedTeacher.plantillaPosition || matchedTeacher.position)) || dom.plantillaPosition.value || "").trim(),
         schoolLevel: selectedSchoolLevel,
@@ -6035,7 +6038,7 @@ function getSlipDescription(item) {
         item.itemClassification && item.itemBrandModel ? item.itemClassification : ""
     ].filter(Boolean).join(" / ");
 
-    return dateAcquired ? `${mainDesc}<br><small>Date Acquired: ${escapeHtml(dateAcquired)}</small>` : mainDesc;
+    return dateAcquired ? `${mainDesc}<br><small><em>Date Acquired: ${escapeHtml(dateAcquired)}</em></small>` : mainDesc;
 }
 
 function createSlipRows(records) {
@@ -6276,10 +6279,11 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
 
         .ics-item-qr-box {
             position: absolute;
-            right: 0;
+            left: 50%;
             bottom: 0;
             width: 29mm;
             height: 33mm;
+            transform: translateX(-50%);
             border: 1px solid #000000;
             display: flex;
             flex-direction: column;
@@ -8183,6 +8187,7 @@ function populateIcsFieldsFromDescription(selectedAssetOverride = null) {
     const additionalItemEl = document.querySelector("#icsAdditionalItem");
     const unitEl = document.querySelector("#icsUnit");
     const unitCostEl = document.querySelector("#icsUnitCost");
+    const usefulLifeEl = document.querySelector("#icsEstimatedUsefulLife");
 
     if (!selectedAsset) {
         // If no matching asset is selected/found, clear auto-filled read-only fields
@@ -8190,6 +8195,7 @@ function populateIcsFieldsFromDescription(selectedAssetOverride = null) {
         if (additionalItemEl) additionalItemEl.value = "";
         if (unitEl) unitEl.value = "";
         if (unitCostEl) unitCostEl.value = "";
+        if (usefulLifeEl) usefulLifeEl.value = "";
         updateInventoryCustodianSlipTotal();
         return;
     }
@@ -8205,6 +8211,7 @@ function populateIcsFieldsFromDescription(selectedAssetOverride = null) {
     if (additionalItemEl) additionalItemEl.value = selectedAsset.additionalItem || "";
     if (unitEl) unitEl.value = selectedAsset.unitMeasurement || "";
     if (unitCostEl) unitCostEl.value = selectedAsset.unitValue ?? "";
+    if (usefulLifeEl) usefulLifeEl.value = selectedAsset.estimatedUsefulLife ?? selectedAsset.est_useful_life ?? "";
     updateInventoryCustodianSlipTotal();
 }
 
@@ -8872,8 +8879,11 @@ async function openInventoryCustodianSlipPdf(slip) {
         return;
     }
 
-    const slipItems = inventoryCustodianSlips
-        .filter((entry) => slip.dbSlipId ? entry.dbSlipId === slip.dbSlipId : entry.icsNo === slip.icsNo)
+    const requestedIcsNo = String(slip.icsNo || "").trim().toLocaleLowerCase();
+    const matchingIcsItems = requestedIcsNo
+        ? inventoryCustodianSlips.filter((entry) => String(entry.icsNo || "").trim().toLocaleLowerCase() === requestedIcsNo)
+        : [];
+    const slipItems = (matchingIcsItems.length ? matchingIcsItems : [slip])
         .sort((first, second) => Number(first.lineNo || 0) - Number(second.lineNo || 0));
     if (!slipItems.length) {
         showToast("No ICS items are available for this document.");
@@ -8968,9 +8978,9 @@ async function openInventoryCustodianSlipPdf(slip) {
     drawDocumentHeading();
     drawTableHeader();
 
-    const tableRows = [];
+    const dateGroups = new Map();
     let qrAssetId = "";
-    slipItems.forEach((item) => {
+    slipItems.forEach((item, itemIndex) => {
         const matchedAsset = (typeof items !== "undefined" && Array.isArray(items))
             ? items.find((a) =>
                 (item.assetId && (String(a.assetId) === String(item.assetId) || String(a.id) === String(item.assetId))) ||
@@ -9051,31 +9061,47 @@ async function openInventoryCustodianSlipPdf(slip) {
         const unitMeasure = item.unit || (matchedAsset ? (matchedAsset.unitMeasurement || matchedAsset.unit_measurement) : "") || "";
         const estLife = item.estimatedUsefulLife || "-";
 
-        // First row: main item details with Serial No and Additional Item in Description
-        tableRows.push([
-            item.quantity ?? "",
-            unitMeasure,
-            formattedUnitCost,
-            formattedTotalCost,
-            fullDescription,
-            invNo,
-            estLife
-        ]);
-
-        // Second row: Date Acquired row under description (like previous)
+        let acquiredDateText = "";
         if (dateAcquired) {
-            const dateText = /^date\s*acquired/i.test(dateAcquired)
-                ? dateAcquired
-                : `Date Acquired: ${dateAcquired}`;
-            tableRows.push([
-                "",
-                "",
-                "",
-                "",
-                dateText,
-                "",
-                ""
-            ]);
+            const acquiredDateValue = String(dateAcquired).trim().replace(/^date\s*acquired\s*:?\s*/i, "");
+            if (acquiredDateValue) acquiredDateText = `Date Acquired: ${acquiredDateValue}`;
+        }
+
+        const dateGroupKey = acquiredDateText || "__no_acquired_date__";
+        if (!dateGroups.has(dateGroupKey)) {
+            dateGroups.set(dateGroupKey, { acquiredDateText, itemGroups: new Map() });
+        }
+        const dateGroup = dateGroups.get(dateGroupKey);
+        const normalizedItemNo = String(invNo || "").trim().toLocaleLowerCase();
+        const itemGroupKey = normalizedItemNo && normalizedItemNo !== "-"
+            ? normalizedItemNo
+            : `unassigned-${item.id || itemIndex}`;
+        if (!dateGroup.itemGroups.has(itemGroupKey)) {
+            dateGroup.itemGroups.set(itemGroupKey, { rows: [] });
+        }
+        const itemGroup = dateGroup.itemGroups.get(itemGroupKey);
+
+        // Each matching Inventory Item No. stays together in one contiguous group.
+        itemGroup.rows.push({
+            values: [
+                item.quantity ?? "",
+                unitMeasure,
+                formattedUnitCost,
+                formattedTotalCost,
+                fullDescription,
+                invNo,
+                estLife
+            ]
+        });
+    });
+
+    const tableRows = [];
+    dateGroups.forEach((dateGroup) => {
+        dateGroup.itemGroups.forEach((itemGroup) => {
+            itemGroup.rows.forEach((row) => tableRows.push(row.values));
+        });
+        if (dateGroup.acquiredDateText) {
+            tableRows.push(["", "", "", "", dateGroup.acquiredDateText, "", ""]);
         }
     });
 
@@ -9103,6 +9129,9 @@ async function openInventoryCustodianSlipPdf(slip) {
         wrappedValues.forEach((lines, index) => {
             pdf.rect(x, y, columns[index], rowHeight);
             if (lines && lines.length > 0 && lines[0] !== "") {
+                const isDateAcquiredLine = index === 4 && /^date\s*acquired\s*:/i.test(String(rowValues[index] || "").trim());
+                pdf.setFont("helvetica", isDateAcquiredLine ? "italic" : "normal");
+                pdf.setFontSize(fontTableCell);
                 if (index === 0 || index === 1) {
                     // Align center for Quantity and Unit
                     pdf.text(lines, x + columns[index] / 2, y + 4.2, { align: "center" });
@@ -9124,7 +9153,10 @@ async function openInventoryCustodianSlipPdf(slip) {
 
     // Dynamically position signature section directly below the table
     y += 8;
-    if (y + 45 > pageHeight - marginY - 33) {
+    const signatureBlockHeight = 31;
+    const signatureBottomBuffer = 4;
+    const qrBoxTop = pageHeight - marginY - 33;
+    if (y + signatureBlockHeight + signatureBottomBuffer > qrBoxTop) {
         pdf.addPage();
         y = marginY + 10;
     }
@@ -9152,7 +9184,7 @@ async function openInventoryCustodianSlipPdf(slip) {
     if (qrDataUrl) {
         const qrBoxWidth = 29;
         const qrBoxHeight = 33;
-        const qrBoxX = pageWidth - marginX - qrBoxWidth;
+        const qrBoxX = (pageWidth - qrBoxWidth) / 2;
         const qrBoxY = pageHeight - marginY - qrBoxHeight;
         pdf.setDrawColor(0);
         pdf.rect(qrBoxX, qrBoxY, qrBoxWidth, qrBoxHeight);

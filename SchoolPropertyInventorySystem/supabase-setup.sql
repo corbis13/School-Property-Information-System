@@ -12,6 +12,7 @@ create table if not exists public.assets (
   item_brand_model text,
   serial_no text,
   acquisition_date text,
+  est_useful_life text,
   accountable_person text,
   plantilla_position text,
   school_level text,
@@ -35,6 +36,7 @@ create table if not exists public.assets (
 
 alter table public.assets add column if not exists property_classification text;
 alter table public.assets add column if not exists property_value text;
+alter table public.assets add column if not exists est_useful_life text;
 alter table public.assets add column if not exists plantilla_position text;
 alter table public.assets add column if not exists additional_item text;
 
