@@ -2680,11 +2680,17 @@ function getAssetDetailUrl(assetId) {
 function getIcsDetailUrl(icsNo) {
     const configuredAssetUrl = (window.SUPABASE_CONFIG && String(window.SUPABASE_CONFIG.assetUrl || "").trim()) || "";
     let pageUrl = "https://corbis13.github.io/School-Property-Information-System/SchoolPropertyInventorySystem/ics-view.html";
+    const isPublicHttpUrl = configuredAssetUrl.startsWith("https://") || configuredAssetUrl.startsWith("http://");
 
-    if (configuredAssetUrl && /^https?:\\/\\//i.test(configuredAssetUrl) && !/localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0/i.test(configuredAssetUrl)) {
-        pageUrl = new URL("ics-view.html", configuredAssetUrl).toString();
-    } else if (window.location && window.location.origin && !/localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0/i.test(window.location.origin)) {
-        pageUrl = new URL("ics-view.html", window.location.href).toString();
+    if (isPublicHttpUrl) {
+        const configuredHost = new URL(configuredAssetUrl).hostname.toLowerCase();
+        const isLoopbackHost = ["localhost", "127.0.0.1", "0.0.0.0"].includes(configuredHost);
+        if (!isLoopbackHost) pageUrl = new URL("ics-view.html", configuredAssetUrl).toString();
+    }
+    if (pageUrl.includes("corbis13.github.io") && window.location && window.location.origin) {
+        const currentUrl = new URL(window.location.href);
+        const isLoopbackHost = ["localhost", "127.0.0.1", "0.0.0.0"].includes(currentUrl.hostname.toLowerCase());
+        if (!isLoopbackHost && !isPublicHttpUrl) pageUrl = new URL("ics-view.html", window.location.href).toString();
     }
 
     const url = new URL(pageUrl);
