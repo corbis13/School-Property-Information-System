@@ -2677,6 +2677,21 @@ function getAssetDetailUrl(assetId) {
     return `https://corbis13.github.io/School-Property-Information-System/SchoolPropertyInventorySystem/asset.html${query}`;
 }
 
+function getIcsDetailUrl(icsNo) {
+    const configuredAssetUrl = (window.SUPABASE_CONFIG && String(window.SUPABASE_CONFIG.assetUrl || "").trim()) || "";
+    let pageUrl = "https://corbis13.github.io/School-Property-Information-System/SchoolPropertyInventorySystem/ics-view.html";
+
+    if (configuredAssetUrl && /^https?:\\/\\//i.test(configuredAssetUrl) && !/localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0/i.test(configuredAssetUrl)) {
+        pageUrl = new URL("ics-view.html", configuredAssetUrl).toString();
+    } else if (window.location && window.location.origin && !/localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0/i.test(window.location.origin)) {
+        pageUrl = new URL("ics-view.html", window.location.href).toString();
+    }
+
+    const url = new URL(pageUrl);
+    url.searchParams.set("icsNo", String(icsNo || "").trim());
+    return url.toString();
+}
+
 function openAssetWindow(assetId, targetUrl) {
     const safeId = encodeURIComponent(String(assetId || "UNKNOWN").trim());
     const finalUrl = targetUrl || `asset.html?assetId=${safeId}`;
@@ -9324,7 +9339,7 @@ async function openInventoryCustodianSlipPdf(slip) {
     pdf.text(`Date: ${headerSlip.receivedFromDate || "-"}`, marginX + signatureWidth / 2, y, { align: "center" });
     pdf.text(`Date: ${headerSlip.receivedByDate || "-"}`, rightSignatureX + signatureWidth / 2, y, { align: "center" });
 
-    const qrDataUrl = qrAssetId ? createQrDataUrl(getAssetDetailUrl(qrAssetId), 128) : "";
+    const qrDataUrl = headerSlip.icsNo ? createQrDataUrl(getIcsDetailUrl(headerSlip.icsNo), 128) : "";
     if (qrDataUrl) {
         const qrBoxWidth = 29;
         const qrBoxHeight = 33;
