@@ -1236,6 +1236,7 @@ function handleSelectActiveSchool() {
         statusElem.style.color = "#16a34a";
     }
 
+    renderQr();
     showToast(`${schoolName} is now displayed in the sidebar!`);
 }
 
@@ -1313,6 +1314,7 @@ async function loadSchoolDetails(forceRefresh = false) {
             statusElem.textContent = "Ready (Offline mode)";
             statusElem.style.color = "#64748b";
         }
+        renderQr();
         return activeSchoolRecord;
     }
 
@@ -1399,6 +1401,7 @@ async function loadSchoolDetails(forceRefresh = false) {
         }
     }
 
+    renderQr();
     return activeSchoolRecord;
 }
 
@@ -1557,6 +1560,7 @@ async function saveSchoolDetails(e) {
             statusElem.textContent = "✓ Saved locally";
             statusElem.style.color = "#16a34a";
         }
+        renderQr();
         showToast("School details saved locally!");
         return;
     }
@@ -1628,6 +1632,7 @@ async function saveSchoolDetails(e) {
                     const logoUrl = savedRecord.school_logo_url || mobileLogoImg.getAttribute("data-default-src");
                     mobileLogoImg.src = logoUrl;
                 }
+                renderQr();
             }
         }
 
@@ -2708,6 +2713,10 @@ function openAssetWindow(assetId, targetUrl) {
 function getQrPayload(item) {
     const assetId = String(item.assetId || "UNKNOWN").trim() || "UNKNOWN";
     return getAssetDetailUrl(assetId);
+}
+
+function getActiveSchoolLogoForQr() {
+    return String(activeSchoolRecord?.school_logo_url || defaultSchoolRecord.school_logo_url || "").trim();
 }
 
 function createQrDataUrl(payload, size = 128) {
@@ -4877,7 +4886,7 @@ function renderQr() {
         height: 280,
         colorDark: "#000000",
         colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.M
+        correctLevel: QRCode.CorrectLevel.H
     });
 
     const canvasEl = dom.qrCode.querySelector("canvas");
@@ -4903,6 +4912,18 @@ function renderQr() {
         canvasEl.style.display = "block";
     } else if (imgEl) {
         imgEl.style.display = "block";
+    }
+
+    const logoUrl = getActiveSchoolLogoForQr();
+    if (logoUrl) {
+        const logoBadge = document.createElement("span");
+        logoBadge.className = "qr-center-logo";
+        logoBadge.setAttribute("aria-hidden", "true");
+        const logoImage = document.createElement("img");
+        logoImage.src = logoUrl;
+        logoImage.alt = "";
+        logoBadge.appendChild(logoImage);
+        dom.qrCode.appendChild(logoBadge);
     }
 
 }
@@ -5955,6 +5976,64 @@ function rememberQrDownloadedFileName(fileName) {
     }
 }
 
+function loadImageForQrLogo(src) {
+    return new Promise((resolve) => {
+        if (!src) {
+            resolve(null);
+            return;
+        }
+
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => resolve(null);
+
+        try {
+            const logoUrl = new URL(src, window.location.href);
+            if (logoUrl.origin !== window.location.origin && logoUrl.protocol !== "data:") {
+                image.crossOrigin = "anonymous";
+            }
+        } catch (error) {}
+
+        image.src = src;
+    });
+}
+
+async function drawCurrentSchoolLogoOnQr(ctx, qrLeft, qrTop, qrSize) {
+    const logoImage = await loadImageForQrLogo(getActiveSchoolLogoForQr());
+    if (!logoImage) return;
+
+    const badgeSize = Math.round(qrSize * 0.24);
+    const imageSize = Math.round(badgeSize * 0.72);
+    const centerX = qrLeft + qrSize / 2;
+    const centerY = qrTop + qrSize / 2;
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(centerX - badgeSize / 2, centerY - badgeSize / 2, badgeSize, badgeSize);
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = Math.max(1, qrSize / 520);
+    ctx.strokeRect(centerX - badgeSize / 2, centerY - badgeSize / 2, badgeSize, badgeSize);
+    ctx.drawImage(logoImage, centerX - imageSize / 2, centerY - imageSize / 2, imageSize, imageSize);
+}
+
+function drawQrInventoryNumber(ctx, item, canvasWidth, captionTop, captionHeight) {
+    const semiExpandableNo = String(item.semiExpandableNo || item.semi_expandable_no || "").trim();
+    const propertyNo = String(item.propertyNo || item.property_no || "").trim();
+    const number = semiExpandableNo && semiExpandableNo !== "-" ? semiExpandableNo : propertyNo;
+    if (!number || number === "-") return;
+    const caption = number;
+    const maxWidth = canvasWidth - 32;
+    let fontSize = 26;
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#00335e";
+    ctx.font = `700 ${fontSize}px Arial, sans-serif`;
+    while (fontSize > 14 && ctx.measureText(caption).width > maxWidth) {
+        fontSize -= 1;
+        ctx.font = `700 ${fontSize}px Arial, sans-serif`;
+    }
+    ctx.fillText(caption, canvasWidth / 2, captionTop + captionHeight / 2, maxWidth);
+}
 async function downloadQr() {
     let item = items.find((entry) => entry.assetId === selectedId);
 
@@ -5990,8 +6069,9 @@ async function downloadQr() {
         // Add standard white quiet zone (margin) around the QR code
         const qrSize = qrCanvas.width || 520;
         const padding = Math.max(36, Math.round(qrSize * 0.08));
+        const captionHeight = 60;
         const outWidth = qrSize + padding * 2;
-        const outHeight = qrSize + padding * 2;
+        const outHeight = qrSize + padding * 2 + captionHeight;
 
         const out = document.createElement("canvas");
         out.width = outWidth;
@@ -6004,6 +6084,8 @@ async function downloadQr() {
 
         // Draw centered QR Code
         ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
+        await drawCurrentSchoolLogoOnQr(ctx, padding, padding, qrSize);
+        drawQrInventoryNumber(ctx, item, outWidth, padding + qrSize + padding, captionHeight);
 
         // Use only the inventory number to keep downloaded filenames short.
         const inventoryNumber = String(item.propertyNo || "").trim()
