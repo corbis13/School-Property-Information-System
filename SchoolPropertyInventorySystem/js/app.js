@@ -215,6 +215,7 @@ const rspiReportStorageKey = "propertyInventoryRspiReports";
 const qrDownloadHistoryStorageKey = "propertyInventoryQrDownloadHistory";
 const qrDownloadedFileNamesStorageKey = "propertyInventoryQrDownloadedFileNames";
 let inventoryCustodianSlips = [];
+const collapsedIcsSlipGroups = new Set();
 let rspiReports = [];
 let activeRspiReportId = "";
 let qrDownloadHistory = [];
@@ -8421,10 +8422,17 @@ function renderInventoryCustodianSlipTable() {
 
     const query = (dom.icsSlipSearchInput ? dom.icsSlipSearchInput.value : "").trim().toLowerCase();
 
-    // Filter across all searchable fields when a query is present
-    const filteredSlips = query
-        ? inventoryCustodianSlips.filter((slip) => {
-            return [
+    // Group records by ICS No. before pagination so one ICS group stays together.
+    const slipGroups = new Map();
+    inventoryCustodianSlips.forEach((slip, index) => {
+        const icsNo = String(slip.icsNo || "").trim();
+        const groupKey = icsNo ? `ics:${icsNo.toLowerCase()}` : `record:${slip.id || index}`;
+        if (!slipGroups.has(groupKey)) slipGroups.set(groupKey, { key: groupKey, icsNo, slips: [] });
+        slipGroups.get(groupKey).slips.push(slip);
+    });
+
+    const matchesQuery = (slip) => {
+        return [
                 slip.description,
                 slip.icsNo,
                 slip.inventoryItemNo,
@@ -8440,19 +8448,24 @@ function renderInventoryCustodianSlipTable() {
                 slip.estimatedUsefulLife,
                 slip.totalCost
             ].some((field) => String(field ?? "").toLowerCase().includes(query));
-        })
-        : inventoryCustodianSlips;
+    };
+    const filteredGroups = [...slipGroups.values()].filter((group) =>
+        !query || group.slips.some(matchesQuery)
+    );
 
-    const totalPages = Math.max(1, Math.ceil(filteredSlips.length / icsSlipPageSize));
+    const totalPages = Math.max(1, Math.ceil(filteredGroups.length / icsSlipPageSize));
     icsSlipPage = Math.min(Math.max(1, icsSlipPage), totalPages);
     const startIndex = (icsSlipPage - 1) * icsSlipPageSize;
-    const visibleSlips = filteredSlips.slice(startIndex, startIndex + icsSlipPageSize);
+    const visibleGroups = filteredGroups.slice(startIndex, startIndex + icsSlipPageSize);
 
-    table.innerHTML = visibleSlips.length
-        ? visibleSlips.map((slip) => `
+    table.innerHTML = visibleGroups.length
+        ? visibleGroups.map((group) => {
+            const isCollapsed = group.slips.length > 1 && collapsedIcsSlipGroups.has(group.key);
+            const visibleItems = isCollapsed ? [group.slips[0]] : group.slips;
+            return visibleItems.map((slip, index) => `
             <tr>
+                ${index === 0 ? `<td class="ics-group-toggle-cell" rowspan="${visibleItems.length}">${group.slips.length > 1 ? `<button type="button" class="ics-group-toggle" data-ics-group-toggle="${escapeHtml(group.key)}" aria-expanded="${!isCollapsed}" aria-label="${isCollapsed ? "Expand" : "Collapse"} items for ICS No. ${escapeHtml(group.icsNo)}">${isCollapsed ? "+" : "-"}</button>` : ""}</td><td class="ics-slip-number-group" rowspan="${visibleItems.length}">${escapeHtml(group.icsNo || "-")}</td>` : ""}
                 <td>${escapeHtml(slip.description)}</td>
-                <td>${escapeHtml(slip.icsNo)}</td>
                 <td>${escapeHtml(slip.inventoryItemNo || "-")}</td>
                 <td>${escapeHtml(slip.quantity ?? "-")}</td>
                 <td>${escapeHtml(slip.unit || "-")}</td>
@@ -8467,13 +8480,14 @@ function renderInventoryCustodianSlipTable() {
                     </div>
                 </td>
             </tr>
-        `).join("")
-        : `<tr><td colspan="8">${query ? `No records matched "<strong>${escapeHtml(query)}</strong>".` : "No Inventory Custodian Slip records yet."}</td></tr>`;
+        `).join("");
+        }).join("")
+        : `<tr><td colspan="9">${query ? `No records matched "<strong>${escapeHtml(query)}</strong>".` : "No Inventory Custodian Slip records yet."}</td></tr>`;
 
     if (dom.icsSlipPagination) {
-        dom.icsSlipPagination.innerHTML = filteredSlips.length > icsSlipPageSize ? `
+        dom.icsSlipPagination.innerHTML = filteredGroups.length > icsSlipPageSize ? `
             <button class="inventory-page-btn" type="button" data-ics-slip-page="${Math.max(1, icsSlipPage - 1)}" ${icsSlipPage === 1 ? "disabled" : ""}>Previous</button>
-            <span class="inventory-page-status">Page ${icsSlipPage} of ${totalPages}${query ? ` (${filteredSlips.length} result${filteredSlips.length !== 1 ? "s" : ""})` : ""}</span>
+            <span class="inventory-page-status">Page ${icsSlipPage} of ${totalPages}${query ? ` (${filteredGroups.length} group${filteredGroups.length !== 1 ? "s" : ""})` : ""}</span>
             <button class="inventory-page-btn" type="button" data-ics-slip-page="${Math.min(totalPages, icsSlipPage + 1)}" ${icsSlipPage === totalPages ? "disabled" : ""}>Next</button>
         ` : "";
     }
@@ -8936,6 +8950,15 @@ async function initInventoryCustodianSlipCrud() {
     });
 
     table.addEventListener("click", async (event) => {
+        const groupToggle = event.target.closest("button[data-ics-group-toggle]");
+        if (groupToggle) {
+            const groupKey = groupToggle.dataset.icsGroupToggle;
+            if (collapsedIcsSlipGroups.has(groupKey)) collapsedIcsSlipGroups.delete(groupKey);
+            else collapsedIcsSlipGroups.add(groupKey);
+            renderInventoryCustodianSlipTable();
+            return;
+        }
+
         const button = event.target.closest("button[data-ics-action]");
         if (!button) return;
 
