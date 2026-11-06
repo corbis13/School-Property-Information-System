@@ -306,11 +306,38 @@ as $$
          a.shortage_overage_qty, a.shortage_overage_value, a.remarks
   from public.assets as a
   where a.asset_id = asset_lookup or a.property_no = asset_lookup
+  order by case when a.asset_id = asset_lookup then 0 else 1 end
   limit 1;
 $$;
 
 revoke all on function public.get_public_asset_qr(text) from public;
 grant execute on function public.get_public_asset_qr(text) to anon, authenticated;
+
+-- Public QR pages can read only the photo paths for the requested asset.
+-- Asset photo metadata remains unavailable through direct anonymous table reads.
+drop function if exists public.get_public_asset_images(text);
+create or replace function public.get_public_asset_images(asset_lookup text)
+returns table (
+  file_path text,
+  is_primary boolean
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select image.file_path, image.is_primary
+  from public.asset_images as image
+  join public.assets as asset on asset.asset_id = image.asset_id
+  where asset.asset_id = asset_lookup
+     or (asset.property_no = asset_lookup and not exists (
+       select 1 from public.assets as exact_asset where exact_asset.asset_id = asset_lookup
+     ))
+  order by image.is_primary desc, image.created_at asc;
+$$;
+
+revoke all on function public.get_public_asset_images(text) from public;
+grant execute on function public.get_public_asset_images(text) to anon, authenticated;
 notify pgrst, 'reload schema';
 
 drop policy if exists "Allow authenticated read access to classifications" on public.classifications;

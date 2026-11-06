@@ -113,11 +113,13 @@ QR scanning opens the asset detail page automatically. Keep the `assetUrl` value
 
 The QR code on a generated ICS PDF opens the public, read-only `ics-view.html` page for that slip's ICS No. Its Supabase `get_public_ics_slip` function returns only that slip's printed header and line-item fields; it does not grant anonymous table access. Run `supabase-setup.sql` to create or refresh this function.
 
+Asset QR pages are publicly viewable without signing in. The `get_public_asset_qr` function returns the fields shown on the asset detail page, and `get_public_asset_images` returns only photo paths for the requested asset. Both functions are read-only and granted to the Supabase `anon` role; direct anonymous reads and writes to the `assets` and `asset_images` tables remain disabled. Run `supabase-setup.sql` to enable or refresh these QR lookups.
+
 The asset hero card reads Accountable Person, Position/Designation, School Level, and Assigned Location from `get_public_asset_qr`, which selects those values from `assets`. The lookup returns `assets.plantilla_position` for the Position/Designation card. After applying changes to this lookup, run `supabase-setup.sql`; it recreates the function and notifies PostgREST to reload its schema. The setup script also fills blank asset designations from the matched accountable person's `school_teacher.plantilla_position` for existing records.
 
 ## Security note
 
-The browser UI is gated by Google sign-in and uses the user's Supabase access token for database requests. Run [`supabase-setup.sql`](supabase-setup.sql) in Supabase to apply the authenticated-only database policies and limited-field public QR lookups for individual assets and ICS slips.
+The browser UI is gated by Google sign-in and uses the user's Supabase access token for database requests. Public asset and ICS QR pages use limited-field, read-only RPCs for anonymous access; the inventory tables themselves remain restricted to authenticated users. Run [`supabase-setup.sql`](supabase-setup.sql) in Supabase to apply the authenticated-only database policies and public QR lookups for individual assets and ICS slips.
 
 ## Legacy files
 

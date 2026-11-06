@@ -6005,25 +6005,14 @@ async function downloadQr() {
         // Draw centered QR Code
         ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
 
-        // Sanitize filename
-        const cleanPropertyNo = (item.propertyNo || item.assetId || "asset")
-            .trim()
+        // Use only the inventory number to keep downloaded filenames short.
+        const inventoryNumber = String(item.propertyNo || "").trim()
+            || String(item.semiExpandableNo || "").trim()
+            || "asset";
+        const cleanInventoryNumber = inventoryNumber
             .replace(/[<>:"/\\|?*]+/g, "-")
             .replace(/[. ]+$/, "");
-        const cleanItemName = (item.itemBrandModel || "qr-code")
-            .trim()
-            .replace(/[<>:"/\\|?*]+/g, "-")
-            .replace(/[. ]+$/, "");
-        const cleanSerial = (item.serialNo || "")
-            .trim()
-            .replace(/[<>:"/\\|?*]+/g, "-")
-            .replace(/[. ]+$/, "");
-
-        let fileName = `${cleanPropertyNo} - ${cleanItemName}`;
-        if (cleanSerial && cleanSerial.toLowerCase() !== "not specified" && cleanSerial.toLowerCase() !== "no serial no") {
-            fileName += ` - ${cleanSerial}`;
-        }
-        fileName += ".png";
+        let fileName = `${cleanInventoryNumber || "asset"}.png`;
         fileName = getNextQrDownloadFileName(fileName);
 
         const success = await downloadCanvasAsPng(out, fileName);
@@ -9999,7 +9988,7 @@ function renderRspiSlipTable() {
             slip.fundCluster,
             slip.custodianName,
             slip.accountingStaffName
-        ].some((f) => String(f ?? "").toLowerCase().includes(query)))
+        ].some((field) => String(field ?? "").toLowerCase().includes(query)))
         : rspiSlips;
 
     const totalPages = Math.max(1, Math.ceil(filteredSlips.length / rspiSlipPageSize));

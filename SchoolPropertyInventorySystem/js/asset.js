@@ -116,18 +116,15 @@ async function loadAssetPhotos(assetId) {
     }
 
     try {
-        const query = new URLSearchParams({
-            select: "file_path,is_primary",
-            asset_id: `eq.${normalizedAssetId}`,
-            order: "is_primary.desc,created_at.asc"
-        });
-        const response = await fetch(`${supabaseUrl}/rest/v1/asset_images?${query}`, {
-            headers: { ...supabaseHeaders, Accept: "application/json" }
+        const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_public_asset_images`, {
+            method: "POST",
+            headers: { ...supabaseHeaders, Accept: "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify({ asset_lookup: normalizedAssetId })
         });
         if (!response.ok) {
             const details = await response.text();
-            if (response.status === 404 && details.includes("PGRST205")) {
-                throw new Error("Photo metadata is not set up yet. Run the updated supabase-setup.sql file.");
+            if (response.status === 404 && details.includes("PGRST202")) {
+                throw new Error("Public photo lookup is not set up yet. Run the updated supabase-setup.sql file.");
             }
             throw new Error(`Unable to load photos (HTTP ${response.status}).`);
         }

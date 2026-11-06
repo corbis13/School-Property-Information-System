@@ -2906,6 +2906,11 @@ body[data-theme="light"] .asset-detail-row {
     min-width: 0;
 }
 
+.asset-detail-page .field-row {
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
 .asset-details-grid .field-row[hidden] {
     display: none !important;
 }
@@ -3142,6 +3147,11 @@ body[data-theme="light"] .asset-detail-row {
         padding: 8px 10px;
         width: 100%;
         box-sizing: border-box;
+    }
+
+    .asset-detail-page .field-row {
+        padding-top: 6px;
+        padding-bottom: 6px;
     }
 
     .field-row dt {
