@@ -6003,7 +6003,7 @@ async function drawCurrentSchoolLogoOnQr(ctx, qrLeft, qrTop, qrSize) {
     if (!logoImage) return;
 
     const badgeSize = Math.round(qrSize * 0.24);
-    const imageSize = Math.round(badgeSize * 0.72);
+    const imageSize = Math.round(badgeSize * 0.94);
     const centerX = qrLeft + qrSize / 2;
     const centerY = qrTop + qrSize / 2;
 
@@ -6022,13 +6022,13 @@ function drawQrInventoryNumber(ctx, item, canvasWidth, captionTop, captionHeight
     if (!number || number === "-") return;
     const caption = number;
     const maxWidth = canvasWidth - 32;
-    let fontSize = 26;
+    let fontSize = 34;
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#00335e";
     ctx.font = `700 ${fontSize}px Arial, sans-serif`;
-    while (fontSize > 14 && ctx.measureText(caption).width > maxWidth) {
+    while (fontSize > 18 && ctx.measureText(caption).width > maxWidth) {
         fontSize -= 1;
         ctx.font = `700 ${fontSize}px Arial, sans-serif`;
     }
@@ -6069,7 +6069,7 @@ async function downloadQr() {
         // Add standard white quiet zone (margin) around the QR code
         const qrSize = qrCanvas.width || 520;
         const padding = Math.max(36, Math.round(qrSize * 0.08));
-        const captionHeight = 60;
+        const captionHeight = 76;
         const outWidth = qrSize + padding * 2;
         const outHeight = qrSize + padding * 2 + captionHeight;
 

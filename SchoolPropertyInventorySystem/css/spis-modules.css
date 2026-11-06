@@ -1771,9 +1771,9 @@ td button.btn-danger:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 63px;
-  height: 63px;
-  padding: 4px;
+  width: 73px;
+  height: 73px;
+  padding: 1px;
   box-sizing: border-box;
   transform: translate(-50%, -50%);
   border: 1px solid #e2e8f0;
