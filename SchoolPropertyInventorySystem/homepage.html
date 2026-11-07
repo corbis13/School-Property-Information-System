@@ -121,7 +121,7 @@
       box-shadow: 0 8px 16px -4px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
     }
   </style>
-  <link rel="stylesheet" href="css/spis-modules.css?v=20261013_pdf_margin_v4">
+  <link rel="stylesheet" href="css/spis-modules.css?v=20261107_login_scrolllock">
   <!-- Font Awesome – used by Personnel Accountability module -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 </head>
@@ -131,20 +131,31 @@
   <div id="googleLoginGate" class="spis-login-layer" role="main" aria-label="Sign in to SPIS">
     <section class="spis-login-panel">
       <div class="spis-login-art" aria-hidden="true">
+        <div class="spis-login-cloud spis-login-cloud-slow">
+          <svg width="150" height="50" viewBox="0 0 140 48"><path d="M12 36 Q28 14 55 24 Q78 8 106 20 Q128 16 135 36 Z" fill="#ffffff"/></svg>
+        </div>
+        <div class="spis-login-cloud spis-login-cloud-medium">
+          <svg width="120" height="42" viewBox="0 0 120 40"><path d="M10 30 Q25 10 50 20 Q70 5 95 18 Q115 15 118 30 Z" fill="#ffffff"/></svg>
+        </div>
+        <div class="spis-login-cloud spis-login-cloud-fast">
+          <svg width="100" height="36" viewBox="0 0 140 48"><path d="M12 36 Q28 14 55 24 Q78 8 106 20 Q128 16 135 36 Z" fill="#ffffff"/></svg>
+        </div>
         <div class="spis-login-copy">
           <h1>Every school asset, accounted for.</h1>
           <p>Keep your school property records organized, visible, and ready when you need them.</p>
         </div>
-        <div class="spis-login-scene">
-          <div class="spis-login-orbit"></div>
-          <div class="spis-login-platform"></div>
-          <div class="spis-login-box box-a"></div>
-          <div class="spis-login-box box-b"></div>
-          <div class="spis-login-box box-c"></div>
+        <div class="spis-login-town">
+          <img src="images/spis_town.png" alt="" />
+        </div>
+        <div class="spis-login-waves">
+          <svg viewBox="0 0 1000 30" preserveAspectRatio="none">
+            <path d="M0,10 Q220,28 480,12 T1000,6 L1000,30 L0,30 Z" fill="#38bdf8" opacity="0.65"/>
+            <path d="M0,16 Q260,2 520,20 T1000,10 L1000,30 L0,30 Z" fill="#55a83b" opacity="0.9"/>
+          </svg>
         </div>
       </div>
       <div class="spis-login-form">
-        <div class="brand-mark">SPIS <span class="text-[#0284c7]">/</span> SCHOOL PROPERTY</div>
+        <div class="brand-mark">School Property Information System</div>
         <h2>Welcome back</h2>
         <p class="login-description">Sign in with your Google account to continue to the School Property Information System.</p>
         <button type="button" id="googleLoginButton" class="spis-google-login">
