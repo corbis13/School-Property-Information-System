@@ -3780,10 +3780,11 @@ html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden))
 .spis-login-form { position: relative; isolation: isolate; display: flex; min-height: 0; flex-direction: column; justify-content: center; padding: clamp(.75rem, 4vh, 2.5rem); overflow: hidden; background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%); }
 .spis-login-form::before { position: absolute; z-index: 0; top: -7rem; right: -7rem; width: 16rem; height: 16rem; border-radius: 50%; background: radial-gradient(circle, rgba(56,189,248,.12), rgba(85,168,59,.06) 56%, transparent 72%); content: ""; pointer-events: none; }
 .spis-login-form > * { position: relative; z-index: 1; }
-.spis-login-form .brand-mark { display: flex; align-items: center; gap: .7rem; color: #00335e; font-size: .78rem; font-weight: 900; letter-spacing: .08em; line-height: 1.4; text-transform: uppercase; }
-.spis-login-brand-icon { display: inline-flex; width: 2.35rem; height: 2.35rem; flex: 0 0 2.35rem; align-items: center; justify-content: center; }
+.spis-login-form .brand-mark { display: flex; align-items: center; gap: .7rem; color: #00335e; font-size: 1.17rem; font-weight: 900; letter-spacing: .08em; line-height: 1.4; text-transform: uppercase; }
+.spis-login-name-highlight { color: #80bf1d; }
+.spis-login-brand-icon { display: inline-flex; width: 3.525rem; height: 3.525rem; flex: 0 0 3.525rem; align-items: center; justify-content: center; }
 .spis-login-brand-icon img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.spis-login-form h2 { margin: clamp(.75rem, 4vh, 2rem) 0 .5rem; color: #10213c; font-size: clamp(1.5rem, 3.2vh, 2rem); font-weight: 800; letter-spacing: -.045em; }
+.spis-login-form h2 { margin: clamp(3rem, 6vh, 4rem) 0 .5rem; color: #10213c; font-size: clamp(1.5rem, 3.2vh, 2rem); font-weight: 800; letter-spacing: -.045em; }
 .spis-login-form .login-description { margin: 0 0 clamp(.75rem, 3vh, 1.5rem); color: #64748b; font-size: .875rem; line-height: 1.6; }
 .spis-google-login { display: flex; align-items: center; justify-content: center; gap: .75rem; width: 100%; min-height: 54px; border: 1px solid #d5e2ed; border-radius: 14px; background: linear-gradient(180deg, #fff, #f8fbff); color: #17324b; font-size: .9rem; font-weight: 800; box-shadow: 0 5px 14px rgba(15,45,72,.08), inset 0 1px 0 rgba(255,255,255,.9); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease; }
 .spis-google-login:hover { transform: translateY(-2px); border-color: #8bc5e8; background: #fff; box-shadow: 0 10px 22px rgba(0,76,135,.13); }
@@ -3804,7 +3805,7 @@ html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden))
   .spis-login-cloud-fast { top: 10rem; }
   .spis-login-scene { transform: scale(.72); margin-top: 5rem; margin-bottom: -2.5rem; }
   .spis-login-form { padding: clamp(.75rem, 2vh, 1.25rem); }
-  .spis-login-form h2 { margin-top: .75rem; }
+  .spis-login-form h2 { margin-top: 1.5rem; }
   .spis-login-form .login-description { margin-bottom: .75rem; }
   .spis-login-footnote { padding-top: .5rem; }
 }
@@ -3816,9 +3817,9 @@ html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden))
   .spis-login-copy p { margin-top: .2rem; font-size: .65rem; }
   .spis-login-town { height: 72%; }
   .spis-login-form { padding: .5rem .85rem; }
-  .spis-login-form .brand-mark { font-size: .8rem; }
-  .spis-login-brand-icon { width: 2rem; height: 2rem; flex-basis: 2rem; }
-  .spis-login-form h2 { margin: .35rem 0 .25rem; font-size: 1.25rem; }
+  .spis-login-form .brand-mark { font-size: 1.2rem; }
+  .spis-login-brand-icon { width: 3rem; height: 3rem; flex-basis: 3rem; }
+  .spis-login-form h2 { margin: 1rem 0 .25rem; font-size: 1.25rem; }
   .spis-login-form .login-description { margin-bottom: .5rem; font-size: .75rem; line-height: 1.35; }
   .spis-google-login { min-height: 44px; }
   .spis-login-error { min-height: .75rem; margin-top: .25rem; }
