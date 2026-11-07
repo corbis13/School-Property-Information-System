@@ -3747,7 +3747,7 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   box-sizing: border-box;
   padding: clamp(.5rem, 2vh, 1.25rem);
   overflow: hidden;
-  background: radial-gradient(ellipse at 16% 10%, rgba(61, 156, 221, 0.28), transparent 42%), linear-gradient(135deg, #001a30 0%, #00335e 55%, #004c87 100%);
+  background: radial-gradient(ellipse at 16% 12%, rgba(56, 189, 248, .34), transparent 40%), radial-gradient(ellipse at 88% 86%, rgba(85, 168, 59, .2), transparent 38%), linear-gradient(135deg, #001a30 0%, #00335e 48%, #07558e 100%);
 }
 .spis-login-layer *, .spis-login-layer *::before, .spis-login-layer *::after { box-sizing: border-box; }
 .spis-login-layer.hidden { display: none; }
@@ -3758,7 +3758,8 @@ html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden))
 .spis-login-copy h1 { margin: 0; color: #00335e; font-size: clamp(1.4rem, 2.7vw, 2rem); font-weight: 800; letter-spacing: -.04em; }
 .spis-login-copy p { margin: .65rem 0 0; max-width: 390px; color: #52677f; font-size: .9rem; line-height: 1.65; }
 .spis-login-town { position: absolute; z-index: 1; inset: auto 0 0; display: flex; align-items: flex-end; justify-content: center; height: 58%; pointer-events: none; }
-.spis-login-town img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 8px 12px rgba(0, 45, 84, .12)); }
+.spis-login-town img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 8px 12px rgba(0, 45, 84, .12)); pointer-events: auto; transform-origin: center bottom; transition: transform .4s cubic-bezier(.2,.75,.25,1), filter .4s ease; }
+.spis-login-town img:hover { transform: translateY(-8px) scale(1.035); filter: drop-shadow(0 15px 18px rgba(0, 45, 84, .22)); }
 .spis-login-cloud { position: absolute; z-index: 0; left: 0; pointer-events: none; opacity: .65; }
 .spis-login-cloud-slow { top: 7rem; animation: spis-login-cloud-drift 34s linear infinite; }
 .spis-login-cloud-medium { top: 10rem; opacity: .5; animation: spis-login-cloud-drift 24s linear -12s infinite; }
@@ -3827,6 +3828,8 @@ html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden))
 }
 @media (prefers-reduced-motion: reduce) {
   .spis-login-scene, .spis-login-box, .spis-login-cloud { animation: none !important; }
+  .spis-login-town img { transition: none; }
+  .spis-login-town img:hover { transform: none; }
 }
 
 .witcher-card-maintenance {
