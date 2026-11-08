@@ -794,4 +794,333 @@ on storage.objects for delete
 to authenticated
 using ( bucket_id = 'property-images' );
 
+-- ============================================================================
+-- SPIS ROLE-BASED ACCESS
+-- ----------------------------------------------------------------------------
+-- Google sign-ins are not granted a role automatically. An administrator must
+-- assign each account. Users can view Dashboard and Personnel data, update
+-- existing personnel records, and upload personnel photos. All other writes
+-- require the single Admin role.
+-- ============================================================================
+
+create table if not exists public.spis_user_roles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  display_name text,
+  role text check (role in ('admin', 'user')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists spis_user_roles_single_admin_idx
+  on public.spis_user_roles (role)
+  where role = 'admin';
+
+create or replace function public.sync_spis_auth_user_role_row()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.spis_user_roles (user_id, email, display_name)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name')
+  )
+  on conflict (user_id) do update
+    set email = excluded.email,
+        display_name = excluded.display_name,
+        updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists sync_spis_auth_user_role_row on auth.users;
+create trigger sync_spis_auth_user_role_row
+  after insert or update of email, raw_user_meta_data on auth.users
+  for each row execute function public.sync_spis_auth_user_role_row();
+
+insert into public.spis_user_roles (user_id, email, display_name)
+select
+  id,
+  email,
+  coalesce(raw_user_meta_data ->> 'full_name', raw_user_meta_data ->> 'name')
+from auth.users
+on conflict (user_id) do update
+  set email = excluded.email,
+      display_name = excluded.display_name,
+      updated_at = now();
+
+-- First Admin bootstrap (run once after that account has signed in with Google):
+-- update public.spis_user_roles
+-- set role = 'admin', updated_at = now()
+-- where lower(email) = lower('admin@your-school.edu')
+-- returning user_id, email, role;
+
+create or replace function public.current_spis_role()
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select role
+  from public.spis_user_roles
+  where user_id = (select auth.uid())
+  limit 1;
+$$;
+
+revoke all on function public.current_spis_role() from public, anon;
+grant execute on function public.current_spis_role() to authenticated;
+
+alter table public.spis_user_roles enable row level security;
+revoke all on table public.spis_user_roles from public, anon, authenticated;
+grant select on table public.spis_user_roles to authenticated;
+
+drop policy if exists "SPIS users read own role" on public.spis_user_roles;
+drop policy if exists "SPIS admins read all roles" on public.spis_user_roles;
+create policy "SPIS users read own role" on public.spis_user_roles
+  for select to authenticated
+  using (user_id = (select auth.uid()));
+create policy "SPIS admins read all roles" on public.spis_user_roles
+  for select to authenticated
+  using ((select public.current_spis_role()) = 'admin');
+
+create or replace function public.set_spis_user_role(target_user_id uuid, new_role text)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if (select public.current_spis_role()) is distinct from 'admin' then
+    raise exception 'Only the SPIS administrator can change user roles.' using errcode = '42501';
+  end if;
+
+  if new_role is not null and new_role not in ('admin', 'user') then
+    raise exception 'Role must be admin, user, or null.' using errcode = '22023';
+  end if;
+
+  if not exists (
+    select 1 from public.spis_user_roles where user_id = target_user_id
+  ) then
+    raise exception 'The selected Google account was not found.' using errcode = 'P0002';
+  end if;
+
+  if new_role = 'admin' then
+    -- Transfer the single Admin slot atomically; the former Admin becomes User.
+    update public.spis_user_roles
+    set role = 'user', updated_at = now()
+    where role = 'admin' and user_id <> target_user_id;
+
+    update public.spis_user_roles
+    set role = 'admin', updated_at = now()
+    where user_id = target_user_id;
+  else
+    if exists (
+      select 1 from public.spis_user_roles
+      where user_id = target_user_id and role = 'admin'
+    ) then
+      raise exception 'Transfer Admin to another account before removing this Admin role.' using errcode = '22023';
+    end if;
+
+    update public.spis_user_roles
+    set role = new_role, updated_at = now()
+    where user_id = target_user_id;
+  end if;
+
+  return public.current_spis_role();
+end;
+$$;
+
+revoke all on function public.set_spis_user_role(uuid, text) from public, anon;
+grant execute on function public.set_spis_user_role(uuid, text) to authenticated;
+
+-- Remove the earlier broad authenticated policies before installing role rules.
+drop policy if exists "Allow public read and write access to school_teacher" on public.school_teacher;
+drop policy if exists "Allow authenticated read and write access to school_teacher" on public.school_teacher;
+drop policy if exists "Allow public read access to inventory item types" on public.inventory_item;
+drop policy if exists "Allow authenticated read access to inventory item types" on public.inventory_item;
+drop policy if exists "Allow public read access to signatories" on public.signatories;
+drop policy if exists "Allow public insert access to signatories" on public.signatories;
+drop policy if exists "Allow public update access to signatories" on public.signatories;
+drop policy if exists "Allow public delete access to signatories" on public.signatories;
+drop policy if exists "Allow authenticated read access to signatories" on public.signatories;
+drop policy if exists "Allow authenticated insert access to signatories" on public.signatories;
+drop policy if exists "Allow authenticated update access to signatories" on public.signatories;
+drop policy if exists "Allow authenticated delete access to signatories" on public.signatories;
+drop policy if exists "Allow public read access to assets" on public.assets;
+drop policy if exists "Allow public insert access to assets" on public.assets;
+drop policy if exists "Allow public update access to assets" on public.assets;
+drop policy if exists "Allow public delete access to assets" on public.assets;
+drop policy if exists "Allow authenticated read access to assets" on public.assets;
+drop policy if exists "Allow authenticated insert access to assets" on public.assets;
+drop policy if exists "Allow authenticated update access to assets" on public.assets;
+drop policy if exists "Allow authenticated delete access to assets" on public.assets;
+drop policy if exists "Allow public read access to asset images" on public.asset_images;
+drop policy if exists "Allow public insert access to asset images" on public.asset_images;
+drop policy if exists "Allow public update access to asset images" on public.asset_images;
+drop policy if exists "Allow public delete access to asset images" on public.asset_images;
+drop policy if exists "Allow authenticated read access to asset images" on public.asset_images;
+drop policy if exists "Allow authenticated insert access to asset images" on public.asset_images;
+drop policy if exists "Allow authenticated update access to asset images" on public.asset_images;
+drop policy if exists "Allow authenticated delete access to asset images" on public.asset_images;
+drop policy if exists "Allow public read access to classifications" on public.classifications;
+drop policy if exists "Allow public insert access to classifications" on public.classifications;
+drop policy if exists "Allow public update access to classifications" on public.classifications;
+drop policy if exists "Allow public delete access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated read access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated insert access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated update access to classifications" on public.classifications;
+drop policy if exists "Allow authenticated delete access to classifications" on public.classifications;
+drop policy if exists "Allow public read access to statuses" on public.statuses;
+drop policy if exists "Allow public insert access to statuses" on public.statuses;
+drop policy if exists "Allow public update access to statuses" on public.statuses;
+drop policy if exists "Allow public delete access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated read access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated insert access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated update access to statuses" on public.statuses;
+drop policy if exists "Allow authenticated delete access to statuses" on public.statuses;
+drop policy if exists "Allow public ICS slip access" on public.ics_slips;
+drop policy if exists "Allow public ICS slip item access" on public.ics_slip_items;
+drop policy if exists "Allow authenticated ICS slip access" on public.ics_slips;
+drop policy if exists "Allow authenticated ICS slip item access" on public.ics_slip_items;
+drop policy if exists "Allow public RSPI report access" on public.rspi_reports;
+drop policy if exists "Allow public RSPI report item access" on public.rspi_report_items;
+drop policy if exists "Allow authenticated RSPI report access" on public.rspi_reports;
+drop policy if exists "Allow authenticated RSPI report item access" on public.rspi_report_items;
+drop policy if exists "Allow public read access to school details" on public.school_details;
+drop policy if exists "Allow authenticated read access to school details" on public.school_details;
+drop policy if exists "Allow authenticated insert access to school details" on public.school_details;
+drop policy if exists "Allow authenticated update access to school details" on public.school_details;
+drop policy if exists "Allow public read access to qr_download_history" on public.qr_download_history;
+drop policy if exists "Allow public insert access to qr_download_history" on public.qr_download_history;
+drop policy if exists "Allow public update access to qr_download_history" on public.qr_download_history;
+drop policy if exists "Allow authenticated read access to qr_download_history" on public.qr_download_history;
+drop policy if exists "Allow authenticated insert access to qr_download_history" on public.qr_download_history;
+drop policy if exists "Allow authenticated update access to qr_download_history" on public.qr_download_history;
+
+drop policy if exists "SPIS role read school_teacher" on public.school_teacher;
+drop policy if exists "SPIS admin manage school_teacher" on public.school_teacher;
+drop policy if exists "SPIS users edit existing personnel" on public.school_teacher;
+drop policy if exists "SPIS admin manage inventory_item" on public.inventory_item;
+drop policy if exists "SPIS admin manage signatories" on public.signatories;
+drop policy if exists "SPIS role read assets" on public.assets;
+drop policy if exists "SPIS admin manage assets" on public.assets;
+drop policy if exists "SPIS admin manage asset_images" on public.asset_images;
+drop policy if exists "SPIS admin manage classifications" on public.classifications;
+drop policy if exists "SPIS admin manage statuses" on public.statuses;
+drop policy if exists "SPIS role read ics_slips" on public.ics_slips;
+drop policy if exists "SPIS admin manage ics_slips" on public.ics_slips;
+drop policy if exists "SPIS role read ics_slip_items" on public.ics_slip_items;
+drop policy if exists "SPIS admin manage ics_slip_items" on public.ics_slip_items;
+drop policy if exists "SPIS admin manage rspi_reports" on public.rspi_reports;
+drop policy if exists "SPIS admin manage rspi_report_items" on public.rspi_report_items;
+drop policy if exists "SPIS role read school_details" on public.school_details;
+drop policy if exists "SPIS admin manage school_details" on public.school_details;
+drop policy if exists "SPIS admin manage qr_download_history" on public.qr_download_history;
+
+-- Any assigned role may read data used by Dashboard and Personnel. Users get
+-- no write access outside personnel profile edits.
+create policy "SPIS role read school_teacher" on public.school_teacher
+  for select to authenticated using ((select public.current_spis_role()) in ('admin', 'user'));
+create policy "SPIS admin manage school_teacher" on public.school_teacher
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+create policy "SPIS users edit existing personnel" on public.school_teacher
+  for update to authenticated using ((select public.current_spis_role()) = 'user')
+  with check ((select public.current_spis_role()) in ('admin', 'user'));
+
+drop policy if exists "SPIS role read inventory_item" on public.inventory_item;
+create policy "SPIS admin manage inventory_item" on public.inventory_item
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+
+drop policy if exists "SPIS role read signatories" on public.signatories;
+create policy "SPIS admin manage signatories" on public.signatories
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+
+create policy "SPIS role read assets" on public.assets
+  for select to authenticated using ((select public.current_spis_role()) in ('admin', 'user'));
+create policy "SPIS admin manage assets" on public.assets
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+
+drop policy if exists "SPIS role read asset_images" on public.asset_images;
+create policy "SPIS admin manage asset_images" on public.asset_images
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+
+drop policy if exists "SPIS role read classifications" on public.classifications;
+create policy "SPIS admin manage classifications" on public.classifications
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+
+drop policy if exists "SPIS role read statuses" on public.statuses;
+create policy "SPIS admin manage statuses" on public.statuses
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+
+create policy "SPIS role read ics_slips" on public.ics_slips
+  for select to authenticated using ((select public.current_spis_role()) in ('admin', 'user'));
+create policy "SPIS admin manage ics_slips" on public.ics_slips
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+create policy "SPIS role read ics_slip_items" on public.ics_slip_items
+  for select to authenticated using ((select public.current_spis_role()) in ('admin', 'user'));
+create policy "SPIS admin manage ics_slip_items" on public.ics_slip_items
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+
+drop policy if exists "SPIS role read rspi_reports" on public.rspi_reports;
+create policy "SPIS admin manage rspi_reports" on public.rspi_reports
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+drop policy if exists "SPIS role read rspi_report_items" on public.rspi_report_items;
+create policy "SPIS admin manage rspi_report_items" on public.rspi_report_items
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+
+create policy "SPIS role read school_details" on public.school_details
+  for select to authenticated using ((select public.current_spis_role()) in ('admin', 'user'));
+create policy "SPIS admin manage school_details" on public.school_details
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+
+drop policy if exists "SPIS role read qr_download_history" on public.qr_download_history;
+create policy "SPIS admin manage qr_download_history" on public.qr_download_history
+  for all to authenticated using ((select public.current_spis_role()) = 'admin')
+  with check ((select public.current_spis_role()) = 'admin');
+
+-- Storage: Users may add/change personnel photos. Only Admins may write asset photos.
+drop policy if exists "Allow Authenticated Upload personnel-photos" on storage.objects;
+drop policy if exists "Allow Authenticated Update personnel-photos" on storage.objects;
+drop policy if exists "SPIS users upload personnel photos" on storage.objects;
+drop policy if exists "SPIS users update personnel photos" on storage.objects;
+drop policy if exists "SPIS admins delete personnel photos" on storage.objects;
+create policy "SPIS users upload personnel photos" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'personnel-photos' and (select public.current_spis_role()) in ('admin', 'user'));
+create policy "SPIS users update personnel photos" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'personnel-photos' and (select public.current_spis_role()) in ('admin', 'user'))
+  with check (bucket_id = 'personnel-photos' and (select public.current_spis_role()) in ('admin', 'user'));
+create policy "SPIS admins delete personnel photos" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'personnel-photos' and (select public.current_spis_role()) = 'admin');
+
+drop policy if exists "Allow Authenticated Upload property-images" on storage.objects;
+drop policy if exists "Allow Authenticated Delete property-images" on storage.objects;
+drop policy if exists "SPIS admins upload property images" on storage.objects;
+drop policy if exists "SPIS admins delete property images" on storage.objects;
+create policy "SPIS admins upload property images" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'property-images' and (select public.current_spis_role()) = 'admin');
+create policy "SPIS admins delete property images" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'property-images' and (select public.current_spis_role()) = 'admin');
+
 notify pgrst, 'reload schema';

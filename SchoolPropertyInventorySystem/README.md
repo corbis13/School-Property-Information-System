@@ -55,7 +55,24 @@ Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The scr
 
 ### Google sign-in
 
-The app now shows a Google-only sign-in screen. Its authorization note uses compact text, and the SPIS town illustration and brand icon are displayed slightly smaller. Both graphics lift and gain a stronger shadow on hover. To enable OAuth:
+The app uses Google-only sign-in. A signed-in account receives no access until an Admin assigns it a role. There is no public registration page or role selector. The one Admin account has full access and can manage roles; Users can open Dashboard and Personnel, edit existing personnel profiles, and cannot add personnel profiles or ICS slips. Role checks are enforced by Supabase RLS as well as the interface.
+
+To bootstrap the first Admin account:
+
+1. Apply the complete [supabase-setup.sql](supabase-setup.sql) script in Supabase SQL Editor.
+2. Sign in once with the Google account that should become Admin. The account will appear in `spis_user_roles` with no role.
+3. In SQL Editor, assign that account the single Admin slot by replacing the example email and running:
+
+   ```sql
+   update public.spis_user_roles
+   set role = 'admin', updated_at = now()
+   where lower(email) = lower('admin@your-school.edu')
+   returning user_id, email, role;
+   ```
+
+4. Reload SPIS and sign in again. The account role appears in the user menu. The Admin can then assign `User` or no access to other accounts from **System Settings → Manage User Roles**. Accounts appear after their first Google sign-in. Assigning Admin to another account transfers the single Admin role; the former Admin becomes a User.
+
+To enable OAuth:
 
 1. In Supabase Authentication settings, enable the Google provider and enter the Google OAuth client ID and secret.
 2. In Supabase Authentication → URL Configuration, set the Site URL to `https://corbis13.github.io/School-Property-Information-System/` and add these Redirect URLs:
@@ -119,7 +136,7 @@ The asset hero card reads Accountable Person, Position/Designation, School Level
 
 ## Security note
 
-The browser UI is gated by Google sign-in and uses the user's Supabase access token for database requests. Public asset and ICS QR pages use limited-field, read-only RPCs for anonymous access; the inventory tables themselves remain restricted to authenticated users. Run [`supabase-setup.sql`](supabase-setup.sql) in Supabase to apply the authenticated-only database policies and public QR lookups for individual assets and ICS slips.
+The browser UI requires Google sign-in and an assigned SPIS role. Supabase RLS enforces role permissions on table and Storage requests; hiding a module or button is only a user-interface aid. Public asset and ICS QR pages use limited-field, read-only RPCs for anonymous access. Run [`supabase-setup.sql`](supabase-setup.sql) in Supabase to install or refresh the role table, single-Admin constraint, role policies, and public QR lookups.
 
 ## Legacy files
 

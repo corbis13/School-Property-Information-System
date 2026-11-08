@@ -34,8 +34,18 @@ async function uploadLogo(req, res) {
       headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${token}` }
     });
     if (!authResponse.ok) return res.status(401).json({ error: 'Sign-in required' });
+    const authUser = await authResponse.json();
+
+    const roleResponse = await fetch(`${supabaseUrl}/rest/v1/spis_user_roles?select=role&user_id=eq.${encodeURIComponent(authUser.id)}&limit=1`, {
+      headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${token}` }
+    });
+    if (!roleResponse.ok) return res.status(403).json({ error: 'Admin access required' });
+    const roleRows = await roleResponse.json();
+    if (!Array.isArray(roleRows) || roleRows[0]?.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
   } catch {
-    return res.status(503).json({ error: 'Unable to verify sign-in' });
+    return res.status(503).json({ error: 'Unable to verify account access' });
   }
 
   const dataUrl = req.body?.dataUrl;

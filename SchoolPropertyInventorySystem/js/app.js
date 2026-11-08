@@ -6942,8 +6942,182 @@ async function syncStatusToSheet(name) {
     throw lastError || new Error("Unable to save status to Supabase.");
 }
 
+function isSpisAdmin() {
+    return window.SUPABASE_APP_ROLE === "admin";
+}
+
+function canOpenSpisModule(moduleName) {
+    const role = window.SUPABASE_APP_ROLE;
+    const target = (moduleName === "ics" || moduleName === "document-ics")
+        ? "document"
+        : (moduleName === "report" ? "reports" : moduleName);
+    return role === "admin" || (role === "user" && (target === "dashboard" || target === "personnel"));
+}
+
+function applySpisRolePermissions() {
+    const role = window.SUPABASE_APP_ROLE;
+    const isAdmin = role === "admin";
+    const userModules = new Set(["dashboard", "personnel"]);
+    document.body.classList.toggle("spis-role-user", role === "user");
+    document.body.classList.toggle("spis-role-admin", isAdmin);
+
+    document.querySelectorAll(".nav-item[data-view], .top-nav-btn[data-view]").forEach((item) => {
+        const allowed = isAdmin || userModules.has(item.dataset.view);
+        item.hidden = !allowed;
+        item.classList.toggle("hidden", !allowed);
+        item.setAttribute("aria-hidden", String(!allowed));
+    });
+    document.querySelectorAll("[data-document-toggle], #documentSubmenu").forEach((item) => {
+        item.hidden = !isAdmin;
+        item.classList.toggle("hidden", !isAdmin);
+    });
+    document.querySelectorAll("a[onclick*=\"showModule('settings')\"], a[onclick*=\"showModule('about')\"]").forEach((item) => {
+        item.hidden = !isAdmin;
+        item.classList.toggle("hidden", !isAdmin);
+    });
+    document.querySelectorAll("[data-spis-admin-only]").forEach((item) => {
+        item.hidden = !isAdmin;
+        item.classList.toggle("hidden", !isAdmin);
+    });
+
+    const addPersonnelButton = document.getElementById("personnelHeaderAddBtn");
+    const addIcsButton = document.getElementById("personnelCardAddIcsBtn");
+    const roleManagement = document.getElementById("spisUserAccessCard");
+    if (addPersonnelButton) { addPersonnelButton.hidden = !isAdmin; addPersonnelButton.classList.toggle("hidden", !isAdmin); }
+    if (addIcsButton) { addIcsButton.hidden = !isAdmin; addIcsButton.classList.toggle("hidden", !isAdmin); }
+    if (roleManagement) roleManagement.style.display = isAdmin ? "block" : "none";
+    if (!isAdmin) {
+        document.getElementById("personnelAddModal")?.classList.add("hidden");
+        document.getElementById("personnelAddIcsModal")?.classList.add("hidden");
+    }
+
+    const active = document.querySelector(".module-view.active")?.dataset.module;
+    if (role && active && !canOpenSpisModule(active)) showModule("dashboard");
+}
+
+window.applySpisRolePermissions = applySpisRolePermissions;
+
+async function loadSpisUserRoles() {
+    const body = document.getElementById("spisUserRolesBody");
+    const status = document.getElementById("spisUserRolesStatus");
+    const card = document.getElementById("spisUserAccessCard");
+    if (!isSpisAdmin() || !body || !card) return;
+    card.style.display = "block";
+    if (status) status.textContent = "Loading accounts...";
+
+    const baseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || supabaseUrl;
+    const apiKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || supabaseAnonKey;
+    try {
+        const response = await fetch(`${baseUrl}/rest/v1/spis_user_roles?select=user_id,email,display_name,role&order=email.asc`, {
+            headers: { apikey: apiKey, Authorization: `Bearer ${window.SUPABASE_AUTH_SESSION?.access_token || apiKey}` }
+        });
+        if (!response.ok) throw new Error("Could not load role accounts (" + response.status + ").");
+        const rows = await response.json();
+        body.replaceChildren();
+
+        rows.forEach((account) => {
+            const tr = document.createElement("tr");
+            tr.className = "border-b border-slate-100";
+            const identity = document.createElement("td");
+            identity.className = "py-3 pr-4";
+            const name = document.createElement("div");
+            name.className = "font-semibold text-slate-800";
+            name.textContent = account.display_name || account.email || "Google account";
+            const email = document.createElement("div");
+            email.className = "text-xs text-slate-500";
+            email.textContent = account.email || account.user_id;
+            identity.append(name, email);
+
+            const roleCell = document.createElement("td");
+            roleCell.className = "py-3 pr-4";
+            const select = document.createElement("select");
+            select.className = "spis-user-role-select";
+            select.dataset.userRoleSelect = account.user_id;
+            const choices = account.role === "admin" ? [["admin", "Admin (only account)"]] : [["", "No access"], ["user", "User"], ["admin", "Admin"]];
+            choices.forEach(([value, label]) => {
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = label;
+                select.appendChild(option);
+            });
+            select.value = account.role || "";
+            select.disabled = account.role === "admin";
+            roleCell.appendChild(select);
+
+            const actionCell = document.createElement("td");
+            actionCell.className = "py-3 text-right";
+            if (account.role === "admin") {
+                const note = document.createElement("span");
+                note.className = "text-xs text-slate-500";
+                note.textContent = "Assign Admin to another account to transfer this role";
+                actionCell.appendChild(note);
+            } else {
+                const save = document.createElement("button");
+                save.type = "button";
+                save.className = "spis-user-role-save";
+                save.dataset.saveUserRole = account.user_id;
+                save.textContent = "Save";
+                actionCell.appendChild(save);
+            }
+            tr.append(identity, roleCell, actionCell);
+            body.appendChild(tr);
+        });
+
+        if (!rows.length) {
+            const tr = document.createElement("tr");
+            const td = document.createElement("td");
+            td.colSpan = 3;
+            td.className = "py-4 text-center text-xs text-slate-500";
+            td.textContent = "No Google accounts have signed in yet.";
+            tr.appendChild(td);
+            body.appendChild(tr);
+        }
+        if (status) status.textContent = `${rows.length} Google account${rows.length === 1 ? "" : "s"}. Save an account as Admin to transfer the single Admin role.`;
+    } catch (error) {
+        if (status) status.textContent = error.message || "Unable to load account roles.";
+        body.replaceChildren();
+    }
+}
+
+async function saveSpisUserRole(userId, role, button) {
+    if (!isSpisAdmin()) return;
+    const status = document.getElementById("spisUserRolesStatus");
+    const baseUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || supabaseUrl;
+    const apiKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || supabaseAnonKey;
+    button.disabled = true;
+    if (status) status.textContent = "Saving role...";
+    try {
+        const response = await fetch(`${baseUrl}/rest/v1/rpc/set_spis_user_role`, {
+            method: "POST",
+            headers: {
+                apikey: apiKey,
+                Authorization: `Bearer ${window.SUPABASE_AUTH_SESSION?.access_token || apiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ target_user_id: userId, new_role: role || null })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || "Role update failed.");
+        }
+        await response.text();
+        if (typeof window.refreshSpisAccessRole === "function") await window.refreshSpisAccessRole();
+        if (isSpisAdmin()) await loadSpisUserRoles();
+        else showModule("dashboard");
+        if (typeof showToast === "function") showToast("Account role updated.");
+    } catch (error) {
+        if (status) status.textContent = error.message || "Role update failed.";
+        button.disabled = false;
+    }
+}
+
 function showModule(moduleName, targetId = "") {
     if (!moduleName) return;
+
+    if (!canOpenSpisModule(moduleName)) {
+        if (typeof showToast === "function") showToast("Your role can open Dashboard and Personnel only.");
+        return;
+    }
 
     if (typeof window.closeEditPersonnelModal === "function") {
         window.closeEditPersonnelModal();
@@ -7053,6 +7227,8 @@ function showModule(moduleName, targetId = "") {
     if (moduleName === "about" || moduleName === "settings") {
         loadSchoolDetails();
     }
+
+    if (moduleName === "settings") loadSpisUserRoles();
 
     if (moduleName === "personnel") {
         if (typeof window.showPersonnelListView === "function") {
@@ -7776,21 +7952,34 @@ function wireEvents() {
 async function init() {
     const authSession = window.SUPABASE_AUTH_READY ? await window.SUPABASE_AUTH_READY : null;
     if (!authSession) {
-        document.getElementById("googleLoginGate")?.classList.remove("hidden");
+        if (!window.SUPABASE_AUTH_SESSION) document.getElementById("googleLoginGate")?.classList.remove("hidden");
         return;
     }
     window.SUPABASE_AUTH_SESSION = authSession;
     supabaseHeaders.Authorization = `Bearer ${authSession.access_token}`;
     window.supabaseHeaders = supabaseHeaders;
+    applySpisRolePermissions();
 
     loadTheme();
     wireEvents();
+    const userRolesBody = document.getElementById("spisUserRolesBody");
+    if (userRolesBody && userRolesBody.dataset.roleActionsWired !== "true") {
+        userRolesBody.dataset.roleActionsWired = "true";
+        userRolesBody.addEventListener("click", (event) => {
+            const button = event.target.closest("[data-save-user-role]");
+            if (!button) return;
+            const select = userRolesBody.querySelector(`[data-user-role-select="${CSS.escape(button.dataset.saveUserRole)}"]`);
+            if (select) saveSpisUserRole(button.dataset.saveUserRole, select.value, button);
+        });
+    }
     await loadItems();
     await loadTeacherOptions();
-    await loadSignatoryOptions();
-    await loadInventoryTypeOptions();
-    await loadClassificationOptions();
-    await loadStatusOptions();
+    if (isSpisAdmin()) {
+        await loadSignatoryOptions();
+        await loadInventoryTypeOptions();
+        await loadClassificationOptions();
+        await loadStatusOptions();
+    }
     await loadSchoolNameOptions();
     await loadSchoolDetails();
     const params = new URLSearchParams(window.location.search);
@@ -7801,17 +7990,22 @@ async function init() {
     canOpenClassificationModal = true;
     canOpenStatusModal = true;
     resetForm();
-    qrDownloadHistory = loadQrDownloadHistory();
-    renderQrDownloadHistory();
-    await loadRemoteQrDownloadHistory();
-    rspiSlips = loadRspiSlips();
-    try {
-        await loadRspiSlipsFromDatabase();
-    } catch (err) {
-        console.warn("Unable to pull RSPI records from database on init:", err);
+    if (isSpisAdmin()) {
+        qrDownloadHistory = loadQrDownloadHistory();
+        renderQrDownloadHistory();
+        await loadRemoteQrDownloadHistory();
+        rspiSlips = loadRspiSlips();
+        try {
+            await loadRspiSlipsFromDatabase();
+        } catch (err) {
+            console.warn("Unable to pull RSPI records from database on init:", err);
+        }
+    } else {
+        qrDownloadHistory = [];
+        rspiSlips = [];
     }
     renderApp();
-    if (typeof initRspiReport === "function") {
+    if (isSpisAdmin() && typeof initRspiReport === "function") {
         initRspiReport();
     }
 

@@ -170,6 +170,17 @@
     </section>
   </div>
 
+  <div id="spisAccessDenied" class="spis-login-layer hidden" role="alert" aria-live="assertive">
+    <section class="spis-access-card">
+      <div class="spis-access-icon"><i class="fa-solid fa-user-lock" aria-hidden="true"></i></div>
+      <p class="eyebrow">SPIS Account Access</p>
+      <h1>Access not assigned</h1>
+      <p id="spisAccessDeniedMessage">This Google account does not have an Admin or User role in SPIS. Ask the system administrator to assign access, then sign in again.</p>
+      <p id="spisAccessDeniedEmail" class="spis-access-email"></p>
+      <button id="spisAccessDeniedSignOutButton" type="button" class="spis-access-signout">Sign out</button>
+    </section>
+  </div>
+
   <!-- Main Container -->
   <div class="app-shell flex flex-1 min-h-screen overflow-hidden" inert aria-hidden="true">
     
@@ -366,6 +377,7 @@
                 <p id="googleAccountMenuName" class="text-xs font-bold text-slate-800">Google User</p>
                 <p id="googleAccountMenuEmail" class="text-[11px] text-slate-500">Signed in with Google</p>
                 <span class="inline-block mt-1 text-[10px] font-semibold bg-[#0284c7]/10 text-[#0369a1] px-2 py-0.5 rounded">Google Account</span>
+                <span id="googleAccountRole" class="hidden inline-block mt-1 ml-1 text-[10px] font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded" aria-live="polite"></span>
               </div>
               <a href="#" class="flex items-center space-x-2.5 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 hover:text-[#00335e] transition" onclick="showModule('settings'); return false;">
                 <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i>
@@ -694,7 +706,7 @@
 
                 <!-- Footer Button -->
                 <div class="mt-4 pt-2">
-                  <a id="propertyCategoryViewAll" href="property-category-report.html" target="_blank" rel="noopener" class="w-full py-2 px-4 rounded-lg border border-[#004c87] text-[#004c87] hover:bg-[#004c87] hover:text-white font-bold text-xs transition text-center flex items-center justify-center gap-1.5 shadow-xs">
+                  <a id="propertyCategoryViewAll" data-spis-admin-only href="property-category-report.html" target="_blank" rel="noopener" class="w-full py-2 px-4 rounded-lg border border-[#004c87] text-[#004c87] hover:bg-[#004c87] hover:text-white font-bold text-xs transition text-center flex items-center justify-center gap-1.5 shadow-xs">
                     <span>View Full Report</span>
                     <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                   </a>
@@ -761,7 +773,7 @@
                 </a>
 
                 <!-- Action 2: Add ICS -->
-                <a href="#" onclick="event.preventDefault();showModule('document');document.getElementById('icsEntityName')?.focus()" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 hover:border-[#449e38] hover:bg-slate-50 transition group">
+                <a href="#" data-spis-admin-only onclick="event.preventDefault();showModule('document');document.getElementById('icsEntityName')?.focus()" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 hover:border-[#449e38] hover:bg-slate-50 transition group">
                   <div class="flex items-center space-x-3">
                     <div class="w-9 h-9 rounded-lg bg-[#449e38] text-white flex items-center justify-center shrink-0">
                       <i data-lucide="file-check-2" class="w-5 h-5"></i>
@@ -775,7 +787,7 @@
                 </a>
 
                 <!-- Action 3: Add Personnel -->
-                <a href="#" onclick="event.preventDefault();showModule('personnel')" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 hover:border-[#f29913] hover:bg-slate-50 transition group">
+                <a href="#" data-spis-admin-only onclick="event.preventDefault();showModule('personnel')" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 hover:border-[#f29913] hover:bg-slate-50 transition group">
                   <div class="flex items-center space-x-3">
                     <div class="w-9 h-9 rounded-lg bg-[#f29913] text-white flex items-center justify-center shrink-0">
                       <i data-lucide="user-round-plus" class="w-5 h-5"></i>
@@ -870,7 +882,7 @@
                 <!-- Footer link for Acquisition Year -->
                 <div class="mt-auto pt-2 border-t border-slate-200/60 flex items-center justify-between">
                   <p class="text-[11px] text-slate-400 font-medium">Total assigned: <strong id="acquisitionYearTotal" class="text-slate-700">0 items</strong></p>
-                  <a id="acquisitionYearViewAll" href="acquisition-year-report.html" target="_blank" rel="noopener" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
+                  <a id="acquisitionYearViewAll" data-spis-admin-only href="acquisition-year-report.html" target="_blank" rel="noopener" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
                     <span>View All Breakdowns</span>
                     <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                   </a>
@@ -893,7 +905,7 @@
                 <!-- Footer link for Issuance Year -->
                 <div class="mt-auto pt-2 border-t border-slate-200/60 flex items-center justify-between">
                   <p class="text-[11px] text-slate-400 font-medium">Total assigned: <strong id="issuanceYearTotal" class="text-slate-700">0 items</strong></p>
-                  <a id="issuanceYearViewAll" href="issuance-year-report.html" target="_blank" rel="noopener" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
+                  <a id="issuanceYearViewAll" data-spis-admin-only href="issuance-year-report.html" target="_blank" rel="noopener" class="text-xs font-bold text-[#004c87] hover:underline flex items-center gap-1">
                     <span>View All Breakdowns</span>
                     <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                   </a>
@@ -4169,6 +4181,10 @@
 
               /* --- Add Personnel Modal Operations --- */
               function openAddPersonnelModal() {
+                if (window.SUPABASE_APP_ROLE !== "admin") {
+                  if (typeof showToast === "function") showToast("Only the Admin account can add personnel profiles.");
+                  return;
+                }
                 var form = document.getElementById("personnelAddForm");
                 if (form) form.reset();
 
@@ -4218,6 +4234,7 @@
               }
 
               async function handleAddPersonnelPhotoSelect(event) {
+                if (window.SUPABASE_APP_ROLE !== "admin") return;
                 var file = event.target.files && event.target.files[0];
                 if (!file) return;
                 var photoInput = document.getElementById("addPhotoUrl");
@@ -4267,6 +4284,10 @@
               }
 
               async function saveNewPersonnel() {
+                if (window.SUPABASE_APP_ROLE !== "admin") {
+                  if (typeof showToast === "function") showToast("Only the Admin account can add personnel profiles.");
+                  return;
+                }
                 var firstNameInput = document.getElementById("addFirstName");
                 var middleNameInput = document.getElementById("addMiddleName");
                 var lastNameInput = document.getElementById("addLastName");
@@ -4397,6 +4418,10 @@
               var modalIcsSelectedAsset = null;
 
               function openPersonnelAddIcsModal(preselectedItemNo, preselectedDesc) {
+                if (window.SUPABASE_APP_ROLE !== "admin") {
+                  if (typeof showToast === "function") showToast("Only the Admin account can add ICS slips.");
+                  return;
+                }
                 if (!window.activePersonnel) {
                   if (window.personnelList && window.personnelList.length > 0) {
                     window.activePersonnel = window.personnelList[0];
@@ -4668,6 +4693,11 @@
 
               async function submitModalIcsForm(event) {
                 if (event) event.preventDefault();
+                if (window.SUPABASE_APP_ROLE !== "admin") {
+                  if (typeof showToast === "function") showToast("Only the Admin account can add ICS slips.");
+                  closePersonnelAddIcsModal();
+                  return;
+                }
                 var form = document.getElementById("personnelAddIcsForm");
                 if (!form || !form.reportValidity()) return;
 
@@ -6070,6 +6100,18 @@
         <!-- MODULE 6: SETTINGS -->
         <div class="module-view" data-module="settings" style="display:none;">
           <section class="settings-grid">
+                    <article class="module-card spis-user-access-card" id="spisUserAccessCard" style="display:none;">
+                        <p class="eyebrow">Account Access</p>
+                        <h2>Manage User Roles</h2>
+                        <p class="module-copy">Only one account can hold the Admin role. Users can open Dashboard and Personnel, edit existing personnel records, and cannot add profiles or ICS slips. Accounts appear here after their first Google sign-in.</p>
+                        <p id="spisUserRolesStatus" class="text-xs font-semibold text-slate-500 mt-3" role="status" aria-live="polite">Loading accounts...</p>
+                        <div class="overflow-x-auto mt-3">
+                          <table class="w-full text-left text-sm">
+                            <thead><tr class="border-b border-slate-200 text-xs uppercase text-slate-500"><th class="py-2 pr-4">Google Account</th><th class="py-2 pr-4">Role</th><th class="py-2 text-right">Action</th></tr></thead>
+                            <tbody id="spisUserRolesBody"><tr><td colspan="3" class="py-4 text-center text-xs text-slate-400">Loading accounts...</td></tr></tbody>
+                          </table>
+                        </div>
+                    </article>
                     <!-- Institutional Profile Card (moved from About) -->
                     <article class="module-card school-details-card" id="schoolDetailsCard">
                         <div class="school-details-card-header" id="schoolDetailsCardHeader">
@@ -6404,18 +6446,21 @@
       var authClient = window.supabase && typeof window.supabase.createClient === "function" && authUrl && authAnonKey
         ? window.supabase.createClient(authUrl, authAnonKey, { auth: { flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
         : null;
+      var accessCheckId = 0;
 
       window.SUPABASE_AUTH_CLIENT = authClient;
       function isGoogleSession(session) {
         return Boolean(session && session.user && (session.user.app_metadata?.provider === "google" || (session.user.identities || []).some(function (identity) { return identity.provider === "google"; })));
       }
-      function applySession(session) {
+      async function applySession(session) {
+        var thisAccessCheckId = ++accessCheckId;
         session = isGoogleSession(session) ? session : null;
         window.SUPABASE_AUTH_SESSION = session || null;
+        window.SUPABASE_APP_ROLE = null;
         var appShell = document.querySelector(".app-shell");
         if (appShell) {
-          appShell.inert = !Boolean(session);
-          appShell.setAttribute("aria-hidden", String(!session));
+          appShell.inert = true;
+          appShell.setAttribute("aria-hidden", "true");
         }
         if (window.supabaseHeaders) {
           window.supabaseHeaders.Authorization = session && session.access_token
@@ -6473,8 +6518,61 @@
             }
           }
         }
-        if (gate) gate.classList.toggle("hidden", Boolean(session));
+        var accessGate = document.getElementById("spisAccessDenied");
+        var accessEmail = document.getElementById("spisAccessDeniedEmail");
+        var accessMessage = document.getElementById("spisAccessDeniedMessage");
+        var roleBadge = document.getElementById("googleAccountRole");
+        if (!session) {
+          if (gate) gate.classList.remove("hidden");
+          if (accessGate) accessGate.classList.add("hidden");
+          if (roleBadge) { roleBadge.classList.add("hidden"); roleBadge.textContent = ""; }
+          return null;
+        }
+
+        if (accessEmail) accessEmail.textContent = user.email || "";
+        var role = null;
+        var roleCheckFailed = false;
+        try {
+          var roleResponse = await fetch(authUrl + "/rest/v1/spis_user_roles?select=role&user_id=eq." + encodeURIComponent(user.id) + "&limit=1", {
+            headers: { apikey: authAnonKey, Authorization: "Bearer " + session.access_token }
+          });
+          if (!roleResponse.ok) throw new Error("SPIS role lookup failed with status " + roleResponse.status);
+          var roleRows = await roleResponse.json();
+          role = Array.isArray(roleRows) && roleRows[0] ? roleRows[0].role : null;
+          if (role !== "admin" && role !== "user") role = null;
+        } catch (error) {
+          console.error("SPIS role verification failed:", error);
+          roleCheckFailed = true;
+        }
+
+        if (thisAccessCheckId !== accessCheckId || window.SUPABASE_AUTH_SESSION !== session) return null;
+
+        window.SUPABASE_APP_ROLE = role;
+        var hasAccess = Boolean(role);
+        if (gate) gate.classList.add("hidden");
+        if (accessGate) accessGate.classList.toggle("hidden", hasAccess);
+        if (accessMessage) {
+          accessMessage.textContent = roleCheckFailed
+            ? "SPIS could not verify this account's role. Ask the administrator to check the role setup, then try again."
+            : "This Google account does not have an Admin or User role in SPIS. Ask the system administrator to assign access, then sign in again.";
+        }
+        if (roleBadge) {
+          roleBadge.textContent = role ? (role === "admin" ? "Admin" : "User") : "";
+          roleBadge.classList.toggle("hidden", !role);
+        }
+        if (appShell) {
+          appShell.inert = !hasAccess;
+          appShell.setAttribute("aria-hidden", String(!hasAccess));
+        }
+        if (hasAccess && typeof window.applySpisRolePermissions === "function") {
+          window.applySpisRolePermissions();
+        }
+        return hasAccess ? session : null;
       }
+
+      window.refreshSpisAccessRole = async function () {
+        return await applySession(window.SUPABASE_AUTH_SESSION);
+      };
 
       window.SUPABASE_AUTH_READY = authClient
         ? authClient.auth.getSession().then(function (result) {
@@ -6483,8 +6581,7 @@
             if (session && !isGoogleSession(session)) {
               return authClient.auth.signOut().then(function () { applySession(null); return null; });
             }
-            applySession(session);
-            return session;
+            return applySession(session);
           }).catch(function (error) {
             if (errorEl) errorEl.textContent = error.message || "Could not verify your Google sign-in.";
             applySession(null);
@@ -6502,8 +6599,8 @@
         });
       }
 
-      var signOutButton = document.getElementById("googleSignOutButton");
-      if (signOutButton) signOutButton.addEventListener("click", async function () {
+      var signOutButtons = [document.getElementById("googleSignOutButton"), document.getElementById("spisAccessDeniedSignOutButton")].filter(Boolean);
+      signOutButtons.forEach(function (signOutButton) { signOutButton.addEventListener("click", async function () {
         if (!authClient) return;
         signOutButton.disabled = true;
         try {
@@ -6515,7 +6612,7 @@
           if (typeof window.showToast === "function") window.showToast(error.message || "Sign out failed.");
           signOutButton.disabled = false;
         }
-      });
+      }); });
 
       if (button) button.addEventListener("click", async function () {
         if (!authClient) {
