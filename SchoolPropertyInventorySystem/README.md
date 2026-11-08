@@ -55,7 +55,7 @@ Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The scr
 
 ### Google sign-in
 
-The app now shows a Google-only sign-in screen. To enable OAuth:
+The app now shows a Google-only sign-in screen. Its authorization note uses compact text, and the SPIS town illustration and brand icon are displayed slightly smaller. Both graphics lift and gain a stronger shadow on hover. To enable OAuth:
 
 1. In Supabase Authentication settings, enable the Google provider and enter the Google OAuth client ID and secret.
 2. In Supabase Authentication → URL Configuration, set the Site URL to `https://corbis13.github.io/School-Property-Information-System/` and add these Redirect URLs:
