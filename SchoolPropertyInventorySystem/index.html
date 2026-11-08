@@ -2818,15 +2818,20 @@
                 return String(window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.user && window.SUPABASE_AUTH_SESSION.user.email || "").trim().toLowerCase();
               }
 
-              function canEditPersonnelProfile(teacher) {
-                if (window.SUPABASE_APP_ROLE === "admin") return true;
-                if (window.SUPABASE_APP_ROLE !== "user" || !teacher) return false;
+              function getLinkedPersonnelProfile() {
                 var email = getSpisSignedInEmail();
-                if (!email) return false;
+                if (!email) return null;
                 var matches = (window.personnelList || []).filter(function (person) {
                   return String(person.email || "").trim().toLowerCase() === email;
                 });
-                return matches.length === 1 && String(matches[0].id) === String(teacher.id);
+                return matches.length === 1 ? matches[0] : null;
+              }
+
+              function canEditPersonnelProfile(teacher) {
+                if (window.SUPABASE_APP_ROLE === "admin") return true;
+                if (window.SUPABASE_APP_ROLE !== "user" || !teacher) return false;
+                var linkedProfile = getLinkedPersonnelProfile();
+                return Boolean(linkedProfile && String(linkedProfile.id) === String(teacher.id));
               }
 
               function renderPersonnelProfile(teacher) {
@@ -3553,9 +3558,11 @@
                 var html = "";
                 pageRows.forEach(function (t) {
                   var initials = (t.teacher_name || "P").split(" ").map(function (w) { return w[0]; }).filter(Boolean).slice(0, 2).join("").toUpperCase();
-                  var isLinkedProfile = window.SUPABASE_APP_ROLE === "user" && canEditPersonnelProfile(t);
-                  var avatarHtml = t.photo_url
-                    ? '<img src="' + safeEscape(t.photo_url) + '" alt="' + safeEscape(t.teacher_name) + '" class="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0" onerror="this.onerror=null; this.src=\'https://ui-avatars.com/api/?name=' + encodeURIComponent(t.teacher_name || "Personnel") + '&background=078f95&color=fff\';">'
+                  var linkedProfile = getLinkedPersonnelProfile();
+                  var isLinkedProfile = Boolean(linkedProfile && String(linkedProfile.id) === String(t.id));
+                  var profileImage = (isLinkedProfile && window.SUPABASE_GOOGLE_AVATAR_URL) || t.photo_url;
+                  var avatarHtml = profileImage
+                    ? '<img src="' + safeEscape(profileImage) + '" alt="' + safeEscape(t.teacher_name) + '" class="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0" onerror="this.onerror=null; this.src=\'https://ui-avatars.com/api/?name=' + encodeURIComponent(t.teacher_name || "Personnel") + '&background=078f95&color=fff\';">'
                     : '<div class="w-10 h-10 rounded-full bg-[#00335e]/10 text-[#00335e] font-bold text-xs flex items-center justify-center border border-[#00335e]/20 shrink-0">' + safeEscape(initials) + '</div>';
 
                   var lvl = String(t.school_level || "").toLowerCase();
@@ -6526,6 +6533,7 @@
         var identityData = googleIdentity && googleIdentity.identity_data || {};
         var avatarUrl = metadata.picture || metadata.avatar_url || identityData.picture || identityData.avatar_url;
         var safeAvatarUrl = typeof avatarUrl === "string" && /^https:\/\//i.test(avatarUrl) ? avatarUrl : "";
+        window.SUPABASE_GOOGLE_AVATAR_URL = safeAvatarUrl;
         if (avatarImage && avatarFallback) {
           avatarImage.onerror = function () {
             avatarImage.classList.add("hidden");
@@ -6547,9 +6555,14 @@
                 return response.json();
               }).then(function (profile) {
                 if (profile.picture && window.SUPABASE_AUTH_SESSION === session) {
-                  avatarImage.src = profile.picture;
-                  avatarImage.classList.remove("hidden");
-                  avatarFallback.classList.add("hidden");
+                  var googlePicture = typeof profile.picture === "string" && /^https:\/\//i.test(profile.picture) ? profile.picture : "";
+                  if (googlePicture) {
+                    window.SUPABASE_GOOGLE_AVATAR_URL = googlePicture;
+                    avatarImage.src = googlePicture;
+                    avatarImage.classList.remove("hidden");
+                    avatarFallback.classList.add("hidden");
+                    if (typeof window.renderPersonnelListTable === "function") window.renderPersonnelListTable();
+                  }
                 }
               }).catch(function () {});
             }

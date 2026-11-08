@@ -51,11 +51,11 @@ To get started:
 2. Fill in your Supabase **Project URL** and **anon / public key** (Project Settings → API in the Supabase dashboard).
 3. Set `assetUrl` to the GitHub Pages URL of `asset.html` (used as the QR code payload).
 
-Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the inventory and lookup tables (including the `asset_images` photo metadata table), configures public read/write policies for this no-login app, and creates the `personnel-photos` and `property-images` Storage buckets.
+Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the inventory and lookup tables (including the `asset_images` photo metadata table), configures authenticated role-based access and the limited public QR lookups, and creates the `personnel-photos` and `property-images` Storage buckets.
 
 ### Google sign-in
 
-The app uses Google-only sign-in with no separate registration page or role selector. The designated Admin account has full access and can manage roles. New Google accounts are automatically assigned the User role, which can open Dashboard and Personnel, edit only the unique personnel profile matching their signed-in email, and cannot add personnel profiles or ICS slips. Other personnel profiles remain view-only. A missing or duplicate email match leaves the profile read-only until the school record is corrected. Supabase RLS enforces the profile restriction as well as the interface.
+The app uses Google-only sign-in with no separate registration page or role selector. The designated Admin account has full access and can manage roles. New Google accounts are automatically assigned the User role, which can open Dashboard and Personnel, edit only the unique personnel profile matching their signed-in email, and cannot add personnel profiles or ICS slips. Other personnel profiles remain view-only. A missing or duplicate email match leaves the profile read-only until the school record is corrected. The profile's email is read-only for Users, so they cannot change it to claim another record. Supabase RLS enforces both the matching-row update and photo upload restrictions; User profile photos are stored in a folder named for that user's Supabase ID.
 
 To bootstrap the first Admin account:
 
@@ -86,7 +86,7 @@ The Google client secret belongs in Supabase's dashboard; do not add it to this 
 
 ### Storage
 
-- `personnel-photos` (public bucket) – personnel profile photos uploaded as WebP from the Personnel profile card. The setup script adds public select/insert/update policies for this bucket.
+- `personnel-photos` (public bucket) – personnel profile photos uploaded as WebP from the Personnel profile card. Photos are publicly viewable. Authenticated Users can upload or update photos only under their own Supabase user-ID folder; Admins can manage all personnel photos.
 - `property-images` (public bucket) – up to 5 JPG, PNG, or WebP photos per asset, limited to 3 MB each. Photos and their primary-image metadata are managed from the Inventory Property Details form. Anyone with a photo URL can view its contents.
 
 ### Expected tables
