@@ -55,12 +55,12 @@ Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The scr
 
 ### Google sign-in
 
-The app uses Google-only sign-in. A signed-in account receives no access until an Admin assigns it a role. There is no public registration page or role selector. The one Admin account has full access and can manage roles; Users can open Dashboard and Personnel, edit existing personnel profiles, and cannot add personnel profiles or ICS slips. Role checks are enforced by Supabase RLS as well as the interface.
+The app uses Google-only sign-in with no separate registration page or role selector. The designated Admin account has full access and can manage roles. New Google accounts are automatically assigned the User role, which can open Dashboard and Personnel, edit only the unique personnel profile matching their signed-in email, and cannot add personnel profiles or ICS slips. Other personnel profiles remain view-only. A missing or duplicate email match leaves the profile read-only until the school record is corrected. Supabase RLS enforces the profile restriction as well as the interface.
 
 To bootstrap the first Admin account:
 
 1. Apply the complete [supabase-setup.sql](supabase-setup.sql) script in Supabase SQL Editor.
-2. Sign in once with the Google account that should become Admin. The account will appear in `spis_user_roles` with no role.
+2. Sign in once with the Google account that should become Admin. The account will appear in `spis_user_roles` with the User role.
 3. In SQL Editor, assign that account the single Admin slot by replacing the example email and running:
 
    ```sql
@@ -70,7 +70,7 @@ To bootstrap the first Admin account:
    returning user_id, email, role;
    ```
 
-4. Reload SPIS and sign in again. The account role appears in the user menu. The Admin can then assign `User` or no access to other accounts from **System Settings → Manage User Roles**. Accounts appear after their first Google sign-in. Assigning Admin to another account transfers the single Admin role; the former Admin becomes a User.
+4. Reload SPIS and sign in again. The account role appears in the user menu. New Google accounts are automatically assigned `User`; the Admin can change an account to no access from **System Settings → Manage User Roles**. Existing accounts that signed in before automatic User assignment was enabled must be assigned a role by the Admin. Assigning Admin to another account transfers the single Admin role; the former Admin becomes a User.
 
 To enable OAuth:
 

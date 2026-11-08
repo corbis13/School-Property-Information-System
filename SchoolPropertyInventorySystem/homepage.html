@@ -1930,6 +1930,7 @@
                       </button>
                     </div>
                   </div>
+                  <p id="personnelProfileReadOnlyNotice" class="hidden mt-2 text-xs font-medium text-slate-500">View only: Users can edit only the personnel profile matching their signed-in email.</p>
 
                   <!-- Badges -->
                   <div class="flex flex-wrap gap-2 mt-2">
@@ -2813,9 +2814,31 @@
                   .replace(/'/g, "&#039;");
               }
 
+              function getSpisSignedInEmail() {
+                return String(window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.user && window.SUPABASE_AUTH_SESSION.user.email || "").trim().toLowerCase();
+              }
+
+              function canEditPersonnelProfile(teacher) {
+                if (window.SUPABASE_APP_ROLE === "admin") return true;
+                if (window.SUPABASE_APP_ROLE !== "user" || !teacher) return false;
+                var email = getSpisSignedInEmail();
+                if (!email) return false;
+                var matches = (window.personnelList || []).filter(function (person) {
+                  return String(person.email || "").trim().toLowerCase() === email;
+                });
+                return matches.length === 1 && String(matches[0].id) === String(teacher.id);
+              }
+
               function renderPersonnelProfile(teacher) {
                 if (!teacher) return;
                 window.activePersonnel = teacher;
+                var canEdit = canEditPersonnelProfile(teacher);
+                var editProfileBtn = document.getElementById("personnelEditProfileBtn");
+                var changePhotoBtn = document.getElementById("personnelChangePhotoBtn");
+                var readOnlyNotice = document.getElementById("personnelProfileReadOnlyNotice");
+                if (editProfileBtn) editProfileBtn.hidden = !canEdit;
+                if (changePhotoBtn) changePhotoBtn.hidden = !canEdit;
+                if (readOnlyNotice) readOnlyNotice.hidden = canEdit;
 
                 // Photo
                 var photoEl = document.getElementById("personnelCardPhoto");
@@ -3530,6 +3553,7 @@
                 var html = "";
                 pageRows.forEach(function (t) {
                   var initials = (t.teacher_name || "P").split(" ").map(function (w) { return w[0]; }).filter(Boolean).slice(0, 2).join("").toUpperCase();
+                  var isLinkedProfile = window.SUPABASE_APP_ROLE === "user" && canEditPersonnelProfile(t);
                   var avatarHtml = t.photo_url
                     ? '<img src="' + safeEscape(t.photo_url) + '" alt="' + safeEscape(t.teacher_name) + '" class="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0" onerror="this.onerror=null; this.src=\'https://ui-avatars.com/api/?name=' + encodeURIComponent(t.teacher_name || "Personnel") + '&background=078f95&color=fff\';">'
                     : '<div class="w-10 h-10 rounded-full bg-[#00335e]/10 text-[#00335e] font-bold text-xs flex items-center justify-center border border-[#00335e]/20 shrink-0">' + safeEscape(initials) + '</div>';
@@ -3563,6 +3587,7 @@
                         avatarHtml +
                         '<div class="min-w-0">' +
                           '<div class="font-bold text-[#10213c] text-sm hover:text-[#078f95] transition truncate">' + safeEscape(formatPersonnelDirectoryName(t)) + '</div>' +
+                          (isLinkedProfile ? '<div class="text-[10px] font-semibold text-emerald-700">Your linked profile</div>' : '') +
                         '</div>' +
                       '</div>' +
                     '</td>' +
@@ -4055,6 +4080,10 @@
                   }
                 }
                 var p = window.activePersonnel;
+                if (!canEditPersonnelProfile(p)) {
+                  if (typeof showToast === "function") showToast("You can edit only the personnel profile matching your signed-in email.");
+                  return;
+                }
 
                 document.getElementById("editTeacherId").value = p.id || "";
                 var parsedNameParts = splitPersonnelName(p.teacher_name);
@@ -4064,6 +4093,7 @@
                 document.getElementById("editItemNo").value = p.item_no || "";
                 document.getElementById("editPhone").value = p.phone || "";
                 document.getElementById("editEmail").value = p.email || "";
+                document.getElementById("editEmail").readOnly = window.SUPABASE_APP_ROLE !== "admin";
                 document.getElementById("editEmployeeId").value = p.employee_id || "";
                 document.getElementById("editStatus").value = p.status || "Active";
                 document.getElementById("editPhotoUrl").value = p.photo_url || "";
@@ -4861,6 +4891,11 @@
               async function savePersonnelProfile() {
                 var id = document.getElementById("editTeacherId").value;
                 if (!id) return;
+                if (!canEditPersonnelProfile(window.activePersonnel) || String(window.activePersonnel.id) !== String(id)) {
+                  if (typeof showToast === "function") showToast("You can edit only the personnel profile matching your signed-in email.");
+                  closeEditPersonnelModal();
+                  return;
+                }
 
                 var firstNameInput = document.getElementById("editFirstName");
                 var middleNameInput = document.getElementById("editMiddleName");
@@ -5023,11 +5058,11 @@
                 var file = event.target.files && event.target.files[0];
                 if (!file) return;
 
-                if (!window.activePersonnel) {
+                if (!window.activePersonnel || !canEditPersonnelProfile(window.activePersonnel)) {
                   if (typeof showToast === "function") {
-                    showToast("Please select a personnel profile first.");
+                    showToast("You can change the photo only on the personnel profile matching your signed-in email.");
                   } else {
-                    alert("Please select a personnel profile first.");
+                    alert("You can change the photo only on the personnel profile matching your signed-in email.");
                   }
                   event.target.value = "";
                   return;
@@ -5057,7 +5092,9 @@
                   var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
                   var bucketName = "personnel-photos";
                   var cleanName = (teacher.teacher_name || "personnel").toLowerCase().replace(/[^a-z0-9]/g, "_");
-                  var fileName = teacherId + "_" + cleanName + "_" + Date.now() + ".webp";
+                  var fileName = window.SUPABASE_APP_ROLE === "admin"
+                    ? teacherId + "_" + cleanName + "_" + Date.now() + ".webp"
+                    : window.SUPABASE_AUTH_SESSION.user.id + "/" + teacherId + "_" + cleanName + "_" + Date.now() + ".webp";
 
                   var finalPhotoUrl = null;
 

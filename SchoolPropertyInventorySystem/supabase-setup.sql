@@ -797,10 +797,9 @@ using ( bucket_id = 'property-images' );
 -- ============================================================================
 -- SPIS ROLE-BASED ACCESS
 -- ----------------------------------------------------------------------------
--- Google sign-ins are not granted a role automatically. An administrator must
--- assign each account. Users can view Dashboard and Personnel data, update
--- existing personnel records, and upload personnel photos. All other writes
--- require the single Admin role.
+-- New Google sign-ins receive the User role automatically. Users can view
+-- Dashboard and Personnel data, update existing personnel records, and upload
+-- personnel photos. All other writes require the single Admin role.
 -- ============================================================================
 
 create table if not exists public.spis_user_roles (
@@ -823,11 +822,12 @@ security definer
 set search_path = ''
 as $$
 begin
-  insert into public.spis_user_roles (user_id, email, display_name)
+  insert into public.spis_user_roles (user_id, email, display_name, role)
   values (
     new.id,
     new.email,
-    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name')
+    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'),
+    'user'
   )
   on conflict (user_id) do update
     set email = excluded.email,
@@ -874,6 +874,23 @@ $$;
 
 revoke all on function public.current_spis_role() from public, anon;
 grant execute on function public.current_spis_role() to authenticated;
+
+create or replace function public.current_spis_personnel_id()
+returns bigint
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select min(id)
+  from public.school_teacher
+  where nullif(lower(btrim(email)), '') =
+    nullif(lower(btrim((select auth.jwt() ->> 'email'))), '')
+  having count(*) = 1;
+$$;
+
+revoke all on function public.current_spis_personnel_id() from public, anon;
+grant execute on function public.current_spis_personnel_id() to authenticated;
 
 alter table public.spis_user_roles enable row level security;
 revoke all on table public.spis_user_roles from public, anon, authenticated;
@@ -1030,8 +1047,17 @@ create policy "SPIS admin manage school_teacher" on public.school_teacher
   for all to authenticated using ((select public.current_spis_role()) = 'admin')
   with check ((select public.current_spis_role()) = 'admin');
 create policy "SPIS users edit existing personnel" on public.school_teacher
-  for update to authenticated using ((select public.current_spis_role()) = 'user')
-  with check ((select public.current_spis_role()) in ('admin', 'user'));
+  for update to authenticated
+  using (
+    (select public.current_spis_role()) = 'user'
+    and id = (select public.current_spis_personnel_id())
+  )
+  with check (
+    (select public.current_spis_role()) = 'user'
+    and id = (select public.current_spis_personnel_id())
+    and nullif(lower(btrim(email)), '') =
+      nullif(lower(btrim((select auth.jwt() ->> 'email'))), '')
+  );
 
 drop policy if exists "SPIS role read inventory_item" on public.inventory_item;
 create policy "SPIS admin manage inventory_item" on public.inventory_item
@@ -1103,11 +1129,28 @@ drop policy if exists "SPIS users update personnel photos" on storage.objects;
 drop policy if exists "SPIS admins delete personnel photos" on storage.objects;
 create policy "SPIS users upload personnel photos" on storage.objects
   for insert to authenticated
-  with check (bucket_id = 'personnel-photos' and (select public.current_spis_role()) in ('admin', 'user'));
+  with check (
+    bucket_id = 'personnel-photos'
+    and (select public.current_spis_role()) = 'user'
+    and (storage.foldername(name))[1] = (select auth.uid())::text
+  );
 create policy "SPIS users update personnel photos" on storage.objects
   for update to authenticated
-  using (bucket_id = 'personnel-photos' and (select public.current_spis_role()) in ('admin', 'user'))
-  with check (bucket_id = 'personnel-photos' and (select public.current_spis_role()) in ('admin', 'user'));
+  using (
+    bucket_id = 'personnel-photos'
+    and (select public.current_spis_role()) = 'user'
+    and (storage.foldername(name))[1] = (select auth.uid())::text
+  )
+  with check (
+    bucket_id = 'personnel-photos'
+    and (select public.current_spis_role()) = 'user'
+    and (storage.foldername(name))[1] = (select auth.uid())::text
+  );
+drop policy if exists "SPIS admins manage personnel photos" on storage.objects;
+create policy "SPIS admins manage personnel photos" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'personnel-photos' and (select public.current_spis_role()) = 'admin')
+  with check (bucket_id = 'personnel-photos' and (select public.current_spis_role()) = 'admin');
 create policy "SPIS admins delete personnel photos" on storage.objects
   for delete to authenticated
   using (bucket_id = 'personnel-photos' and (select public.current_spis_role()) = 'admin');
