@@ -3761,7 +3761,7 @@ html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden))
 .spis-login-copy h1 span::after { display: block; width: 78%; height: .4rem; margin-top: .45rem; border-radius: 99px; background: #16882b; content: ""; transform: skewX(-18deg); }
 .spis-login-copy p { max-width: 540px; margin: 1.15rem 0 0; color: #395876; font-size: clamp(.95rem, 1.35vw, 1.15rem); line-height: 1.55; }
 .spis-login-town { position: absolute; z-index: 1; inset: auto 0 0; display: flex; align-items: flex-end; justify-content: center; height: 57%; pointer-events: none; }
-.spis-login-town img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 8px 12px rgba(0, 45, 84, .12)); pointer-events: auto; transform-origin: center bottom; transition: transform .4s cubic-bezier(.2,.75,.25,1), filter .4s ease; }
+.spis-login-town img { display: block; width: 90%; height: 90%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 8px 12px rgba(0, 45, 84, .12)); pointer-events: auto; transform-origin: center bottom; transition: transform .4s cubic-bezier(.2,.75,.25,1), filter .4s ease; }
 .spis-login-town img:hover { transform: translateY(-8px) scale(1.035); filter: drop-shadow(0 15px 18px rgba(0, 45, 84, .22)); }
 .spis-login-cloud { position: absolute; z-index: 0; left: 0; pointer-events: none; opacity: .65; }
 .spis-login-cloud-slow { top: 7rem; animation: spis-login-cloud-drift 34s linear infinite; }
@@ -3788,7 +3788,8 @@ html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden))
 .spis-login-form .brand-mark > span:last-child { padding-left: .9rem; border-left: 2px solid #16882b; }
 .spis-login-name-highlight { display: block; color: #16882b; }
 .spis-login-brand-icon { display: inline-flex; width: 4.25rem; height: 4.25rem; flex: 0 0 4.25rem; align-items: center; justify-content: center; }
-.spis-login-brand-icon img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.spis-login-brand-icon img { display: block; width: 90%; height: 90%; object-fit: contain; transform-origin: center; transition: transform .4s cubic-bezier(.2,.75,.25,1), filter .4s ease; }
+.spis-login-brand-icon img:hover { transform: translateY(-8px) scale(1.035); filter: drop-shadow(0 15px 18px rgba(0, 45, 84, .22)); }
 .spis-login-form h2 { margin: clamp(3rem, 7vh, 5rem) 0 .65rem; color: #102f5c; font-size: clamp(2rem, 3.3vw, 3rem); font-weight: 900; letter-spacing: -.05em; line-height: 1.1; }
 .spis-login-form .login-description { margin: 0 0 clamp(1.25rem, 3vh, 2rem); color: #4b6481; font-size: clamp(.95rem, 1.25vw, 1.1rem); line-height: 1.55; }
 .spis-google-login { display: flex; align-items: center; justify-content: center; gap: .9rem; width: 100%; min-height: 68px; border: 2px solid #d7e5f0; border-radius: 999px; background: linear-gradient(180deg, #fff, #f6faff); color: #102f5c; font-size: 1.05rem; font-weight: 800; box-shadow: 0 10px 18px rgba(0,76,135,.13), inset 0 1px 0 rgba(255,255,255,.95); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease; }
@@ -3796,7 +3797,7 @@ html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden))
 .spis-google-login:focus-visible { outline: 3px solid rgba(2,132,199,.35); outline-offset: 3px; }
 .spis-google-login:disabled { cursor: wait; opacity: .65; transform: none; }
 .spis-login-error { min-height: 1.25rem; margin-top: .85rem; color: #b91c1c; font-size: .75rem; line-height: 1.5; }
-.spis-login-footnote { display: flex; align-items: center; gap: 1rem; margin-top: auto; padding-top: 1.5rem; color: #405b78; font-size: .9rem; line-height: 1.5; }
+.spis-login-footnote { display: flex; align-items: center; gap: 1rem; margin-top: auto; padding-top: 1.5rem; color: #405b78; font-size: .8rem; line-height: 1.5; }
 .spis-login-footnote svg { display: block; width: 2.6rem; height: 3rem; flex: 0 0 2.6rem; color: #188a39; }
 @keyframes spis-login-float { 0%,100% { transform: translateY(0) rotateY(-5deg); } 50% { transform: translateY(-9px) rotateY(3deg); } }
 @keyframes spis-login-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -8px; } }
