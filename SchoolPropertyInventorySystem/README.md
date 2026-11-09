@@ -26,10 +26,10 @@ The Express server (`server.js`) serves the app at `http://localhost:3000` (redi
 ### Personnel Accountability
 
 - **Personnel Directory** – searchable list sorted by latest update / newly recorded on top (1st row), with School Level and Status filters (white search/filter controls, equal 200px width on desktop, full-width on mobile) and per-person item counts.
-- **Add Personnel** – register a new faculty or staff member via modal card into `school_teacher`, with photo URL / upload (WebP conversion to `personnel-photos` bucket), automatic stat card / directory / dropdown updates, and immediate switch to their new profile.
+- **Add Personnel** – register a new faculty or staff member via modal card into `school_teacher`, with automatic stat card / directory / dropdown updates and immediate switch to their new profile.
 - **Profile card**
   - **Edit Profile** modal (updates `school_teacher`).
-  - **Change photo** (camera button) – picks an image, converts it to **WebP** in the browser, uploads it to the `personnel-photos` Supabase Storage bucket and saves the URL to `school_teacher.photo_url` (falls back to a data URL if Storage is unavailable).
+  - The linked personnel profile displays the signed-in Google account's profile picture; other profiles remain view-only for Users.
   - **Add ICS** – opens a modal duplicate of the ICS template with **Received By** locked to the selected personnel. Selecting an inventory item auto-fills item no., unit, unit cost and total. Saving creates the ICS record and updates the asset's accountable person.
 - **Tabs** – Properties, History, Documents, Activity Log. The Properties tab lists the person's ICS records plus assets assigned to them that are still pending an ICS.
 
@@ -51,11 +51,15 @@ To get started:
 2. Fill in your Supabase **Project URL** and **anon / public key** (Project Settings → API in the Supabase dashboard).
 3. Set `assetUrl` to the GitHub Pages URL of `asset.html` (used as the QR code payload).
 
-Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the inventory and lookup tables (including the `asset_images` photo metadata table), configures authenticated role-based access and the limited public QR lookups, and creates the `personnel-photos` and `property-images` Storage buckets.
+Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the inventory and lookup tables (including the `asset_images` photo metadata table), configures authenticated role-based access and the limited public QR lookups, and creates the `property-images` Storage bucket.
+
+#### Removing legacy personnel photos
+
+The setup script drops `school_teacher.photo_url` and removes all `personnel-photos` Storage policies. To reclaim space used by existing profile photos, first delete the contents of the `personnel-photos` bucket and then delete the bucket from **Supabase Dashboard → Storage**. This permanently deletes those stored files. Supabase Storage files should be removed through the Storage dashboard or API, not by deleting rows from `storage.objects`.
 
 ### Google sign-in
 
-The app uses Google-only sign-in with no separate registration page or role selector. The designated Admin account has full access and can manage roles. New Google accounts are automatically assigned the User role, which can open Dashboard and Personnel, edit only the unique personnel profile matching their signed-in email, and cannot add personnel profiles or ICS slips. Other personnel profiles remain view-only. A missing or duplicate email match leaves the profile read-only until the school record is corrected. The profile's email is read-only for Users, so they cannot change it to claim another record. Supabase RLS enforces both the matching-row update and photo upload restrictions; User profile photos are stored in a folder named for that user's Supabase ID.
+The app uses Google-only sign-in with no separate registration page or role selector. The designated Admin account has full access and can manage roles. New Google accounts are automatically assigned the User role, which can open Dashboard and Personnel, edit only the unique personnel profile matching their signed-in email, and cannot add personnel profiles or ICS slips. Other personnel profiles remain view-only. A missing or duplicate email match leaves the profile read-only until the school record is corrected. The profile's email is read-only for Users, so they cannot change it to claim another record. Supabase RLS enforces the matching-row update restriction.
 
 To bootstrap the first Admin account:
 
@@ -86,7 +90,6 @@ The Google client secret belongs in Supabase's dashboard; do not add it to this 
 
 ### Storage
 
-- `personnel-photos` (public bucket) – personnel profile photos uploaded as WebP from the Personnel profile card. Photos are publicly viewable. Authenticated Users can upload or update photos only under their own Supabase user-ID folder; Admins can manage all personnel photos.
 - `property-images` (public bucket) – up to 5 JPG, PNG, or WebP photos per asset, limited to 3 MB each. Photos and their primary-image metadata are managed from the Inventory Property Details form. Anyone with a photo URL can view its contents.
 
 ### Expected tables
@@ -96,7 +99,7 @@ The Google client secret belongs in Supabase's dashboard; do not add it to this 
 - classifications
 - statuses (source for status options; column: `status_name`)
 - inventory_item (source for inventory item type options; column: `inventory_item_type`)
-- school_teacher (Personnel Accountability records; columns: `teacher_name`, `first_name`, `middle_name`, `last_name`, `employee_id`, `item_no`, `phone`, `email`, `plantilla_position`, `school_level`, `personnel_type`, `school_name`, `employment_status`, `birthday`, `original_appointment`, `date_of_last_promotion`, `status`, `photo_url`)
+- school_teacher (Personnel Accountability records; columns: `teacher_name`, `first_name`, `middle_name`, `last_name`, `employee_id`, `item_no`, `phone`, `email`, `plantilla_position`, `school_level`, `personnel_type`, `school_name`, `employment_status`, `birthday`, `original_appointment`, `date_of_last_promotion`, `status`)
 - signatories (managed in Settings and used for report signatory options; columns: `signatory`, `position`, `assumption_date`)
 - ics_slips (Inventory Custodian Slip headers)
 - ics_slip_items (line items linked to slips; `asset_id` is filled when the item was picked from inventory)
