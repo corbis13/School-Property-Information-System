@@ -3749,6 +3749,37 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   overflow: hidden;
   background: radial-gradient(ellipse at 16% 12%, rgba(56, 189, 248, .34), transparent 40%), radial-gradient(ellipse at 88% 86%, rgba(85, 168, 59, .2), transparent 38%), linear-gradient(135deg, #001a30 0%, #00335e 48%, #07558e 100%);
 }
+.spis-auth-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 16% 12%, rgba(56, 189, 248, .34), transparent 40%), radial-gradient(ellipse at 88% 86%, rgba(85, 168, 59, .2), transparent 38%), linear-gradient(135deg, #001a30 0%, #00335e 48%, #07558e 100%);
+}
+.spis-auth-loading.hidden { display: none; }
+.spis-auth-loading__card {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid rgba(184, 224, 248, .8);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 24px 70px rgba(0, 12, 31, .3);
+  color: #062f60;
+  font-weight: 700;
+}
+.spis-auth-loading__card p { margin: 0; }
+.spis-auth-loading__spinner {
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 3px solid #d5e7f2;
+  border-top-color: #16882b;
+  border-radius: 50%;
+  animation: spis-auth-spin .8s linear infinite;
+}
+@keyframes spis-auth-spin { to { transform: rotate(360deg); } }
 .spis-login-layer *, .spis-login-layer *::before, .spis-login-layer *::after { box-sizing: border-box; }
 .spis-login-layer.hidden { display: none; }
 html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden)) { overflow: hidden !important; }

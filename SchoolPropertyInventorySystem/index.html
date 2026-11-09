@@ -128,8 +128,15 @@
 </head>
 <body class="bg-[#f0f4f8] text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-green selection:text-white">
 
+  <div id="spisAuthLoading" class="spis-auth-loading" role="status" aria-live="polite">
+    <div class="spis-auth-loading__card">
+      <span class="spis-auth-loading__spinner" aria-hidden="true"></span>
+      <p>Checking your sign-in…</p>
+    </div>
+  </div>
+
   <!-- Google-only authentication gate -->
-  <div id="googleLoginGate" class="spis-login-layer" role="main" aria-label="Sign in to SPIS">
+  <div id="googleLoginGate" class="spis-login-layer hidden" role="main" aria-label="Sign in to SPIS">
     <section class="spis-login-panel">
       <div class="spis-login-art" aria-hidden="true">
         <div class="spis-login-cloud spis-login-cloud-slow">
@@ -6200,6 +6207,7 @@
   <script>
     (function () {
       var gate = document.getElementById("googleLoginGate");
+      var loadingGate = document.getElementById("spisAuthLoading");
       var button = document.getElementById("googleLoginButton");
       var errorEl = document.getElementById("googleLoginError");
       var config = window.SUPABASE_CONFIG || {};
@@ -6209,14 +6217,46 @@
         ? window.supabase.createClient(authUrl, authAnonKey, { auth: { flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
         : null;
       var accessCheckId = 0;
+      var pendingAccessToken = "";
+      var pendingAccessPromise = null;
 
       window.SUPABASE_AUTH_CLIENT = authClient;
       function isGoogleSession(session) {
         return Boolean(session && session.user && (session.user.app_metadata?.provider === "google" || (session.user.identities || []).some(function (identity) { return identity.provider === "google"; })));
       }
-      async function applySession(session) {
-        var thisAccessCheckId = ++accessCheckId;
+      function applySession(session, forceRefresh) {
         session = isGoogleSession(session) ? session : null;
+        var accessToken = session && session.access_token || "";
+        if (accessToken && accessToken === pendingAccessToken && pendingAccessPromise) {
+          return pendingAccessPromise;
+        }
+        if (!forceRefresh && accessToken && window.SUPABASE_AUTH_SESSION &&
+            window.SUPABASE_AUTH_SESSION.access_token === accessToken &&
+            (window.SUPABASE_APP_ROLE === "admin" || window.SUPABASE_APP_ROLE === "user")) {
+          return Promise.resolve(session);
+        }
+
+        var thisAccessCheckId = ++accessCheckId;
+        var checkPromise = applySessionState(session, thisAccessCheckId);
+        if (accessToken) {
+          pendingAccessToken = accessToken;
+          pendingAccessPromise = checkPromise;
+          checkPromise.then(function () {
+            if (pendingAccessPromise === checkPromise) {
+              pendingAccessToken = "";
+              pendingAccessPromise = null;
+            }
+          }, function () {
+            if (pendingAccessPromise === checkPromise) {
+              pendingAccessToken = "";
+              pendingAccessPromise = null;
+            }
+          });
+        }
+        return checkPromise;
+      }
+
+      async function applySessionState(session, thisAccessCheckId) {
         window.SUPABASE_AUTH_SESSION = session || null;
         window.SUPABASE_APP_ROLE = null;
         var appShell = document.querySelector(".app-shell");
@@ -6291,6 +6331,9 @@
         var accessMessage = document.getElementById("spisAccessDeniedMessage");
         var roleBadge = document.getElementById("googleAccountRole");
         if (!session) {
+          pendingAccessToken = "";
+          pendingAccessPromise = null;
+          if (loadingGate) loadingGate.classList.add("hidden");
           if (gate) gate.classList.remove("hidden");
           if (accessGate) accessGate.classList.add("hidden");
           if (roleBadge) { roleBadge.classList.add("hidden"); roleBadge.textContent = ""; }
@@ -6298,6 +6341,8 @@
         }
 
         if (accessEmail) accessEmail.textContent = user.email || "";
+        if (gate) gate.classList.add("hidden");
+        if (accessGate) accessGate.classList.add("hidden");
         var role = null;
         var roleCheckFailed = false;
         try {
@@ -6335,11 +6380,12 @@
         if (hasAccess && typeof window.applySpisRolePermissions === "function") {
           window.applySpisRolePermissions();
         }
+        if (loadingGate) loadingGate.classList.add("hidden");
         return hasAccess ? session : null;
       }
 
       window.refreshSpisAccessRole = async function () {
-        return await applySession(window.SUPABASE_AUTH_SESSION);
+        return await applySession(window.SUPABASE_AUTH_SESSION, true);
       };
 
       window.SUPABASE_AUTH_READY = authClient
@@ -6357,13 +6403,17 @@
           })
         : Promise.resolve(null).then(function () {
             if (errorEl) errorEl.textContent = "Google sign-in could not load. Check your connection and Supabase configuration.";
+            if (loadingGate) loadingGate.classList.add("hidden");
+            if (gate) gate.classList.remove("hidden");
             return null;
           });
 
       if (authClient) {
-        authClient.auth.onAuthStateChange(function (_event, session) {
-          applySession(session);
-          if (session && window.supabaseHeaders) window.supabaseHeaders.Authorization = "Bearer " + session.access_token;
+        window.SUPABASE_AUTH_READY.then(function () {
+          authClient.auth.onAuthStateChange(function (_event, session) {
+            applySession(session);
+            if (session && window.supabaseHeaders) window.supabaseHeaders.Authorization = "Bearer " + session.access_token;
+          });
         });
       }
 
