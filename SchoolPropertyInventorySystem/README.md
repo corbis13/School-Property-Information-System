@@ -59,7 +59,15 @@ The setup script drops `school_teacher.photo_url` and removes all `personnel-pho
 
 ### Google sign-in
 
-The app uses Google-only sign-in with no separate registration page or role selector. The designated Admin account has full access and can manage roles. New Google accounts are automatically assigned the User role, which can open Dashboard and Personnel, edit only the unique personnel profile matching their signed-in email, and cannot add personnel profiles or ICS slips. Other personnel profiles remain view-only. A missing or duplicate email match leaves the profile read-only until the school record is corrected. The profile's email is read-only for Users, so they cannot change it to claim another record. Supabase RLS enforces the matching-row update restriction.
+The app uses Google-only sign-in with no separate registration page or role selector. The designated Admin account has full access and can manage roles. New Google accounts are automatically assigned the User role, which can open Dashboard and Personnel, edit only the unique personnel profile matching their signed-in email, and cannot add personnel profiles or ICS slips. Other personnel profiles remain view-only. A User with no unique matching personnel email is blocked from the dashboard until the email is corrected. The mismatch flow requires the Employee ID and a one-time code sent to the email currently stored on that personnel record; the corrected address must match the verified sign-in email. Changing the sign-in email uses Supabase's normal email-change confirmation. SPIS RLS continues to prevent Users from updating arbitrary personnel rows.
+
+To enable secure self-service correction of mismatched personnel emails:
+
+1. From the repository root, run `supabase login`, link the Supabase project with `supabase link --project-ref <project-ref>`, then deploy with `supabase functions deploy repair-personnel-email`. JWT verification is enabled in `supabase/config.toml`. The function uses Supabase's `SUPABASE_SERVICE_ROLE_KEY` only on the server to update the verified row; never place that key in browser code or commit it.
+2. In Supabase Authentication, enable the Email provider, configure SMTP delivery and an email OTP template that displays `{{ .Token }}`, and configure email-change confirmation. Ensure the SPIS app URL is in the allowed redirect URLs.
+3. The correction flow intentionally uses `shouldCreateUser: false`. The email receiving the OTP must already exist as a Supabase Auth user; otherwise an Admin must correct the personnel email. This avoids creating extra Auth accounts or automatically granting extra User roles just to verify an address.
+
+The function verifies the signed-in Google session, the OTP-verified mailbox, the Employee ID, the stored email, and duplicate target emails before updating `school_teacher.email`. No additional SQL migration is required.
 
 To bootstrap the first Admin account:
 

@@ -188,6 +188,29 @@
     </section>
   </div>
 
+  <div id="spisEmailMismatchModal" class="spis-login-layer hidden" role="dialog" aria-modal="true" aria-labelledby="spisEmailMismatchTitle">
+    <section class="spis-email-mismatch-card">
+      <p class="eyebrow">Personnel email verification</p>
+      <h1 id="spisEmailMismatchTitle">Confirm your personnel record</h1>
+      <p>Your Google email does not match a personnel record. Enter your Employee ID, then compare and correct the two email addresses. SPIS will send a one-time code to the email currently stored on that personnel record.</p>
+      <label for="spisMismatchEmployeeId">Employee ID</label>
+      <input id="spisMismatchEmployeeId" type="text" autocomplete="off" inputmode="text">
+      <p class="spis-email-current">Current database email: <strong id="spisMismatchStoredEmail">Not loaded</strong></p>
+      <label for="spisMismatchDatabaseEmail">Personnel email (editable)</label>
+      <input id="spisMismatchDatabaseEmail" type="email" autocomplete="email">
+      <label for="spisMismatchLoginEmail">Sign-in email (editable)</label>
+      <input id="spisMismatchLoginEmail" type="email" autocomplete="email">
+      <p id="spisMismatchMessage" class="spis-email-mismatch-message" role="status" aria-live="polite"></p>
+      <button id="spisMismatchSendCode" type="button" class="spis-email-mismatch-primary">Send verification code</button>
+      <div id="spisMismatchOtpPanel" class="hidden">
+        <label for="spisMismatchOtp">Verification code</label>
+        <input id="spisMismatchOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10">
+        <button id="spisMismatchVerify" type="button" class="spis-email-mismatch-primary">Verify and correct email</button>
+      </div>
+      <button id="spisMismatchSignOut" type="button" class="spis-email-mismatch-secondary">Sign out</button>
+    </section>
+  </div>
+
   <!-- Main Container -->
   <div class="app-shell flex flex-1 min-h-screen overflow-hidden" inert aria-hidden="true">
     
@@ -6219,10 +6242,174 @@
       var accessCheckId = 0;
       var pendingAccessToken = "";
       var pendingAccessPromise = null;
+      var mismatchPersonnelRecord = null;
+      var mismatchProofClient = null;
+      var mismatchAuthSession = null;
 
       window.SUPABASE_AUTH_CLIENT = authClient;
       function isGoogleSession(session) {
         return Boolean(session && session.user && (session.user.app_metadata?.provider === "google" || (session.user.identities || []).some(function (identity) { return identity.provider === "google"; })));
+      }
+      function normalizeEmail(email) {
+        return String(email || "").trim().toLowerCase();
+      }
+      function setMismatchMessage(message, isError) {
+        var element = document.getElementById("spisMismatchMessage");
+        if (!element) return;
+        element.textContent = message || "";
+        element.dataset.error = isError ? "true" : "false";
+      }
+      function setMismatchBusy(isBusy) {
+        ["spisMismatchSendCode", "spisMismatchVerify"].forEach(function (id) {
+          var buttonEl = document.getElementById(id);
+          if (buttonEl) buttonEl.disabled = Boolean(isBusy);
+        });
+      }
+      function normalizedPersonName(person) {
+        return String(person.teacher_name || [person.first_name, person.middle_name, person.last_name].filter(Boolean).join(" ") || "")
+          .trim().toLowerCase().replace(/\s+/g, " ");
+      }
+      function openEmailMismatchModal(session, personnelRows) {
+        var modal = document.getElementById("spisEmailMismatchModal");
+        if (!modal) return;
+        mismatchAuthSession = session;
+        mismatchPersonnelRecord = null;
+        mismatchProofClient = null;
+        var employeeInput = document.getElementById("spisMismatchEmployeeId");
+        var databaseEmailInput = document.getElementById("spisMismatchDatabaseEmail");
+        var loginEmailInput = document.getElementById("spisMismatchLoginEmail");
+        var storedEmailLabel = document.getElementById("spisMismatchStoredEmail");
+        var otpPanel = document.getElementById("spisMismatchOtpPanel");
+        if (employeeInput) employeeInput.value = "";
+        if (databaseEmailInput) databaseEmailInput.value = "";
+        if (loginEmailInput) loginEmailInput.value = session.user.email || "";
+        if (storedEmailLabel) storedEmailLabel.textContent = "Not loaded";
+        if (otpPanel) otpPanel.classList.add("hidden");
+        var likelyName = String(session.user.user_metadata && (session.user.user_metadata.full_name || session.user.user_metadata.name) || "")
+          .trim().toLowerCase().replace(/\s+/g, " ");
+        var candidates = likelyName ? personnelRows.filter(function (person) {
+          return normalizedPersonName(person) === likelyName;
+        }) : [];
+        if (candidates.length === 1) {
+          if (employeeInput) employeeInput.value = candidates[0].employee_id || "";
+          loadMismatchPersonnelRecord(candidates[0]);
+          setMismatchMessage("A possible record was found by name. Confirm the Employee ID before continuing.", false);
+        } else {
+          setMismatchMessage("Enter your Employee ID to load the email currently stored on your personnel record.", false);
+        }
+        modal.classList.remove("hidden");
+      }
+      function loadMismatchPersonnelRecord(record) {
+        mismatchPersonnelRecord = record;
+        var databaseEmailInput = document.getElementById("spisMismatchDatabaseEmail");
+        var storedEmailLabel = document.getElementById("spisMismatchStoredEmail");
+        var otpPanel = document.getElementById("spisMismatchOtpPanel");
+        var otpInput = document.getElementById("spisMismatchOtp");
+        if (databaseEmailInput) databaseEmailInput.value = record.email || "";
+        if (storedEmailLabel) storedEmailLabel.textContent = record.email || "No email stored";
+        if (otpPanel) otpPanel.classList.add("hidden");
+        if (otpInput) otpInput.value = "";
+        mismatchProofClient = null;
+      }
+      async function findMismatchPersonnelRecord() {
+        var employeeInput = document.getElementById("spisMismatchEmployeeId");
+        var employeeId = String(employeeInput && employeeInput.value || "").trim();
+        if (!employeeId) throw new Error("Enter your Employee ID.");
+        var response = await fetch(authUrl + "/rest/v1/school_teacher?select=id,employee_id,email,teacher_name,first_name,middle_name,last_name&employee_id=eq." + encodeURIComponent(employeeId) + "&limit=2", {
+          headers: { apikey: authAnonKey, Authorization: "Bearer " + mismatchAuthSession.access_token }
+        });
+        if (!response.ok) throw new Error("Could not look up that Employee ID. Please try again or ask an administrator for help.");
+        var rows = await response.json();
+        if (!Array.isArray(rows) || rows.length !== 1) throw new Error(rows && rows.length > 1 ? "That Employee ID is not unique. Ask an administrator to correct the personnel records." : "No personnel record was found for that Employee ID.");
+        loadMismatchPersonnelRecord(rows[0]);
+        return rows[0];
+      }
+      function validEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+      }
+      async function requestMismatchEmailCode() {
+        var enteredEmployeeId = String(document.getElementById("spisMismatchEmployeeId").value || "").trim();
+        var record = mismatchPersonnelRecord && String(mismatchPersonnelRecord.employee_id || "").trim() === enteredEmployeeId
+          ? mismatchPersonnelRecord
+          : await findMismatchPersonnelRecord();
+        if (!record.email || !validEmail(record.email)) throw new Error("The selected personnel record has no valid email address. Ask an administrator to update it.");
+        var databaseEmail = String(document.getElementById("spisMismatchDatabaseEmail").value || "").trim();
+        var loginEmail = String(document.getElementById("spisMismatchLoginEmail").value || "").trim();
+        if (!validEmail(databaseEmail) || !validEmail(loginEmail)) throw new Error("Enter valid email addresses in both fields.");
+        if (normalizeEmail(databaseEmail) !== normalizeEmail(loginEmail)) throw new Error("The two corrected email addresses must match before continuing.");
+        if (normalizeEmail(loginEmail) !== normalizeEmail(mismatchAuthSession.user.email)) {
+          var changeResult = await authClient.auth.updateUser(
+            { email: loginEmail },
+            { emailRedirectTo: window.location.href.split("#")[0] }
+          );
+          if (changeResult.error) throw changeResult.error;
+          setMismatchMessage("A confirmation email was sent to verify the new sign-in address. Confirm it, sign in again, and then complete personnel email verification.", false);
+          return;
+        }
+        mismatchProofClient = window.supabase.createClient(authUrl, authAnonKey, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+        var result = await mismatchProofClient.auth.signInWithOtp({
+          email: record.email,
+          options: { shouldCreateUser: false }
+        });
+        if (result.error) {
+          throw new Error((result.error.message || "Supabase could not send the verification code.") +
+            " If this email has no existing Supabase Auth account, an Admin must correct the personnel record.");
+        }
+        document.getElementById("spisMismatchOtpPanel").classList.remove("hidden");
+        setMismatchMessage("A verification code was sent to the current database email shown above. Enter that code to authorize the correction.", false);
+      }
+      async function verifyAndCorrectMismatchEmail() {
+        var enteredEmployeeId = String(document.getElementById("spisMismatchEmployeeId").value || "").trim();
+        var record = mismatchPersonnelRecord && String(mismatchPersonnelRecord.employee_id || "").trim() === enteredEmployeeId
+          ? mismatchPersonnelRecord
+          : await findMismatchPersonnelRecord();
+        if (!mismatchProofClient) throw new Error("Request a verification code first.");
+        var databaseEmail = String(document.getElementById("spisMismatchDatabaseEmail").value || "").trim();
+        var loginEmail = String(document.getElementById("spisMismatchLoginEmail").value || "").trim();
+        var otp = String(document.getElementById("spisMismatchOtp").value || "").trim();
+        if (!validEmail(databaseEmail) || !validEmail(loginEmail) || normalizeEmail(databaseEmail) !== normalizeEmail(loginEmail)) {
+          throw new Error("The two corrected email addresses must be valid and match.");
+        }
+        if (normalizeEmail(loginEmail) !== normalizeEmail(mismatchAuthSession.user.email)) {
+          throw new Error("The sign-in email has not been verified yet. Use Send verification code to start its confirmation process, then sign in again.");
+        }
+        if (!otp) throw new Error("Enter the verification code sent to the current database email.");
+        var verifyResult = await mismatchProofClient.auth.verifyOtp({
+          email: record.email,
+          token: otp,
+          type: "email"
+        });
+        if (verifyResult.error) throw verifyResult.error;
+        var proofSession = verifyResult.data && verifyResult.data.session;
+        if (!proofSession || !proofSession.access_token) throw new Error("The email code could not be verified. Request a new code and try again.");
+        var edgeResponse = await fetch(authUrl + "/functions/v1/repair-personnel-email", {
+          method: "POST",
+          headers: {
+            apikey: authAnonKey,
+            Authorization: "Bearer " + mismatchAuthSession.access_token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            employeeId: String(record.employee_id || "").trim(),
+            storedEmail: record.email,
+            targetEmail: databaseEmail,
+            proofAccessToken: proofSession.access_token
+          })
+        });
+        var resultText = await edgeResponse.text();
+        var result = {};
+        if (resultText) {
+          try {
+            result = JSON.parse(resultText);
+          } catch (error) {
+            throw new Error("Email correction service returned an invalid response.");
+          }
+        }
+        if (!edgeResponse.ok) throw new Error(result.error || "SPIS could not update the personnel email.");
+        setMismatchMessage("Email corrected. Loading your dashboard…", false);
+        window.setTimeout(function () { window.location.reload(); }, 900);
       }
       function applySession(session, forceRefresh) {
         session = isGoogleSession(session) ? session : null;
@@ -6230,10 +6417,8 @@
         if (accessToken && accessToken === pendingAccessToken && pendingAccessPromise) {
           return pendingAccessPromise;
         }
-        if (!forceRefresh && accessToken && window.SUPABASE_AUTH_SESSION &&
-            window.SUPABASE_AUTH_SESSION.access_token === accessToken &&
-            (window.SUPABASE_APP_ROLE === "admin" || window.SUPABASE_APP_ROLE === "user")) {
-          return Promise.resolve(session);
+        if (!forceRefresh && accessToken && window.SUPABASE_AUTH_CHECKED_TOKEN === accessToken) {
+          return Promise.resolve(window.SUPABASE_AUTH_ACCESS_GRANTED ? session : null);
         }
 
         var thisAccessCheckId = ++accessCheckId;
@@ -6259,6 +6444,7 @@
       async function applySessionState(session, thisAccessCheckId) {
         window.SUPABASE_AUTH_SESSION = session || null;
         window.SUPABASE_APP_ROLE = null;
+        window.SUPABASE_AUTH_ACCESS_GRANTED = false;
         var appShell = document.querySelector(".app-shell");
         if (appShell) {
           appShell.inert = true;
@@ -6333,9 +6519,12 @@
         if (!session) {
           pendingAccessToken = "";
           pendingAccessPromise = null;
+          window.SUPABASE_AUTH_CHECKED_TOKEN = "";
           if (loadingGate) loadingGate.classList.add("hidden");
           if (gate) gate.classList.remove("hidden");
           if (accessGate) accessGate.classList.add("hidden");
+          var mismatchModal = document.getElementById("spisEmailMismatchModal");
+          if (mismatchModal) mismatchModal.classList.add("hidden");
           if (roleBadge) { roleBadge.classList.add("hidden"); roleBadge.textContent = ""; }
           return null;
         }
@@ -6345,6 +6534,8 @@
         if (accessGate) accessGate.classList.add("hidden");
         var role = null;
         var roleCheckFailed = false;
+        var personnelCheckFailed = false;
+        var personnelRows = [];
         try {
           var roleResponse = await fetch(authUrl + "/rest/v1/spis_user_roles?select=role&user_id=eq." + encodeURIComponent(user.id) + "&limit=1", {
             headers: { apikey: authAnonKey, Authorization: "Bearer " + session.access_token }
@@ -6353,20 +6544,55 @@
           var roleRows = await roleResponse.json();
           role = Array.isArray(roleRows) && roleRows[0] ? roleRows[0].role : null;
           if (role !== "admin" && role !== "user") role = null;
+          if (role === "user") {
+            var personnelResponse = await fetch(authUrl + "/rest/v1/school_teacher?select=id,employee_id,email,teacher_name,first_name,middle_name,last_name&limit=1000", {
+              headers: { apikey: authAnonKey, Authorization: "Bearer " + session.access_token }
+            });
+            if (!personnelResponse.ok) throw new Error("Could not verify the personnel email match.");
+            personnelRows = await personnelResponse.json();
+            if (!Array.isArray(personnelRows)) throw new Error("Invalid personnel response while verifying email.");
+          }
         } catch (error) {
           console.error("SPIS role verification failed:", error);
-          roleCheckFailed = true;
+          if (role === "user") personnelCheckFailed = true;
+          else roleCheckFailed = true;
         }
 
         if (thisAccessCheckId !== accessCheckId || window.SUPABASE_AUTH_SESSION !== session) return null;
 
         window.SUPABASE_APP_ROLE = role;
-        var hasAccess = Boolean(role);
+        var emailMatches = role === "user" ? personnelRows.filter(function (person) {
+          return normalizeEmail(person.email) === normalizeEmail(user.email);
+        }) : [];
+        if (role === "user" && !personnelCheckFailed && emailMatches.length !== 1) {
+          if (gate) gate.classList.add("hidden");
+          if (accessGate) accessGate.classList.toggle("hidden", emailMatches.length === 0);
+          if (accessMessage && emailMatches.length > 1) {
+            accessMessage.textContent = "More than one personnel record uses this email. Ask an administrator to resolve the duplicate email before signing in.";
+          }
+          if (appShell) {
+            appShell.inert = true;
+            appShell.setAttribute("aria-hidden", "true");
+          }
+          if (roleBadge) {
+            roleBadge.textContent = "User";
+            roleBadge.classList.remove("hidden");
+          }
+          if (emailMatches.length === 0) openEmailMismatchModal(session, personnelRows);
+          if (loadingGate) loadingGate.classList.add("hidden");
+          window.SUPABASE_AUTH_CHECKED_TOKEN = session.access_token;
+          return null;
+        }
+        var mismatchModal = document.getElementById("spisEmailMismatchModal");
+        if (mismatchModal) mismatchModal.classList.add("hidden");
+        var hasAccess = Boolean(role) && !roleCheckFailed && !personnelCheckFailed;
         if (gate) gate.classList.add("hidden");
         if (accessGate) accessGate.classList.toggle("hidden", hasAccess);
         if (accessMessage) {
           accessMessage.textContent = roleCheckFailed
             ? "SPIS could not verify this account's role. Ask the administrator to check the role setup, then try again."
+            : personnelCheckFailed
+              ? "SPIS could not verify your personnel email. Check your connection or ask an administrator for help."
             : "This Google account does not have an Admin or User role in SPIS. Ask the system administrator to assign access, then sign in again.";
         }
         if (roleBadge) {
@@ -6380,6 +6606,8 @@
         if (hasAccess && typeof window.applySpisRolePermissions === "function") {
           window.applySpisRolePermissions();
         }
+        window.SUPABASE_AUTH_ACCESS_GRANTED = hasAccess;
+        window.SUPABASE_AUTH_CHECKED_TOKEN = session.access_token;
         if (loadingGate) loadingGate.classList.add("hidden");
         return hasAccess ? session : null;
       }
@@ -6407,6 +6635,54 @@
             if (gate) gate.classList.remove("hidden");
             return null;
           });
+
+      var mismatchEmployeeInput = document.getElementById("spisMismatchEmployeeId");
+      if (mismatchEmployeeInput) mismatchEmployeeInput.addEventListener("change", async function () {
+        try {
+          await findMismatchPersonnelRecord();
+          setMismatchMessage("Personnel record loaded. Verify that the current database email is yours before requesting a code.", false);
+        } catch (error) {
+          mismatchPersonnelRecord = null;
+          var storedEmailLabel = document.getElementById("spisMismatchStoredEmail");
+          if (storedEmailLabel) storedEmailLabel.textContent = "Not loaded";
+          setMismatchMessage(error.message || "Could not load this personnel record.", true);
+        }
+      });
+      var mismatchSendCodeButton = document.getElementById("spisMismatchSendCode");
+      if (mismatchSendCodeButton) mismatchSendCodeButton.addEventListener("click", async function () {
+        setMismatchBusy(true);
+        try {
+          await requestMismatchEmailCode();
+        } catch (error) {
+          setMismatchMessage(error.message || "Could not send the verification code.", true);
+        } finally {
+          setMismatchBusy(false);
+        }
+      });
+      var mismatchVerifyButton = document.getElementById("spisMismatchVerify");
+      if (mismatchVerifyButton) mismatchVerifyButton.addEventListener("click", async function () {
+        setMismatchBusy(true);
+        try {
+          await verifyAndCorrectMismatchEmail();
+        } catch (error) {
+          setMismatchMessage(error.message || "Could not verify the code or correct the email.", true);
+        } finally {
+          setMismatchBusy(false);
+        }
+      });
+      var mismatchSignOutButton = document.getElementById("spisMismatchSignOut");
+      if (mismatchSignOutButton) mismatchSignOutButton.addEventListener("click", async function () {
+        if (!authClient) return;
+        mismatchSignOutButton.disabled = true;
+        try {
+          var result = await authClient.auth.signOut();
+          if (result.error) throw result.error;
+          applySession(null);
+        } catch (error) {
+          setMismatchMessage(error.message || "Sign out failed.", true);
+          mismatchSignOutButton.disabled = false;
+        }
+      });
 
       if (authClient) {
         window.SUPABASE_AUTH_READY.then(function () {

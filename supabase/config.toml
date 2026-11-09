@@ -1,0 +1,4 @@
+project_id = "school-property-information-system"
+
+[functions.repair-personnel-email]
+verify_jwt = true
