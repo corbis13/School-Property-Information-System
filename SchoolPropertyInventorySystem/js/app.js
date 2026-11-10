@@ -6015,24 +6015,54 @@ async function drawCurrentSchoolLogoOnQr(ctx, qrLeft, qrTop, qrSize) {
     ctx.drawImage(logoImage, centerX - imageSize / 2, centerY - imageSize / 2, imageSize, imageSize);
 }
 
-function drawQrInventoryNumber(ctx, item, canvasWidth, captionTop, captionHeight) {
-    const semiExpandableNo = String(item.semiExpandableNo || item.semi_expandable_no || "").trim();
-    const propertyNo = String(item.propertyNo || item.property_no || "").trim();
-    const number = semiExpandableNo && semiExpandableNo !== "-" ? semiExpandableNo : propertyNo;
-    if (!number || number === "-") return;
-    const caption = number;
-    const maxWidth = canvasWidth - 32;
-    let fontSize = 34;
+function getQrDescriptionLayout(item, maxWidth) {
+    const description = String(
+        item.itemBrandModel || item.item_brand_model ||
+        item.itemDescription || item.item_description ||
+        item.description || item.desc || "Inventory item"
+    ).trim() || "Inventory item";
+    const measureCanvas = document.createElement("canvas");
+    const measureCtx = measureCanvas.getContext("2d");
+    const fontSize = 34;
+    const lineHeight = 42;
+    measureCtx.font = `700 ${fontSize}px Arial, sans-serif`;
 
+    const lines = [];
+    let currentLine = "";
+    description.split(/\s+/).forEach((word) => {
+        const candidate = currentLine ? `${currentLine} ${word}` : word;
+        if (measureCtx.measureText(candidate).width <= maxWidth) {
+            currentLine = candidate;
+            return;
+        }
+        if (currentLine) lines.push(currentLine);
+        currentLine = "";
+
+        let remaining = word;
+        while (measureCtx.measureText(remaining).width > maxWidth) {
+            let splitAt = remaining.length;
+            while (splitAt > 1 && measureCtx.measureText(remaining.slice(0, splitAt)).width > maxWidth) {
+                splitAt -= 1;
+            }
+            lines.push(remaining.slice(0, splitAt));
+            remaining = remaining.slice(splitAt);
+        }
+        currentLine = remaining;
+    });
+    if (currentLine) lines.push(currentLine);
+
+    return { lines, fontSize, lineHeight, height: Math.max(76, lines.length * lineHeight + 20) };
+}
+
+function drawQrDescription(ctx, layout, canvasWidth, captionTop) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#00335e";
-    ctx.font = `700 ${fontSize}px Arial, sans-serif`;
-    while (fontSize > 18 && ctx.measureText(caption).width > maxWidth) {
-        fontSize -= 1;
-        ctx.font = `700 ${fontSize}px Arial, sans-serif`;
-    }
-    ctx.fillText(caption, canvasWidth / 2, captionTop + captionHeight / 2, maxWidth);
+    ctx.font = `700 ${layout.fontSize}px Arial, sans-serif`;
+    const firstLineY = captionTop + layout.height / 2 - ((layout.lines.length - 1) * layout.lineHeight) / 2;
+    layout.lines.forEach((line, index) => {
+        ctx.fillText(line, canvasWidth / 2, firstLineY + index * layout.lineHeight);
+    });
 }
 async function downloadQr() {
     let item = items.find((entry) => entry.assetId === selectedId);
@@ -6069,9 +6099,9 @@ async function downloadQr() {
         // Add standard white quiet zone (margin) around the QR code
         const qrSize = qrCanvas.width || 520;
         const padding = Math.max(36, Math.round(qrSize * 0.08));
-        const captionHeight = 76;
         const outWidth = qrSize + padding * 2;
-        const outHeight = qrSize + padding * 2 + captionHeight;
+        const descriptionLayout = getQrDescriptionLayout(item, outWidth - 32);
+        const outHeight = qrSize + padding * 2 + descriptionLayout.height;
 
         const out = document.createElement("canvas");
         out.width = outWidth;
@@ -6085,7 +6115,7 @@ async function downloadQr() {
         // Draw centered QR Code
         ctx.drawImage(qrCanvas, padding, padding, qrSize, qrSize);
         await drawCurrentSchoolLogoOnQr(ctx, padding, padding, qrSize);
-        drawQrInventoryNumber(ctx, item, outWidth, padding + qrSize + padding, captionHeight);
+        drawQrDescription(ctx, descriptionLayout, outWidth, padding + qrSize + padding);
 
         // Use only the inventory number to keep downloaded filenames short.
         const inventoryNumber = String(item.propertyNo || "").trim()

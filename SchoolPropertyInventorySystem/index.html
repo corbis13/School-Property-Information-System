@@ -6718,7 +6718,7 @@
         try {
           var result = await authClient.auth.signInWithOAuth({
             provider: "google",
-            options: { redirectTo: window.location.href.split("#")[0], scopes: "openid email profile", queryParams: { prompt: "select_account" } }
+            options: { redirectTo: window.location.href.split("#")[0], queryParams: { prompt: "select_account" } }
           });
           if (result.error) throw result.error;
         } catch (error) {
