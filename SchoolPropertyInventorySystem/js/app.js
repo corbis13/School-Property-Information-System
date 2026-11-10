@@ -4789,6 +4789,11 @@ function hasIssuedInventoryCustodianSlip(item) {
 function renderTable() {
     const filteredItems = getFilteredItems();
     const totalPages = Math.max(1, Math.ceil(filteredItems.length / inventoryRowsPerPage));
+    const duplicateInventoryItems = new Set();
+    findDuplicateNumberGroups(items, (item) => [
+        item.semiExpandableNo || item.semi_expandable_no,
+        item.propertyNo || item.property_no
+    ]).forEach((group) => group.records.forEach((item) => duplicateInventoryItems.add(item)));
 
     if (inventoryPage > totalPages) {
         inventoryPage = totalPages;
@@ -4810,6 +4815,10 @@ function renderTable() {
 
         const row = document.createElement("tr");
         row.setAttribute("data-asset-id", item.assetId);
+        if (duplicateInventoryItems.has(item)) {
+            row.classList.add("duplicate-number-row");
+            row.title = "Duplicate Inventory Item No.";
+        }
         if (isRecentlyUpdated) {
             row.classList.add("bg-emerald-50/80", "transition-colors", "duration-500");
         }
@@ -8776,6 +8785,10 @@ function renderInventoryCustodianSlipTable() {
     if (!table) return;
 
     inventoryCustodianSlips = dedupeInventoryCustodianSlips(inventoryCustodianSlips);
+    const duplicateIcsSlips = new Set();
+    findDuplicateNumberGroups(inventoryCustodianSlips, (slip) => [
+        slip.inventoryItemNo || slip.inventory_item_no
+    ]).forEach((group) => group.records.forEach((slip) => duplicateIcsSlips.add(slip)));
 
     const query = (dom.icsSlipSearchInput ? dom.icsSlipSearchInput.value : "").trim().toLowerCase();
 
@@ -8818,9 +8831,10 @@ function renderInventoryCustodianSlipTable() {
     table.innerHTML = visibleGroups.length
         ? visibleGroups.map((group) => {
             const isCollapsed = group.slips.length > 1 && collapsedIcsSlipGroups.has(group.key);
+            const groupHasDuplicate = group.slips.some((slip) => duplicateIcsSlips.has(slip));
             const visibleItems = isCollapsed ? [group.slips[0]] : group.slips;
             return visibleItems.map((slip, index) => `
-            <tr>
+            <tr${duplicateIcsSlips.has(slip) || (isCollapsed && groupHasDuplicate) ? ' class="duplicate-number-row" title="This ICS group contains a duplicate Inventory Item No."' : ""}>
                 ${index === 0 ? `<td class="ics-group-toggle-cell" rowspan="${visibleItems.length}">${group.slips.length > 1 ? `<button type="button" class="ics-group-toggle" data-ics-group-toggle="${escapeHtml(group.key)}" aria-expanded="${!isCollapsed}" aria-label="${isCollapsed ? "Expand" : "Collapse"} items for ICS No. ${escapeHtml(group.icsNo)}">${isCollapsed ? "+" : "-"}</button>` : ""}</td><td class="ics-slip-number-group" rowspan="${visibleItems.length}">${escapeHtml(group.icsNo || "-")}</td>` : ""}
                 <td>${escapeHtml(slip.description)}</td>
                 <td>${escapeHtml(slip.inventoryItemNo || "-")}</td>

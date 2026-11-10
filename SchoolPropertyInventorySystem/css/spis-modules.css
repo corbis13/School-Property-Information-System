@@ -1595,6 +1595,11 @@ table:not(.physical-report-table) tbody tr:hover {
   background-color: #f8fafc;
 }
 
+table:not(.physical-report-table) tbody tr.duplicate-number-row td,
+table:not(.physical-report-table) tbody tr.duplicate-number-row:hover td {
+  background-color: #fee2e2;
+}
+
 /* Empty State */
 .empty-state {
   text-align: center;
