@@ -35,12 +35,18 @@ The **School Property Information System (SPIS)** is designed to help schools or
 
 | Module | Purpose |
 |---|---|
-| **Dashboard** | View summarized property and inventory information |
-| **Inventory** | Register, organize, and maintain school property records |
-| **Documents** | Access property-related forms and documents |
-| **QR Code** | Support property identification through QR codes |
+| **Dashboard** | View property summaries, recent activity, and system alerts |
+| **Inventory** | Register, organize, and maintain school property records; alerts flag duplicate SEP/PPE numbers |
+| **Documents** | Manage property documents, including Inventory Custodian Slips (ICS); alerts flag duplicate Inventory Item Nos. |
+| **QR Code** | Generate and download property QR codes with the item description shown beneath the code |
 | **Personnel** | Maintain personnel records related to property accountability |
-| **Reports** | Generate property and inventory reports |
+| **Reports** | Generate property and inventory reports, including acquisition- and issuance-year breakdowns |
+
+### Activity and notifications
+
+- **Recent Activity** shows inventory, QR download, and saved document events. Select **View All** in the dashboard card to open the full, read-only activity list in a new tab; records are sorted newest first.
+- The notification bell identifies duplicate SEP/PPE numbers in Inventory and duplicate Inventory Item Nos. in ICS records. Selecting either alert opens and highlights the corresponding record card.
+- Notification alerts also cover missing property numbers, unassigned custodians, and asset status concerns. Alerts can be reviewed and ignored from **View all**.
 
 ## Technology Stack
 
@@ -110,12 +116,13 @@ Database setup resources are located in the application directory. Review the SQ
 │   ├── images/              # Logo and application images
 │   ├── css/                 # Stylesheets
 │   ├── js/                  # Frontend scripts
-│   ├── reports/              # Report pages and resources
-│   ├── index.html            # Application entry page
-│   ├── homepage.html          # Dashboard / homepage
-│   ├── server.js              # Node.js server
-│   └── supabase-setup.sql    # Database setup script
-├── .env.example
+│   ├── reports/             # Printable report templates
+│   ├── index.html           # Application entry and dashboard
+│   ├── homepage.html         # Mirrored dashboard entry
+│   ├── recent-activity.html # Read-only activity history
+│   ├── *-year-report.html   # Acquisition and issuance year reports
+│   └── supabase-setup.sql   # Database setup script
+├── server.js
 ├── package.json
 ├── README.md
 └── LICENSE

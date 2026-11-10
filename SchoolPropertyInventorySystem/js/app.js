@@ -5359,6 +5359,31 @@ function closeSystemAlertsModal() {
 window.openSystemAlertsModal = openSystemAlertsModal;
 window.closeSystemAlertsModal = closeSystemAlertsModal;
 
+function findDuplicateNumberGroups(records, getValues) {
+    const groups = new Map();
+    records.forEach((record) => {
+        const values = new Map();
+        getValues(record).forEach((rawValue) => {
+            const value = String(rawValue || "").trim();
+            if (!value || ["-", "n/a", "na", "none"].includes(value.toLowerCase())) return;
+            const normalized = value.toLocaleLowerCase();
+            if (!values.has(normalized)) values.set(normalized, value);
+        });
+        values.forEach((value, normalized) => {
+            if (!groups.has(normalized)) groups.set(normalized, { value, records: [] });
+            groups.get(normalized).records.push(record);
+        });
+    });
+    return Array.from(groups.values()).filter((group) => group.records.length > 1);
+}
+
+function describeDuplicateNumberGroups(groups, noun) {
+    const examples = groups.slice(0, 5).map((group) => group.value).join(", ");
+    const more = groups.length > 5 ? `, and ${groups.length - 5} more` : "";
+    const unit = noun === "Inventory Item No." ? `${noun} value` : noun;
+    return `${groups.length} duplicate ${unit}${groups.length === 1 ? "" : "s"} found: ${examples}${more}`;
+}
+
 function updateSystemAlerts() {
     const notifBtn = document.getElementById("notifBellBtn");
     const notifDropdown = document.getElementById("notifDropdown");
@@ -5404,6 +5429,15 @@ function updateSystemAlerts() {
             missingNumberItems.push(item);
         }
     });
+
+    const duplicatePropertyNumbers = findDuplicateNumberGroups(currentItems, (item) => [
+        item.semiExpandableNo || item.semi_expandable_no,
+        item.propertyNo || item.property_no
+    ]);
+    const currentSlips = Array.isArray(inventoryCustodianSlips) ? inventoryCustodianSlips : [];
+    const duplicateIcsInventoryNumbers = findDuplicateNumberGroups(currentSlips, (slip) => [
+        slip.inventoryItemNo || slip.inventory_item_no
+    ]);
 
     const alerts = [];
 
@@ -5472,6 +5506,32 @@ function updateSystemAlerts() {
         });
     }
 
+    if (duplicatePropertyNumbers.length > 0) {
+        alerts.push({
+            id: "duplicatePropertyNumbers",
+            iconBg: "bg-rose-100 text-rose-700",
+            icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+            title: "Duplicate SEP/PPE Numbers",
+            badge: `${duplicatePropertyNumbers.length} Duplicate`,
+            badgeClass: "bg-rose-50 text-rose-700 border border-rose-200",
+            desc: describeDuplicateNumberGroups(duplicatePropertyNumbers, "number"),
+            onClick: "showModule('inventory', 'propertyListPanel'); if(window.closeDropdowns) window.closeDropdowns();"
+        });
+    }
+
+    if (duplicateIcsInventoryNumbers.length > 0) {
+        alerts.push({
+            id: "duplicateIcsInventoryNumbers",
+            iconBg: "bg-rose-100 text-rose-700",
+            icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+            title: "Duplicate ICS Inventory Item Nos.",
+            badge: `${duplicateIcsInventoryNumbers.length} Duplicate`,
+            badgeClass: "bg-rose-50 text-rose-700 border border-rose-200",
+            desc: describeDuplicateNumberGroups(duplicateIcsInventoryNumbers, "Inventory Item No."),
+            onClick: "showModule('document', 'savedDocumentsPanel'); if(window.closeDropdowns) window.closeDropdowns();"
+        });
+    }
+
     // System reminders pointing to particular cards
     alerts.push({
         id: 'audit',
@@ -5501,7 +5561,9 @@ function updateSystemAlerts() {
         unserviceable: unserviceableItems.length,
         repair: repairItems.length,
         unassigned: unassignedItems.length,
-        missingNo: missingNumberItems.length
+        missingNo: missingNumberItems.length,
+        duplicatePropertyNumbers: duplicatePropertyNumbers.length,
+        duplicateIcsInventoryNumbers: duplicateIcsInventoryNumbers.length
     };
     const activeAlerts = alerts.filter((alert) => !ignoredAlertIds.has(alert.id));
     const actionableCount = Object.entries(actionableCountsByAlert).reduce((sum, [id, count]) => {

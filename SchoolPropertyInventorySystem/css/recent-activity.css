@@ -20,12 +20,23 @@
 
 .activity-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   text-align: left;
 }
 
+.activity-table th:first-child,
+.activity-table td:first-child {
+  width: 190px;
+}
+
+.activity-table th:nth-child(2),
+.activity-table td:nth-child(2) {
+  width: 150px;
+}
+
 .activity-table th {
-  padding: 12px 14px;
+  padding: 9px 10px;
   border-bottom: 1px solid #dbe5ed;
   color: #64748b;
   background: #f8fafc;
@@ -35,10 +46,11 @@
 }
 
 .activity-table td {
-  padding: 13px 14px;
+  padding: 8px 10px;
   border-bottom: 1px solid #eef3f7;
   color: #334155;
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .activity-table tbody tr:hover {
@@ -46,12 +58,12 @@
 }
 
 .activity-date {
-  min-width: 185px;
+  width: 190px;
   white-space: nowrap;
 }
 
 .activity-kind {
-  min-width: 150px;
+  width: 150px;
   color: #00335e !important;
   font-weight: 700;
 }
@@ -69,11 +81,17 @@
 @media (max-width: 600px) {
   .activity-table th,
   .activity-table td {
-    padding: 10px 8px;
-    font-size: 12px;
+    padding: 7px 6px;
+    font-size: 11px;
   }
 
-  .activity-date {
-    min-width: 145px;
+  .activity-table th:first-child,
+  .activity-table td:first-child {
+    width: 135px;
+  }
+
+  .activity-table th:nth-child(2),
+  .activity-table td:nth-child(2) {
+    width: 110px;
   }
 }
