@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>All Recent Activity - SPIS</title>
+  <link rel="stylesheet" href="css/accountable-person-report.css">
+  <link rel="stylesheet" href="css/recent-activity.css">
+  <script src="js/recent-activity.js" defer></script>
+</head>
+<body>
+  <main>
+    <div class="top-nav">
+      <a href="index.html" class="back-link">← Back to Dashboard</a>
+      <span class="read-only-label">Read-only</span>
+    </div>
+    <header>
+      <div>
+        <h1>All Recent Activity</h1>
+        <p>Inventory, QR code, and saved document activity, newest first</p>
+      </div>
+      <div id="activityTotal" class="total" aria-live="polite">Loading...</div>
+    </header>
+    <section class="activity-list-wrap" aria-label="Recent activity records">
+      <table class="activity-table">
+        <thead>
+          <tr>
+            <th scope="col">Date and Time</th>
+            <th scope="col">Activity</th>
+            <th scope="col">Record</th>
+          </tr>
+        </thead>
+        <tbody id="activityRows">
+          <tr><td class="activity-message" colspan="3">Loading activity records...</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

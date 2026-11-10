@@ -127,10 +127,20 @@ async function fetchFromSupabase() {
     return null;
   }
 
+  const projectRef = new URL(url).hostname.split(".")[0];
+  const authStorageKey = `sb-${projectRef}-auth-token`;
+  let accessToken = "";
+  try {
+    const session = JSON.parse(localStorage.getItem(authStorageKey) || "null");
+    accessToken = session?.access_token || "";
+  } catch (error) {
+    console.warn("Could not read the Supabase session for acquisition years:", error);
+  }
+
   const response = await fetch(`${url}/rest/v1/assets?select=asset_id,acquisition_date,inventory_type,item_classification,property_no`, {
     headers: {
       apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`
+      Authorization: `Bearer ${accessToken || anonKey}`
     }
   });
 
@@ -144,7 +154,11 @@ async function fetchFromSupabase() {
 async function init() {
   // 1. Check localStorage for cached entries or raw items for instant rendering
   try {
-    const cachedRaw = JSON.parse(localStorage.getItem("spis_inventory_items") || "[]");
+    const cachedRaw = JSON.parse(
+      localStorage.getItem("propertyInventoryItems") ||
+      localStorage.getItem("spis_inventory_items") ||
+      "[]"
+    );
     if (Array.isArray(cachedRaw) && cachedRaw.length > 0) {
       allRawAssets = cachedRaw;
       allEntries = computeEntriesFromAssets(allRawAssets, "all");
@@ -167,7 +181,7 @@ async function init() {
       chart.innerHTML = '<p class="loading-state" style="text-align: center; color: #64748b; padding: 36px 0;">Connecting to database and pulling acquisition records...</p>';
     }
     const assets = await fetchFromSupabase();
-    if (Array.isArray(assets)) {
+    if (Array.isArray(assets) && (assets.length > 0 || allRawAssets.length === 0)) {
       allRawAssets = assets;
       allEntries = computeEntriesFromAssets(assets, "all");
       localStorage.setItem("acquisitionYearReportEntries", JSON.stringify(allEntries));

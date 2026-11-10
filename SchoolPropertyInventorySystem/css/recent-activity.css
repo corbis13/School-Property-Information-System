@@ -1,0 +1,79 @@
+.top-nav {
+  justify-content: space-between;
+}
+
+.read-only-label {
+  padding: 5px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  color: #475569;
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.activity-list-wrap {
+  overflow-x: auto;
+}
+
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.activity-table th {
+  padding: 12px 14px;
+  border-bottom: 1px solid #dbe5ed;
+  color: #64748b;
+  background: #f8fafc;
+  font-size: 11px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.activity-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #eef3f7;
+  color: #334155;
+  font-size: 13px;
+}
+
+.activity-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.activity-date {
+  min-width: 185px;
+  white-space: nowrap;
+}
+
+.activity-kind {
+  min-width: 150px;
+  color: #00335e !important;
+  font-weight: 700;
+}
+
+.activity-record {
+  overflow-wrap: anywhere;
+}
+
+.activity-message {
+  padding: 38px 14px !important;
+  color: #64748b !important;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .activity-table th,
+  .activity-table td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .activity-date {
+    min-width: 145px;
+  }
+}
