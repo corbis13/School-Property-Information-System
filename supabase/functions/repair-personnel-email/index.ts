@@ -41,7 +41,6 @@ Deno.serve(async (request: Request) => {
     employeeId?: unknown;
     storedEmail?: unknown;
     targetEmail?: unknown;
-    proofAccessToken?: unknown;
   };
   try {
     payload = await request.json();
@@ -52,39 +51,28 @@ Deno.serve(async (request: Request) => {
   const employeeId = String(payload.employeeId || "").trim();
   const storedEmail = normalizeEmail(payload.storedEmail);
   const targetEmail = normalizeEmail(payload.targetEmail);
-  const proofAccessToken = String(payload.proofAccessToken || "").trim();
-  if (!employeeId || employeeId.length > 128 || !storedEmail || !targetEmail || !proofAccessToken) {
-    return response(400, { error: "Employee ID, both email addresses, and the verification proof are required." });
+  if (!employeeId || employeeId.length > 128 || !targetEmail) {
+    return response(400, { error: "Employee ID and the target email address are required." });
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(storedEmail) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
     return response(400, { error: "Enter valid email addresses." });
   }
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const [{ data: currentResult, error: currentError }, { data: proofResult, error: proofError }] = await Promise.all([
-    admin.auth.getUser(currentToken),
-    admin.auth.getUser(proofAccessToken),
-  ]);
+  const { data: currentResult, error: currentError } = await admin.auth.getUser(currentToken);
   if (currentError || !currentResult.user) {
     return response(401, { error: "Your sign-in session is invalid. Sign in again and retry." });
   }
-  if (proofError || !proofResult.user) {
-    return response(401, { error: "The email verification code is invalid or expired. Request a new code." });
-  }
 
   const currentUser = currentResult.user;
-  const proofUser = proofResult.user;
   const currentProviders = currentUser.app_metadata?.providers;
   const isGoogleUser = currentUser.app_metadata?.provider === "google" ||
     (Array.isArray(currentProviders) && currentProviders.includes("google")) ||
     (currentUser.identities || []).some((identity) => identity.provider === "google");
   if (!isGoogleUser || !currentUser.email_confirmed_at) {
     return response(403, { error: "A verified Google sign-in is required." });
-  }
-  if (!proofUser.email_confirmed_at) {
-    return response(403, { error: "Verify the current personnel email with its one-time code." });
   }
   if (normalizeEmail(currentUser.email) !== targetEmail) {
     return response(400, { error: "The corrected sign-in email must match your verified account email." });
@@ -98,8 +86,8 @@ Deno.serve(async (request: Request) => {
   if (roleError) {
     return response(500, { error: "SPIS could not verify your account role." });
   }
-  if (roleRow?.role !== "user") {
-    return response(403, { error: "This correction flow is available only to User accounts." });
+  if (roleRow?.role !== "user" && roleRow?.role !== "admin") {
+    return response(403, { error: "An assigned SPIS role is required to correct a personnel email." });
   }
 
   const { data: personnel, error: personnelError } = await admin
@@ -115,8 +103,8 @@ Deno.serve(async (request: Request) => {
   }
 
   const actualStoredEmail = normalizeEmail(personnel.email);
-  if (!actualStoredEmail || actualStoredEmail !== storedEmail || normalizeEmail(proofUser.email) !== actualStoredEmail) {
-    return response(403, { error: "The verification code must be sent to the email currently stored on this personnel record." });
+  if (actualStoredEmail !== storedEmail) {
+    return response(409, { error: "The personnel email has changed. Reload the page and try again." });
   }
 
   const escapedTargetEmail = targetEmail.replace(/[%_\\]/g, "\\$&");
@@ -134,11 +122,14 @@ Deno.serve(async (request: Request) => {
     return response(409, { error: "That sign-in email is already assigned to another personnel record. Ask an administrator to resolve the duplicate." });
   }
 
-  const { data: updatedPersonnel, error: updateError } = await admin
+  let updateQuery = admin
     .from("school_teacher")
     .update({ email: currentUser.email })
-    .eq("id", personnel.id)
-    .eq("email", personnel.email)
+    .eq("id", personnel.id);
+  updateQuery = personnel.email == null
+    ? updateQuery.is("email", null)
+    : updateQuery.eq("email", personnel.email);
+  const { data: updatedPersonnel, error: updateError } = await updateQuery
     .select("id, email")
     .single();
   if (updateError || !updatedPersonnel) {
