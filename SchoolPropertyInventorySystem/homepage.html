@@ -195,11 +195,10 @@
       <p>Your Google email does not match a personnel record. Enter your Employee ID and set both email fields to the Google email you are signed in with. SPIS will save the personnel email, sign you out, and ask you to sign in again.</p>
       <label for="spisMismatchEmployeeId">Employee ID</label>
       <input id="spisMismatchEmployeeId" type="text" autocomplete="off" inputmode="text">
-      <p class="spis-email-current">Current database email: <strong id="spisMismatchStoredEmail">Not loaded</strong></p>
       <label for="spisMismatchDatabaseEmail">Personnel email (editable)</label>
-      <input id="spisMismatchDatabaseEmail" type="email" autocomplete="email">
-      <label for="spisMismatchLoginEmail">Sign-in email (editable)</label>
-      <input id="spisMismatchLoginEmail" type="email" autocomplete="email">
+      <input id="spisMismatchDatabaseEmail" type="email" autocomplete="email" readonly>
+      <label for="spisMismatchLoginEmail">Sign-in email</label>
+      <input id="spisMismatchLoginEmail" type="email" autocomplete="email" readonly>
       <p id="spisMismatchMessage" class="spis-email-mismatch-message" role="status" aria-live="polite"></p>
       <button id="spisMismatchLogin" type="button" class="spis-email-mismatch-primary">Login</button>
       <button id="spisMismatchSignOut" type="button" class="spis-email-mismatch-secondary">Sign out</button>
@@ -6266,11 +6265,15 @@
         var employeeInput = document.getElementById("spisMismatchEmployeeId");
         var databaseEmailInput = document.getElementById("spisMismatchDatabaseEmail");
         var loginEmailInput = document.getElementById("spisMismatchLoginEmail");
-        var storedEmailLabel = document.getElementById("spisMismatchStoredEmail");
         if (employeeInput) employeeInput.value = "";
-        if (databaseEmailInput) databaseEmailInput.value = "";
-        if (loginEmailInput) loginEmailInput.value = session.user.email || "";
-        if (storedEmailLabel) storedEmailLabel.textContent = "Not loaded";
+        if (databaseEmailInput) {
+          databaseEmailInput.value = "";
+          databaseEmailInput.readOnly = true;
+        }
+        if (loginEmailInput) {
+          loginEmailInput.value = session.user.email || "";
+          loginEmailInput.readOnly = true;
+        }
         var likelyName = String(session.user.user_metadata && (session.user.user_metadata.full_name || session.user.user_metadata.name) || "")
           .trim().toLowerCase().replace(/\s+/g, " ");
         var candidates = likelyName ? personnelRows.filter(function (person) {
@@ -6286,11 +6289,17 @@
         modal.classList.remove("hidden");
       }
       function loadMismatchPersonnelRecord(record) {
+        var employeeInput = document.getElementById("spisMismatchEmployeeId");
+        var enteredEmployeeId = String(employeeInput && employeeInput.value || "").trim();
+        if (!record || String(record.employee_id || "").trim() !== enteredEmployeeId) {
+          throw new Error("Enter a valid Employee ID to load its personnel record.");
+        }
         mismatchPersonnelRecord = record;
         var databaseEmailInput = document.getElementById("spisMismatchDatabaseEmail");
-        var storedEmailLabel = document.getElementById("spisMismatchStoredEmail");
-        if (databaseEmailInput) databaseEmailInput.value = record.email || "";
-        if (storedEmailLabel) storedEmailLabel.textContent = record.email || "No email stored";
+        if (databaseEmailInput) {
+          databaseEmailInput.value = record.email || "";
+          databaseEmailInput.readOnly = false;
+        }
       }
       async function findMismatchPersonnelRecord() {
         var employeeInput = document.getElementById("spisMismatchEmployeeId");
@@ -6350,8 +6359,6 @@
         }
         if (!edgeResponse.ok) throw new Error(result.error || "SPIS could not update the personnel email.");
         record.email = databaseEmail;
-        var storedEmailLabel = document.getElementById("spisMismatchStoredEmail");
-        if (storedEmailLabel) storedEmailLabel.textContent = databaseEmail;
         setMismatchMessage("Personnel email saved. Signing you out so you can sign in again…", false);
         var signOutResult = await authClient.auth.signOut();
         if (signOutResult.error) throw new Error("Email saved, but sign-out failed. Select Sign out, then sign in again.");
@@ -6583,14 +6590,20 @@
           });
 
       var mismatchEmployeeInput = document.getElementById("spisMismatchEmployeeId");
+      if (mismatchEmployeeInput) mismatchEmployeeInput.addEventListener("input", function () {
+        mismatchPersonnelRecord = null;
+        var databaseEmailInput = document.getElementById("spisMismatchDatabaseEmail");
+        if (databaseEmailInput) {
+          databaseEmailInput.value = "";
+          databaseEmailInput.readOnly = true;
+        }
+      });
       if (mismatchEmployeeInput) mismatchEmployeeInput.addEventListener("change", async function () {
         try {
           await findMismatchPersonnelRecord();
           setMismatchMessage("Personnel record loaded. Confirm the Employee ID and email addresses before continuing.", false);
         } catch (error) {
           mismatchPersonnelRecord = null;
-          var storedEmailLabel = document.getElementById("spisMismatchStoredEmail");
-          if (storedEmailLabel) storedEmailLabel.textContent = "Not loaded";
           setMismatchMessage(error.message || "Could not load this personnel record.", true);
         }
       });

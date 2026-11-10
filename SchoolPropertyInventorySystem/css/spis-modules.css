@@ -3797,11 +3797,10 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   color: #263852;
 }
 .spis-email-mismatch-card h1 { margin: .2rem 0 .75rem; color: #062f60; font-size: 1.5rem; font-weight: 800; }
-.spis-email-mismatch-card > p:not(.eyebrow):not(.spis-email-current):not(.spis-email-mismatch-message) { margin: 0 0 1rem; color: #52657a; font-size: .9rem; line-height: 1.5; }
+.spis-email-mismatch-card > p:not(.eyebrow):not(.spis-email-mismatch-message) { margin: 0 0 1rem; color: #52657a; font-size: .9rem; line-height: 1.5; }
 .spis-email-mismatch-card label { display: block; margin: .8rem 0 .3rem; color: #334155; font-size: .78rem; font-weight: 700; }
 .spis-email-mismatch-card input { width: 100%; min-height: 2.7rem; padding: .6rem .75rem; border: 1px solid #cbd5e1; border-radius: .55rem; background: #fff; color: #0f172a; font-size: .92rem; }
-.spis-email-current { margin: .4rem 0 .75rem; color: #64748b; font-size: .75rem; }
-.spis-email-current strong { overflow-wrap: anywhere; color: #334155; }
+.spis-email-mismatch-card input:read-only { border-color: #d1d5db; background: #f3f4f6; color: #6b7280; cursor: not-allowed; }
 .spis-email-mismatch-message { min-height: 1.25rem; margin: .75rem 0; color: #475569; font-size: .8rem; line-height: 1.45; }
 .spis-email-mismatch-message[data-error="true"] { color: #b42318; }
 .spis-email-mismatch-primary, .spis-email-mismatch-secondary { width: 100%; min-height: 2.75rem; margin-top: .65rem; border-radius: .6rem; font-size: .88rem; font-weight: 700; }
