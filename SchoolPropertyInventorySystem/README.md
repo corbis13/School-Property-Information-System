@@ -22,6 +22,7 @@ The Express server (`server.js`) serves the app at `http://localhost:3000` (redi
 - **Document (ICS / RSPI)** – create, edit, delete and export Inventory Custodian Slips to PDF; build RSPI reports from ICS items.
 - **Reports** – printable physical count and other reports (13 × 8.5 in landscape PDF export).
 - **Personnel** – directory and per-person accountability profile (see below).
+- **System Settings** – manage school details, report signatories, and user roles.
 
 ### Personnel Accountability
 

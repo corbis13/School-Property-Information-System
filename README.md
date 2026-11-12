@@ -41,6 +41,7 @@ The **School Property Information System (SPIS)** is designed to help schools or
 | **QR Code** | Generate and download property QR codes with the item description shown beneath the code |
 | **Personnel** | Maintain personnel records related to property accountability |
 | **Reports** | Generate property and inventory reports, including acquisition- and issuance-year breakdowns |
+| **System Settings** | Manage school details, report signatories, and user roles |
 
 ### Activity and notifications
 
