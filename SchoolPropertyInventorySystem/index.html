@@ -2006,7 +2006,7 @@
           <!-- ===================================================
                ACCOUNTABILITY SUMMARY
           =================================================== -->
-          <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-5">
+          <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 mb-5">
 
             <div class="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[#1971c2]/40 transition" onclick="setPersonnelStatusFilter('all')" title="Filter by All Properties">
               <div class="flex items-center gap-3">
@@ -2016,6 +2016,18 @@
                 <div>
                   <p class="text-xs text-[#1550a0] font-medium">Total Properties</p>
                   <p id="personnelCountTotal" class="text-2xl font-bold text-[#14253e]">0</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-xl p-4 transition" title="Total value of properties under this personnel's accountability">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-[#e5f7ef] text-[#15945b] flex items-center justify-center shrink-0">
+                  <i class="fa-solid fa-peso-sign text-lg"></i>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs text-[#14794d] font-medium">Total Cost</p>
+                  <p id="personnelTotalCost" class="text-lg font-bold text-[#153d2d] truncate" title="₱0.00">₱0.00</p>
                 </div>
               </div>
             </div>
@@ -3682,6 +3694,19 @@
 
                 // Update summary counters
                 var totalCount = records.length;
+                var totalCost = records.reduce(function (sum, record) {
+                  var rawTotal = record.totalCost;
+                  var normalizedTotal = rawTotal == null ? "" : String(rawTotal).replace(/[^0-9.-]/g, "");
+                  var value = !normalizedTotal
+                    ? NaN
+                    : Number(normalizedTotal);
+                  if (!Number.isFinite(value)) {
+                    var unitCost = Number(String(record.unitCost == null ? 0 : record.unitCost).replace(/[^0-9.-]/g, ""));
+                    var quantity = Number(String(record.quantity == null ? 1 : record.quantity).replace(/[^0-9.-]/g, ""));
+                    value = (Number.isFinite(unitCost) ? unitCost : 0) * (Number.isFinite(quantity) && quantity > 0 ? quantity : 1);
+                  }
+                  return sum + value;
+                }, 0);
                 var pendingCount = records.filter(function (r) { return r.isPendingIcs; }).length;
                 var issuedCount = records.filter(function (r) { return !r.isPendingIcs && r.icsNo && r.icsNo !== "—"; }).length;
                 var repairCount = records.filter(function (r) {
@@ -3695,6 +3720,7 @@
                 if (serviceableCount < 0) serviceableCount = 0;
 
                 var elTotal = document.getElementById("personnelCountTotal");
+                var elTotalCost = document.getElementById("personnelTotalCost");
                 var elPending = document.getElementById("personnelCountPending");
                 var elIssued = document.getElementById("personnelCountIssued");
                 var elServiceable = document.getElementById("personnelCountServiceable");
@@ -3702,6 +3728,15 @@
                 var elUnserviceable = document.getElementById("personnelCountUnserviceable");
 
                 if (elTotal) elTotal.textContent = totalCount;
+                if (elTotalCost) {
+                  var formattedTotalCost = new Intl.NumberFormat("en-PH", {
+                    style: "currency",
+                    currency: "PHP",
+                    maximumFractionDigits: 2
+                  }).format(totalCost);
+                  elTotalCost.textContent = formattedTotalCost;
+                  elTotalCost.title = formattedTotalCost;
+                }
                 if (elPending) elPending.textContent = pendingCount;
                 if (elIssued) elIssued.textContent = issuedCount;
                 if (elServiceable) elServiceable.textContent = serviceableCount;
