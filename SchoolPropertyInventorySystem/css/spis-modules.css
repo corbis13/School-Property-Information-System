@@ -518,34 +518,12 @@
   align-items: stretch;
 }
 
-/* Settings Module Grid - Auto-fit Responsive Layout */
+/* Settings Module Grid */
 .settings-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
   width: 100%;
-}
-
-@media (min-width: 900px) {
-  .settings-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-
-  .settings-grid > .school-details-card {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .settings-grid > .settings-theme-card {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .settings-grid > .settings-secondary-col {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-  }
 }
 
 .settings-secondary-col {
@@ -3082,30 +3060,6 @@ body[data-theme="dark"] .qr-uiverse-btn p {
   color: #64748b;
   line-height: 1.6;
   margin-top: 0.5rem;
-}
-
-.theme-switcher {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.theme-option {
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: #475569;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.theme-option.active {
-  background: #00335e;
-  color: #ffffff;
-  border-color: #00335e;
 }
 
 /* School Details Card in Settings Module */

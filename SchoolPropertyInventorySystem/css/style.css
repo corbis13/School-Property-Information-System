@@ -1397,18 +1397,13 @@ body[data-theme="light"] .qr-summary-card p {
     align-items: start;
 }
 
-/* Settings Module Grid - Balanced Auto-Fit Layout */
+/* Settings Module Grid */
 .settings-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 20px;
     align-items: start;
     width: 100%;
-}
-
-.settings-grid .school-details-card {
-    grid-row: span 2;
-    min-width: 0;
 }
 
 .settings-grid .module-card {
@@ -3246,42 +3241,6 @@ body[data-theme="light"] .frame-controls input {
     overflow-wrap: anywhere;
     font-size: 14px;
     font-weight: 500;
-}
-
-.theme-switcher {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 16px;
-    padding: 6px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--panel-2);
-}
-
-.theme-option {
-    min-height: 40px;
-    border: 0;
-    border-radius: 6px;
-    color: var(--muted);
-    background: transparent;
-    font-weight: 600;
-}
-
-.theme-option.active {
-    color: #ffffff;
-    background: linear-gradient(135deg, #7c5cff, #b79cff);
-    box-shadow: 0 10px 22px rgba(124, 92, 255, 0.22);
-}
-
-body[data-theme="light"] .theme-switcher {
-    background: #eef3f8;
-    border-color: #d9e1ec;
-}
-
-body[data-theme="light"] .theme-option.active {
-    color: #ffffff;
-    background: linear-gradient(135deg, #316a9f, #5b4bc4);
 }
 
 .item-form,

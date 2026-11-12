@@ -148,7 +148,6 @@ const dom = {
     icsSlipSearchInput: document.querySelector("#icsSlipSearchInput"),
     rspiSlipPagination: document.querySelector("#rspiSlipPagination"),
     rspiSlipSearchInput: document.querySelector("#rspiSlipSearchInput"),
-    themeButtons: document.querySelectorAll("[data-theme-choice]"),
     toast: document.querySelector("#toast"),
     databaseStatus: document.querySelector("#databaseStatus"),
     databaseMessage: document.querySelector("#databaseMessage"),
@@ -7408,12 +7407,6 @@ function applyTheme(theme) {
         if (!lightSrc && !darkSrc) return;
         icon.src = selectedTheme === "light" ? (lightSrc || darkSrc) : (darkSrc || lightSrc);
     });
-
-    dom.themeButtons.forEach((button) => {
-        const isActive = button.dataset.themeChoice === selectedTheme;
-        button.classList.toggle("active", isActive);
-        button.setAttribute("aria-pressed", String(isActive));
-    });
 }
 
 function loadTheme() {
@@ -7976,13 +7969,6 @@ function wireEvents() {
             }
         }
 
-    });
-
-    dom.themeButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-            applyTheme(button.dataset.themeChoice);
-            showToast(`${button.textContent.trim()} mode applied.`);
-        });
     });
 
     document.addEventListener("click", (e) => {
