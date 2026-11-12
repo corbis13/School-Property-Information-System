@@ -4044,6 +4044,7 @@
                   await loadSchoolDetailsOptions();
 
                   updatePersonnelStatCards();
+                  if (typeof window.updateSystemAlerts === "function") window.updateSystemAlerts();
 
                   if (window.currentPersonnelView === "list") {
                     showPersonnelListView();

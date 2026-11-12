@@ -5275,9 +5275,15 @@ async function refreshInventoryCardManual() {
 }
 window.refreshInventoryCardManual = refreshInventoryCardManual;
 
+function getIgnoredSystemAlertStorageKey() {
+    const role = window.SUPABASE_APP_ROLE;
+    const email = String(window.SUPABASE_AUTH_SESSION?.user?.email || "").trim().toLowerCase();
+    return role === "user" && email ? `ignoredSystemAlertIds:user:${email}` : "ignoredSystemAlertIds";
+}
+
 function getIgnoredSystemAlertIds() {
     try {
-        const stored = JSON.parse(localStorage.getItem("ignoredSystemAlertIds") || "[]");
+        const stored = JSON.parse(localStorage.getItem(getIgnoredSystemAlertStorageKey()) || "[]");
         return new Set(Array.isArray(stored) ? stored : []);
     } catch (_) {
         return new Set();
@@ -5319,7 +5325,7 @@ function ensureSystemAlertsModal() {
         const ignored = getIgnoredSystemAlertIds();
         if (checkbox.checked) ignored.add(checkbox.dataset.ignoreSystemAlert);
         else ignored.delete(checkbox.dataset.ignoreSystemAlert);
-        localStorage.setItem("ignoredSystemAlertIds", JSON.stringify(Array.from(ignored)));
+        localStorage.setItem(getIgnoredSystemAlertStorageKey(), JSON.stringify(Array.from(ignored)));
         updateSystemAlerts();
     });
     document.addEventListener("keydown", (event) => {
@@ -5333,6 +5339,8 @@ function renderSystemAlertsModal(alerts, ignoredIds) {
     const modal = ensureSystemAlertsModal();
     const list = modal.querySelector("#systemAlertsModalList");
     if (!list) return;
+    const title = modal.querySelector("#systemAlertsModalTitle");
+    if (title) title.textContent = window.SUPABASE_APP_ROLE === "user" ? "My Duplicate Alerts" : "All System Alerts";
     list.innerHTML = alerts.length ? alerts.map((alert) => `
         <article class="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3.5 sm:p-4 hover:border-slate-300 transition">
             <span class="mt-0.5 shrink-0 rounded-lg p-2 ${alert.iconBg}">${alert.icon}</span>
@@ -5347,7 +5355,7 @@ function renderSystemAlertsModal(alerts, ignoredIds) {
                 <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-[#004c87] focus:ring-[#004c87]" data-ignore-system-alert="${escapeHtml(alert.id)}" ${ignoredIds.has(alert.id) ? "checked" : ""}>
                 <span>Ignore</span>
             </label>
-        </article>`).join("") : '<p class="py-12 text-center text-sm text-slate-500">There are no current system alerts.</p>';
+        </article>`).join("") : `<p class="py-12 text-center text-sm text-slate-500">${window.SUPABASE_APP_ROLE === "user" ? "There are no duplicate alerts for your records." : "There are no current system alerts."}</p>`;
     if (window.lucide && typeof window.lucide.createIcons === "function") window.lucide.createIcons();
 }
 
@@ -5400,6 +5408,16 @@ function updateSystemAlerts() {
 
     let notifBadge = notifBtn.querySelector(".notif-badge") || notifBtn.querySelector("span");
 
+    const isUserRole = window.SUPABASE_APP_ROLE === "user";
+    const userEmail = String(window.SUPABASE_AUTH_SESSION?.user?.email || "").trim().toLowerCase();
+    const normalizeOwnerName = (name) => String(name || "").trim().toLowerCase().replace(/\s+/g, " ");
+    const userPersonnelNames = new Set(
+        (Array.isArray(window.personnelList) ? window.personnelList : [])
+            .filter((person) => userEmail && String(person.email || "").trim().toLowerCase() === userEmail)
+            .map((person) => normalizeOwnerName(person.teacher_name))
+            .filter(Boolean)
+    );
+    const belongsToCurrentUser = (name) => userPersonnelNames.has(normalizeOwnerName(name));
     const currentItems = Array.isArray(items) && items.length ? items : (window.inventoryData || []);
 
     const stolenItems = [];
@@ -5439,14 +5457,20 @@ function updateSystemAlerts() {
         }
     });
 
-    const duplicatePropertyNumbers = findDuplicateNumberGroups(currentItems, (item) => [
+    const duplicatePropertyNumberGroups = findDuplicateNumberGroups(currentItems, (item) => [
         item.semiExpandableNo || item.semi_expandable_no,
         item.propertyNo || item.property_no
     ]);
+    const duplicatePropertyNumbers = isUserRole
+        ? duplicatePropertyNumberGroups.filter((group) => group.records.some((item) => belongsToCurrentUser(item.accountable || item.accountable_person)))
+        : duplicatePropertyNumberGroups;
     const currentSlips = Array.isArray(inventoryCustodianSlips) ? inventoryCustodianSlips : [];
-    const duplicateIcsInventoryNumbers = findDuplicateNumberGroups(currentSlips, (slip) => [
+    const duplicateIcsInventoryNumberGroups = findDuplicateNumberGroups(currentSlips, (slip) => [
         slip.inventoryItemNo || slip.inventory_item_no
     ]);
+    const duplicateIcsInventoryNumbers = isUserRole
+        ? duplicateIcsInventoryNumberGroups.filter((group) => group.records.some((slip) => belongsToCurrentUser(slip.receivedBy || slip.received_by_name)))
+        : duplicateIcsInventoryNumberGroups;
 
     const alerts = [];
 
@@ -5565,20 +5589,28 @@ function updateSystemAlerts() {
     });
 
     const ignoredAlertIds = getIgnoredSystemAlertIds();
-    const actionableCountsByAlert = {
-        stolen: stolenItems.length,
-        unserviceable: unserviceableItems.length,
-        repair: repairItems.length,
-        unassigned: unassignedItems.length,
-        missingNo: missingNumberItems.length,
-        duplicatePropertyNumbers: duplicatePropertyNumbers.length,
-        duplicateIcsInventoryNumbers: duplicateIcsInventoryNumbers.length
-    };
-    const activeAlerts = alerts.filter((alert) => !ignoredAlertIds.has(alert.id));
+    const actionableCountsByAlert = isUserRole
+        ? {
+            duplicatePropertyNumbers: duplicatePropertyNumbers.length,
+            duplicateIcsInventoryNumbers: duplicateIcsInventoryNumbers.length
+        }
+        : {
+            stolen: stolenItems.length,
+            unserviceable: unserviceableItems.length,
+            repair: repairItems.length,
+            unassigned: unassignedItems.length,
+            missingNo: missingNumberItems.length,
+            duplicatePropertyNumbers: duplicatePropertyNumbers.length,
+            duplicateIcsInventoryNumbers: duplicateIcsInventoryNumbers.length
+        };
+    const visibleAlerts = isUserRole
+        ? alerts.filter((alert) => alert.id === "duplicatePropertyNumbers" || alert.id === "duplicateIcsInventoryNumbers")
+        : alerts;
+    const activeAlerts = visibleAlerts.filter((alert) => !ignoredAlertIds.has(alert.id));
     const actionableCount = Object.entries(actionableCountsByAlert).reduce((sum, [id, count]) => {
         return sum + (ignoredAlertIds.has(id) ? 0 : count);
     }, 0);
-    renderSystemAlertsModal(alerts, ignoredAlertIds);
+    renderSystemAlertsModal(visibleAlerts, ignoredAlertIds);
 
     // Update badge
     if (notifBadge) {
@@ -5586,7 +5618,7 @@ function updateSystemAlerts() {
         if (actionableCount > 0) {
             notifBadge.textContent = actionableCount > 99 ? '99+' : String(actionableCount);
             notifBadge.style.display = 'flex';
-            if (stolenItems.length > 0) {
+            if (!isUserRole && stolenItems.length > 0) {
                 notifBadge.className = 'notif-badge absolute top-1 right-1 bg-red-600 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-white animate-pulse';
             } else {
                 notifBadge.className = 'notif-badge absolute top-1 right-1 bg-[#f59e0b] text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center ring-2 ring-white';
@@ -5602,7 +5634,7 @@ function updateSystemAlerts() {
     notifDropdown.innerHTML = `
         <div class="p-3 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <span class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">System Alerts</span>
+                <span class="text-xs font-extrabold text-[#00335e] uppercase tracking-wider">${isUserRole ? "My Alerts" : "System Alerts"}</span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${actionableCount > 0 ? (stolenItems.length > 0 ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-amber-100 text-amber-800 border border-amber-300') : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}">
                     ${actionableCount > 0 ? `${actionableCount} Action Needed` : 'All Verified'}
                 </span>
@@ -5626,7 +5658,7 @@ function updateSystemAlerts() {
             `).join('')}
         </div>
         <div class="p-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span>${activeAlerts.length ? "Click an alert to open the related view" : "All alerts are ignored"}</span>
+            <span>${activeAlerts.length ? "Click an alert to open the related view" : visibleAlerts.length ? "All alerts are ignored" : isUserRole ? "No duplicate alerts for your records" : "All alerts are ignored"}</span>
             <button type="button" onclick="updateSystemAlerts(); showToast('Alerts refreshed');" class="text-[11px] font-semibold text-[#004c87] hover:underline flex items-center gap-1 cursor-pointer">
                 Refresh
             </button>
@@ -7094,6 +7126,7 @@ function applySpisRolePermissions() {
 
     const active = document.querySelector(".module-view.active")?.dataset.module;
     if (role && active && !canOpenSpisModule(active)) showModule("dashboard");
+    if (typeof updateSystemAlerts === "function") updateSystemAlerts();
 }
 
 window.applySpisRolePermissions = applySpisRolePermissions;

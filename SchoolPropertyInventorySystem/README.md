@@ -61,6 +61,8 @@ The setup script drops `school_teacher.photo_url` and removes all `personnel-pho
 
 The app uses Google-only sign-in with no separate registration page or role selector. The designated Admin account has full access and can manage roles. New Google accounts are automatically assigned the User role, which can open Dashboard and Personnel, edit only the unique personnel profile matching their signed-in email, and cannot add personnel profiles or ICS slips. Other personnel profiles remain view-only. A User with no unique matching personnel email is blocked from the dashboard until the email is corrected. The mismatch flow requires the Employee ID and a one-time code sent to the email currently stored on that personnel record; the corrected address must match the verified sign-in email. Changing the sign-in email uses Supabase's normal email-change confirmation. SPIS RLS continues to prevent Users from updating arbitrary personnel rows.
 
+The notification bell shows Admins all system alerts. Users see only duplicate SEP/PPE numbers that include an inventory item assigned to their email-matched personnel record, or duplicate ICS Inventory Item Nos. that include a slip received by them. User alert dismissals are stored per signed-in email in that browser.
+
 To enable secure self-service correction of mismatched personnel emails:
 
 1. From the repository root, run `supabase login`, link the Supabase project with `supabase link --project-ref <project-ref>`, then deploy with `supabase functions deploy repair-personnel-email`. JWT verification is enabled in `supabase/config.toml`. The function uses Supabase's `SUPABASE_SERVICE_ROLE_KEY` only on the server to update the verified row; never place that key in browser code or commit it.
