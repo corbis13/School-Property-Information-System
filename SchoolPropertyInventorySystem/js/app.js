@@ -6461,10 +6461,10 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
             white-space: nowrap;
         }
 
-        .ics-meta .ics-number-label {
-            width: 58px;
+        .ics-meta .ics-number {
             font-weight: 700;
             text-align: right;
+            overflow-wrap: anywhere;
         }
 
         .ics-table {
@@ -6617,8 +6617,7 @@ function buildInventoryCustodianSlip(records, logoSrc, options = {}) {
             <tr>
                 <td class="label">Entity Name:</td>
                 <td>${escapeHtml(entityName)}</td>
-                <td class="ics-number-label" rowspan="2">ICS No.:</td>
-                <td rowspan="2">${escapeHtml(icsNo)}</td>
+                <td class="ics-number" colspan="2" rowspan="2">ICS No.: ${escapeHtml(icsNo)}</td>
             </tr>
             <tr>
                 <td class="label">Fund Cluster:</td>
@@ -9492,7 +9491,7 @@ async function openInventoryCustodianSlipPdf(slip) {
         return num.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
     const headerSlip = slipItems[0];
-    const tableStartY = 55;
+    let tableStartY = 55;
     const tableBottomY = 167;
     let y = marginY;
 
@@ -9519,8 +9518,9 @@ async function openInventoryCustodianSlipPdf(slip) {
         pdf.text(String(headerSlip.entityName || "-"), marginX + 25, y + 36);
         pdf.text("Fund Cluster:", marginX, y + 44);
         pdf.text(String(headerSlip.fundCluster || "-"), marginX + 25, y + 44);
-        pdf.text("ICS No.:", pageWidth - marginX - 46, y + 44);
-        pdf.text(String(headerSlip.icsNo || "-"), pageWidth - marginX, y + 44, { align: "right" });
+        const icsNumberLines = pdf.splitTextToSize(`ICS No.: ${String(headerSlip.icsNo || "-")}`, 75);
+        pdf.text(icsNumberLines, pageWidth - marginX, y + 44, { align: "right" });
+        tableStartY = Math.max(55, y + 44 + (icsNumberLines.length - 1) * 4.5 + 3);
         y = tableStartY;
     };
 
