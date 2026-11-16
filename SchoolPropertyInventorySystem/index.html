@@ -6456,12 +6456,55 @@
         });
         var identityData = googleIdentity && googleIdentity.identity_data || {};
         var avatarUrl = metadata.picture || metadata.avatar_url || identityData.picture || identityData.avatar_url;
-        var safeAvatarUrl = typeof avatarUrl === "string" && /^https:\/\//i.test(avatarUrl) ? avatarUrl : "";
+        var avatarCacheKey = user.id ? "spis_google_avatar_" + user.id : "";
+        var cachedAvatarUrl = "";
+        try {
+          cachedAvatarUrl = avatarCacheKey ? localStorage.getItem(avatarCacheKey) || "" : "";
+        } catch (error) {
+          console.warn("Could not read the cached Google profile photo:", error);
+        }
+        var safeAvatarUrl = typeof avatarUrl === "string" && /^https:\/\//i.test(avatarUrl)
+          ? avatarUrl
+          : (typeof cachedAvatarUrl === "string" && /^https:\/\//i.test(cachedAvatarUrl) ? cachedAvatarUrl : "");
         window.SUPABASE_GOOGLE_AVATAR_URL = safeAvatarUrl;
         if (avatarImage && avatarFallback) {
+          var providerPhotoRequested = false;
+          function loadGoogleProfilePhoto() {
+            if (!session || !session.provider_token || providerPhotoRequested) return;
+            providerPhotoRequested = true;
+            fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+              headers: { Authorization: "Bearer " + session.provider_token }
+            }).then(function (response) {
+              if (!response.ok) throw new Error("Google profile photo unavailable");
+              return response.json();
+            }).then(function (profile) {
+              if (profile.picture && window.SUPABASE_AUTH_SESSION === session) {
+                var googlePicture = typeof profile.picture === "string" && /^https:\/\//i.test(profile.picture) ? profile.picture : "";
+                if (googlePicture) {
+                  window.SUPABASE_GOOGLE_AVATAR_URL = googlePicture;
+                  avatarImage.src = googlePicture;
+                  avatarImage.classList.remove("hidden");
+                  avatarFallback.classList.add("hidden");
+                  if (typeof window.renderPersonnelListTable === "function") window.renderPersonnelListTable();
+                }
+              }
+            }).catch(function (error) {
+              console.warn("Could not load the Google profile photo:", error);
+            });
+          }
+          avatarImage.onload = function () {
+            if (window.SUPABASE_AUTH_SESSION !== session || !avatarCacheKey) return;
+            try {
+              localStorage.setItem(avatarCacheKey, avatarImage.src);
+            } catch (error) {
+              console.warn("Could not cache the Google profile photo:", error);
+            }
+          };
           avatarImage.onerror = function () {
+            if (window.SUPABASE_AUTH_SESSION !== session) return;
             avatarImage.classList.add("hidden");
             avatarFallback.classList.remove("hidden");
+            loadGoogleProfilePhoto();
           };
           if (safeAvatarUrl) {
             avatarImage.src = safeAvatarUrl;
@@ -6471,25 +6514,7 @@
             avatarImage.removeAttribute("src");
             avatarImage.classList.add("hidden");
             avatarFallback.classList.remove("hidden");
-            if (session && session.provider_token) {
-              fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                headers: { Authorization: "Bearer " + session.provider_token }
-              }).then(function (response) {
-                if (!response.ok) throw new Error("Google profile photo unavailable");
-                return response.json();
-              }).then(function (profile) {
-                if (profile.picture && window.SUPABASE_AUTH_SESSION === session) {
-                  var googlePicture = typeof profile.picture === "string" && /^https:\/\//i.test(profile.picture) ? profile.picture : "";
-                  if (googlePicture) {
-                    window.SUPABASE_GOOGLE_AVATAR_URL = googlePicture;
-                    avatarImage.src = googlePicture;
-                    avatarImage.classList.remove("hidden");
-                    avatarFallback.classList.add("hidden");
-                    if (typeof window.renderPersonnelListTable === "function") window.renderPersonnelListTable();
-                  }
-                }
-              }).catch(function () {});
-            }
+            loadGoogleProfilePhoto();
           }
         }
         var accessGate = document.getElementById("spisAccessDenied");
