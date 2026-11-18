@@ -1927,6 +1927,10 @@
                 <div class="relative shrink-0">
                   <img id="personnelCardPhoto" alt="Personnel profile avatar"
                     class="w-[156px] h-[198px] rounded-xl object-cover border border-gray-200" />
+                  <button type="button" id="personnelChangePhotoBtn" class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-white shadow-md text-[#243852] hover:text-[#078f95] flex items-center justify-center transition cursor-pointer hover:scale-105 active:scale-95" title="Upload personnel photo">
+                    <i class="fa-solid fa-camera"></i>
+                  </button>
+                  <input type="file" id="personnelPhotoFileInput" accept="image/jpeg,image/png,image/webp" class="hidden" />
                 </div>
 
                 <!-- Personnel Information -->
@@ -2854,13 +2858,15 @@
                 var readOnlyNotice = document.getElementById("personnelProfileReadOnlyNotice");
                 if (editProfileBtn) editProfileBtn.hidden = !canEdit;
                 if (readOnlyNotice) readOnlyNotice.hidden = canEdit;
+                var photoBtn = document.getElementById("personnelChangePhotoBtn");
+                if (photoBtn) photoBtn.hidden = !canEdit;
 
                 // Photo
                 var photoEl = document.getElementById("personnelCardPhoto");
                 if (photoEl) {
                   var linkedProfile = getLinkedPersonnelProfile();
                   var googleAvatar = linkedProfile && String(linkedProfile.id) === String(teacher.id) && window.SUPABASE_GOOGLE_AVATAR_URL;
-                  photoEl.src = googleAvatar || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(teacher.teacher_name || "Personnel") + "&background=078f95&color=fff");
+                  photoEl.src = teacher.photo_url || googleAvatar || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(teacher.teacher_name || "Personnel") + "&background=078f95&color=fff");
                   photoEl.alt = teacher.teacher_name || "Personnel Photo";
                 }
 
@@ -3572,7 +3578,7 @@
                   var initials = (t.teacher_name || "P").split(" ").map(function (w) { return w[0]; }).filter(Boolean).slice(0, 2).join("").toUpperCase();
                   var linkedProfile = getLinkedPersonnelProfile();
                   var isLinkedProfile = Boolean(linkedProfile && String(linkedProfile.id) === String(t.id));
-                  var profileImage = isLinkedProfile && window.SUPABASE_GOOGLE_AVATAR_URL;
+                  var profileImage = t.photo_url || (isLinkedProfile && window.SUPABASE_GOOGLE_AVATAR_URL);
                   var avatarHtml = profileImage
                     ? '<img src="' + safeEscape(profileImage) + '" alt="' + safeEscape(t.teacher_name) + '" class="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0" onerror="this.onerror=null; this.src=\'https://ui-avatars.com/api/?name=' + encodeURIComponent(t.teacher_name || "Personnel") + '&background=078f95&color=fff\';">'
                     : '<div class="w-10 h-10 rounded-full bg-[#00335e]/10 text-[#00335e] font-bold text-xs flex items-center justify-center border border-[#00335e]/20 shrink-0">' + safeEscape(initials) + '</div>';
@@ -4877,6 +4883,112 @@
                 wirePersonnelAddIcsListeners();
               }
 
+              function convertPersonnelPhoto(file) {
+                return new Promise(function (resolve, reject) {
+                  var reader = new FileReader();
+                  reader.onerror = reject;
+                  reader.onload = function (event) {
+                    var image = new Image();
+                    image.onerror = reject;
+                    image.onload = function () {
+                      var maxSize = 800;
+                      var scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+                      var canvas = document.createElement("canvas");
+                      canvas.width = Math.max(1, Math.round(image.width * scale));
+                      canvas.height = Math.max(1, Math.round(image.height * scale));
+                      var context = canvas.getContext("2d");
+                      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                      canvas.toBlob(function (blob) {
+                        if (!blob) {
+                          reject(new Error("This image format could not be converted."));
+                          return;
+                        }
+                        resolve(blob);
+                      }, "image/webp", 0.85);
+                    };
+                    image.src = event.target.result;
+                  };
+                  reader.readAsDataURL(file);
+                });
+              }
+
+              async function handlePersonnelPhotoUpload(event) {
+                var file = event.target.files && event.target.files[0];
+                if (!file) return;
+                var teacher = window.activePersonnel;
+                if (!teacher || !canEditPersonnelProfile(teacher)) {
+                  if (typeof showToast === "function") showToast("You can upload a photo only for your linked personnel profile.");
+                  event.target.value = "";
+                  return;
+                }
+                if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
+                  if (typeof showToast === "function") showToast("Please select a JPEG, PNG, or WebP image.");
+                  event.target.value = "";
+                  return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                  if (typeof showToast === "function") showToast("The selected image must be 5 MB or smaller.");
+                  event.target.value = "";
+                  return;
+                }
+
+                var button = document.getElementById("personnelChangePhotoBtn");
+                if (button) {
+                  button.disabled = true;
+                  button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                }
+                try {
+                  var blob = await convertPersonnelPhoto(file);
+                  var sUrl = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.url) || "https://ouqgkytallctnptshefo.supabase.co";
+                  var sKey = (window.SUPABASE_CONFIG && window.SUPABASE_CONFIG.anonKey) || "sb_publishable_UDhp6lrRgVppuqH6Uu4Izg_zp7T-_WS";
+                  var token = window.SUPABASE_AUTH_SESSION && window.SUPABASE_AUTH_SESSION.access_token;
+                  if (!token) throw new Error("Sign-in required");
+                  var cleanName = String(teacher.teacher_name || "personnel").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+                  var fileName = String(teacher.id) + "_" + cleanName + "_" + Date.now() + ".webp";
+                  var uploadResponse = await fetch(sUrl + "/storage/v1/object/personnel-photos/" + encodeURIComponent(fileName), {
+                    method: "POST",
+                    headers: {
+                      apikey: sKey,
+                      Authorization: "Bearer " + token,
+                      "Content-Type": "image/webp",
+                      "x-upsert": "true"
+                    },
+                    body: blob
+                  });
+                  if (!uploadResponse.ok) throw new Error(await uploadResponse.text() || "Photo upload failed");
+
+                  var photoUrl = sUrl + "/storage/v1/object/public/personnel-photos/" + encodeURIComponent(fileName);
+                  var patchResponse = await fetch(sUrl + "/rest/v1/school_teacher?id=eq." + encodeURIComponent(teacher.id), {
+                    method: "PATCH",
+                    headers: {
+                      apikey: sKey,
+                      Authorization: "Bearer " + token,
+                      "Content-Type": "application/json",
+                      "Prefer": "return=representation"
+                    },
+                    body: JSON.stringify({ photo_url: photoUrl })
+                  });
+                  if (!patchResponse.ok) throw new Error(await patchResponse.text() || "Photo database update failed");
+
+                  teacher.photo_url = photoUrl;
+                  var photoElement = document.getElementById("personnelCardPhoto");
+                  if (photoElement) photoElement.src = photoUrl;
+                  var index = (window.personnelList || []).findIndex(function (person) { return String(person.id) === String(teacher.id); });
+                  if (index !== -1) window.personnelList[index].photo_url = photoUrl;
+                  if (typeof renderPersonnelListTable === "function") renderPersonnelListTable();
+                  if (typeof showToast === "function") showToast("Personnel profile photo updated successfully.");
+                } catch (error) {
+                  console.error("Personnel photo upload error:", error);
+                  if (typeof showToast === "function") showToast(error.message || "Failed to upload profile photo.");
+                } finally {
+                  event.target.value = "";
+                  if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fa-solid fa-camera"></i>';
+                  }
+                }
+              }
+
               async function savePersonnelProfile() {
                 var id = document.getElementById("editTeacherId").value;
                 if (!id) return;
@@ -5096,6 +5208,19 @@
                 var modalSaveBtn = document.getElementById("personnelEditModalSaveBtn");
                 if (modalSaveBtn) {
                   modalSaveBtn.addEventListener("click", savePersonnelProfile);
+                }
+
+                var photoBtn = document.getElementById("personnelChangePhotoBtn");
+                var photoFileInput = document.getElementById("personnelPhotoFileInput");
+                if (photoBtn && photoFileInput) {
+                  photoBtn.addEventListener("click", function () {
+                    if (!window.activePersonnel || !canEditPersonnelProfile(window.activePersonnel)) {
+                      if (typeof showToast === "function") showToast("You can upload a photo only for your linked personnel profile.");
+                      return;
+                    }
+                    photoFileInput.click();
+                  });
+                  photoFileInput.addEventListener("change", handlePersonnelPhotoUpload);
                 }
 
                 /* --- Add Personnel Modal Wiring --- */

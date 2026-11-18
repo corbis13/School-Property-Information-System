@@ -114,8 +114,8 @@ alter table if exists public.school_teacher add column if not exists birthday   
 alter table if exists public.school_teacher add column if not exists original_appointment date;
 alter table if exists public.school_teacher add column if not exists date_of_last_promotion date;
 alter table if exists public.school_teacher add column if not exists status             text default 'Active';
+alter table if exists public.school_teacher add column if not exists photo_url           text;
 alter table if exists public.school_teacher
-  drop column if exists photo_url,
   drop column if exists location,
   drop column if exists position;
 
@@ -727,18 +727,22 @@ create policy "Allow authenticated insert access to qr_download_history" on publ
 create policy "Allow authenticated update access to qr_download_history" on public.qr_download_history
   for update to authenticated using (true) with check (true);
 
--- Remove legacy personnel photo policies. Empty and delete the
--- personnel-photos bucket in Supabase Storage to remove existing files;
--- Storage objects must not be deleted directly from storage.objects.
-drop policy if exists "Public Access personnel-photos" on storage.objects;
-drop policy if exists "Allow Public Upload personnel-photos" on storage.objects;
-drop policy if exists "Allow Authenticated Upload personnel-photos" on storage.objects;
-drop policy if exists "Allow Public Update personnel-photos" on storage.objects;
-drop policy if exists "Allow Authenticated Update personnel-photos" on storage.objects;
-drop policy if exists "SPIS users upload personnel photos" on storage.objects;
-drop policy if exists "SPIS users update personnel photos" on storage.objects;
-drop policy if exists "SPIS admins manage personnel photos" on storage.objects;
-drop policy if exists "SPIS admins delete personnel photos" on storage.objects;
+-- =====================================================
+-- STORAGE SETUP: Personnel Profile Photos
+-- =====================================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'personnel-photos',
+  'personnel-photos',
+  true,
+  3145728,
+  array['image/jpeg', 'image/png', 'image/webp']::text[]
+)
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
 
 -- =====================================================
 -- STORAGE SETUP: Public Property Images
@@ -1106,6 +1110,61 @@ drop policy if exists "Allow Authenticated Upload property-images" on storage.ob
 drop policy if exists "Allow Authenticated Delete property-images" on storage.objects;
 drop policy if exists "SPIS admins upload property images" on storage.objects;
 drop policy if exists "SPIS admins delete property images" on storage.objects;
+drop policy if exists "Public Read personnel-photos" on storage.objects;
+drop policy if exists "SPIS users upload personnel photos" on storage.objects;
+drop policy if exists "SPIS users update personnel photos" on storage.objects;
+drop policy if exists "SPIS users delete personnel photos" on storage.objects;
+
+create policy "Public Read personnel-photos" on storage.objects
+  for select
+  using (bucket_id = 'personnel-photos');
+create policy "SPIS users upload personnel photos" on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'personnel-photos'
+    and (
+      (select public.current_spis_role()) = 'admin'
+      or (
+        (select public.current_spis_role()) = 'user'
+        and split_part(name, '_', 1) = (select public.current_spis_personnel_id())::text
+      )
+    )
+  );
+create policy "SPIS users update personnel photos" on storage.objects
+  for update to authenticated
+  using (
+    bucket_id = 'personnel-photos'
+    and (
+      (select public.current_spis_role()) = 'admin'
+      or (
+        (select public.current_spis_role()) = 'user'
+        and split_part(name, '_', 1) = (select public.current_spis_personnel_id())::text
+      )
+    )
+  )
+  with check (
+    bucket_id = 'personnel-photos'
+    and (
+      (select public.current_spis_role()) = 'admin'
+      or (
+        (select public.current_spis_role()) = 'user'
+        and split_part(name, '_', 1) = (select public.current_spis_personnel_id())::text
+      )
+    )
+  );
+create policy "SPIS users delete personnel photos" on storage.objects
+  for delete to authenticated
+  using (
+    bucket_id = 'personnel-photos'
+    and (
+      (select public.current_spis_role()) = 'admin'
+      or (
+        (select public.current_spis_role()) = 'user'
+        and split_part(name, '_', 1) = (select public.current_spis_personnel_id())::text
+      )
+    )
+  );
+
 create policy "SPIS admins upload property images" on storage.objects
   for insert to authenticated
   with check (bucket_id = 'property-images' and (select public.current_spis_role()) = 'admin');

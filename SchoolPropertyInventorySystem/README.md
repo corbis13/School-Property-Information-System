@@ -54,9 +54,9 @@ To get started:
 
 Run [supabase-setup.sql](supabase-setup.sql) after creating the project. The script creates the inventory and lookup tables (including the `asset_images` photo metadata table), configures authenticated role-based access and the limited public QR lookups, and creates the `property-images` Storage bucket.
 
-#### Removing legacy personnel photos
+#### Personnel profile photos
 
-The setup script drops `school_teacher.photo_url` and removes all `personnel-photos` Storage policies. To reclaim space used by existing profile photos, first delete the contents of the `personnel-photos` bucket and then delete the bucket from **Supabase Dashboard → Storage**. This permanently deletes those stored files. Supabase Storage files should be removed through the Storage dashboard or API, not by deleting rows from `storage.objects`.
+The setup script creates the `personnel-photos` public Storage bucket and adds `school_teacher.photo_url`. Upload and update access is limited to assigned Users and the Admin role. Profile photos can be removed through **Supabase Dashboard → Storage**; removing a Storage file does not automatically clear its saved database URL.
 
 ### Google sign-in
 
