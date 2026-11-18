@@ -3704,9 +3704,9 @@ body[data-theme="dark"] .top-nav-btn.active svg {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  padding: clamp(.5rem, 2vh, 1.25rem);
+  padding: 0;
   overflow: hidden;
-  background: radial-gradient(ellipse at 16% 12%, rgba(56, 189, 248, .34), transparent 40%), radial-gradient(ellipse at 88% 86%, rgba(85, 168, 59, .2), transparent 38%), linear-gradient(135deg, #001a30 0%, #00335e 48%, #07558e 100%);
+  background: #fff;
 }
 .spis-auth-loading {
   position: fixed;
@@ -3769,15 +3769,16 @@ body[data-theme="dark"] .top-nav-btn.active svg {
 .spis-login-layer *, .spis-login-layer *::before, .spis-login-layer *::after { box-sizing: border-box; }
 .spis-login-layer.hidden { display: none; }
 html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden)) { overflow: hidden !important; }
-.spis-login-panel { position: relative; width: min(88vw, 1260px); height: min(720px, 50vw, calc(100vh - 3rem)); height: min(720px, 50vw, calc(100dvh - 3rem)); min-height: 0; display: grid; grid-template-columns: 1.2fr 0.8fr; overflow: hidden; border: 1px solid rgba(184,224,248,.8); border-radius: 34px; background: rgba(255,255,255,.98); box-shadow: 0 38px 110px rgba(0,12,31,.42), 0 0 0 1px rgba(255,255,255,.16); }
-.spis-login-art { position: relative; display: flex; min-height: 0; align-items: flex-end; justify-content: center; overflow: hidden; padding: clamp(2rem, 5vw, 5rem); background: linear-gradient(145deg, #dff4ff 0%, #eefaff 52%, #d5efff 100%); }
-.spis-login-art::before { position: absolute; z-index: 1; top: 0; left: 0; width: min(52%, 430px); height: 180px; background: linear-gradient(153deg, #07539a 0 42%, #ffc400 42% 51%, #fff 51% 55%, transparent 55%); clip-path: polygon(0 0, 100% 0, 0 28%); content: ""; pointer-events: none; }
-.spis-login-copy { position: absolute; z-index: 2; top: clamp(3.5rem, 8vh, 6rem); left: clamp(2rem, 6vw, 5rem); right: 2rem; }
-.spis-login-copy h1 { max-width: 700px; margin: 0; color: #062f60; font-size: clamp(2.25rem, 4vw, 3.5rem); font-weight: 900; letter-spacing: -.055em; line-height: 1.04; }
-.spis-login-copy h1 span { display: inline-block; color: #16882b; }
-.spis-login-copy h1 span::after { display: block; width: 78%; height: .4rem; margin-top: .45rem; border-radius: 99px; background: #16882b; content: ""; transform: skewX(-18deg); }
-.spis-login-copy p { max-width: 540px; margin: 1.15rem 0 0; color: #395876; font-size: clamp(.95rem, 1.35vw, 1.15rem); line-height: 1.55; }
-.spis-login-town { position: absolute; z-index: 1; inset: auto 0 0; display: flex; align-items: flex-end; justify-content: center; height: 57%; pointer-events: none; }
+.spis-login-panel { position: relative; width: 100%; height: 100vh; height: 100dvh; min-height: 0; display: grid; grid-template-columns: minmax(0, 2.92fr) minmax(0, 1fr); overflow: hidden; border: 0; border-radius: 0; background: rgba(255,255,255,.98); box-shadow: none; }
+.spis-login-art { position: relative; display: flex; min-height: 0; align-items: flex-end; justify-content: center; overflow: hidden; padding: clamp(2rem, 5vw, 5rem); background: #00335e url("../images/spis_background.png") center / cover no-repeat; }
+.spis-login-art::before { display: none; }
+.spis-login-art::after { position: absolute; z-index: 1; inset: 0; background: linear-gradient(0deg, rgba(0, 26, 48, .82) 0%, rgba(0, 26, 48, .35) 38%, transparent 75%); content: ""; pointer-events: none; }
+.spis-login-copy { position: absolute; z-index: 2; top: auto; right: 2rem; bottom: clamp(4rem, 10vh, 8rem); left: clamp(2rem, 6vw, 5rem); }
+.spis-login-copy h1 { max-width: 700px; margin: 0; color: #fff; font-size: clamp(2.25rem, 4vw, 3.5rem); font-weight: 900; letter-spacing: -.055em; line-height: 1.04; }
+.spis-login-copy h1 span { display: inline-block; color: #c8f17b; }
+.spis-login-copy h1 span::after { display: block; width: 78%; height: .4rem; margin-top: .45rem; border-radius: 99px; background: #a8df45; content: ""; transform: skewX(-18deg); }
+.spis-login-copy p { max-width: 540px; margin: 1.15rem 0 0; color: rgba(255,255,255,.9); font-size: clamp(.95rem, 1.35vw, 1.15rem); line-height: 1.55; }
+.spis-login-town, .spis-login-cloud, .spis-login-waves { display: none; }
 .spis-login-town img { display: block; width: 90%; height: 90%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 8px 12px rgba(0, 45, 84, .12)); pointer-events: auto; transform-origin: center bottom; transition: transform .4s cubic-bezier(.2,.75,.25,1), filter .4s ease; }
 .spis-login-town img:hover { transform: translateY(-8px) scale(1.035); filter: drop-shadow(0 15px 18px rgba(0, 45, 84, .22)); }
 .spis-login-cloud { position: absolute; z-index: 0; left: 0; pointer-events: none; opacity: .65; }
@@ -3798,16 +3799,16 @@ html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden))
 .spis-login-box.box-c { left: 122px; top: 169px; width: 74px; height: 77px; background: linear-gradient(145deg, #fff, #fff0d8); animation: spis-login-bob 5s ease-in-out -2.1s infinite; }
 .spis-login-box.box-c::before { background: #0284c7; }
 .spis-login-orbit { position: absolute; inset: 36px 14px 8px; border: 1px solid rgba(2,132,199,.24); border-radius: 50%; transform: rotateX(67deg) rotateZ(-25deg); }
-.spis-login-form { position: relative; isolation: isolate; display: flex; min-height: 0; flex-direction: column; justify-content: flex-start; padding: clamp(2rem, 5vh, 3.5rem) clamp(1.75rem, 4vw, 3.5rem) 5.5rem; overflow: hidden; background: linear-gradient(145deg, #ffffff 0%, #f7fbff 100%); }
+.spis-login-form { position: relative; isolation: isolate; display: flex; min-height: 0; flex-direction: column; justify-content: flex-start; padding: clamp(2rem, 5vh, 3.5rem) clamp(1.25rem, 2vw, 1.75rem) 5.5rem; overflow: hidden; background: linear-gradient(145deg, #ffffff 0%, #f7fbff 100%); }
 .spis-login-form::before { position: absolute; z-index: 0; top: -7rem; right: -7rem; width: 16rem; height: 16rem; border-radius: 50%; background: radial-gradient(circle, rgba(56,189,248,.12), rgba(85,168,59,.06) 56%, transparent 72%); content: ""; pointer-events: none; }
 .spis-login-form > * { position: relative; z-index: 1; }
-.spis-login-form .brand-mark { display: flex; align-items: center; gap: .9rem; color: #00335e; font-size: clamp(1.05rem, 1.8vw, 1.45rem); font-weight: 900; letter-spacing: .025em; line-height: 1.2; text-transform: uppercase; }
-.spis-login-form .brand-mark > span:last-child { padding-left: .9rem; border-left: 2px solid #16882b; }
+.spis-login-form .brand-mark { display: flex; align-items: center; gap: .65rem; color: #00335e; font-size: clamp(1rem, 1.4vw, 1.25rem); font-weight: 900; letter-spacing: .025em; line-height: 1.2; text-transform: uppercase; }
+.spis-login-form .brand-mark > span:last-child { padding-left: .65rem; border-left: 2px solid #16882b; }
 .spis-login-name-highlight { display: block; color: #16882b; }
-.spis-login-brand-icon { display: inline-flex; width: 4.25rem; height: 4.25rem; flex: 0 0 4.25rem; align-items: center; justify-content: center; }
+.spis-login-brand-icon { display: inline-flex; width: 3.5rem; height: 3.5rem; flex: 0 0 3.5rem; align-items: center; justify-content: center; }
 .spis-login-brand-icon img { display: block; width: 90%; height: 90%; object-fit: contain; transform-origin: center; transition: transform .4s cubic-bezier(.2,.75,.25,1), filter .4s ease; }
 .spis-login-brand-icon img:hover { transform: translateY(-8px) scale(1.035); filter: drop-shadow(0 15px 18px rgba(0, 45, 84, .22)); }
-.spis-login-form h2 { margin: clamp(3rem, 7vh, 5rem) 0 .65rem; color: #102f5c; font-size: clamp(2rem, 3.3vw, 3rem); font-weight: 900; letter-spacing: -.05em; line-height: 1.1; }
+.spis-login-form h2 { margin: clamp(3rem, 7vh, 5rem) 0 .65rem; color: #102f5c; font-size: clamp(1.8rem, 2.4vw, 2.4rem); font-weight: 900; letter-spacing: -.05em; line-height: 1.1; }
 .spis-login-form .login-description { margin: 0 0 clamp(1.25rem, 3vh, 2rem); color: #4b6481; font-size: clamp(.95rem, 1.25vw, 1.1rem); line-height: 1.55; }
 .spis-google-login { display: flex; align-items: center; justify-content: center; gap: .9rem; width: 100%; min-height: 68px; border: 2px solid #d7e5f0; border-radius: 999px; background: linear-gradient(180deg, #fff, #f6faff); color: #102f5c; font-size: 1.05rem; font-weight: 800; box-shadow: 0 10px 18px rgba(0,76,135,.13), inset 0 1px 0 rgba(255,255,255,.95); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease; }
 .spis-google-login:hover { transform: translateY(-2px); border-color: #8bc5e8; background: #fff; box-shadow: 0 10px 22px rgba(0,76,135,.13); }
@@ -3831,13 +3832,13 @@ body.spis-role-user #personnelPropertyTable button[onclick*="createIcsForPersonn
 @keyframes spis-login-float { 0%,100% { transform: translateY(0) rotateY(-5deg); } 50% { transform: translateY(-9px) rotateY(3deg); } }
 @keyframes spis-login-bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -8px; } }
 @media (max-width: 760px) {
-  .spis-login-panel { width: min(100%, 540px); height: min(760px, calc(100vh - 1rem)); height: min(760px, calc(100dvh - 1rem)); grid-template-columns: 1fr; grid-template-rows: minmax(240px, .85fr) minmax(0, 1.15fr); border-radius: 26px; }
+  .spis-login-panel { width: 100%; height: 100vh; height: 100dvh; grid-template-columns: 1fr; grid-template-rows: minmax(220px, .38fr) minmax(0, .62fr); border-radius: 0; }
   .spis-login-art::before { width: 42%; height: 125px; clip-path: polygon(0 0, 100% 0, 0 16%); }
   .spis-login-art { min-height: 0; padding: 1rem; }
-  .spis-login-copy { top: 1.5rem; left: 1.25rem; right: 1rem; }
+  .spis-login-copy { top: auto; bottom: 1.5rem; left: 1.25rem; right: 1rem; }
   .spis-login-copy h1 { font-size: clamp(1.65rem, 6vw, 2.3rem); }
   .spis-login-copy p { max-width: 380px; margin-top: .65rem; font-size: .85rem; line-height: 1.4; }
-  .spis-login-town { height: 60%; }
+  .spis-login-town { display: none; height: 60%; }
   .spis-login-cloud-medium { top: 8rem; }
   .spis-login-cloud-fast { top: 10rem; }
   .spis-login-scene { transform: scale(.72); margin-top: 5rem; margin-bottom: -2.5rem; }
@@ -3853,9 +3854,9 @@ body.spis-role-user #personnelPropertyTable button[onclick*="createIcsForPersonn
   .spis-login-waves { height: 48px; }
 }
 @media (max-width: 760px) and (max-height: 500px) {
-  .spis-login-panel { grid-template-rows: 135px minmax(0, 1fr); }
+  .spis-login-panel { grid-template-rows: minmax(130px, .34fr) minmax(0, .66fr); }
   .spis-login-art { padding: .65rem; }
-  .spis-login-copy { top: .65rem; left: .75rem; right: .75rem; }
+  .spis-login-copy { top: auto; bottom: .65rem; left: .75rem; right: .75rem; }
   .spis-login-copy h1 { font-size: 1.25rem; }
   .spis-login-copy h1 span::after { height: .22rem; margin-top: .2rem; }
   .spis-login-copy p { margin-top: .2rem; font-size: .65rem; }
