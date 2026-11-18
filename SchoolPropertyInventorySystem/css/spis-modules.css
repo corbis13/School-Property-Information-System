@@ -3770,7 +3770,7 @@ body[data-theme="dark"] .top-nav-btn.active svg {
 .spis-login-layer.hidden { display: none; }
 html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden)) { overflow: hidden !important; }
 .spis-login-panel { position: relative; width: 100%; height: 100vh; height: 100dvh; min-height: 0; display: grid; grid-template-columns: minmax(0, 2.92fr) minmax(0, 1fr); overflow: hidden; border: 0; border-radius: 0; background: rgba(255,255,255,.98); box-shadow: none; }
-.spis-login-art { position: relative; display: flex; min-height: 0; align-items: flex-end; justify-content: center; overflow: hidden; padding: clamp(2rem, 5vw, 5rem); background: #00335e url("../images/spis_background.png") 35% 50% / cover no-repeat; animation: spis-login-bg-pan 36s ease-in-out infinite alternate; }
+.spis-login-art { position: relative; display: flex; min-height: 0; align-items: flex-end; justify-content: center; overflow: hidden; padding: clamp(2rem, 5vw, 5rem); background: #00335e url("../images/spis_background.png") 35% 50% / cover no-repeat; animation: spis-login-bg-pan 43s ease-in-out infinite alternate; }
 .spis-login-art::before { display: none; }
 .spis-login-art::after { position: absolute; z-index: 1; inset: 0; background: linear-gradient(0deg, rgba(0, 26, 48, .82) 0%, rgba(0, 26, 48, .35) 38%, transparent 75%); content: ""; pointer-events: none; }
 .spis-login-copy { position: absolute; z-index: 2; top: auto; right: 2rem; bottom: clamp(4rem, 10vh, 8rem); left: clamp(2rem, 6vw, 5rem); }
