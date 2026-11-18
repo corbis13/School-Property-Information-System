@@ -3770,7 +3770,8 @@ body[data-theme="dark"] .top-nav-btn.active svg {
 .spis-login-layer.hidden { display: none; }
 html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden)) { overflow: hidden !important; }
 .spis-login-panel { position: relative; width: 100%; height: 100vh; height: 100dvh; min-height: 0; display: grid; grid-template-columns: minmax(0, 2.92fr) minmax(0, 1fr); overflow: hidden; border: 0; border-radius: 0; background: rgba(255,255,255,.98); box-shadow: none; }
-.spis-login-art { position: relative; display: flex; min-height: 0; align-items: flex-end; justify-content: center; overflow: hidden; padding: clamp(2rem, 5vw, 5rem); background: #00335e url("../images/spis_background.png") 35% 50% / cover no-repeat; animation: spis-login-bg-pan 43s ease-in-out infinite alternate; }
+.spis-login-art { position: relative; display: flex; min-height: 0; align-items: flex-end; justify-content: center; overflow: hidden; padding: clamp(2rem, 5vw, 5rem); background: #00335e url("../images/spis_background.png") center / cover no-repeat; }
+.spis-login-video { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
 .spis-login-art::before { display: none; }
 .spis-login-art::after { position: absolute; z-index: 1; inset: 0; background: linear-gradient(0deg, rgba(0, 26, 48, .82) 0%, rgba(0, 26, 48, .35) 38%, transparent 75%); content: ""; pointer-events: none; }
 .spis-login-copy { position: absolute; z-index: 2; top: auto; right: 2rem; bottom: clamp(4rem, 10vh, 8rem); left: clamp(2rem, 6vw, 5rem); }
@@ -3788,7 +3789,6 @@ html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden))
 .spis-login-waves { position: absolute; z-index: 4; right: 0; bottom: 0; left: 0; height: 80px; pointer-events: none; }
 .spis-login-waves svg { display: block; width: 100%; height: 100%; }
 @keyframes spis-login-cloud-drift { from { transform: translateX(-150px); } to { transform: translateX(700px); } }
-@keyframes spis-login-bg-pan { from { background-position: 35% 50%; } to { background-position: 65% 50%; } }
 .spis-login-scene { position: relative; width: 330px; height: 280px; margin-top: 5rem; transform-style: preserve-3d; animation: spis-login-float 6s ease-in-out infinite; }
 .spis-login-platform { position: absolute; left: 50%; bottom: 5px; width: 285px; height: 115px; border: 1px solid rgba(0,76,135,.2); border-radius: 22px; background: linear-gradient(145deg, rgba(255,255,255,.95), rgba(210,232,251,.9)); box-shadow: 0 24px 32px rgba(0,51,94,.15); transform: translateX(-50%) rotateX(62deg) rotateZ(-28deg); }
 .spis-login-box { position: absolute; z-index: 1; width: 92px; height: 102px; border-radius: 13px; background: linear-gradient(145deg, #fff, #dceafa); box-shadow: 12px 18px 25px rgba(0,51,94,.2), inset -8px -8px 15px rgba(0,76,135,.09); transform: rotateY(-25deg) rotateX(8deg) rotateZ(-9deg); }
@@ -3874,7 +3874,7 @@ body.spis-role-user #personnelPropertyTable button[onclick*="createIcsForPersonn
   .spis-login-footnote svg { width: 1.6rem; height: 2rem; flex-basis: 1.6rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .spis-login-art { animation: none !important; background-position: center; }
+  .spis-login-video { display: none; }
   .spis-login-scene, .spis-login-box, .spis-login-cloud { animation: none !important; }
   .spis-login-town img, .spis-login-brand-icon img { transition: none; }
   .spis-login-town img:hover, .spis-login-brand-icon img:hover { transform: none; }
