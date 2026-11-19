@@ -9482,8 +9482,8 @@ async function openInventoryCustodianSlipPdf(slip) {
     const fontSignatureNote =  11; // name / position / date lines under signatures
     // ────────────────────────────────────────────────────────────────────────
 
-    // Column ratios follow the uploaded ICS.xlsx template (A:H), including its merged Description field.
-    const columns = [12, 15, 22, 22, 75, 30, 20];
+    // Reallocate 5 mm from Description to Inventory Item No. while preserving the table width.
+    const columns = [12, 15, 22, 22, 70, 35, 20];
     const formatAmount = (value) => {
         if (value === "" || value === null || value === undefined) return "";
         const num = Number(String(value).replace(/[^0-9.-]/g, ""));
