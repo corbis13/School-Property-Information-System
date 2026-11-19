@@ -1070,7 +1070,7 @@
                         </label>
                         <label>
                             <span id="propertyNumberPlaceholderLabel">(<em>Select Property Classification to open</em>)</span>
-                            <input id="propertyNumberPlaceholder" type="text" placeholder="Select Property Classification" readonly>
+                            <input id="propertyNumberPlaceholder" type="text" placeholder="Select Property Classification" readonly tabindex="-1">
                             <span id="propertyNoLabel">Property No.</span>
                             <input id="propertyNo" type="text" placeholder="e.g. PROP-2026-001" hidden>
                             <span id="semiExpandableNoLabel" hidden>Semi-Expandable No.</span>
@@ -1111,7 +1111,7 @@
                         </label>
                         <label>
                             Position
-                            <input id="position" type="text" placeholder="Auto-populates from selected teacher" readonly>
+                            <input id="position" type="text" placeholder="Auto-populates from selected teacher" readonly tabindex="-1">
                         </label>
                     </div>
                     <input id="plantillaPosition" type="hidden">
@@ -1119,7 +1119,7 @@
                     <div class="two-column">
                         <label>
                             School Level
-                            <input id="schoolLevel" type="text" placeholder="Auto-populates from selected teacher" readonly>
+                            <input id="schoolLevel" type="text" placeholder="Auto-populates from selected teacher" readonly tabindex="-1">
                         </label>
                         <label>
                             Acquisition Date
@@ -1145,7 +1145,7 @@
                         </label>
                         <label>
                             Total
-                            <input id="total" type="text" placeholder="0.00" readonly>
+                            <input id="total" type="text" placeholder="0.00" readonly tabindex="-1">
                         </label>
                     </div>
 
@@ -1477,11 +1477,11 @@
                                 <option value="Basilan National High School - Night" selected>Basilan National High School - Night</option>
                               </select>
                             </label>
-                            <label>Fund Cluster<input id="icsFundCluster" type="text" required readonly></label>
+                            <label>Fund Cluster<input id="icsFundCluster" type="text" required readonly tabindex="-1"></label>
                         </div>
                         <div class="two-column">
                             <label>ICS No.<input id="icsNo" type="text" required></label>
-                            <label>Inventory Item No.<input id="icsInventoryItemNo" type="text" required readonly></label>
+                            <label>Inventory Item No.<input id="icsInventoryItemNo" type="text" required readonly tabindex="-1"></label>
                         </div>
                         <div class="full-width ics-form-group">
                           <label for="icsDescriptionSearch">Description</label>
@@ -1504,14 +1504,14 @@
                           <label>Additional Item
                               <textarea id="icsAdditionalItem" class="ics-tall-field" rows="4" placeholder="No additional item"></textarea>
                           </label>
-                            <label>Unit<input id="icsUnit" type="text" placeholder="e.g. pcs" required readonly></label>
+                            <label>Unit<input id="icsUnit" type="text" placeholder="e.g. pcs" required readonly tabindex="-1"></label>
                         </div>
                         <div class="two-column">
                           <label>Quantity<input id="icsQuantity" type="number" min="0" step="1" required></label>
-                          <label>Unit Cost<input id="icsUnitCost" type="number" min="0" step="0.01" required readonly></label>
+                          <label>Unit Cost<input id="icsUnitCost" type="number" min="0" step="0.01" required readonly tabindex="-1"></label>
                         </div>
                         <div class="two-column">
-                          <label>Total Cost<input id="icsTotalCost" type="number" min="0" step="0.01" readonly></label>
+                          <label>Total Cost<input id="icsTotalCost" type="number" min="0" step="0.01" readonly tabindex="-1"></label>
                           <label>Estimated Useful Life<input id="icsEstimatedUsefulLife" type="text" placeholder="e.g. 5 years"></label>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -1523,7 +1523,7 @@
                                         <option value="">Select signatory</option>
                                     </select>
                                 </label>
-                                <label>Designation/Position<input id="icsReceivedFromPosition" type="text" readonly></label>
+                                <label>Designation/Position<input id="icsReceivedFromPosition" type="text" readonly tabindex="-1"></label>
                                 <label>Date Received From<input id="icsReceivedFromDate" type="date"></label>
                             </div>
                         </section>
@@ -1535,7 +1535,7 @@
                                         <option value="">Select recipient</option>
                                     </select>
                                 </label>
-                                <label>Designation/Position<input id="icsReceivedByPosition" type="text" readonly></label>
+                                <label>Designation/Position<input id="icsReceivedByPosition" type="text" readonly tabindex="-1"></label>
                                 <label>Date Received By<input id="icsReceivedByDate" type="date"></label>
                             </div>
                         </section>
@@ -1810,9 +1810,9 @@
 
               <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-[0_1px_3px_rgba(0,0,0,.04)] flex items-center justify-between">
                 <div>
-                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Secondary Dept</div>
+                  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Secondary Department</div>
                   <div class="text-2xl font-bold text-[#0759a5] mt-1" id="personnelStatSec">0</div>
-                  <div class="text-[11px] text-gray-400 mt-0.5">Junior & Senior High</div>
+                  <div class="text-[11px] text-gray-400 mt-0.5">Senior High Faculty</div>
                 </div>
                 <div class="w-11 h-11 rounded-xl bg-sky-50 text-[#0759a5] flex items-center justify-center text-lg">
                   <i class="fa-solid fa-graduation-cap"></i>
@@ -3383,7 +3383,7 @@
                 }).length;
                 var sec = list.filter(function (t) {
                   var lvl = String(t.school_level || "").toLowerCase();
-                  return lvl.includes("junior") || lvl.includes("senior") || lvl.includes("high");
+                  return lvl.includes("senior");
                 }).length;
                 var admin = list.filter(function (t) {
                   return String(t.school_level || "").toLowerCase().includes("admin");

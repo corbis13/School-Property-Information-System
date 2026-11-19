@@ -3811,7 +3811,8 @@ html:has(#googleLoginGate:not(.hidden)), body:has(#googleLoginGate:not(.hidden))
 .spis-login-brand-icon img:hover { transform: translateY(-8px) scale(1.035); filter: drop-shadow(0 15px 18px rgba(0, 45, 84, .22)); }
 .spis-login-form h2 { margin: clamp(3rem, 7vh, 5rem) 0 .65rem; color: #102f5c; font-size: clamp(1.8rem, 2.4vw, 2.4rem); font-weight: 900; letter-spacing: -.05em; line-height: 1.1; }
 .spis-login-form .login-description { margin: 0 0 clamp(1.25rem, 3vh, 2rem); color: #4b6481; font-size: clamp(.95rem, 1.25vw, 1.1rem); line-height: 1.55; }
-.spis-google-login { display: flex; align-items: center; justify-content: center; gap: .9rem; width: 100%; min-height: 68px; border: 2px solid #d7e5f0; border-radius: 999px; background: linear-gradient(180deg, #fff, #f6faff); color: #102f5c; font-size: 1.05rem; font-weight: 800; box-shadow: 0 10px 18px rgba(0,76,135,.13), inset 0 1px 0 rgba(255,255,255,.95); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+.spis-google-login { display: flex; align-items: center; justify-content: center; gap: .81rem; width: 90%; min-height: 61.2px; margin: .5rem auto 0; border: 2px solid #d7e5f0; border-radius: 999px; background: linear-gradient(180deg, #fff, #f6faff); color: #102f5c; font-size: .945rem; font-weight: 800; box-shadow: 0 10px 18px rgba(0,76,135,.13), inset 0 1px 0 rgba(255,255,255,.95); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+.spis-google-login svg { width: 18px; height: 18px; flex: 0 0 18px; }
 .spis-google-login:hover { transform: translateY(-2px); border-color: #8bc5e8; background: #fff; box-shadow: 0 10px 22px rgba(0,76,135,.13); }
 .spis-google-login:focus-visible { outline: 3px solid rgba(2,132,199,.35); outline-offset: 3px; }
 .spis-google-login:disabled { cursor: wait; opacity: .65; transform: none; }
@@ -3849,7 +3850,7 @@ body.spis-role-user #personnelPropertyTable button[onclick*="createIcsForPersonn
   .spis-login-brand-icon { width: 3rem; height: 3rem; flex-basis: 3rem; }
   .spis-login-form h2 { margin: 1.65rem 0 .45rem; font-size: clamp(1.6rem, 7vw, 2.1rem); }
   .spis-login-form .login-description { margin-bottom: 1rem; font-size: .88rem; }
-  .spis-google-login { min-height: 54px; }
+  .spis-google-login { min-height: 48.6px; }
   .spis-login-footnote { gap: .7rem; padding-top: .8rem; font-size: .75rem; }
   .spis-login-footnote svg { width: 2.1rem; height: 2.5rem; flex-basis: 2.1rem; }
   .spis-login-waves { height: 48px; }
