@@ -15,6 +15,10 @@ The Express server (`server.js`) serves the app at `http://localhost:3000` (redi
 
 > `index.html` and `homepage.html` are mirrors. Any HTML or inline-script change must be applied to **both** files.
 
+### Login background video
+
+Both entry pages use `images/spis_video.mp4` as a muted, looping background video and `images/spis_video_poster.jpg` as the poster and still-image fallback. Keep the video source synchronized in both pages.
+
 ## Modules
 
 - **Dashboard** – stat cards, school-level / status / acquisition-year / category charts, recent assets.
